@@ -53,4 +53,25 @@ class LrcParserTest {
     fun letraSemTempo() {
         assertEquals(listOf("um", "", "dois"), parsePlain("\num\n\ndois\n").map { it.text })
     }
+
+    @Test
+    fun letraDoArquivoSincronizada() {
+        val lyrics = lyricsFromText("[00:01.00] Açaí\n[00:04.00] guardiã")!!
+        assertEquals(true, lyrics.synced)
+        assertEquals(EMBEDDED_LYRICS_SOURCE, lyrics.source)
+        assertEquals(2, lyrics.lines.size)
+    }
+
+    @Test
+    fun letraDoArquivoSimples() {
+        val lyrics = lyricsFromText("Primeira\nSegunda")!!
+        assertEquals(false, lyrics.synced)
+        assertEquals(listOf("Primeira", "Segunda"), lyrics.lines.map { it.text })
+    }
+
+    @Test
+    fun letraDoArquivoVazia() {
+        assertEquals(null, lyricsFromText("  \n "))
+        assertEquals(null, lyricsFromText(null))
+    }
 }

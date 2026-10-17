@@ -3,14 +3,44 @@
 
 package com.boomlistener.feature.tageditor
 
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.boomlistener.core.player.PlayerConnection
+import com.boomlistener.data.deezer.DeezerData
+import com.boomlistener.data.lastfm.LastfmData
+import com.boomlistener.data.library.LibraryData
+import com.boomlistener.data.tags.TagsData
 
-const val TAGEDITOR_ROUTE = "tageditor"
+private const val ARG_URI = "uri"
+const val TAGEDITOR_ROUTE = "tageditor?$ARG_URI={$ARG_URI}"
 
-fun NavController.navigateToTagEditor() = navigate(TAGEDITOR_ROUTE)
+/** Abre o editor de tags da música [trackUri] (endereço content:// do MediaStore). */
+fun NavController.navigateToTagEditor(trackUri: String) =
+    navigate("tageditor?$ARG_URI=" + Uri.encode(trackUri))
 
 fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit) {
-    composable(TAGEDITOR_ROUTE) { TagEditorScreen(onBack = onBack) }
+    composable(
+        route = TAGEDITOR_ROUTE,
+        arguments = listOf(navArgument(ARG_URI) { type = NavType.StringType }),
+    ) { entry ->
+        val uri = entry.arguments?.getString(ARG_URI).orEmpty()
+        val context = LocalContext.current.applicationContext
+        val viewModel = viewModel(key = "tags:$uri") {
+            TagEditorViewModel(
+                uri = uri,
+                tagsRepository = TagsData.repository(context),
+                library = LibraryData.repository(context),
+                deezer = DeezerData.repository(context),
+                lastfm = LastfmData.repository(context),
+                player = PlayerConnection.controller(context),
+            )
+        }
+        TagEditorScreen(viewModel = viewModel, onBack = onBack)
+    }
 }

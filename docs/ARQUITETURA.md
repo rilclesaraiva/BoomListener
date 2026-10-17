@@ -29,7 +29,7 @@ core/
 
 data/
   library/        ← varre o MediaStore, sincroniza com o Room, expõe faixas, álbuns e artistas
-  tags/           ← lê e grava tags nos arquivos (jaudiotagger) + pedido de permissão de escrita
+  tags/           ← lê e grava tags nos arquivos (TagLib nativo) + pedido de permissão de escrita
   deezer/         ← API do Deezer: foto do artista, discografia, lançamentos, faixas
   lastfm/         ← API do Last.fm (via proxy): biografia, tags de gênero, similares, scrobble
   releases/       ← artistas seguidos, comparação de discografia, WorkManager diário, notificações
@@ -90,7 +90,8 @@ Tudo que vem de fora é salvo no Room com data de atualização, para o app func
 ## Fluxos principais
 
 - **Biblioteca:** `data/library` escuta mudanças do MediaStore → atualiza o Room → as telas observam via `Flow`.
-- **Edição de tags:** `feature/tageditor` → `data/tags` pede permissão de escrita (Android 11+ usa `MediaStore.createWriteRequest`) → grava → pede reescaneamento do arquivo.
+- **Edição de tags:** `feature/tageditor` → `data/tags` pede permissão de escrita (Android 11+ usa `MediaStore.createWriteRequest`) → grava → pede reescaneamento do arquivo → `LibraryRepository.notifyChanged` (lista e capas recarregam) e `PlaybackController.updateTrackInfo` (fila e notificação sem parar a música).
+- **Tags automáticas:** o ViewModel do editor junta `data/deezer` (`searchTrack` + `rankCandidates`, testado com acentos, "feat." e homônimos; depois `trackTags` com faixa, disco, ano, capa) e `data/lastfm` (`trackTags` + `pickGenre`, gênero mais preciso). Resultado claro (≥ 0,8 e 0,1 à frente do segundo) preenche sozinho; senão o usuário escolhe. Nada é gravado sem tocar em Salvar.
 - **Página do artista:** primeiro mostra o cache do Room, depois atualiza em segundo plano com Deezer e Last.fm.
 - **Radar de lançamentos:** `data/releases` associa os artistas locais a IDs do Deezer; um WorkManager diário compara a discografia com a última checagem e notifica o que é novo.
 - **Avisos de tela:** `data/wellbeing` soma o tempo de reprodução vindo do `core/player`; ao passar do limite configurado, mostra um aviso leve (nunca bloqueia).
@@ -134,7 +135,7 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
   - **A ordem original é guardada** ao ligar o aleatório e restaurada ao desligar, continuando da música que está tocando. Músicas removidas durante o aleatório também saem da ordem original; músicas movidas ficam onde o usuário pôs só na ordem embaralhada.
   - **Com "repetir tudo" + aleatório:** ao fim de uma rodada, embaralha de novo, sem deixar a última música da rodada anterior ser a primeira da nova.
   - A lógica do embaralhador fica numa classe pura (sem Android), com testes: sem repetição, ordem original restaurada, remoção refletida nas duas ordens, virada de rodada.
-- **Letras no player** — ✅ feito na 0.10.0 (`data/lyrics`), falta ler a letra embutida no arquivo (entra junto com o editor de tags, que já vai ler as tags): tocar na capa do player troca, com animação suave (capa encolhe e esmaece, letra entra), para a letra; tocar de novo volta. Letra **sincronizada** quando houver: a linha atual em destaque (maior e mais forte), as outras esmaecidas, rolagem automática acompanhando a música, e tocar numa linha pula para aquele trecho. Fontes, em ordem: letra embutida no arquivo (tag de letra/LRC) → **LRCLIB** (gratuito, sem chave, tem letras sincronizadas) → "letra não encontrada". Guardar em cache no aparelho. Precisa de um módulo novo `data/lyrics` (perguntar antes de criar, pela regra). Fundo do player tingido pela cor da capa (combina com a ideia já registrada).
+- **Letras no player** — ✅ feito na 0.10.0 (`data/lyrics`), letra embutida no arquivo ✅ na 0.14.0 (tem prioridade sobre o LRCLIB): tocar na capa do player troca, com animação suave (capa encolhe e esmaece, letra entra), para a letra; tocar de novo volta. Letra **sincronizada** quando houver: a linha atual em destaque (maior e mais forte), as outras esmaecidas, rolagem automática acompanhando a música, e tocar numa linha pula para aquele trecho. Fontes, em ordem: letra embutida no arquivo (tag de letra/LRC) → **LRCLIB** (gratuito, sem chave, tem letras sincronizadas) → "letra não encontrada". Guardar em cache no aparelho. Precisa de um módulo novo `data/lyrics` (perguntar antes de criar, pela regra). Fundo do player tingido pela cor da capa (combina com a ideia já registrada).
 - **Perfil do artista** — ✅ feito na 0.11.0 com o Deezer; falta a biografia do Last.fm (precisa da chave + proxy na Cloudflare). Visual próprio em Material 3 Expressive, inspirado nas referências (Spotify e perfil do TikTok), sem copiar nenhum dos dois:
   - Cabeçalho grande com a foto do artista (Deezer) ocupando o topo e esmaecendo para a cor de fundo; nome em destaque por cima; foto em círculo sobreposta na borda do cabeçalho (estilo perfil).
   - Linha de números: músicas que você tem, álbuns que você tem, fãs no Deezer.
@@ -154,7 +155,7 @@ Hoje estão em uso: Compose, Material 3, navegação, Media3 e DataStore. O rest
 - Media3 (ExoPlayer + MediaSession)
 - OkHttp, Retrofit, kotlinx.serialization
 - Coil (imagens)
-- jaudiotagger (tags)
+- TagLib para Android (`io.github.kyant0:taglib`): tags de MP3, FLAC, M4A, OGG, OPUS, WAV… Trabalha com o descritor de arquivo do MediaStore, o único jeito de gravar no Android 10+ (o jaudiotagger precisa do caminho do arquivo, por isso foi trocado).
 - Testes: JUnit, Turbine (Flows), MockK
 
 ## Build e release

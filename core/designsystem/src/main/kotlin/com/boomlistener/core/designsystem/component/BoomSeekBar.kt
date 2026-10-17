@@ -92,7 +92,8 @@ fun BoomThinProgress(
         progress = { progress },
         modifier = modifier.fillMaxWidth(),
         color = color,
-        trackColor = Color.Transparent,
+        // Trilho bem suave no mesmo tom, para a barra se ler como "progresso".
+        trackColor = color.copy(alpha = 0.22f),
         drawStopIndicator = {},
     )
 }

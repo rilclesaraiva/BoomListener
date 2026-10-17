@@ -13,6 +13,8 @@ dependencies {
     implementation(project(":core:player"))
     implementation(project(":data:library"))
     implementation(project(":data:lyrics"))
+    // Letra guardada dentro do arquivo.
+    implementation(project(":data:tags"))
     // Arrastar para reordenar a fila.
     implementation(libs.reorderable)
 

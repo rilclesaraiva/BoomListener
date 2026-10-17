@@ -16,6 +16,10 @@ import android.util.LruCache
 import android.util.Size
 import com.boomlistener.core.model.Track
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.text.Collator
 import java.util.Collections
@@ -40,6 +44,15 @@ internal class MediaStoreLibraryRepository(
     // Músicas já conferidas que não têm capa, para não tentar de novo.
     private val noArtwork: MutableSet<String> =
         Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
+
+    private val changes = MutableStateFlow(0)
+    override val version: StateFlow<Int> = changes.asStateFlow()
+
+    override fun notifyChanged(trackUri: String) {
+        artworkCache.snapshot().keys.filter { it.startsWith("$trackUri@") }.forEach { artworkCache.remove(it) }
+        noArtwork.removeAll { it.startsWith("$trackUri@") }
+        changes.update { it + 1 }
+    }
 
     override suspend fun getTracks(): List<Track> = withContext(Dispatchers.IO) {
         val projection = arrayOf(

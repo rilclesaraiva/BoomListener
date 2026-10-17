@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -26,7 +27,7 @@ internal class LibraryViewModel(
     private val query = MutableStateFlow("")
 
     val uiState: StateFlow<LibraryUiState> =
-        combine(allTracks, query) { tracks, currentQuery ->
+        combine(allTracks, query, repository.version) { tracks, currentQuery, version ->
             if (tracks == null) {
                 LibraryUiState.Loading
             } else {
@@ -34,9 +35,17 @@ internal class LibraryViewModel(
                     tracks = filterTracks(tracks, currentQuery),
                     totalCount = tracks.size,
                     query = currentQuery,
+                    version = version,
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryUiState.Loading)
+
+    init {
+        // Tags editadas: relê a lista (títulos e capas novos).
+        viewModelScope.launch {
+            repository.version.drop(1).collect { if (allTracks.value != null) load() }
+        }
+    }
 
     /** Lê (ou relê) as músicas do aparelho. Chamado quando a permissão existe. */
     fun load() {

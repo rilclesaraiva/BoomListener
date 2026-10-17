@@ -39,3 +39,20 @@ fun Context.shareText(text: String) {
         // Sem nenhum app para compartilhar.
     }
 }
+
+/**
+ * Compartilha um link (e não um texto solto): o app de destino mostra a
+ * prévia da página e quem recebe abre direto. [title] aparece na folha de
+ * compartilhar do Android.
+ */
+fun Context.shareLink(url: String, title: String) {
+    val send = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, url)
+        .putExtra(Intent.EXTRA_TITLE, title)
+    try {
+        startActivity(Intent.createChooser(send, title).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } catch (_: ActivityNotFoundException) {
+        // Sem nenhum app para compartilhar.
+    }
+}

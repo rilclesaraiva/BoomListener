@@ -17,6 +17,8 @@ internal sealed interface LibraryUiState {
         val tracks: List<Track>,
         val totalCount: Int,
         val query: String,
+        /** Sobe quando tags foram editadas (para recarregar as capas). */
+        val version: Int = 0,
     ) : LibraryUiState
 }
 

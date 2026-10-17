@@ -36,22 +36,37 @@ internal class LrclibLyricsRepository(context: Context) : LyricsRepository {
         val cacheFile = File(cacheDir, cacheKey(query) + ".json")
         readCache(cacheFile)?.let { return@withContext it }
 
-        val result = try {
-            fetchExact(query) ?: searchBest(query)
-        } catch (_: Exception) {
-            return@withContext LyricsResult.Failed
-        }
+        // Cada etapa pode falhar sozinha (o LRCLIB às vezes demora numa delas).
+        // Só é "sem conexão" se NENHUMA etapa respondeu; se alguma respondeu e
+        // nenhuma achou, a música simplesmente não tem letra lá.
+        var answered = false
+        fun attempt(step: () -> Lyrics?): Lyrics? =
+            try {
+                step().also { answered = true }
+            } catch (_: Exception) {
+                null
+            }
+
+        val canSearchExact = query.artist != null && query.album != null && query.durationMs > 0
+        val result = (if (canSearchExact) attempt { fetchExact(query) } else null)
+            ?: attempt { searchBest(query, byFields = true) }
+            ?: attempt { searchBest(query, byFields = false) }
+        if (result == null && !answered) return@withContext LyricsResult.Failed
+
         val final = result?.let { LyricsResult.Found(it) } ?: LyricsResult.NotFound
         writeCache(cacheFile, final)
         final
     }
 
-    /** Busca exata (título + artista + álbum + duração). Só quando temos tudo. */
+    /**
+     * Busca exata (título + artista + álbum + duração), só no banco do LRCLIB
+     * ("get-cached"): responde na hora, sem ir procurar em outros sites.
+     */
     private fun fetchExact(query: LyricsQuery): Lyrics? {
         val artist = query.artist ?: return null
         val album = query.album ?: return null
         if (query.durationMs <= 0) return null
-        val url = "$BASE_URL/get?" + params(
+        val url = "$BASE_URL/get-cached?" + params(
             "track_name" to query.title,
             "artist_name" to artist,
             "album_name" to album,
@@ -61,12 +76,17 @@ internal class LrclibLyricsRepository(context: Context) : LyricsRepository {
         return toLyrics(JSONObject(body))
     }
 
-    /** Busca aberta: entre os resultados, o de duração mais parecida, preferindo os sincronizados. */
-    private fun searchBest(query: LyricsQuery): Lyrics? {
-        val url = "$BASE_URL/search?" + params(
-            "track_name" to query.title,
-            "artist_name" to query.artist,
-        )
+    /**
+     * Busca aberta: entre os resultados, o de duração mais parecida, preferindo
+     * os sincronizados. [byFields] procura por título e artista separados; sem
+     * ele, procura o texto livre "artista título" (pega grafias diferentes).
+     */
+    private fun searchBest(query: LyricsQuery, byFields: Boolean): Lyrics? {
+        val url = "$BASE_URL/search?" + if (byFields) {
+            params("track_name" to query.title, "artist_name" to query.artist)
+        } else {
+            params("q" to listOfNotNull(query.artist, query.title).joinToString(" "))
+        }
         val body = request(url) ?: return null
         val results = JSONArray(body)
         val candidates = (0 until results.length()).map { results.getJSONObject(it) }
@@ -101,8 +121,8 @@ internal class LrclibLyricsRepository(context: Context) : LyricsRepository {
     /** null = 404 (não encontrada). Outros erros viram exceção. */
     private fun request(url: String): String? {
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 10_000
-            readTimeout = 10_000
+            connectTimeout = 8_000
+            readTimeout = 12_000
             setRequestProperty("User-Agent", userAgent)
         }
         try {

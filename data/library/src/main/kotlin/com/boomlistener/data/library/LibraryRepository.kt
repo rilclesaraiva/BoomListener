@@ -6,6 +6,9 @@ package com.boomlistener.data.library
 import android.content.Context
 import android.graphics.Bitmap
 import com.boomlistener.core.model.Track
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /** Acesso às músicas do aparelho. O resto do app só enxerga esta interface. */
 interface LibraryRepository {
@@ -18,7 +21,18 @@ interface LibraryRepository {
      * tiver capa. Guarda em cache na memória.
      */
     suspend fun loadArtwork(trackUri: String, sizePx: Int): Bitmap?
+
+    /**
+     * Muda (soma 1) toda vez que alguma música do aparelho foi alterada pelo
+     * app (tags editadas). Quem mostra músicas ou capas recarrega ao mudar.
+     */
+    val version: StateFlow<Int> get() = NoChanges
+
+    /** Avisa que [trackUri] mudou: esquece a capa guardada e sobe [version]. */
+    fun notifyChanged(trackUri: String) {}
 }
+
+private val NoChanges: StateFlow<Int> = MutableStateFlow(0).asStateFlow()
 
 /**
  * Ponto de acesso provisório enquanto o app não tem injeção de dependências

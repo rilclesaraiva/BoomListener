@@ -52,7 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.MediaPermissions
 import com.boomlistener.core.common.openUrl
-import com.boomlistener.core.common.shareText
+import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.common.openAppSettings
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
@@ -201,6 +201,7 @@ private fun TrackList(
             items(state.tracks, key = { it.id }) { track ->
                 TrackItem(
                     track = track,
+                    version = state.version,
                     loadArtwork = loadArtwork,
                     onClick = { onOpenTrack(track) },
                     onOpenArtist = track.artist?.let { name -> { onOpenArtist(name) } },
@@ -214,13 +215,15 @@ private fun TrackList(
 @Composable
 private fun TrackItem(
     track: Track,
+    version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
     onClick: () -> Unit,
     onOpenArtist: (() -> Unit)?,
     onEditTags: () -> Unit,
 ) {
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
-    val artwork by produceState<ImageBitmap?>(initialValue = null, track.uri) {
+    // [version] muda quando alguma tag foi editada: a capa é lida de novo.
+    val artwork by produceState<ImageBitmap?>(initialValue = null, track.uri, version) {
         value = loadArtwork(track, sizePx)?.asImageBitmap()
     }
     val context = LocalContext.current
@@ -248,7 +251,12 @@ private fun TrackItem(
                         onClick = {},
                     ),
                 ),
-                onShare = { context.shareText(listOfNotNull(track.title, track.artist).joinToString(" — ")) },
+                onShare = {
+                    context.shareLink(
+                        url = ExternalLinks.youtubeMusicSearch(track.title, track.artist),
+                        title = listOfNotNull(track.title, track.artist).joinToString(" — "),
+                    )
+                },
                 onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) },
             )
         },

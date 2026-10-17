@@ -39,6 +39,27 @@ internal class ProxyLastfmRepository(context: Context) : LastfmRepository {
         }
     }
 
+    override suspend fun trackTags(artistName: String, title: String): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val artist = URLEncoder.encode(artistName, "UTF-8")
+            val track = getJson(
+                "$PROXY_URL?method=track.getinfo&autocorrect=1&artist=$artist&track=" + URLEncoder.encode(title, "UTF-8"),
+            )
+            val fromTrack = tagNames(track.optJSONObject("track")?.optJSONObject("toptags"))
+            if (fromTrack.isNotEmpty()) return@withContext fromTrack
+            val artistTags = getJson("$PROXY_URL?method=artist.gettoptags&autocorrect=1&artist=$artist")
+            tagNames(artistTags.optJSONObject("toptags"))
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun tagNames(container: JSONObject?): List<String> {
+        val array = container?.optJSONArray("tag") ?: return emptyList()
+        return (0 until array.length()).mapNotNull { array.optJSONObject(it)?.optString("name") }
+            .filter { it.isNotBlank() }
+    }
+
     private fun fetchBio(artistName: String, language: String): ArtistBio? {
         val url = PROXY_URL + "?method=artist.getinfo&autocorrect=1" +
             "&artist=" + URLEncoder.encode(artistName, "UTF-8") +

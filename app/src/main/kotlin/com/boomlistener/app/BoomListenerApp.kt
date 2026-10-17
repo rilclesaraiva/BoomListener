@@ -33,7 +33,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.boomlistener.app.navigation.TopLevelDestination
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
-import com.boomlistener.core.designsystem.theme.boomSpatialSpec
+import com.boomlistener.core.designsystem.theme.boomScreenSpec
 import com.boomlistener.feature.artist.artistScreen
 import com.boomlistener.feature.artist.navigateToArtist
 import com.boomlistener.feature.library.LIBRARY_ROUTE
@@ -66,26 +66,25 @@ fun BoomListenerApp() {
     val currentDestination = backStackEntry?.destination
     val playerSheet = rememberPlayerSheetState()
 
-    // Transições do motionScheme: telas internas deslizam um pouco para o lado
-    // enquanto aparecem (eixo compartilhado); trocar de aba só esmaece. O
-    // "voltar" preditivo do sistema percorre estas mesmas animações.
-    val slideSpec: FiniteAnimationSpec<IntOffset> = boomSpatialSpec()
+    // Telas internas entram deslizando por cima da anterior (que recua um
+    // pouco e escurece) e saem deslizando de volta; trocar de aba só esmaece.
+    // O "voltar" preditivo do sistema usa as mesmas animações de saída, então
+    // a tela acompanha o dedo e termina o movimento ao soltar, sem salto.
+    val slideSpec: FiniteAnimationSpec<IntOffset> = boomScreenSpec()
     val fadeSpec: FiniteAnimationSpec<Float> = boomEffectsSpec()
     val enter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        if (isTabSwitch()) fadeIn(fadeSpec)
-        else slideInHorizontally(slideSpec) { it / 6 } + fadeIn(fadeSpec)
+        if (isTabSwitch()) fadeIn(fadeSpec) else slideInHorizontally(slideSpec) { it }
     }
     val exit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         if (isTabSwitch()) fadeOut(fadeSpec)
-        else slideOutHorizontally(slideSpec) { -it / 6 } + fadeOut(fadeSpec)
+        else slideOutHorizontally(slideSpec) { -it / 4 } + fadeOut(fadeSpec, targetAlpha = 0.4f)
     }
     val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         if (isTabSwitch()) fadeIn(fadeSpec)
-        else slideInHorizontally(slideSpec) { -it / 6 } + fadeIn(fadeSpec)
+        else slideInHorizontally(slideSpec) { -it / 4 } + fadeIn(fadeSpec, initialAlpha = 0.4f)
     }
     val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-        if (isTabSwitch()) fadeOut(fadeSpec)
-        else slideOutHorizontally(slideSpec) { it / 6 } + fadeOut(fadeSpec)
+        if (isTabSwitch()) fadeOut(fadeSpec) else slideOutHorizontally(slideSpec) { it }
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -122,11 +121,15 @@ fun BoomListenerApp() {
                 exitTransition = exit,
                 popEnterTransition = popEnter,
                 popExitTransition = popExit,
+                // Sem isto o Android usa a animação padrão (a tela encolhe num
+                // cartão e some de uma vez ao soltar o dedo).
+                predictivePopEnterTransition = { popEnter(this) },
+                predictivePopExitTransition = { popExit(this) },
             ) {
                 val back: () -> Unit = { navController.popBackStack() }
                 libraryScreen(
                     onOpenArtist = navController::navigateToArtist,
-                    onEditTags = { navController.navigateToTagEditor() },
+                    onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
                 )
                 artistScreen(
                     navController = navController,
@@ -150,6 +153,11 @@ fun BoomListenerApp() {
             onOpenArtist = { name ->
                 playerSheet.collapse()
                 navController.navigateToArtist(name)
+            },
+            // Editar tags da música que está tocando: fecha o player e abre o editor.
+            onEditTags = { uri ->
+                playerSheet.collapse()
+                navController.navigateToTagEditor(uri)
             },
         )
     }

@@ -17,6 +17,7 @@ Reprodutor de música **local** para Android, em Material 3, com edição comple
 - **Bandcamp não é usado** (não tem API pública).
 - Nada de dados do usuário sai do aparelho, exceto as consultas de metadados e o scrobble no Last.fm quando o próprio usuário ativar.
 - **Permissões de mídia: só áudio** (`READ_MEDIA_AUDIO`, e `READ_EXTERNAL_STORAGE` até o Android 12). **Nunca** peça fotos ou vídeos: a política da Play Store só aceita essas permissões quando galeria é a função principal do app, e as capas não precisam delas (vêm de dentro dos arquivos e do MediaStore de áudio). Capa escolhida pelo usuário no editor de tags usa o **Photo Picker**, que não exige permissão.
+- **Gravar tags:** no Android 10+ o próprio sistema pergunta arquivo por arquivo (`MediaStore.createWriteRequest` / `RecoverableSecurityException`), sem permissão no manifesto. Só no Android 8 e 9 existe `WRITE_EXTERNAL_STORAGE` (com `maxSdkVersion="28"`). Nenhuma outra permissão de armazenamento.
 - A identidade visual é própria: inspiração de layout é permitida, copiar a marca ou o visual de outro app não.
 
 ## Regra fixa: Release só com autorização
@@ -89,7 +90,8 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 - **Aleatório é nosso, não do ExoPlayer.** O serviço usa `ShuffleOrder.UnshuffledShuffleOrder`, então a fila do player é sempre a ordem real. `ShuffleState` (classe pura, testada) embaralha com Fisher-Yates, guarda a ordem original e restaura ao desligar. `shuffleModeEnabled` só guarda se o aleatório está ligado. Toda nova forma de tocar aleatório passa por `PlaybackController.playShuffled` ou `toggleShuffle`.
 - **"Mais ouvidas":** quem decide se uma reprodução conta é `PlayCountTracker` (puro, testado) dentro do `PlaybackService`: conta se o usuário **escolheu** a música (lista ou fila, marcada por `ChosenSongSignal` no controller) ou se ela tocou **na ordem normal**; **não** conta se entrou sozinha pelo aleatório; exige **30 s ouvidos de verdade** (80% em músicas menores que 30 s); uma vez por reprodução. O serviço avisa por `PlaybackHooks.onPlayCounted`, que o `BoomApplication` liga às estatísticas (`data/wellbeing`).
 - Troca de barra do topo, letra, fila e telas: **sempre animadas**. Toda tela/painel novo precisa de transição e de "voltar" que feche só ele (com `PredictiveBackHandler` quando for painel).
-- Todo movimento usa `boomSpatialSpec` / `boomFastSpatialSpec` / `boomEffectsSpec` (`core/designsystem/theme/Motion.kt`), que vêm do motionScheme. Nada de `tween(300)` à mão.
+- Todo movimento usa `boomSpatialSpec` / `boomFastSpatialSpec` / `boomEffectsSpec` / `boomScreenSpec` (`core/designsystem/theme/Motion.kt`), que vêm do motionScheme. Nada de `tween(300)` à mão.
+- **Navegação entre telas** (no `app`): a tela nova entra deslizando por cima da anterior (que recua e escurece) e sai deslizando de volta, com `boomScreenSpec` (sem quique, para não abrir fresta na borda). O voltar preditivo usa as mesmas animações (`predictivePopEnterTransition`/`predictivePopExitTransition` do `NavHost`); nunca deixe o padrão do Android (cartão que encolhe e some).
 - Ícones de player (pausa, próxima, aleatório…) são desenhados em `BoomIcons` a partir dos caminhos dos Material Icons. Não adicione o pacote `material-icons-extended` (pesa vários MB).
 
 ## Testes

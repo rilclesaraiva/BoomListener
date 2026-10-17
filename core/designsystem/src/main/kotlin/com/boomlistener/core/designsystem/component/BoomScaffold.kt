@@ -62,6 +62,7 @@ fun BoomScreenScaffold(
     largeTitle: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {},
     topBar: (@Composable () -> Unit)? = null,
+    snackbarHost: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val effects = boomEffectsSpec<Float>()
@@ -80,6 +81,7 @@ fun BoomScreenScaffold(
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = snackbarHost,
         topBar = {
             // A troca entre a barra normal e uma barra própria (ex.: busca)
             // é animada, nunca um corte seco.

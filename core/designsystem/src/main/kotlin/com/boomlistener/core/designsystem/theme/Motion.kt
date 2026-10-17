@@ -28,3 +28,11 @@ fun <T> boomFastSpatialSpec(): FiniteAnimationSpec<T> = MaterialTheme.motionSche
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun <T> boomEffectsSpec(): FiniteAnimationSpec<T> = MaterialTheme.motionScheme.defaultEffectsSpec()
+
+/**
+ * Para telas inteiras entrando e saindo (navegação). Mola sem quique: uma
+ * tela que passasse do ponto deixaria uma fresta preta na borda.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun <T> boomScreenSpec(): FiniteAnimationSpec<T> = MaterialTheme.motionScheme.slowEffectsSpec()

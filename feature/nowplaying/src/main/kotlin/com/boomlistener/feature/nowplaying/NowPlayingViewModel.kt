@@ -13,6 +13,7 @@ import com.boomlistener.core.model.Lyrics
 import com.boomlistener.data.lyrics.LyricsQuery
 import com.boomlistener.data.lyrics.LyricsRepository
 import com.boomlistener.data.lyrics.LyricsResult
+import com.boomlistener.data.lyrics.lyricsFromText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,9 +38,14 @@ internal class NowPlayingViewModel(
     private val controller: PlaybackController,
     private val library: LibraryRepository,
     private val lyricsRepository: LyricsRepository,
+    /** Letra guardada dentro do arquivo (tag), que tem prioridade sobre a internet. */
+    private val embeddedLyrics: suspend (uri: String) -> String? = { null },
 ) : ViewModel() {
 
     val state: StateFlow<PlaybackState> = controller.state
+
+    /** Sobe quando tags foram editadas (capa e letra são lidas de novo). */
+    val libraryVersion: StateFlow<Int> = library.version
 
     /** Mostrando a letra no lugar da capa? */
     private val _showLyrics = MutableStateFlow(false)
@@ -48,6 +54,8 @@ internal class NowPlayingViewModel(
     private val _lyrics = MutableStateFlow<LyricsUiState>(LyricsUiState.Idle)
     // Cada "tentar de novo" muda este número e dispara uma nova busca.
     private val retries = MutableStateFlow(0)
+    // Versão da biblioteca da última letra carregada (letra editada = buscar de novo).
+    private var lyricsVersion = -1
     val lyrics: StateFlow<LyricsUiState> = _lyrics.asStateFlow()
 
     init {
@@ -58,12 +66,24 @@ internal class NowPlayingViewModel(
                 _showLyrics,
                 controller.state.map { it.item }.distinctUntilChanged(),
                 retries,
-            ) { show, item, _ -> show to item }.collectLatest { (show, item) ->
+                library.version,
+            ) { show, item, _, version -> Triple(show, item, version) }.collectLatest { (show, item, version) ->
                 if (!show || item == null) return@collectLatest
                 val current = _lyrics.value
-                if (current is LyricsUiState.Ready && current.uri == item.uri) return@collectLatest
+                if (current is LyricsUiState.Ready && current.uri == item.uri && version == lyricsVersion) {
+                    return@collectLatest
+                }
+                lyricsVersion = version
                 _lyrics.value = LyricsUiState.Loading
-                // Dá um instante para a duração da música chegar do player.
+
+                // 1º: a letra guardada no próprio arquivo (não precisa de internet).
+                val fromFile = runCatching { lyricsFromText(embeddedLyrics(item.uri)) }.getOrNull()
+                if (fromFile != null) {
+                    _lyrics.value = LyricsUiState.Ready(item.uri, fromFile)
+                    return@collectLatest
+                }
+
+                // 2º: LRCLIB. Dá um instante para a duração da música chegar do player.
                 if (controller.state.value.durationMs <= 0) delay(400)
                 val query = LyricsQuery(
                     title = item.title,

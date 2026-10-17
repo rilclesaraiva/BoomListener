@@ -5,7 +5,8 @@ package com.boomlistener.feature.nowplaying
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,6 +42,7 @@ import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import com.boomlistener.core.model.Lyrics
+import com.boomlistener.data.lyrics.EMBEDDED_LYRICS_SOURCE
 import com.boomlistener.data.lyrics.currentLyricIndex
 
 // Depois que o usuário rola a letra com o dedo, a rolagem automática espera
@@ -48,8 +51,10 @@ private const val AUTO_SCROLL_PAUSE_MS = 4_000L
 
 /**
  * A letra no lugar da capa. Sincronizada: a linha atual fica grande e forte,
- * as outras menores e esmaecidas, a lista acompanha a música e tocar numa
- * linha pula para aquele trecho.
+ * as outras menores e esmaecidas e a lista acompanha a música.
+ *
+ * Tocar em qualquer ponto volta para a capa ([onTap]), do mesmo jeito que
+ * tocar na capa abriu a letra. Segurar uma linha pula para aquele trecho.
  */
 @Composable
 internal fun LyricsView(
@@ -57,19 +62,22 @@ internal fun LyricsView(
     positionMs: Long,
     onSeek: (Long) -> Unit,
     onRetry: () -> Unit,
+    onTap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Toques que nenhuma linha usou (espaço vazio, mensagens) voltam para a capa.
+    val tapModifier = modifier.pointerInput(onTap) { detectTapGestures(onTap = { onTap() }) }
     when (state) {
-        LyricsUiState.Idle, LyricsUiState.Loading -> BoomLoading(modifier)
-        LyricsUiState.NotFound -> LyricsMessage(stringResource(R.string.feature_nowplaying_lyrics_not_found), modifier)
+        LyricsUiState.Idle, LyricsUiState.Loading -> BoomLoading(tapModifier)
+        LyricsUiState.NotFound -> LyricsMessage(stringResource(R.string.feature_nowplaying_lyrics_not_found), tapModifier)
         LyricsUiState.Failed -> LyricsMessage(
             text = stringResource(R.string.feature_nowplaying_lyrics_failed),
-            modifier = modifier,
+            modifier = tapModifier,
             action = {
                 TextButton(onClick = onRetry) { Text(stringResource(R.string.feature_nowplaying_lyrics_retry)) }
             },
         )
-        is LyricsUiState.Ready -> LyricsList(state.lyrics, positionMs, onSeek, modifier)
+        is LyricsUiState.Ready -> LyricsList(state.lyrics, positionMs, onSeek, onTap, tapModifier)
     }
 }
 
@@ -78,6 +86,7 @@ private fun LyricsList(
     lyrics: Lyrics,
     positionMs: Long,
     onSeek: (Long) -> Unit,
+    onTap: () -> Unit,
     modifier: Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -106,6 +115,16 @@ private fun LyricsList(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = modifier.fillMaxSize().nestedScroll(userScrollDetector),
     ) {
+        if (lyrics.synced) {
+            item {
+                Text(
+                    text = stringResource(R.string.feature_nowplaying_lyrics_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+        }
         itemsIndexed(lyrics.lines) { index, line ->
             val isCurrent = index == current
             val isPast = lyrics.synced && index < current
@@ -113,12 +132,17 @@ private fun LyricsList(
                 text = line.text.ifEmpty { "♪" },
                 highlighted = isCurrent || !lyrics.synced,
                 past = isPast,
-                onClick = if (lyrics.synced) ({ onSeek(line.timeMs) }) else null,
+                onClick = onTap,
+                onLongClick = if (lyrics.synced) ({ onSeek(line.timeMs) }) else null,
             )
         }
         item {
             Text(
-                text = stringResource(R.string.feature_nowplaying_lyrics_source, lyrics.source),
+                text = if (lyrics.source == EMBEDDED_LYRICS_SOURCE) {
+                    stringResource(R.string.feature_nowplaying_lyrics_from_file)
+                } else {
+                    stringResource(R.string.feature_nowplaying_lyrics_source, lyrics.source)
+                },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 16.dp),
@@ -132,7 +156,8 @@ private fun LyricLineText(
     text: String,
     highlighted: Boolean,
     past: Boolean,
-    onClick: (() -> Unit)?,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val color by animateColorAsState(
@@ -160,7 +185,7 @@ private fun LyricLineText(
                 scaleY = scale
                 transformOrigin = TransformOrigin(0f, 0.5f)
             }
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     )
 }
 

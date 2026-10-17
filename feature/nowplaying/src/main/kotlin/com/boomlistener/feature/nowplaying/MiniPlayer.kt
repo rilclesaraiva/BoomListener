@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomArtworkSurface
+import com.boomlistener.core.designsystem.component.LocalArtworkAccent
 import com.boomlistener.core.designsystem.component.BoomThinProgress
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
@@ -181,7 +181,8 @@ fun MiniPlayer(
                 }
                 BoomThinProgress(
                     progress = state.progress,
-                    color = LocalContentColor.current,
+                    // Tom da capa sobre o pastel (nunca preto puro).
+                    color = LocalArtworkAccent.current,
                     modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 6.dp),
                 )
             }

@@ -20,10 +20,14 @@
     <string name="feature_nowplaying_playing">Playing</string>
     <string name="feature_nowplaying_reorder">Hold and drag to reorder</string>
     <string name="feature_nowplaying_remove">Remove from queue</string>
-    <string name="feature_nowplaying_lyrics">Lyrics</string>
     <string name="feature_nowplaying_lyrics_not_found">No lyrics found for this song</string>
     <string name="feature_nowplaying_lyrics_failed">Couldn’t load the lyrics. Are you online?</string>
     <string name="feature_nowplaying_lyrics_retry">Try again</string>
     <string name="feature_nowplaying_lyrics_source">Lyrics from %1$s</string>
     <string name="feature_nowplaying_go_to_artist">Go to artist</string>
+    <string name="feature_nowplaying_show_lyrics">Show lyrics</string>
+    <string name="feature_nowplaying_hide_lyrics">Show cover</string>
+    <string name="feature_nowplaying_edit_tags">Edit tags</string>
+    <string name="feature_nowplaying_lyrics_hint">Tap to go back to the cover · hold a line to jump to it</string>
+    <string name="feature_nowplaying_lyrics_from_file">Lyrics saved in the file</string>
 </resources>

@@ -30,6 +30,7 @@ import kotlinx.coroutines.CancellationException
 fun PlayerSheet(
     state: PlayerSheetState,
     onOpenArtist: (artistName: String) -> Unit,
+    onEditTags: (trackUri: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel = nowPlayingViewModel()
@@ -75,6 +76,7 @@ fun PlayerSheet(
             viewModel = viewModel,
             queueState = queueState,
             onOpenArtist = onOpenArtist,
+            onEditTags = onEditTags,
             modifier = Modifier
                 .graphicsLayer {
                     translationY = (1f - state.progress) * heightPx

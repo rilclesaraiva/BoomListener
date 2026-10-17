@@ -4,6 +4,7 @@
 package com.boomlistener.data.lyrics
 
 import com.boomlistener.core.model.LyricLine
+import com.boomlistener.core.model.Lyrics
 
 private val TIMESTAMP = Regex("""\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?]""")
 private val OFFSET = Regex("""\[offset:\s*([+-]?\d+)\s*]""", RegexOption.IGNORE_CASE)
@@ -57,4 +58,19 @@ fun currentLyricIndex(lines: List<LyricLine>, positionMs: Long): Int {
         }
     }
     return answer
+}
+
+/** Fonte usada quando a letra veio de dentro do próprio arquivo de música. */
+const val EMBEDDED_LYRICS_SOURCE = "file"
+
+/**
+ * Letra guardada no arquivo (tag de letra): vira sincronizada se estiver no
+ * formato LRC, senão texto simples. null se estiver vazia.
+ */
+fun lyricsFromText(text: String?, source: String = EMBEDDED_LYRICS_SOURCE): Lyrics? {
+    if (text.isNullOrBlank()) return null
+    val synced = parseLrc(text)
+    if (synced.isNotEmpty()) return Lyrics(synced, synced = true, source = source)
+    val plain = parsePlain(text)
+    return if (plain.isEmpty()) null else Lyrics(plain, synced = false, source = source)
 }

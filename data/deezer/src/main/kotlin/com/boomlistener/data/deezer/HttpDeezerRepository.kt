@@ -13,6 +13,8 @@ import com.boomlistener.core.model.ExternalArtist
 import com.boomlistener.core.model.PopularTrack
 import com.boomlistener.core.model.Release
 import com.boomlistener.core.model.ReleaseType
+import com.boomlistener.core.model.TagSuggestion
+import com.boomlistener.core.model.TrackTags
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -85,6 +87,60 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         } catch (_: Exception) {
             AlbumResult.Failed
         }
+    }
+
+    override suspend fun searchTrack(local: LocalTrackInfo): TrackSearchResult = withContext(Dispatchers.IO) {
+        try {
+            val title = searchableSongTitle(local.title)
+            val artist = local.artist?.let(::primaryArtistName)?.takeIf { it.isNotBlank() }
+            // Busca precisa (artista + título); se não vier nada, busca livre.
+            val queries = listOfNotNull(
+                artist?.let { "artist:\"$it\" track:\"$title\"" },
+                listOfNotNull(artist, title).joinToString(" "),
+            )
+            var ranked = emptyList<TrackCandidate>()
+            for (query in queries) {
+                val json = getJson("$API/search?q=" + URLEncoder.encode(query, "UTF-8") + "&limit=25")
+                val candidates = json.optJSONArray("data").objects().map { it.toCandidate() }
+                ranked = rankCandidates(local, candidates)
+                if (ranked.isNotEmpty()) break
+            }
+            if (ranked.isEmpty()) TrackSearchResult.NotFound else TrackSearchResult.Found(ranked)
+        } catch (_: Exception) {
+            TrackSearchResult.Failed
+        }
+    }
+
+    override suspend fun trackTags(candidate: TrackCandidate): TrackTagsResult = withContext(Dispatchers.IO) {
+        try {
+            coroutineScope {
+                val trackJob = async { getJson("$API/track/${candidate.trackId}") }
+                val albumJob = async { getJson("$API/album/${candidate.albumId}") }
+                val track = trackJob.await()
+                val album = albumJob.await()
+                TrackTagsResult.Found(tagSuggestionOf(track, album, candidate))
+            }
+        } catch (_: Exception) {
+            TrackTagsResult.Failed
+        }
+    }
+
+    override suspend fun imageBytes(url: String): ByteArray? = withContext(Dispatchers.IO) {
+        runCatching {
+            val file = File(imageCache, sha1(url))
+            if (!file.exists()) {
+                val connection = URL(url).openConnection() as HttpURLConnection
+                connection.connectTimeout = 10_000
+                connection.readTimeout = 15_000
+                try {
+                    if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
+                    connection.inputStream.use { input -> file.outputStream().use { input.copyTo(it) } }
+                } finally {
+                    connection.disconnect()
+                }
+            }
+            file.readBytes()
+        }.getOrNull()
     }
 
     override suspend fun image(url: String, sizePx: Int): Bitmap? {
@@ -180,3 +236,57 @@ private fun JSONObject.toPopularTrack() = PopularTrack(
     durationMs = optLong("duration") * 1000,
     link = str("link"),
 )
+
+private fun JSONObject.toCandidate(): TrackCandidate {
+    val album = optJSONObject("album")
+    return TrackCandidate(
+        trackId = optLong("id"),
+        albumId = album?.optLong("id") ?: 0,
+        title = optString("title"),
+        artist = optJSONObject("artist")?.str("name").orEmpty(),
+        album = album?.str("title").orEmpty(),
+        coverUrl = album?.let { it.str("cover_xl") ?: it.str("cover_big") ?: it.str("cover_medium") },
+        durationMs = optLong("duration") * 1000,
+        link = str("link"),
+    )
+}
+
+/**
+ * Junta a faixa (/track) e o álbum (/album) do Deezer nas tags do arquivo.
+ * O gênero do Deezer é amplo ("Pop", "Rock"); quem chama pode trocar por um
+ * mais preciso do Last.fm.
+ */
+internal fun tagSuggestionOf(track: JSONObject, album: JSONObject, candidate: TrackCandidate): TagSuggestion {
+    val mainArtists = track.optJSONArray("contributors").objects()
+        .filter { it.optString("role").equals("Main", ignoreCase = true) }
+        .mapNotNull { it.str("name") }
+        .distinct()
+    val artist = mainArtists.takeIf { it.size > 1 }?.joinToString(", ")
+        ?: track.optJSONObject("artist")?.str("name")
+        ?: candidate.artist
+    val releaseDate = album.str("release_date") ?: track.str("release_date")
+    val genre = album.optJSONObject("genres")?.optJSONArray("data").objects()
+        .firstNotNullOfOrNull { it.str("name") }
+        .orEmpty()
+    val trackNumber = track.optInt("track_position").takeIf { it > 0 }?.toString().orEmpty()
+    val discNumber = track.optInt("disk_number").takeIf { it > 0 }?.toString().orEmpty()
+    val totalTracks = album.optInt("nb_tracks").takeIf { it > 0 }?.toString().orEmpty()
+    return TagSuggestion(
+        tags = TrackTags(
+            title = track.str("title") ?: candidate.title,
+            artist = artist,
+            album = album.str("title") ?: candidate.album,
+            albumArtist = album.optJSONObject("artist")?.str("name").orEmpty(),
+            year = releaseDate?.take(4).orEmpty(),
+            genre = genre,
+            trackNumber = trackNumber,
+            trackTotal = if (trackNumber.isEmpty()) "" else totalTracks,
+            discNumber = discNumber,
+        ),
+        coverUrl = album.str("cover_xl") ?: album.str("cover_big") ?: candidate.coverUrl,
+        durationMs = track.optLong("duration") * 1000,
+        confidence = candidate.confidence,
+        source = "Deezer",
+        link = track.str("link") ?: candidate.link,
+    )
+}

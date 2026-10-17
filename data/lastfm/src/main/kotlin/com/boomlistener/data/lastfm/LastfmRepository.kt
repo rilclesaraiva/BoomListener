@@ -25,6 +25,12 @@ sealed interface BioResult {
 interface LastfmRepository {
     /** Biografia no idioma [language] ("pt", "en"…), caindo para inglês se não houver. */
     suspend fun artistBio(artistName: String, language: String): BioResult
+
+    /**
+     * Tags dos ouvintes para uma música, da mais usada para a menos (vazio se
+     * não achar ou sem internet). Sem tags na música, usa as do artista.
+     */
+    suspend fun trackTags(artistName: String, title: String): List<String> = emptyList()
 }
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */

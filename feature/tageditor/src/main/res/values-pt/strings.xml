@@ -1,5 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_tageditor_title">Editar tags</string>
-    <string name="feature_tageditor_message">Título, artista, álbum, ano, gênero, capa e letra.</string>
+    <string name="feature_tageditor_save">Salvar</string>
+    <string name="feature_tageditor_saving">Salvando…</string>
+    <string name="feature_tageditor_saved">Tags salvas</string>
+    <string name="feature_tageditor_save_failed">Não deu para salvar. Esse tipo de arquivo pode não aceitar tags, ou o arquivo é só de leitura.</string>
+    <string name="feature_tageditor_permission_denied">Sem a sua permissão as tags não podem ser salvas</string>
+    <string name="feature_tageditor_load_failed_title">Não deu para ler este arquivo</string>
+    <string name="feature_tageditor_load_failed_message">Ele pode ter sido movido, apagado ou estar num formato que o editor não aceita.</string>
+    <string name="feature_tageditor_retry">Tentar de novo</string>
+    <string name="feature_tageditor_cover">Capa</string>
+    <string name="feature_tageditor_cover_change">Trocar capa</string>
+    <string name="feature_tageditor_cover_remove">Remover capa</string>
+    <string name="feature_tageditor_field_title">Título</string>
+    <string name="feature_tageditor_field_artist">Artista</string>
+    <string name="feature_tageditor_field_album">Álbum</string>
+    <string name="feature_tageditor_field_album_artist">Artista do álbum</string>
+    <string name="feature_tageditor_field_year">Ano</string>
+    <string name="feature_tageditor_field_track">Faixa</string>
+    <string name="feature_tageditor_field_disc">Disco</string>
+    <string name="feature_tageditor_field_genre">Gênero</string>
+    <string name="feature_tageditor_field_composer">Compositor</string>
+    <string name="feature_tageditor_field_lyrics">Letra</string>
+    <string name="feature_tageditor_field_lyrics_hint">Texto simples, ou LRC com tempos [mm:ss.xx] para letra sincronizada</string>
+    <string name="feature_tageditor_changed">Alterado</string>
+    <string name="feature_tageditor_reset">Desfazer todas as alterações</string>
+    <string name="feature_tageditor_auto_title">Corrigir tags automaticamente</string>
+    <string name="feature_tageditor_auto_message">Busca no Deezer e no Last.fm o título, artista, álbum, ano, gênero, número da faixa e capa oficiais. Você revisa tudo antes de salvar.</string>
+    <string name="feature_tageditor_auto_search">Buscar</string>
+    <string name="feature_tageditor_auto_searching">Buscando no Deezer e no Last.fm…</string>
+    <string name="feature_tageditor_auto_applied">Preenchido com %1$s. Confira os campos e toque em Salvar.</string>
+    <string name="feature_tageditor_auto_other">Outras opções</string>
+    <string name="feature_tageditor_auto_undo">Desfazer</string>
+    <string name="feature_tageditor_auto_not_found">Nada encontrado. Confira o título e o artista e busque de novo.</string>
+    <string name="feature_tageditor_auto_failed">Não deu para falar com o Deezer. Você está conectado?</string>
+    <string name="feature_tageditor_auto_choose_title">Qual delas é?</string>
+    <string name="feature_tageditor_auto_match">%1$d%% de chance</string>
+    <string name="feature_tageditor_discard_title">Descartar alterações?</string>
+    <string name="feature_tageditor_discard_message">O que você mudou nesta música ainda não foi salvo.</string>
+    <string name="feature_tageditor_discard">Descartar</string>
+    <string name="feature_tageditor_keep_editing">Continuar editando</string>
 </resources>

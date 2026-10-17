@@ -7,6 +7,11 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- Gravar tags no Android 8 e 9. Do 10 em diante, o próprio Android
+         pergunta ao usuário arquivo por arquivo, sem esta permissão. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:name=".BoomApplication"

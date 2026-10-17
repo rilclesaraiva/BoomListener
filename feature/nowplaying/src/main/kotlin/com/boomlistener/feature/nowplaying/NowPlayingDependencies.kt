@@ -13,6 +13,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.lyrics.LyricsData
+import com.boomlistener.data.tags.TagsData
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 internal fun nowPlayingViewModel(): NowPlayingViewModel {
@@ -22,6 +24,7 @@ internal fun nowPlayingViewModel(): NowPlayingViewModel {
             PlayerConnection.controller(context),
             LibraryData.repository(context),
             LyricsData.repository(context),
+            embeddedLyrics = TagsData.repository(context)::readLyrics,
         )
     }
 }
@@ -29,7 +32,9 @@ internal fun nowPlayingViewModel(): NowPlayingViewModel {
 /** Capa da música [uri] em ~[sizePx], carregada fora da thread da tela. */
 @Composable
 internal fun rememberArtwork(viewModel: NowPlayingViewModel, uri: String?, sizePx: Int): ImageBitmap? {
-    val artwork by produceState<ImageBitmap?>(initialValue = null, uri, sizePx) {
+    // Muda quando alguma tag foi editada: a capa é lida de novo.
+    val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
+    val artwork by produceState<ImageBitmap?>(initialValue = null, uri, sizePx, version) {
         value = uri?.let { viewModel.artwork(it, sizePx)?.asImageBitmap() }
     }
     return artwork

@@ -4,6 +4,27 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.14.0] — 2026-10-17
+
+### ✨ New
+- **Tag editor.** Open it from a song's menu (library or player) to edit title, artist, album, album artist, year, track and disc number, genre, composer, lyrics and the cover. Changed fields are marked, and you're asked before leaving with unsaved edits. Works with MP3, FLAC, M4A, OGG, OPUS and more.
+  - **Change the cover** with the Android photo picker. No access to your photos is needed.
+  - The first time you save a song, Android asks you to allow the change to that file.
+  - Saved changes show up right away in the library, the player and the notification, without stopping the music.
+- **Fix tags automatically.** One tap looks up the song on Deezer and fills in the official title, artist, album, year, track number and cover, with a more precise genre from Last.fm. When it's not sure, it shows the closest matches for you to pick. You review everything and can undo before saving.
+- **Lyrics saved in the file** now show first in the player, even offline. Synced (LRC) lyrics work too.
+
+### 🎨 Visual tweaks
+- **Smoother screens.** Inner screens slide in over the previous one and slide back out, and the back gesture follows your finger all the way, with no more card that shrinks and vanishes.
+- **The lyrics button moved** into the player's three-dot menu ("Show lyrics" / "Show cover").
+- **The mini player's progress bar** now takes a shade of the cover's color, never plain black, over a soft track.
+- **The "Up next" handle** at the bottom of the player sits higher, away from Android's home gesture.
+
+### 🐛 Fixes
+- **Sharing a song** now sends a YouTube Music link instead of plain text.
+- **Tapping the lyrics brings the cover back**, just like tapping the cover opened them. Hold a line to jump to it.
+- **"No lyrics found" shows up quickly** when a song has no lyrics, instead of a misleading "Are you online?" message. That message now only appears when there's really no connection.
+
 ## [0.13.0] — 2026-10-17
 
 ### ✨ New

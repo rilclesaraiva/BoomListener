@@ -87,6 +87,23 @@ class NowPlayingViewModelTest {
     }
 
     @Test
+    fun letraDoArquivoVemAntesDaInternet() {
+        val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
+        val repo = FakeLyrics(LyricsResult.NotFound)
+        val viewModel = NowPlayingViewModel(
+            FakeController(duration = 200_000, item = song),
+            NoLibrary,
+            repo,
+            embeddedLyrics = { "[00:01.00] Açaí, guardiã" },
+        )
+        viewModel.toggleLyrics()
+        assertEquals(0, repo.calls)
+        val state = viewModel.lyrics.value as LyricsUiState.Ready
+        assertEquals("Açaí, guardiã", state.lyrics.lines.single().text)
+        assertEquals(true, state.lyrics.synced)
+    }
+
+    @Test
     fun tentarDeNovoDepoisDeFalha() {
         val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
         val repo = FakeLyrics(LyricsResult.Failed)

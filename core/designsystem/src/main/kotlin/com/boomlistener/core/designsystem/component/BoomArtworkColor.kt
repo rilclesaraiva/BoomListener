@@ -7,6 +7,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -65,6 +66,24 @@ private fun pastelOf(seed: Color): Pair<Color, Color> {
 }
 
 /**
+ * Cor de destaque sobre o pastel (barra de progresso, por exemplo): a própria
+ * cor da capa, escurecida o bastante para aparecer sobre o pastel claro, mas
+ * nunca preto puro. Sobre um pastel escuro, um tom bem claro da capa.
+ */
+private fun accentOn(pastel: Color, seed: Color): Color =
+    if (pastel.luminance() > 0.45f) {
+        lerp(seed, Color.Black, 0.35f).let { if (it.luminance() < 0.02f) lerp(seed, Color.Black, 0.15f) else it }
+    } else {
+        lerp(seed, Color.White, 0.8f)
+    }
+
+/**
+ * Cor de destaque dentro de [BoomArtworkSurface] (tom da capa com bom
+ * contraste sobre o pastel). Fora dela, a cor primária do tema.
+ */
+val LocalArtworkAccent = staticCompositionLocalOf { Color.Unspecified }
+
+/**
  * Superfície no tom pastel da capa (gradiente suave da esquerda para a
  * direita), com a cor do conteúdo ajustada para manter o contraste. Sem
  * capa, usa o primaryContainer do tema. A troca entre músicas é animada.
@@ -78,14 +97,20 @@ fun BoomArtworkSurface(
 ) {
     val fallback = MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
     val (targetContainer, targetContent) = seed?.let(::pastelOf) ?: fallback
+    val targetAccent = seed?.let { accentOn(targetContainer, it) } ?: MaterialTheme.colorScheme.primary
     val container by animateColorAsState(targetContainer, animationSpec = boomEffectsSpec(), label = "pastel")
     val onContainer by animateColorAsState(targetContent, animationSpec = boomEffectsSpec(), label = "onPastel")
+    val accent by animateColorAsState(targetAccent, animationSpec = boomEffectsSpec(), label = "accent")
     val deeper = lerp(container, seed ?: container, 0.25f)
     Box(
         modifier
             .clip(shape)
             .background(Brush.horizontalGradient(listOf(container, deeper))),
     ) {
-        CompositionLocalProvider(LocalContentColor provides onContainer, content = content)
+        CompositionLocalProvider(
+            LocalContentColor provides onContainer,
+            LocalArtworkAccent provides accent,
+            content = content,
+        )
     }
 }

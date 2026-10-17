@@ -40,6 +40,12 @@ interface PlaybackController {
 
     /** Para de tocar e esvazia a fila (some o mini player e a notificação). */
     fun stop()
+
+    /**
+     * As tags de [uri] foram editadas: atualiza título, artista e álbum na
+     * fila (e na notificação) sem interromper a música.
+     */
+    fun updateTrackInfo(uri: String, title: String, artist: String?, album: String?) {}
 }
 
 /**

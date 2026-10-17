@@ -5,12 +5,25 @@ package com.boomlistener.data.deezer
 
 import android.content.Context
 import android.graphics.Bitmap
+import com.boomlistener.core.model.TagSuggestion
 import com.boomlistener.core.model.AlbumDetail
 import com.boomlistener.core.model.ArtistProfile
 
 sealed interface AlbumResult {
     data class Found(val album: AlbumDetail) : AlbumResult
     data object Failed : AlbumResult
+}
+
+sealed interface TrackSearchResult {
+    /** Do mais provável para o menos (ver [rankCandidates]). */
+    data class Found(val candidates: List<TrackCandidate>) : TrackSearchResult
+    data object NotFound : TrackSearchResult
+    data object Failed : TrackSearchResult
+}
+
+sealed interface TrackTagsResult {
+    data class Found(val suggestion: TagSuggestion) : TrackTagsResult
+    data object Failed : TrackTagsResult
 }
 
 sealed interface ProfileResult {
@@ -29,6 +42,15 @@ interface DeezerRepository {
 
     /** Baixa (ou pega do cache) uma imagem do Deezer em ~[sizePx]. */
     suspend fun image(url: String, sizePx: Int): Bitmap?
+
+    /** Procura a música do arquivo no Deezer (tags automáticas). */
+    suspend fun searchTrack(local: LocalTrackInfo): TrackSearchResult = TrackSearchResult.Failed
+
+    /** Todas as tags oficiais de um resultado (faixa, disco, ano, gênero, capa…). */
+    suspend fun trackTags(candidate: TrackCandidate): TrackTagsResult = TrackTagsResult.Failed
+
+    /** A imagem original (para gravar como capa no arquivo). */
+    suspend fun imageBytes(url: String): ByteArray? = null
 }
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */

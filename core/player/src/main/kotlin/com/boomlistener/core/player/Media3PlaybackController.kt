@@ -215,6 +215,21 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         publish(it)
     }
 
+    override fun updateTrackInfo(uri: String, title: String, artist: String?, album: String?) = withController { player ->
+        for (index in 0 until player.mediaItemCount) {
+            val item = player.getMediaItemAt(index)
+            if (item.mediaId != uri) continue
+            val metadata = item.mediaMetadata.buildUpon()
+                .setTitle(title)
+                .setArtist(artist)
+                .setAlbumTitle(album)
+                .build()
+            // Mesmo arquivo: o ExoPlayer só troca as informações, sem parar.
+            player.replaceMediaItem(index, item.buildUpon().setMediaMetadata(metadata).build())
+        }
+        publish(player)
+    }
+
     /** Executa já, ou assim que a conexão com o serviço ficar pronta. */
     private fun withController(command: (MediaController) -> Unit) {
         mainHandler.post {

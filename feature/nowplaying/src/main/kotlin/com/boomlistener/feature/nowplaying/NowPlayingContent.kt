@@ -57,7 +57,7 @@ import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
-import com.boomlistener.core.common.shareText
+import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomSeekBar
@@ -82,6 +82,7 @@ internal fun NowPlayingContent(
     viewModel: NowPlayingViewModel,
     queueState: PlayerSheetState,
     onOpenArtist: (artistName: String) -> Unit,
+    onEditTags: (trackUri: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -143,27 +144,27 @@ internal fun NowPlayingContent(
                             )
                         }
                     }
-                    // Letra: troca a capa pela letra (o mesmo que tocar na capa).
-                    IconToggleButton(
-                        checked = showLyrics,
-                        onCheckedChange = { viewModel.toggleLyrics() },
-                        enabled = item != null,
-                        colors = IconButtonDefaults.iconToggleButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            checkedContainerColor = MaterialTheme.colorScheme.primary,
-                            checkedContentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    ) {
-                        Icon(BoomIcons.Lyrics, stringResource(R.string.feature_nowplaying_lyrics))
-                    }
                     if (item != null) {
                         BoomMoreMenu(
                             actions = listOfNotNull(
+                                // Letra: o mesmo que tocar na capa.
+                                BoomMenuAction(
+                                    stringResource(
+                                        if (showLyrics) R.string.feature_nowplaying_hide_lyrics
+                                        else R.string.feature_nowplaying_show_lyrics,
+                                    ),
+                                ) { viewModel.toggleLyrics() },
                                 item.artist?.let { name ->
                                     BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
                                 },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags)) { onEditTags(item.uri) },
                             ),
-                            onShare = { context.shareText(listOfNotNull(item.title, item.artist).joinToString(" — ")) },
+                            onShare = {
+                                context.shareLink(
+                                    url = ExternalLinks.youtubeMusicSearch(item.title, item.artist),
+                                    title = listOfNotNull(item.title, item.artist).joinToString(" — "),
+                                )
+                            },
                             onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(item.title, item.artist)) },
                         )
                     }
@@ -194,6 +195,8 @@ internal fun NowPlayingContent(
                             positionMs = state.positionMs,
                             onSeek = viewModel::seekTo,
                             onRetry = viewModel::retryLyrics,
+                            // Tocar na letra volta para a capa, como tocar na capa abriu a letra.
+                            onTap = viewModel::toggleLyrics,
                         )
                     } else {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -255,8 +258,11 @@ internal fun NowPlayingContent(
                     onNext = viewModel::next,
                     onRepeat = viewModel::cycleRepeatMode,
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 UpNextHandle(state = state, queueState = queueState)
+                // Folga para o puxador da fila não ficar colado no gesto de
+                // "ir para a tela inicial" do Android, que fica logo abaixo.
+                Spacer(Modifier.height(20.dp))
             }
           }
         }
