@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.15.1] — 2026-10-17
+
+### 🎨 Visual tweaks
+- **Library sections are now pill buttons** (Genres, Artists, Playlists, Albums) at the top, instead of a carousel of cards. The selected one is filled and shows a check.
+
 ## [0.15.0] — 2026-10-17
 
 ### ✨ New

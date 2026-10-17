@@ -3,9 +3,6 @@
 
 package com.boomlistener.feature.library
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,9 +16,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -36,12 +37,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -50,20 +48,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
-import com.boomlistener.core.designsystem.component.BoomCarousel
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomTopActions
-import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.model.Track
 
-private val CardHeight = 176.dp
-
 /**
- * Aba Biblioteca: um carrossel no topo com Gêneros, Artistas, Playlists e
- * Álbuns; tocar num card mostra aquela seção embaixo.
+ * Aba Biblioteca: botões em pílula no topo com Gêneros, Artistas, Playlists e
+ * Álbuns; tocar num deles mostra aquela seção embaixo.
  */
 @Composable
 internal fun CollectionsScreen(
@@ -87,8 +81,8 @@ internal fun CollectionsScreen(
         when (val current = state) {
             CollectionsUiState.Loading -> BoomLoading(Modifier.padding(padding))
             is CollectionsUiState.Ready -> LazyColumn(contentPadding = padding) {
-                item(key = "carousel") {
-                    CategoryCarousel(current, viewModel, onSelect = viewModel::select)
+                item(key = "chips") {
+                    CategoryChips(current, onSelect = viewModel::select)
                     Spacer(Modifier.height(8.dp))
                 }
                 when (current.selected) {
@@ -185,84 +179,37 @@ internal fun CollectionsScreen(
     }
 }
 
-/** Os quatro cards do topo, cada um com a capa de algo daquela seção. */
+/**
+ * Botões em pílula no topo (Gêneros, Artistas, Playlists, Álbuns): o
+ * escolhido fica preenchido e mostra a seção dele embaixo.
+ */
 @Composable
-private fun CategoryCarousel(
-    state: CollectionsUiState.Ready,
-    viewModel: CollectionsViewModel,
-    onSelect: (CollectionKind) -> Unit,
-) {
-    val kinds = CollectionKind.entries
-    BoomCarousel(
-        itemCount = kinds.size,
-        modifier = Modifier.fillMaxWidth().height(CardHeight),
-    ) { index, itemModifier ->
-        val kind = kinds[index]
-        val (label, icon, count, cover) = when (kind) {
-            CollectionKind.Genres -> CardInfo(R.string.feature_library_genres, BoomIcons.Genre, state.genres.size, state.genres.firstOrNull()?.tracks?.firstOrNull())
-            CollectionKind.Artists -> CardInfo(R.string.feature_library_artists, BoomIcons.Person, state.artists.size, state.artists.firstOrNull()?.tracks?.firstOrNull())
-            CollectionKind.Playlists -> CardInfo(R.string.feature_library_playlists, BoomIcons.Playlist, state.playlists.size, state.playlists.firstOrNull()?.tracks?.firstOrNull())
-            CollectionKind.Albums -> CardInfo(R.string.feature_library_albums, BoomIcons.Album, state.albums.size, state.albums.firstOrNull()?.tracks?.firstOrNull())
-        }
-        CategoryCard(
-            label = stringResource(label),
-            icon = icon,
-            count = count,
-            cover = cover,
-            selected = state.selected == kind,
-            viewModel = viewModel,
-            onClick = { onSelect(kind) },
-            modifier = itemModifier,
-        )
-    }
-}
-
-private data class CardInfo(val label: Int, val icon: ImageVector, val count: Int, val cover: Track?)
-
-@Composable
-private fun CategoryCard(
-    label: String,
-    icon: ImageVector,
-    count: Int,
-    cover: Track?,
-    selected: Boolean,
-    viewModel: CollectionsViewModel,
-    onClick: () -> Unit,
-    modifier: Modifier,
-) {
-    val px = with(LocalDensity.current) { 240.dp.roundToPx() }
-    val image by produceState<ImageBitmap?>(initialValue = null, cover?.uri) {
-        value = cover?.let { viewModel.artwork(it.uri, px)?.asImageBitmap() }
-    }
-    // O card escolhido fica na cor de destaque; os outros, no tom neutro.
-    val container by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        animationSpec = boomEffectsSpec(),
-        label = "cardColor",
-    )
-    val content = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-    Box(
-        modifier
-            .fillMaxSize()
-            .background(container)
-            .clickable(onClick = onClick),
+private fun CategoryChips(state: CollectionsUiState.Ready, onSelect: (CollectionKind) -> Unit) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        image?.let {
-            Image(
-                bitmap = it,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alpha = 0.55f,
-                modifier = Modifier.fillMaxSize(),
+        items(CollectionKind.entries, key = { it.name }) { kind ->
+            val label = stringResource(
+                when (kind) {
+                    CollectionKind.Genres -> R.string.feature_library_genres
+                    CollectionKind.Artists -> R.string.feature_library_artists
+                    CollectionKind.Playlists -> R.string.feature_library_playlists
+                    CollectionKind.Albums -> R.string.feature_library_albums
+                },
             )
-            // Escurece de baixo para cima para o nome ficar legível sobre a capa.
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, container))))
-        }
-        Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
-            Icon(icon, contentDescription = null, tint = content)
-            Spacer(Modifier.height(6.dp))
-            Text(label, style = MaterialTheme.typography.titleLarge, color = content, maxLines = 1)
-            Text(count.toString(), style = MaterialTheme.typography.labelLarge, color = content)
+            val selected = state.selected == kind
+            FilterChip(
+                selected = selected,
+                onClick = { onSelect(kind) },
+                label = { Text(label, style = MaterialTheme.typography.labelLarge) },
+                leadingIcon = if (selected) {
+                    { Icon(BoomIcons.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                } else {
+                    null
+                },
+                shape = CircleShape,
+            )
         }
     }
 }

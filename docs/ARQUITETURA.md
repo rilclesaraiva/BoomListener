@@ -124,7 +124,7 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 
 ## Ideias registradas (ainda sem data)
 
-- Biblioteca dividida em **Músicas, Álbuns, Artistas e Gêneros** — ✅ na 0.15.0: abas **Início** (lista de músicas) · **Lançamentos** · **Biblioteca** (carrossel com Gêneros, Artistas, Playlists e Álbuns; telas de gênero, álbum e playlist em `feature/library`). Ajustes e Histórico saíram da barra de baixo e ficam no canto superior direito de cada aba (`BoomTopActions`).
+- Biblioteca dividida em **Músicas, Álbuns, Artistas e Gêneros** — ✅ na 0.15.0: abas **Início** (lista de músicas) · **Lançamentos** · **Biblioteca** (botões em pílula — `FilterChip` — com Gêneros, Artistas, Playlists e Álbuns; telas de gênero, álbum e playlist em `feature/library`). Ajustes e Histórico saíram da barra de baixo e ficam no canto superior direito de cada aba (`BoomTopActions`).
 - **Playlists do app** — ✅ na 0.15.0: `data/library/PlaylistRepository` (arquivo JSON no aparelho, como as estatísticas). Criar, renomear, apagar, adicionar pelo menu ⋮ (folha `AddToPlaylistSheet`, também usada pelo player via `:app`), tirar e reordenar segurando.
 - **Histórico de escuta** — ✅ na 0.15.0: `data/wellbeing/ListeningHistory` (até 1 ano / 5.000 reproduções) e tela em `feature/wellbeing`, agrupada em Hoje, Ontem, Esta semana, Semana passada e meses.
 - **Radar de lançamentos** na aba Lançamentos: para cada artista seguido (`data/releases`), checagem diária no Deezer (WorkManager), lista dos lançamentos recentes e notificação do que é novo.
