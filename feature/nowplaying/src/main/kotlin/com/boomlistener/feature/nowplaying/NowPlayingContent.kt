@@ -3,6 +3,12 @@
 
 package com.boomlistener.feature.nowplaying
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -48,6 +54,10 @@ import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomSeekBar
+import com.boomlistener.core.designsystem.component.artworkTintedBackground
+import com.boomlistener.core.designsystem.component.rememberArtworkColor
+import com.boomlistener.core.designsystem.theme.boomEffectsSpec
+import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.RepeatMode
 
@@ -69,9 +79,16 @@ internal fun NowPlayingContent(
     val item = state.item
     val sizePx = with(LocalDensity.current) { ArtworkSizeForLoading.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
+    val artworkColor = rememberArtworkColor(artwork)
+    val showLyrics by viewModel.showLyrics.collectAsStateWithLifecycle()
+    val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
+    val spatial = boomSpatialSpec<Float>()
+    val effects = boomEffectsSpec<Float>()
 
     Box(modifier.fillMaxSize()) {
+        // Fundo tingido com a cor da capa da música atual.
         Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
+          Box(Modifier.fillMaxSize().artworkTintedBackground(artworkColor)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -105,7 +122,19 @@ internal fun NowPlayingContent(
                             )
                         }
                     }
-                    Spacer(Modifier.size(48.dp)) // equilibra o botão da esquerda
+                    // Letra: troca a capa pela letra (o mesmo que tocar na capa).
+                    IconToggleButton(
+                        checked = showLyrics,
+                        onCheckedChange = { viewModel.toggleLyrics() },
+                        enabled = item != null,
+                        colors = IconButtonDefaults.iconToggleButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            checkedContainerColor = MaterialTheme.colorScheme.primary,
+                            checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    ) {
+                        Icon(BoomIcons.Lyrics, stringResource(R.string.feature_nowplaying_lyrics))
+                    }
                 }
 
                 if (item == null) {
@@ -116,17 +145,39 @@ internal fun NowPlayingContent(
                     return@Column
                 }
 
-                Spacer(Modifier.weight(0.5f))
-                BoomArtwork(
-                    image = artwork,
-                    fallbackText = item.title,
-                    size = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .align(Alignment.CenterHorizontally),
-                )
-                Spacer(Modifier.weight(0.5f))
+                // Capa ⇄ letra: tocar na capa abre a letra, com a capa
+                // encolhendo e esmaecendo enquanto a letra entra.
+                AnimatedContent(
+                    targetState = showLyrics,
+                    transitionSpec = {
+                        (fadeIn(effects) + scaleIn(spatial, initialScale = 0.92f)) togetherWith
+                            (fadeOut(effects) + scaleOut(spatial, targetScale = 0.92f))
+                    },
+                    label = "artworkOrLyrics",
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                ) { lyricsOn ->
+                    if (lyricsOn) {
+                        LyricsView(
+                            state = lyrics,
+                            positionMs = state.positionMs,
+                            onSeek = viewModel::seekTo,
+                            onRetry = viewModel::retryLyrics,
+                        )
+                    } else {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            BoomArtwork(
+                                image = artwork,
+                                fallbackText = item.title,
+                                size = null,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clickable(onClick = viewModel::toggleLyrics),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
 
                 Text(
                     text = item.title,
@@ -171,6 +222,7 @@ internal fun NowPlayingContent(
                 Spacer(Modifier.height(8.dp))
                 UpNextHandle(state = state, queueState = queueState)
             }
+          }
         }
 
         QueuePanel(state = state, queueState = queueState, viewModel = viewModel)

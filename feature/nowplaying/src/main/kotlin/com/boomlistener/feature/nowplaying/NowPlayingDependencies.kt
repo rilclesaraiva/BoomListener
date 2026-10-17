@@ -12,12 +12,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.LibraryData
+import com.boomlistener.data.lyrics.LyricsData
 
 @Composable
 internal fun nowPlayingViewModel(): NowPlayingViewModel {
     val context = LocalContext.current.applicationContext
     return viewModel {
-        NowPlayingViewModel(PlayerConnection.controller(context), LibraryData.repository(context))
+        NowPlayingViewModel(
+            PlayerConnection.controller(context),
+            LibraryData.repository(context),
+            LyricsData.repository(context),
+        )
     }
 }
 

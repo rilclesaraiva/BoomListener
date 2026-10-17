@@ -20,4 +20,9 @@
     <string name="feature_nowplaying_playing">Tocando</string>
     <string name="feature_nowplaying_reorder">Segure e arraste para reordenar</string>
     <string name="feature_nowplaying_remove">Remover da fila</string>
+    <string name="feature_nowplaying_lyrics">Letra</string>
+    <string name="feature_nowplaying_lyrics_not_found">Não encontramos a letra desta música</string>
+    <string name="feature_nowplaying_lyrics_failed">Não deu para carregar a letra. Você está conectado?</string>
+    <string name="feature_nowplaying_lyrics_retry">Tentar de novo</string>
+    <string name="feature_nowplaying_lyrics_source">Letra do %1$s</string>
 </resources>

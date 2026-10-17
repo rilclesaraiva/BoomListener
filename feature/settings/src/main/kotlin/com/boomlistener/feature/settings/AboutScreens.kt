@@ -100,6 +100,9 @@ private val attributions = listOf(
     Attribution("Media3 (ExoPlayer)", "Google · Apache License 2.0"),
     Attribution("DataStore", "Google · Apache License 2.0"),
     Attribution("Kotlin & kotlinx.coroutines", "JetBrains · Apache License 2.0"),
+    Attribution("Palette", "Google · Apache License 2.0"),
+    Attribution("Reorderable", "Calvin Liang · Apache License 2.0"),
+    Attribution("LRCLIB", "lrclib.net · lyrics database"),
 )
 
 @Composable

@@ -20,4 +20,9 @@
     <string name="feature_nowplaying_playing">Playing</string>
     <string name="feature_nowplaying_reorder">Hold and drag to reorder</string>
     <string name="feature_nowplaying_remove">Remove from queue</string>
+    <string name="feature_nowplaying_lyrics">Lyrics</string>
+    <string name="feature_nowplaying_lyrics_not_found">No lyrics found for this song</string>
+    <string name="feature_nowplaying_lyrics_failed">Couldn’t load the lyrics. Are you online?</string>
+    <string name="feature_nowplaying_lyrics_retry">Try again</string>
+    <string name="feature_nowplaying_lyrics_source">Lyrics from %1$s</string>
 </resources>

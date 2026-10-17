@@ -13,13 +13,26 @@ import kotlinx.coroutines.flow.StateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import org.junit.After
+import org.junit.Before
+import com.boomlistener.core.model.LyricLine
+import com.boomlistener.core.model.Lyrics
+import com.boomlistener.core.player.NowPlayingItem
+import com.boomlistener.data.lyrics.LyricsQuery
+import com.boomlistener.data.lyrics.LyricsRepository
+import com.boomlistener.data.lyrics.LyricsResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 
-private class FakeController(duration: Long) : PlaybackController {
+private class FakeController(duration: Long, item: NowPlayingItem? = null) : PlaybackController {
     var seekedTo: Long? = null
     var playedIndex: Int? = null
     var moved: Pair<Int, Int>? = null
     var removed: Int? = null
-    override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState(durationMs = duration))
+    override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState(item = item, durationMs = duration))
     override fun play(tracks: List<Track>, startIndex: Int) = Unit
     override fun playShuffled(tracks: List<Track>) = Unit
     override fun togglePlayPause() = Unit
@@ -34,37 +47,82 @@ private class FakeController(duration: Long) : PlaybackController {
     override fun stop() = Unit
 }
 
+private class FakeLyrics(var result: LyricsResult = LyricsResult.NotFound) : LyricsRepository {
+    var calls = 0
+    override suspend fun getLyrics(query: LyricsQuery): LyricsResult {
+        calls++
+        return result
+    }
+}
+
 private object NoLibrary : LibraryRepository {
     override suspend fun getTracks(): List<Track> = emptyList()
     override suspend fun loadArtwork(trackUri: String, sizePx: Int): Bitmap? = null
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class NowPlayingViewModelTest {
+    @Before
+    fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
+    @After
+    fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun letraSoEBuscadaQuandoAbreEFicaPronta() {
+        val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
+        val lyrics = Lyrics(listOf(LyricLine(0, "Açaí, guardiã")), synced = true, source = "LRCLIB")
+        val repo = FakeLyrics(LyricsResult.Found(lyrics))
+        val viewModel = NowPlayingViewModel(FakeController(duration = 200_000, item = song), NoLibrary, repo)
+
+        assertEquals(0, repo.calls) // privacidade: nada é buscado com a letra fechada
+        viewModel.toggleLyrics()
+        assertEquals(1, repo.calls)
+        assertEquals(LyricsUiState.Ready("content://1", lyrics), viewModel.lyrics.value)
+
+        // Fechar e abrir de novo na mesma música não busca outra vez.
+        viewModel.toggleLyrics()
+        viewModel.toggleLyrics()
+        assertEquals(1, repo.calls)
+    }
+
+    @Test
+    fun tentarDeNovoDepoisDeFalha() {
+        val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
+        val repo = FakeLyrics(LyricsResult.Failed)
+        val viewModel = NowPlayingViewModel(FakeController(duration = 200_000, item = song), NoLibrary, repo)
+        viewModel.toggleLyrics()
+        assertEquals(LyricsUiState.Failed, viewModel.lyrics.value)
+        repo.result = LyricsResult.NotFound
+        viewModel.retryLyrics()
+        assertEquals(LyricsUiState.NotFound, viewModel.lyrics.value)
+    }
+
     @Test
     fun arrastarABarraVaiParaAPosicaoCerta() {
         val controller = FakeController(duration = 200_000)
-        NowPlayingViewModel(controller, NoLibrary).seekToFraction(0.25f)
+        NowPlayingViewModel(controller, NoLibrary, FakeLyrics()).seekToFraction(0.25f)
         assertEquals(50_000L, controller.seekedTo)
     }
 
     @Test
     fun semDuracaoNaoPula() {
         val controller = FakeController(duration = 0)
-        NowPlayingViewModel(controller, NoLibrary).seekToFraction(0.5f)
+        NowPlayingViewModel(controller, NoLibrary, FakeLyrics()).seekToFraction(0.5f)
         assertNull(controller.seekedTo)
     }
 
     @Test
     fun tocarDaFilaUsaAPosicaoOriginal() {
         val controller = FakeController(duration = 1000)
-        NowPlayingViewModel(controller, NoLibrary).playQueueItem(7)
+        NowPlayingViewModel(controller, NoLibrary, FakeLyrics()).playQueueItem(7)
         assertEquals(7, controller.playedIndex)
     }
 
     @Test
     fun reordenarERemoverChegamAoPlayer() {
         val controller = FakeController(duration = 1000)
-        val viewModel = NowPlayingViewModel(controller, NoLibrary)
+        val viewModel = NowPlayingViewModel(controller, NoLibrary, FakeLyrics())
         viewModel.moveQueueItem(2, 9)
         viewModel.removeQueueItem(4)
         assertEquals(2 to 9, controller.moved)

@@ -37,6 +37,7 @@ include(":data:lastfm")
 include(":data:releases")
 include(":data:wellbeing")
 include(":data:updates")
+include(":data:lyrics")
 
 include(":feature:library")
 include(":feature:nowplaying")

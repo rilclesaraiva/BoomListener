@@ -34,6 +34,7 @@ data/
   lastfm/         ← API do Last.fm (via proxy): biografia, tags de gênero, similares, scrobble
   releases/       ← artistas seguidos, comparação de discografia, WorkManager diário, notificações
   wellbeing/      ← contagem do tempo de escuta e regras dos avisos de tela
+  lyrics/         ← letras: LRCLIB + cache no aparelho + leitor de LRC
   updates/        ← "Verificar atualizações": compara a versão instalada com a última Release do GitHub
 
 feature/
@@ -132,7 +133,7 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
   - **A ordem original é guardada** ao ligar o aleatório e restaurada ao desligar, continuando da música que está tocando. Músicas removidas durante o aleatório também saem da ordem original; músicas movidas ficam onde o usuário pôs só na ordem embaralhada.
   - **Com "repetir tudo" + aleatório:** ao fim de uma rodada, embaralha de novo, sem deixar a última música da rodada anterior ser a primeira da nova.
   - A lógica do embaralhador fica numa classe pura (sem Android), com testes: sem repetição, ordem original restaurada, remoção refletida nas duas ordens, virada de rodada.
-- **Letras no player (próxima leva):** tocar na capa do player troca, com animação suave (capa encolhe e esmaece, letra entra), para a letra; tocar de novo volta. Letra **sincronizada** quando houver: a linha atual em destaque (maior e mais forte), as outras esmaecidas, rolagem automática acompanhando a música, e tocar numa linha pula para aquele trecho. Fontes, em ordem: letra embutida no arquivo (tag de letra/LRC) → **LRCLIB** (gratuito, sem chave, tem letras sincronizadas) → "letra não encontrada". Guardar em cache no aparelho. Precisa de um módulo novo `data/lyrics` (perguntar antes de criar, pela regra). Fundo do player tingido pela cor da capa (combina com a ideia já registrada).
+- **Letras no player** — ✅ feito na 0.10.0 (`data/lyrics`), falta ler a letra embutida no arquivo (entra junto com o editor de tags, que já vai ler as tags): tocar na capa do player troca, com animação suave (capa encolhe e esmaece, letra entra), para a letra; tocar de novo volta. Letra **sincronizada** quando houver: a linha atual em destaque (maior e mais forte), as outras esmaecidas, rolagem automática acompanhando a música, e tocar numa linha pula para aquele trecho. Fontes, em ordem: letra embutida no arquivo (tag de letra/LRC) → **LRCLIB** (gratuito, sem chave, tem letras sincronizadas) → "letra não encontrada". Guardar em cache no aparelho. Precisa de um módulo novo `data/lyrics` (perguntar antes de criar, pela regra). Fundo do player tingido pela cor da capa (combina com a ideia já registrada).
 - **Perfil do artista (próxima leva), visual próprio em Material 3 Expressive**, inspirado nas referências (Spotify e perfil do TikTok), sem copiar nenhum dos dois:
   - Cabeçalho grande com a foto do artista (Deezer) ocupando o topo e esmaecendo para a cor de fundo; nome em destaque por cima; foto em círculo sobreposta na borda do cabeçalho (estilo perfil).
   - Linha de números: músicas que você tem, álbuns que você tem, fãs no Deezer.

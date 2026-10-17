@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.10.0] — 2026-10-17
+
+### ✨ New
+- **Lyrics in the player.** Tap the cover (or the lyrics button at the top) and it smoothly turns into the song's lyrics; tap the button again to bring the cover back.
+- **Synced lyrics**: the current line is big and bright, past and upcoming lines are smaller and faded, and the lyrics scroll along with the song. Tap any line to jump to that moment. If you scroll the lyrics yourself, they wait a few seconds before following the song again.
+- Lyrics come from **LRCLIB**, a free and open lyrics database, and are saved on your phone after the first time. They're only looked up when you open them.
+- **The player takes the color of the cover**: its background is tinted with the main color of the album art, changing smoothly from song to song.
+
 ## [0.9.0] — 2026-10-17
 
 ### ✨ New

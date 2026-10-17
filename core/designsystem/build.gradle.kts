@@ -15,4 +15,5 @@ dependencies {
     // "api": quem usa o design system recebe os componentes do Material 3 junto.
     api(libs.androidx.compose.material3)
     api(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.palette)
 }

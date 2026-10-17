@@ -12,6 +12,7 @@ android {
 dependencies {
     implementation(project(":core:player"))
     implementation(project(":data:library"))
+    implementation(project(":data:lyrics"))
     // Arrastar para reordenar a fila.
     implementation(libs.reorderable)
 
