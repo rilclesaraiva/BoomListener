@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.11.0] — 2026-10-17
+
+### ✨ New
+- **Artist profiles.** Open one from a song's menu or by tapping the artist's name in the player.
+  - A big header with the artist's photo fading into the background, their name, and a round picture on the edge.
+  - How many of their songs and albums you have, and their fans on Deezer.
+  - **Follow** (it will power the release radar), **Shuffle** and **Play** their songs that are on your device.
+  - **Songs** tab: your songs by them, plus their most popular on Deezer, marking the ones you already have.
+  - **Discography** tab: albums, EPs, singles and compilations, each one marked as in your library or not. Tap one to open it outside the app.
+  - **About** tab: similar artists (tap to open their profile). The biography comes with Last.fm in a future update.
+- The artist is matched by name, ignoring accents and "feat." guests; between artists with the same name, the most popular one is picked, and nothing is shown if no name matches.
+
 ## [0.10.0] — 2026-10-17
 
 ### ✨ New

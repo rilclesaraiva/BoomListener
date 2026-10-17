@@ -2,4 +2,41 @@
 <resources>
     <string name="feature_artist_title">Artist</string>
     <string name="feature_artist_message">Photo, biography and discography, showing what you have and what you’re missing.</string>
+    <string name="feature_artist_back">Back</string>
+    <string name="feature_artist_tab_songs">Songs</string>
+    <string name="feature_artist_tab_discography">Discography</string>
+    <string name="feature_artist_tab_about">About</string>
+    <string name="feature_artist_fans">%1$s fans on Deezer</string>
+    <string name="feature_artist_follow">Follow</string>
+    <string name="feature_artist_following">Following</string>
+    <string name="feature_artist_shuffle">Shuffle</string>
+    <string name="feature_artist_play">Play</string>
+    <string name="feature_artist_not_found">We couldn’t find this artist on Deezer.</string>
+    <string name="feature_artist_failed">Couldn’t load the artist. Are you online?</string>
+    <string name="feature_artist_retry">Try again</string>
+    <string name="feature_artist_on_device">On your device</string>
+    <string name="feature_artist_popular">Popular on Deezer</string>
+    <string name="feature_artist_albums">Albums</string>
+    <string name="feature_artist_eps">EPs</string>
+    <string name="feature_artist_singles">Singles</string>
+    <string name="feature_artist_compilations">Compilations</string>
+    <string name="feature_artist_biography">Biography</string>
+    <string name="feature_artist_biography_soon">The biography will come from Last.fm in a future update.</string>
+    <string name="feature_artist_related">Similar artists</string>
+    <string name="feature_artist_source">Artist info from Deezer</string>
+    <string name="feature_artist_owned">In your library</string>
+    <string name="feature_artist_missing">Not in your library</string>
+    <string name="feature_artist_open_external">Open outside the app</string>
+    <string name="feature_artist_type_album">Album</string>
+    <string name="feature_artist_type_ep">EP</string>
+    <string name="feature_artist_type_single">Single</string>
+    <string name="feature_artist_type_compilation">Compilation</string>
+    <plurals name="feature_artist_local_songs">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <plurals name="feature_artist_local_albums">
+        <item quantity="one">%1$d album on your device</item>
+        <item quantity="other">%1$d albums on your device</item>
+    </plurals>
 </resources>

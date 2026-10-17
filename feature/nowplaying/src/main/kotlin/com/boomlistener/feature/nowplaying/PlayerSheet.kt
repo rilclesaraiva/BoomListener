@@ -29,6 +29,7 @@ import kotlinx.coroutines.CancellationException
 @Composable
 fun PlayerSheet(
     state: PlayerSheetState,
+    onOpenArtist: (artistName: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel = nowPlayingViewModel()
@@ -73,6 +74,7 @@ fun PlayerSheet(
             onCollapse = { if (queueState.isVisible) queueState.collapse() else state.collapse() },
             viewModel = viewModel,
             queueState = queueState,
+            onOpenArtist = onOpenArtist,
             modifier = Modifier
                 .graphicsLayer {
                     translationY = (1f - state.progress) * heightPx

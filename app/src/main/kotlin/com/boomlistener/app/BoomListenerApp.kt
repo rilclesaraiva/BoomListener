@@ -128,7 +128,7 @@ fun BoomListenerApp() {
                     onOpenArtist = navController::navigateToArtist,
                     onEditTags = { navController.navigateToTagEditor() },
                 )
-                artistScreen(onBack = back)
+                artistScreen(onBack = back, onOpenArtist = navController::navigateToArtist)
                 tageditorScreen(onBack = back)
                 releasesScreen()
                 settingsScreen(
@@ -140,6 +140,13 @@ fun BoomListenerApp() {
         }
 
         // Por último: fica por cima de tudo e tem prioridade no "voltar".
-        PlayerSheet(state = playerSheet)
+        PlayerSheet(
+            state = playerSheet,
+            // Tocar no artista dentro do player: fecha o player e abre o perfil.
+            onOpenArtist = { name ->
+                playerSheet.collapse()
+                navController.navigateToArtist(name)
+            },
+        )
     }
 }

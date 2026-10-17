@@ -5,6 +5,8 @@ package com.boomlistener.core.designsystem.component
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -43,6 +45,12 @@ object BoomIcons {
     val Info: ImageVector = Icons.Filled.Info
     val Privacy: ImageVector = Icons.Filled.Lock
 
+    val Check: ImageVector = Icons.Filled.Check
+    val Owned: ImageVector = Icons.Filled.CheckCircle
+    val OpenExternal: ImageVector = materialIcon(
+        "OpenInNew",
+        "M19,19H5V5h7V3H5c-1.11,0 -2,0.9 -2,2v14c0,1.1 0.89,2 2,2h14c1.1,0 2,-0.9 2,-2v-7h-2v7zM14,3v2h3.59l-9.83,9.83 1.41,1.41L19,6.41V10h2V3h-7z",
+    )
     val Play: ImageVector = Icons.Filled.PlayArrow
     val Pause: ImageVector = materialIcon("Pause", "M6,19h4V5H6v14zM14,5v14h4V5h-4z")
     val SkipNext: ImageVector = materialIcon("SkipNext", "M6,18l8.5,-6L6,6v12zM16,6v12h2V6h-2z")

@@ -73,6 +73,7 @@ internal fun NowPlayingContent(
     onCollapse: () -> Unit,
     viewModel: NowPlayingViewModel,
     queueState: PlayerSheetState,
+    onOpenArtist: (artistName: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -186,6 +187,7 @@ internal fun NowPlayingContent(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                // Tocar no nome do artista abre o perfil dele.
                 Text(
                     text = listOfNotNull(
                         item.artist ?: stringResource(R.string.feature_nowplaying_unknown_artist),
@@ -195,6 +197,9 @@ internal fun NowPlayingContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.then(
+                        item.artist?.let { name -> Modifier.clickable { onOpenArtist(name) } } ?: Modifier,
+                    ),
                 )
 
                 Spacer(Modifier.height(24.dp))

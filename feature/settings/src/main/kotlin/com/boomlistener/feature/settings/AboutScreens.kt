@@ -103,6 +103,7 @@ private val attributions = listOf(
     Attribution("Palette", "Google · Apache License 2.0"),
     Attribution("Reorderable", "Calvin Liang · Apache License 2.0"),
     Attribution("LRCLIB", "lrclib.net · lyrics database"),
+    Attribution("Deezer API", "Deezer · artist information"),
 )
 
 @Composable
