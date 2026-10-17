@@ -47,6 +47,10 @@ fun BoomSeekBar(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                // O padrão do Material deixa a onda reta nos primeiros 10% e nos
+                // últimos 5% do progresso; num player isso parece travado no
+                // começo da música. Aqui ela ondula sempre que está tocando.
+                amplitude = { 1f },
             )
         } else {
             LinearProgressIndicator(

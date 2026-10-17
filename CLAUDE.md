@@ -19,6 +19,12 @@ Reprodutor de música **local** para Android, em Material 3, com edição comple
 - **Permissões de mídia: só áudio** (`READ_MEDIA_AUDIO`, e `READ_EXTERNAL_STORAGE` até o Android 12). **Nunca** peça fotos ou vídeos: a política da Play Store só aceita essas permissões quando galeria é a função principal do app, e as capas não precisam delas (vêm de dentro dos arquivos e do MediaStore de áudio). Capa escolhida pelo usuário no editor de tags usa o **Photo Picker**, que não exige permissão.
 - A identidade visual é própria: inspiração de layout é permitida, copiar a marca ou o visual de outro app não.
 
+## Regra fixa: Release só com autorização
+
+- **Nunca publique uma Release no GitHub por conta própria.** Todo push gera o APK assinado só como **artefato** da Action (aba Actions → build → Artifacts). É assim que o rilclesaraiva testa.
+- Release só quando ele disser explicitamente que pode ("pode lançar", "pode ser release"). Aí dispare: `gh workflow run android.yml -R rilclesaraiva/BoomListener --ref main -f publish_release=true`.
+- Esta sessão **não consegue apagar** Releases nem tags (403). Se uma sair por engano, peça para ele apagar pelo GitHub.
+
 ## Regra fixa: modularidade
 
 Siga `docs/ARQUITETURA.md`. Resumo:
@@ -85,10 +91,11 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 - **Nada do Gradle compila aqui:** o Google Maven, o Maven Central, o Gradle Plugin Portal e o `services.gradle.org` estão fora da lista de rede liberada. A única prova real é a Action do GitHub. Por isso, antes de usar uma versão nova de biblioteca, confirme na documentação oficial (via WebFetch) que ela existe e o que exige (compileSdk, versão do AGP).
 - **Quando a Action falhar**, ela mesma posta o resumo do erro como comentário no commit. Leia com `gh api repos/rilclesaraiva/BoomListener/commits/<sha>/comments`.
 - **Logs da Action não são legíveis daqui** (`gh run view --log` dá 403). É por isso que o workflow já posta o erro no commit sozinho.
-- **Secrets e Releases do GitHub dão 403 para esta sessão.** Quem cadastra os Secrets de assinatura é o usuário, pelo painel (Settings → Secrets and variables → Actions).
+- **Secrets e Releases do GitHub dão 403 para esta sessão** (criar, editar e apagar). Disparar o workflow (`gh workflow run`) funciona. Quem cadastra os Secrets de assinatura é o usuário, pelo painel (Settings → Secrets and variables → Actions).
 - **Deletar branches remotas é bloqueado.** Peça ao usuário.
 - Na Action: **JDK 21**, e **sem** `android-actions/setup-android` (o runner já tem o SDK, e essa action quebrou o build no BusBus).
-- Sem os Secrets de assinatura, a Action gera um APK de **debug** (`boomlistener_v{versão}-debug.apk`, só como artefato) e não cria Release.
+- Os Secrets de assinatura estão cadastrados: a Action gera `boomlistener_v{versão}.apk` assinado, como artefato. Sem eles, cairia no APK de debug. Release só por disparo manual (ver regra acima).
+- O alias da chave (`boomlistener`) é um Secret, então o GitHub esconde essa palavra nos logs (aparece `***`). É só cosmético.
 
 ## Build: AGP 9
 

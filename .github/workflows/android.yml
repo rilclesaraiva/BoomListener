@@ -5,7 +5,14 @@ name: Build APK do Android
 on:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  # Disparo manual. Release no GitHub SÓ quando publish_release = true, e o
+  # Claude só faz isso quando o rilclesaraiva disser que pode (ver CLAUDE.md).
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publicar como Release no GitHub?"
+        type: boolean
+        default: false
 
 # Escrita: para criar a Release e para comentar no commit quando o build falha.
 # O GITHUB_TOKEN é gerado pelo próprio GitHub a cada execução.
@@ -16,8 +23,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Sem os Secrets de assinatura, sai um APK de debug (instalável para teste)
-      # e nenhuma Release é criada. Com eles, sai o APK de release assinado.
+      # Com os Secrets, sai o APK de release assinado; sem eles, um de debug.
+      # Em ambos os casos ele fica só como artefato do build (aba Actions).
       HAS_SIGNING_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - name: Baixar o código
@@ -110,7 +117,7 @@ jobs:
 
       # Nota da Release = seção desta versão no CHANGELOG.md.
       - name: Extrair a nota de versão do CHANGELOG.md
-        if: env.HAS_SIGNING_KEY == 'true'
+        if: env.HAS_SIGNING_KEY == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish_release
         run: |
           awk -v ver="## [${{ steps.version.outputs.version }}]" '
             index($0, ver) == 1 { found=1; next }
@@ -119,7 +126,7 @@ jobs:
           ' CHANGELOG.md > release_notes.md
 
       - name: Publicar/atualizar a Release do GitHub
-        if: env.HAS_SIGNING_KEY == 'true'
+        if: env.HAS_SIGNING_KEY == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish_release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
