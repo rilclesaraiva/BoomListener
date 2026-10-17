@@ -65,6 +65,8 @@ import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSearchTopBar
 import com.boomlistener.core.designsystem.component.BoomTopActions
+import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
@@ -183,6 +185,8 @@ private fun TrackList(
     onAddToPlaylist: (Track) -> Unit,
     contentPadding: PaddingValues,
 ) {
+    val listState = rememberLazyListState()
+    ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
     when {
         state.totalCount == 0 -> BoomPlaceholder(
             title = stringResource(R.string.feature_library_empty_title),
@@ -196,7 +200,7 @@ private fun TrackList(
             modifier = Modifier.padding(contentPadding),
         )
 
-        else -> LazyColumn(contentPadding = contentPadding) {
+        else -> LazyColumn(state = listState, contentPadding = contentPadding) {
             item(key = "header") {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

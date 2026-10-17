@@ -53,6 +53,8 @@ import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomTopActions
+import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.boomlistener.core.model.Track
 
 /**
@@ -72,6 +74,8 @@ internal fun CollectionsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var creating by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    ScrollToTopOnReselect(COLLECTIONS_ROUTE, listState)
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_collections_title),
@@ -80,7 +84,7 @@ internal fun CollectionsScreen(
     ) { padding ->
         when (val current = state) {
             CollectionsUiState.Loading -> BoomLoading(Modifier.padding(padding))
-            is CollectionsUiState.Ready -> LazyColumn(contentPadding = padding) {
+            is CollectionsUiState.Ready -> LazyColumn(state = listState, contentPadding = padding) {
                 item(key = "chips") {
                     CategoryChips(current, onSelect = viewModel::select)
                     Spacer(Modifier.height(8.dp))

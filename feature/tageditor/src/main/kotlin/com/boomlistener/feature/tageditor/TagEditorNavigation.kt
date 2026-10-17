@@ -20,9 +20,16 @@ import com.boomlistener.data.tags.TagsData
 private const val ARG_URI = "uri"
 const val TAGEDITOR_ROUTE = "tageditor?$ARG_URI={$ARG_URI}"
 
-/** Abre o editor de tags da música [trackUri] (endereço content:// do MediaStore). */
+/**
+ * Abre o editor de tags da música [trackUri] (endereço content:// do
+ * MediaStore). Só existe um editor por vez: se já houver um aberto na pilha,
+ * ele é trocado pelo novo em vez de empilhar.
+ */
 fun NavController.navigateToTagEditor(trackUri: String) =
-    navigate("tageditor?$ARG_URI=" + Uri.encode(trackUri))
+    navigate("tageditor?$ARG_URI=" + Uri.encode(trackUri)) {
+        popUpTo(TAGEDITOR_ROUTE) { inclusive = true }
+        launchSingleTop = true
+    }
 
 fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit) {
     composable(

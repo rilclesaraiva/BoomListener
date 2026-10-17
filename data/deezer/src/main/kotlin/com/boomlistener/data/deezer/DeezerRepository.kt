@@ -6,6 +6,8 @@ package com.boomlistener.data.deezer
 import android.content.Context
 import android.graphics.Bitmap
 import com.boomlistener.core.model.TagSuggestion
+import com.boomlistener.core.model.ExternalArtist
+import com.boomlistener.core.model.Release
 import com.boomlistener.core.model.AlbumDetail
 import com.boomlistener.core.model.ArtistProfile
 
@@ -26,6 +28,11 @@ sealed interface TrackTagsResult {
     data object Failed : TrackTagsResult
 }
 
+sealed interface ArtistReleasesResult {
+    data class Found(val artist: ExternalArtist, val releases: List<Release>) : ArtistReleasesResult
+    data object Failed : ArtistReleasesResult
+}
+
 sealed interface ProfileResult {
     data class Found(val profile: ArtistProfile) : ProfileResult
     data object NotFound : ProfileResult
@@ -36,6 +43,12 @@ sealed interface ProfileResult {
 interface DeezerRepository {
     /** Acha o artista pelo nome que está nas tags e monta o perfil. */
     suspend fun artistProfile(artistName: String): ProfileResult
+
+    /**
+     * Discografia de um artista pelo id do Deezer (artistas seguidos), do
+     * lançamento mais novo para o mais antigo.
+     */
+    suspend fun artistReleases(artistId: Long): ArtistReleasesResult = ArtistReleasesResult.Failed
 
     /** Um álbum do Deezer com a lista de músicas. */
     suspend fun album(albumId: Long): AlbumResult

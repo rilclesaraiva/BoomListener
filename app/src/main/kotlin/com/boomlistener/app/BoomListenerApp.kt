@@ -35,6 +35,7 @@ import com.boomlistener.app.navigation.TopLevelDestination
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomScreenSpec
 import com.boomlistener.feature.artist.artistScreen
+import com.boomlistener.feature.artist.navigateToAlbum
 import com.boomlistener.feature.artist.navigateToArtist
 import com.boomlistener.feature.library.LIBRARY_ROUTE
 import com.boomlistener.feature.library.libraryScreen
@@ -42,7 +43,17 @@ import com.boomlistener.feature.nowplaying.MiniPlayer
 import com.boomlistener.feature.nowplaying.PlayerSheet
 import com.boomlistener.feature.nowplaying.rememberPlayerSheetState
 import com.boomlistener.feature.releases.releasesScreen
+import com.boomlistener.feature.settings.SETTINGS_ROUTE
 import com.boomlistener.feature.settings.settingsScreen
+import com.boomlistener.feature.wellbeing.WELLBEING_ROUTE
+import com.boomlistener.core.designsystem.component.LocalTabReselect
+import com.boomlistener.core.designsystem.theme.boomSpatialSpec
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.flow.MutableSharedFlow
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
 import com.boomlistener.feature.wellbeing.navigateToHistory
@@ -73,6 +84,16 @@ fun BoomListenerApp() {
     val playerSheet = rememberPlayerSheetState()
     // Música do player a adicionar numa playlist (a folha aparece por cima de tudo).
     var addToPlaylistUri by remember { mutableStateOf<String?>(null) }
+    // Tocar de novo na aba aberta: a lista dela sobe até o topo.
+    val reselect = remember { MutableSharedFlow<String>(extraBufferCapacity = 1) }
+
+    // Ajustes (e o que fica dentro dele) são telas de foco: sem mini player e
+    // sem barra de abas. O editor de tags também esconde o mini player.
+    val route = currentDestination?.route.orEmpty()
+    val inSettings = route == SETTINGS_ROUTE || route.startsWith("$SETTINGS_ROUTE/") || route == WELLBEING_ROUTE
+    val inTagEditor = route.startsWith("tageditor")
+    val barSpec = boomSpatialSpec<IntSize>()
+    val barFade = boomEffectsSpec<Float>()
 
     // Telas internas entram deslizando por cima da anterior (que recua um
     // pouco e escurece) e saem deslizando de volta; trocar de aba só esmaece.
@@ -95,11 +116,23 @@ fun BoomListenerApp() {
         if (isTabSwitch()) fadeOut(fadeSpec) else slideOutHorizontally(slideSpec) { it }
     }
 
+    CompositionLocalProvider(LocalTabReselect provides reselect) {
     Box(Modifier.fillMaxSize()) {
         Scaffold(
             bottomBar = {
                 Column {
-                    MiniPlayer(sheetState = playerSheet)
+                    AnimatedVisibility(
+                        visible = !inSettings && !inTagEditor,
+                        enter = expandVertically(barSpec) + fadeIn(barFade),
+                        exit = shrinkVertically(barSpec) + fadeOut(barFade),
+                    ) {
+                        MiniPlayer(sheetState = playerSheet)
+                    }
+                    AnimatedVisibility(
+                        visible = !inSettings,
+                        enter = expandVertically(barSpec) + fadeIn(barFade),
+                        exit = shrinkVertically(barSpec) + fadeOut(barFade),
+                    ) {
                     NavigationBar {
                         TopLevelDestination.entries.forEach { destination ->
                             // A aba fica marcada também nas telas de dentro dela (ex.: um álbum da Biblioteca).
@@ -109,16 +142,23 @@ fun BoomListenerApp() {
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = {
-                                    navController.navigate(destination.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
+                                    when {
+                                        // Já está nela: sobe a lista até o topo.
+                                        route == destination.route -> reselect.tryEmit(destination.route)
+                                        // Numa tela de dentro dela (ex.: um álbum): volta para o começo da aba.
+                                        selected -> navController.popBackStack(destination.route, inclusive = false)
+                                        else -> navController.navigate(destination.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
                                 },
                                 icon = { Icon(destination.icon, contentDescription = null) },
                                 label = { Text(stringResource(destination.label)) },
                             )
                         }
+                    }
                     }
                 }
             },
@@ -153,7 +193,12 @@ fun BoomListenerApp() {
                     onOpenArtist = navController::navigateToArtist,
                 )
                 tageditorScreen(onBack = back)
-                releasesScreen(onOpenHistory = openHistory, onOpenSettings = openSettings)
+                releasesScreen(
+                    onOpenAlbum = navController::navigateToAlbum,
+                    onOpenArtist = navController::navigateToArtist,
+                    onOpenHistory = openHistory,
+                    onOpenSettings = openSettings,
+                )
                 settingsScreen(
                     navController = navController,
                     onOpenWellbeing = navController::navigateToWellbeing,
@@ -182,4 +227,5 @@ fun BoomListenerApp() {
             AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
         }
     }
+}
 }

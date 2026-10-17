@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_releases_title">Releases</string>
-    <string name="feature_releases_message">New releases from the artists you follow.</string>
+    <string name="feature_releases_no_follows_title">Follow your artists</string>
+    <string name="feature_releases_no_follows_message">Open an artist’s profile and tap Follow. Their new albums, EPs and singles show up here, newest first.</string>
+    <string name="feature_releases_failed_title">Couldn’t load releases</string>
+    <string name="feature_releases_failed_message">Check your connection and try again.</string>
+    <string name="feature_releases_retry">Try again</string>
+    <string name="feature_releases_partial">%1$d artists didn’t load. They’ll show up once you’re back online.</string>
+    <string name="feature_releases_empty_filter">Nothing here with this filter.</string>
+    <string name="feature_releases_view_latest">Latest</string>
+    <string name="feature_releases_view_by_artist">By artist</string>
+    <string name="feature_releases_filter_all">All</string>
+    <string name="feature_releases_filter_albums">Albums</string>
+    <string name="feature_releases_filter_eps">EPs</string>
+    <string name="feature_releases_filter_singles">Singles</string>
+    <string name="feature_releases_new">New</string>
+    <string name="feature_releases_type_album">Album</string>
+    <string name="feature_releases_type_ep">EP</string>
+    <string name="feature_releases_type_single">Single</string>
+    <string name="feature_releases_type_compilation">Compilation</string>
 </resources>

@@ -73,6 +73,23 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         }
     }
 
+    override suspend fun artistReleases(artistId: Long): ArtistReleasesResult = withContext(Dispatchers.IO) {
+        try {
+            coroutineScope {
+                val artist = async { getJson("$API/artist/$artistId").toArtist() }
+                val albums = async { getJson("$API/artist/$artistId/albums?limit=200") }
+                ArtistReleasesResult.Found(
+                    artist = artist.await(),
+                    releases = albums.await().optJSONArray("data").objects()
+                        .map { it.toRelease() }
+                        .sortedByDescending { it.releaseDate.orEmpty() },
+                )
+            }
+        } catch (_: Exception) {
+            ArtistReleasesResult.Failed
+        }
+    }
+
     override suspend fun album(albumId: Long): AlbumResult = withContext(Dispatchers.IO) {
         try {
             val json = getJson("$API/album/$albumId")

@@ -8,3 +8,10 @@ plugins {
 android {
     namespace = "com.boomlistener.feature.releases"
 }
+
+dependencies {
+    implementation(project(":data:releases"))
+    implementation(project(":data:deezer"))
+
+    testImplementation(libs.kotlinx.coroutines.test)
+}

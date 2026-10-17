@@ -4,6 +4,19 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.16.0] — 2026-10-17
+
+### ✨ New
+- **The Releases tab works.** See the albums, EPs and singles of the artists you follow, either **Latest** (newest first, across everyone) or **By artist**. Filter by Albums, EPs or Singles; anything from the last 30 days gets a **New** tag. Tap a release to open its album page, or an artist's name to open their profile.
+- **Tap the tab you're on to jump back to the top** of its list. Inside a screen of that tab (like an album), it takes you back to the tab's start.
+
+### 🎨 Visual tweaks
+- **Settings is now a focused screen**: the mini player and the tab bar slide away while you're in Settings (and Wellbeing), and come back when you leave.
+- **The tag editor hides the mini player**, so the form has the whole screen.
+
+### 🐛 Fixes
+- **Only one tag editor at a time.** Opening tags for another song replaces the editor that was open instead of stacking them.
+
 ## [0.15.1] — 2026-10-17
 
 ### 🎨 Visual tweaks

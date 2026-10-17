@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_releases_title">Lançamentos</string>
-    <string name="feature_releases_message">Os lançamentos novos dos artistas que você segue.</string>
+    <string name="feature_releases_no_follows_title">Siga seus artistas</string>
+    <string name="feature_releases_no_follows_message">Abra o perfil de um artista e toque em Seguir. Os álbuns, EPs e singles dele aparecem aqui, do mais novo para o mais antigo.</string>
+    <string name="feature_releases_failed_title">Não deu para carregar os lançamentos</string>
+    <string name="feature_releases_failed_message">Confira sua conexão e tente de novo.</string>
+    <string name="feature_releases_retry">Tentar de novo</string>
+    <string name="feature_releases_partial">%1$d artistas não carregaram. Eles aparecem depois, com a internet ligada.</string>
+    <string name="feature_releases_empty_filter">Nada aqui com este filtro.</string>
+    <string name="feature_releases_view_latest">Mais recentes</string>
+    <string name="feature_releases_view_by_artist">Por artista</string>
+    <string name="feature_releases_filter_all">Tudo</string>
+    <string name="feature_releases_filter_albums">Álbuns</string>
+    <string name="feature_releases_filter_eps">EPs</string>
+    <string name="feature_releases_filter_singles">Singles</string>
+    <string name="feature_releases_new">Novo</string>
+    <string name="feature_releases_type_album">Álbum</string>
+    <string name="feature_releases_type_ep">EP</string>
+    <string name="feature_releases_type_single">Single</string>
+    <string name="feature_releases_type_compilation">Coletânea</string>
 </resources>
