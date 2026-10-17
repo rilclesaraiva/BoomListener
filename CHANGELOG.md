@@ -4,6 +4,12 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.6.1] — 2026-10-17
+
+### 🐛 Fixes
+- **Swiping the mini player down now really stops the music.** Sometimes it only hid the mini player while the song kept playing.
+- Swiping the mini player up now opens the player exactly as fast as your finger moves, even the first time.
+
 ## [0.6.0] — 2026-10-17
 
 ### ✨ New

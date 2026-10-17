@@ -3,54 +3,66 @@
 
 package com.boomlistener.feature.nowplaying
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.animate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
  * Estado do painel do player, que desliza de baixo para cima por cima do app.
  *
- * [progress] vai de 0 (fechado, só o mini player) a 1 (tela cheia). Os gestos
- * mexem nele diretamente e, ao soltar o dedo, ele termina o movimento com a
- * mola do motionScheme.
+ * [progress] vai de 0 (fechado, só o mini player) a 1 (tela cheia). Durante um
+ * gesto ele muda na hora (sem corrotina, para nunca ficar fora de ordem); ao
+ * soltar o dedo, uma única animação com a mola do motionScheme termina o
+ * movimento, e qualquer gesto novo a interrompe.
  */
 @Stable
 class PlayerSheetState internal constructor(
     private val scope: CoroutineScope,
     private val spec: FiniteAnimationSpec<Float>,
 ) {
-    internal val progress = Animatable(0f)
+    internal var progress by mutableFloatStateOf(0f)
+        private set
+
+    /** Para onde o painel está indo: 1 = aberto, 0 = fechado. */
+    private var target by mutableFloatStateOf(0f)
+
+    private var animation: Job? = null
 
     /** Altura da tela em px, informada pelo próprio painel ao se medir. */
     internal var screenHeightPx: Float = 1f
 
-    /** true quando o painel está aberto ou abrindo (alvo da animação). */
+    /** true quando o painel está aberto ou abrindo. */
     val isExpanded: Boolean
-        get() = progress.targetValue > 0.5f
+        get() = target > 0.5f
 
-    fun expand() {
-        scope.launch { progress.animateTo(1f, spec) }
-    }
+    /** true enquanto qualquer parte do painel está na tela. */
+    internal val isVisible: Boolean
+        get() = progress > 0f || target > 0f
 
-    fun collapse() {
-        scope.launch { progress.animateTo(0f, spec) }
-    }
+    fun expand() = animateTo(1f)
+
+    fun collapse() = animateTo(0f)
 
     /** Arraste: [deltaPx] positivo puxa para cima (abre). */
     internal fun dragBy(deltaPx: Float) {
-        val next = (progress.value + deltaPx / screenHeightPx).coerceIn(0f, 1f)
-        scope.launch { progress.snapTo(next) }
+        animation?.cancel()
+        progress = (progress + deltaPx / screenHeightPx).coerceIn(0f, 1f)
     }
 
     /** Segue o dedo durante o gesto de voltar do sistema. */
     internal fun snapTo(value: Float) {
-        scope.launch { progress.snapTo(value.coerceIn(0f, 1f)) }
+        animation?.cancel()
+        progress = value.coerceIn(0f, 1f)
     }
 
     /**
@@ -61,9 +73,19 @@ class PlayerSheetState internal constructor(
         val open = when {
             velocityUp > FLING_VELOCITY -> true
             velocityUp < -FLING_VELOCITY -> false
-            else -> progress.value > 0.5f
+            else -> progress > 0.5f
         }
         if (open) expand() else collapse()
+    }
+
+    private fun animateTo(value: Float) {
+        animation?.cancel()
+        target = value
+        animation = scope.launch {
+            animate(initialValue = progress, targetValue = value, animationSpec = spec) { current, _ ->
+                progress = current
+            }
+        }
     }
 
     private companion object {

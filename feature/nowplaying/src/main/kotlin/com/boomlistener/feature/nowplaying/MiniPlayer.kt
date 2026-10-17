@@ -4,7 +4,7 @@
 package com.boomlistener.feature.nowplaying
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -27,10 +27,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +47,6 @@ import com.boomlistener.core.designsystem.component.BoomThinProgress
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomFastSpatialSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
-import kotlinx.coroutines.launch
 
 /**
  * Mini player acima da barra de navegação. Só aparece quando há música na fila.
@@ -66,12 +65,17 @@ fun MiniPlayer(
     val sizePx = with(LocalDensity.current) { 48.dp.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
 
-    val scope = rememberCoroutineScope()
-    val dismissSpec = boomSpatialSpec<Float>()
     val returnSpec = boomFastSpatialSpec<Float>()
     // Quanto o mini player foi puxado para baixo (px), no gesto de encerrar.
-    val dismissOffset = remember { Animatable(0f) }
+    // É estado simples, atualizado na hora a cada movimento do dedo.
+    var dismissOffset by remember { mutableFloatStateOf(0f) }
     var heightPx by remember { mutableFloatStateOf(1f) }
+
+    // Quando a fila esvazia (música encerrada), volta o mini player para o
+    // lugar, pronto para a próxima vez que algo tocar.
+    LaunchedEffect(item == null) {
+        if (item == null) dismissOffset = 0f
+    }
 
     AnimatedVisibility(
         visible = item != null,
@@ -80,9 +84,9 @@ fun MiniPlayer(
         modifier = modifier,
     ) {
         val dragState = rememberDraggableState { delta ->
-            val pullingDown = dismissOffset.value > 0f || (delta > 0f && sheetState.progress.value == 0f)
+            val pullingDown = dismissOffset > 0f || (delta > 0f && sheetState.progress == 0f)
             if (pullingDown) {
-                scope.launch { dismissOffset.snapTo((dismissOffset.value + delta).coerceAtLeast(0f)) }
+                dismissOffset = (dismissOffset + delta).coerceAtLeast(0f)
             } else {
                 sheetState.dragBy(-delta)
             }
@@ -96,21 +100,24 @@ fun MiniPlayer(
                 .padding(horizontal = 8.dp, vertical = 4.dp)
                 .onSizeChanged { heightPx = it.height.toFloat().coerceAtLeast(1f) }
                 .graphicsLayer {
-                    translationY = dismissOffset.value
-                    alpha = 1f - (dismissOffset.value / heightPx).coerceIn(0f, 1f) * 0.8f
+                    translationY = dismissOffset
+                    alpha = 1f - (dismissOffset / heightPx).coerceIn(0f, 1f) * 0.8f
                 }
                 .draggable(
                     state = dragState,
                     orientation = Orientation.Vertical,
                     onDragStopped = { velocity ->
-                        if (dismissOffset.value > 0f) {
-                            val dismiss = dismissOffset.value > heightPx * 0.4f || velocity > 1500f
+                        if (dismissOffset > 0f) {
+                            val dismiss = dismissOffset > heightPx * 0.4f || velocity > 1500f
                             if (dismiss) {
-                                dismissOffset.animateTo(heightPx * 1.5f, dismissSpec)
+                                // Primeiro encerra a música de verdade; o mini
+                                // player some sozinho com a animação de saída
+                                // quando a fila esvazia.
                                 viewModel.stop()
-                                dismissOffset.snapTo(0f)
                             } else {
-                                dismissOffset.animateTo(0f, returnSpec)
+                                animate(dismissOffset, 0f, animationSpec = returnSpec) { value, _ ->
+                                    dismissOffset = value
+                                }
                             }
                         } else {
                             sheetState.settle(-velocity)

@@ -48,19 +48,19 @@ fun PlayerSheet(
         }
     }
 
-    val progress = state.progress.value
-    if (progress <= 0f && !state.progress.isRunning) return
-
+    // Mede a tela sempre, mesmo fechado: o mini player precisa da altura para
+    // o arraste para cima acompanhar o dedo na proporção certa.
     BoxWithConstraints(modifier.fillMaxSize()) {
         val heightPx = with(LocalDensity.current) { maxHeight.toPx() }
         state.screenHeightPx = heightPx
+        if (!state.isVisible) return@BoxWithConstraints
 
         NowPlayingContent(
             onCollapse = state::collapse,
             viewModel = viewModel,
             modifier = Modifier
                 .graphicsLayer {
-                    translationY = (1f - state.progress.value) * heightPx
+                    translationY = (1f - state.progress) * heightPx
                 }
                 .draggable(
                     state = rememberDraggableState { delta -> state.dragBy(-delta) },
