@@ -12,6 +12,8 @@ import com.boomlistener.core.model.ReleaseType
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlaybackController
 import com.boomlistener.core.player.PlaybackState
+import com.boomlistener.core.model.AlbumDetail
+import com.boomlistener.data.deezer.AlbumResult
 import com.boomlistener.data.deezer.DeezerRepository
 import com.boomlistener.data.deezer.ProfileResult
 import com.boomlistener.data.library.LibraryRepository
@@ -81,8 +83,12 @@ class ArtistLogicTest {
     }
 }
 
-private class FakeDeezer(private val result: ProfileResult) : DeezerRepository {
+private class FakeDeezer(
+    private val result: ProfileResult,
+    private val albumResult: AlbumResult = AlbumResult.Failed,
+) : DeezerRepository {
     override suspend fun artistProfile(artistName: String) = result
+    override suspend fun album(albumId: Long) = albumResult
     override suspend fun image(url: String, sizePx: Int): Bitmap? = null
 }
 
@@ -155,5 +161,56 @@ class ArtistViewModelTest {
 
         viewModel.shuffle()
         assertEquals(listOf(1L), player.shuffled.map { it.id })
+    }
+}
+
+class AlbumLogicTest {
+    @Test
+    fun casaMusicasDoAlbumComAsSuas() {
+        val mine = listOf(track(1, "Açaí", "Djavan", "Luz"), track(2, "Sina (Ao Vivo)", "Djavan", "Luz"))
+        val album = listOf(
+            PopularTrack(10, "Açaí", "Luz", null, 0, null),
+            PopularTrack(11, "Pétala", "Luz", null, 0, null),
+        )
+        assertEquals(listOf(1L, null), matchAlbumTracks(album, mine).map { it?.id })
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class AlbumViewModelTest {
+    private val dispatcher = UnconfinedTestDispatcher()
+
+    @Before
+    fun setUp() = Dispatchers.setMain(dispatcher)
+
+    @After
+    fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun tocaSoOQueVoceTemComecandoPelaEscolhida() {
+        val album = AlbumDetail(
+            release = release(10, "Luz"),
+            artistName = "Djavan",
+            tracks = listOf(
+                PopularTrack(1, "Samurai", "Luz", null, 0, null),
+                PopularTrack(2, "Pétala", "Luz", null, 0, null),
+                PopularTrack(3, "Açaí", "Luz", null, 0, null),
+            ),
+        )
+        val mine = listOf(track(7, "Samurai", "Djavan", "Luz"), track(8, "Açaí", "Djavan", "Luz"))
+        val player = FakePlayer()
+        val viewModel = AlbumViewModel(
+            albumId = 10,
+            artistName = "Djavan",
+            deezer = FakeDeezer(ProfileResult.NotFound, AlbumResult.Found(album)),
+            library = FakeLibrary(mine),
+            player = player,
+        )
+        val ready = viewModel.state.value as AlbumUiState.Ready
+        assertEquals(2, ready.ownedCount)
+
+        viewModel.playOwned(fromAlbumIndex = 2)
+        assertEquals(listOf(7L, 8L), player.played?.first?.map { it.id })
+        assertEquals(1, player.played?.second)
     }
 }
