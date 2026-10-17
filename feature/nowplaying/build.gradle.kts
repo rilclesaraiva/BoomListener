@@ -8,3 +8,10 @@ plugins {
 android {
     namespace = "com.boomlistener.feature.nowplaying"
 }
+
+dependencies {
+    implementation(project(":core:player"))
+    implementation(project(":data:library"))
+
+    testImplementation(libs.kotlinx.coroutines.test)
+}

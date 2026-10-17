@@ -13,11 +13,10 @@ const val LIBRARY_ROUTE = "library"
 fun NavController.navigateToLibrary() = navigate(LIBRARY_ROUTE)
 
 fun NavGraphBuilder.libraryScreen(
-    onOpenTrack: (Track) -> Unit,
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (Track) -> Unit,
 ) {
     composable(LIBRARY_ROUTE) {
-        LibraryScreen(onOpenTrack = onOpenTrack, onOpenArtist = onOpenArtist, onEditTags = onEditTags)
+        LibraryScreen(onOpenArtist = onOpenArtist, onEditTags = onEditTags)
     }
 }

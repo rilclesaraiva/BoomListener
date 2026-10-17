@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.input.ImeAction
  * reserva espaço para as barras do sistema embaixo (evita espaço em dobro).
  *
  * @param onBack mostra a seta de voltar quando não é null.
+ * @param largeTitle título grande que encolhe ao rolar (telas principais, como Ajustes).
  * @param topBar barra própria, que substitui a barra padrão (ex.: modo busca).
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,25 +48,41 @@ fun BoomScreenScaffold(
     title: String,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    largeTitle: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {},
     topBar: (@Composable () -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val topBarState = rememberTopAppBarState()
+    val scrollBehavior = if (largeTitle) {
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topBarState)
+    } else {
+        TopAppBarDefaults.pinnedScrollBehavior(topBarState)
+    }
+    val navigationIcon: @Composable () -> Unit = {
+        if (onBack != null) {
+            IconButton(onClick = onBack) { Icon(BoomIcons.Back, contentDescription = "Voltar") }
+        }
+    }
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = topBar ?: {
-            TopAppBar(
-                title = { Text(title, style = MaterialTheme.typography.titleLarge) },
-                navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) { Icon(BoomIcons.Back, contentDescription = "Voltar") }
-                    }
-                },
-                actions = actions,
-                scrollBehavior = scrollBehavior,
-            )
+            if (largeTitle) {
+                LargeTopAppBar(
+                    title = { Text(title) },
+                    navigationIcon = navigationIcon,
+                    actions = actions,
+                    scrollBehavior = scrollBehavior,
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+                    navigationIcon = navigationIcon,
+                    actions = actions,
+                    scrollBehavior = scrollBehavior,
+                )
+            }
         },
         content = content,
     )

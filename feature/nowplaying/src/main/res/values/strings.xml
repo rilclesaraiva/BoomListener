@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_nowplaying_title">Tocando agora</string>
-    <string name="feature_nowplaying_message">O player em tela cheia vai ficar aqui.</string>
+    <string name="feature_nowplaying_message">Escolha uma música na Biblioteca para começar.</string>
+    <string name="feature_nowplaying_empty_title">Nada tocando</string>
+    <string name="feature_nowplaying_queue_position">%1$d de %2$d</string>
+    <string name="feature_nowplaying_unknown_artist">Artista desconhecido</string>
+    <string name="feature_nowplaying_play">Tocar</string>
+    <string name="feature_nowplaying_pause">Pausar</string>
+    <string name="feature_nowplaying_next">Próxima</string>
+    <string name="feature_nowplaying_previous">Anterior</string>
+    <string name="feature_nowplaying_shuffle">Aleatório</string>
+    <string name="feature_nowplaying_repeat">Repetir</string>
+    <string name="feature_nowplaying_collapse">Minimizar</string>
 </resources>

@@ -52,18 +52,21 @@ import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSearchTopBar
 import com.boomlistener.core.model.Track
+import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.LibraryData
 
 @Composable
 internal fun LibraryScreen(
-    onOpenTrack: (Track) -> Unit,
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (Track) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val viewModel: LibraryViewModel = viewModel {
-        LibraryViewModel(LibraryData.repository(context.applicationContext))
+        LibraryViewModel(
+            LibraryData.repository(context.applicationContext),
+            PlayerConnection.controller(context.applicationContext),
+        )
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -130,7 +133,7 @@ internal fun LibraryScreen(
                 is LibraryUiState.Success -> TrackList(
                     state = state,
                     loadArtwork = viewModel::artwork,
-                    onOpenTrack = onOpenTrack,
+                    onOpenTrack = viewModel::play,
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
                     contentPadding = padding,

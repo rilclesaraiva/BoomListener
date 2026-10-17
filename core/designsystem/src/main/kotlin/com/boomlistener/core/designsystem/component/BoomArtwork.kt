@@ -24,15 +24,20 @@ val BoomListArtworkSize: Dp = 52.dp
 /**
  * Capa de música ou álbum. Sem imagem, mostra a inicial do [fallbackText]
  * sobre a cor de destaque do tema.
+ *
+ * @param size tamanho fixo; null para o tamanho vir do [modifier] (tela cheia).
  */
 @Composable
 fun BoomArtwork(
     image: ImageBitmap?,
     fallbackText: String,
     modifier: Modifier = Modifier,
-    size: Dp = BoomListArtworkSize,
+    size: Dp? = BoomListArtworkSize,
 ) {
-    val shaped = modifier.size(size).clip(MaterialTheme.shapes.medium)
+    val sized = if (size != null) modifier.size(size) else modifier
+    // Capas grandes ganham cantos maiores, como no resto do Material 3.
+    val shape = if (size == null || size > 96.dp) MaterialTheme.shapes.extraLarge else MaterialTheme.shapes.medium
+    val shaped = sized.clip(shape)
     if (image != null) {
         Image(
             bitmap = image,

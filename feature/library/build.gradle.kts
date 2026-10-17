@@ -11,6 +11,7 @@ android {
 
 dependencies {
     implementation(project(":data:library"))
+    implementation(project(":core:player"))
     // Pedido de permissão (rememberLauncherForActivityResult).
     implementation(libs.androidx.activity.compose)
 

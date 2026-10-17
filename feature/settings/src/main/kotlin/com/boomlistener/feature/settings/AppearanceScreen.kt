@@ -1,0 +1,89 @@
+// Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
+// Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
+
+package com.boomlistener.feature.settings
+
+import android.os.Build
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.boomlistener.core.datastore.PreferencesData
+import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import com.boomlistener.core.designsystem.component.BoomSettingsItem
+import com.boomlistener.core.designsystem.component.BoomSettingsSection
+import com.boomlistener.core.model.ThemeMode
+
+@Composable
+internal fun AppearanceScreen(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current.applicationContext
+    val viewModel: AppearanceViewModel = viewModel {
+        AppearanceViewModel(PreferencesData.repository(context))
+    }
+    val prefs by viewModel.preferences.collectAsStateWithLifecycle()
+    val dynamicAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+    val themes = listOf(
+        Triple(ThemeMode.System, R.string.feature_settings_theme_system, R.string.feature_settings_theme_system_summary),
+        Triple(ThemeMode.Light, R.string.feature_settings_theme_light, null),
+        Triple(ThemeMode.Dark, R.string.feature_settings_theme_dark, null),
+        Triple(ThemeMode.Amoled, R.string.feature_settings_theme_amoled, R.string.feature_settings_theme_amoled_summary),
+    )
+
+    BoomScreenScaffold(
+        title = stringResource(R.string.feature_settings_appearance),
+        onBack = onBack,
+        modifier = modifier,
+    ) { padding ->
+        LazyColumn(contentPadding = padding) {
+            item {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_theme)) {
+                    themes.forEach { (mode, title, summary) ->
+                        BoomSettingsItem(
+                            icon = null,
+                            title = stringResource(title),
+                            subtitle = summary?.let { stringResource(it) },
+                            onClick = { viewModel.setThemeMode(mode) },
+                            trailing = {
+                                RadioButton(
+                                    selected = prefs.themeMode == mode,
+                                    onClick = { viewModel.setThemeMode(mode) },
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+            item {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_colors)) {
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_dynamic_color),
+                        subtitle = stringResource(
+                            if (dynamicAvailable) R.string.feature_settings_dynamic_color_summary
+                            else R.string.feature_settings_dynamic_color_unavailable,
+                        ),
+                        enabled = dynamicAvailable,
+                        onClick = { viewModel.setDynamicColor(!prefs.dynamicColor) },
+                        trailing = {
+                            Switch(
+                                checked = dynamicAvailable && prefs.dynamicColor,
+                                onCheckedChange = { viewModel.setDynamicColor(it) },
+                                enabled = dynamicAvailable,
+                            )
+                        },
+                    )
+                }
+            }
+        }
+    }
+}

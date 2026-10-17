@@ -34,6 +34,14 @@ android {
     }
 
     signingConfigs {
+        // Chave de debug fixa, versionada no repositório: sem ela, cada build da
+        // Action gerava uma chave nova e o APK de debug não atualizava por cima.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (keystorePropertiesFile.exists()) {
             create("release") {
                 storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
@@ -61,6 +69,7 @@ android {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:model"))
+    implementation(project(":core:datastore"))
 
     implementation(project(":feature:library"))
     implementation(project(":feature:nowplaying"))
@@ -73,4 +82,5 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 }

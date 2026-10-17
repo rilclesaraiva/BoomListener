@@ -9,7 +9,7 @@ import androidx.navigation.compose.composable
 
 const val NOWPLAYING_ROUTE = "nowplaying"
 
-fun NavController.navigateToNowPlaying() = navigate(NOWPLAYING_ROUTE)
+fun NavController.navigateToNowPlaying() = navigate(NOWPLAYING_ROUTE) { launchSingleTop = true }
 
 fun NavGraphBuilder.nowplayingScreen(onBack: () -> Unit) {
     composable(NOWPLAYING_ROUTE) { NowPlayingScreen(onBack = onBack) }

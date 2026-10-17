@@ -3,6 +3,7 @@
 
 package com.boomlistener.app
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -23,6 +24,8 @@ import com.boomlistener.feature.artist.artistScreen
 import com.boomlistener.feature.artist.navigateToArtist
 import com.boomlistener.feature.library.LIBRARY_ROUTE
 import com.boomlistener.feature.library.libraryScreen
+import com.boomlistener.feature.nowplaying.MiniPlayer
+import com.boomlistener.feature.nowplaying.NOWPLAYING_ROUTE
 import com.boomlistener.feature.nowplaying.navigateToNowPlaying
 import com.boomlistener.feature.nowplaying.nowplayingScreen
 import com.boomlistener.feature.releases.releasesScreen
@@ -33,32 +36,39 @@ import com.boomlistener.feature.wellbeing.navigateToWellbeing
 import com.boomlistener.feature.wellbeing.wellbeingScreen
 
 /**
- * Esqueleto do app: barra de navegação + o grafo de telas. É o ÚNICO lugar
- * que conhece todas as features e liga uma à outra (ver CLAUDE.md).
+ * Esqueleto do app: mini player + barra de navegação + o grafo de telas. É o
+ * ÚNICO lugar que conhece todas as features e liga uma à outra (ver CLAUDE.md).
  */
 @Composable
 fun BoomListenerApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
+    // Na tela cheia do player, somem o mini player e a barra de navegação.
+    val showBottomBars = currentDestination?.route != NOWPLAYING_ROUTE
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                TopLevelDestination.entries.forEach { destination ->
-                    val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(destination.icon, contentDescription = null) },
-                        label = { Text(stringResource(destination.label)) },
-                    )
+            if (showBottomBars) {
+                Column {
+                    MiniPlayer(onExpand = { navController.navigateToNowPlaying() })
+                    NavigationBar {
+                        TopLevelDestination.entries.forEach { destination ->
+                            val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(destination.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(destination.icon, contentDescription = null) },
+                                label = { Text(stringResource(destination.label)) },
+                            )
+                        }
+                    }
                 }
             }
         },
@@ -66,12 +76,11 @@ fun BoomListenerApp() {
         NavHost(
             navController = navController,
             startDestination = LIBRARY_ROUTE,
+            // Cada tela cuida do próprio topo; daqui só a folga das barras de baixo.
             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
         ) {
             val back: () -> Unit = { navController.popBackStack() }
             libraryScreen(
-                // O player ainda não existe: tocar uma música abre a tela provisória.
-                onOpenTrack = { navController.navigateToNowPlaying() },
                 onOpenArtist = navController::navigateToArtist,
                 onEditTags = { navController.navigateToTagEditor() },
             )
@@ -79,7 +88,10 @@ fun BoomListenerApp() {
             tageditorScreen(onBack = back)
             nowplayingScreen(onBack = back)
             releasesScreen()
-            settingsScreen(onOpenWellbeing = navController::navigateToWellbeing)
+            settingsScreen(
+                navController = navController,
+                onOpenWellbeing = navController::navigateToWellbeing,
+            )
             wellbeingScreen(onBack = back)
         }
     }

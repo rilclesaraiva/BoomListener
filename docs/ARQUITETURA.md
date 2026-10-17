@@ -122,11 +122,13 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 ## Ideias registradas (ainda sem data)
 
 - Biblioteca dividida em **Músicas, Álbuns, Artistas e Gêneros** (abas ou filtros no topo).
+- **Ajustes ainda por vir** (seguindo o modelo das telas de referência): Gestão de música (pastas, ignorar áudios curtos), Reprodução (pular silêncio, crossfade), Equalizador, Notificações (radar de lançamentos), Integrações (Last.fm, Deezer), Cópia e restauração.
+- Fila visível na tela cheia do player, cor do player tirada da capa, gesto de arrastar o mini player.
 - **Injeção de dependências:** enquanto o Hilt não entra, cada `data` expõe um ponto de acesso provisório (ex.: `LibraryData.repository(context)`) que devolve sempre a mesma instância.
 
 ## Stack
 
-Na versão 0.1.0 só o Compose, o Material 3 e a navegação estão em uso. O resto entra módulo a módulo, conforme cada funcionalidade for construída.
+Hoje estão em uso: Compose, Material 3, navegação, Media3 e DataStore. O resto entra módulo a módulo, conforme cada funcionalidade for construída.
 
 
 - Kotlin, Compose, Material 3 (com cor dinâmica)

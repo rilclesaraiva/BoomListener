@@ -4,6 +4,20 @@ Todas as mudanças do **Boom, listener!** ficam registradas aqui, por versão, t
 
 Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/). Versionamento [SemVer](https://semver.org/lang/pt-BR/): `MAJOR.MINOR.PATCH`.
 
+## [0.4.0] — 2026-10-17
+
+### ✨ Novidades
+- **O app toca música!** Toque numa música da Biblioteca e ela começa a tocar, com a lista da tela virando a fila (se você estiver buscando, a fila é só o resultado da busca).
+- **Mini player** acima da barra de navegação, com capa, música, artista, anterior, tocar/pausar e próxima. Tocar nele abre a tela cheia.
+- **Tela "Tocando agora"**: capa grande, barra de progresso ondulada (fica reta quando pausa) que dá para arrastar, tempo decorrido e total, aleatório, anterior, tocar/pausar, próxima e repetir (tudo, uma, desligado).
+- **Continua tocando com o app fechado**, com controles na notificação, na tela de bloqueio e nos botões do fone. Pausa sozinho quando o fone é desconectado ou quando chega uma ligação.
+- **Ajustes reorganizados** em seções (Geral e Sobre), com ícones coloridos e título grande.
+- **Aparência**: escolha entre seguir o sistema, claro, escuro ou AMOLED (preto puro), e ligue ou desligue as cores do papel de parede.
+- **Sobre, Privacidade e Licenças** nos Ajustes.
+
+### 🐛 Correções
+- **O APK de teste agora atualiza por cima**, sem precisar desinstalar a cada versão.
+
 ## [0.3.0] — 2026-10-17
 
 ### ✨ Novidades

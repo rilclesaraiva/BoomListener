@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boomlistener.core.model.Track
+import com.boomlistener.core.player.PlaybackController
 import com.boomlistener.data.library.LibraryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 
 internal class LibraryViewModel(
     private val repository: LibraryRepository,
+    private val player: PlaybackController,
 ) : ViewModel() {
 
     // null = ainda não carregou.
@@ -43,6 +45,16 @@ internal class LibraryViewModel(
 
     fun onQueryChange(newQuery: String) {
         query.value = newQuery
+    }
+
+    /**
+     * Toca [track] usando como fila a lista que está na tela (se houver busca,
+     * só os resultados dela).
+     */
+    fun play(track: Track) {
+        val visible = (uiState.value as? LibraryUiState.Success)?.tracks ?: return
+        val index = visible.indexOfFirst { it.id == track.id }.takeIf { it >= 0 } ?: return
+        player.play(visible, index)
     }
 
     suspend fun artwork(track: Track, sizePx: Int): Bitmap? =

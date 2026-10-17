@@ -8,3 +8,9 @@ plugins {
 android {
     namespace = "com.boomlistener.feature.settings"
 }
+
+dependencies {
+    implementation(project(":core:datastore"))
+
+    testImplementation(libs.kotlinx.coroutines.test)
+}
