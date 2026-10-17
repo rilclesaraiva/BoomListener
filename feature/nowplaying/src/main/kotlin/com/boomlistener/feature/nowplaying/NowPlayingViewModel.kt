@@ -19,6 +19,7 @@ internal class NowPlayingViewModel(
     val state: StateFlow<PlaybackState> = controller.state
 
     fun togglePlayPause() = controller.togglePlayPause()
+    fun playQueueItem(index: Int) = controller.playQueueItem(index)
     fun next() = controller.next()
     fun previous() = controller.previous()
     fun toggleShuffle() = controller.toggleShuffle()

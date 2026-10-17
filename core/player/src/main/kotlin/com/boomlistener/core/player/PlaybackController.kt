@@ -19,6 +19,10 @@ interface PlaybackController {
     fun play(tracks: List<Track>, startIndex: Int)
 
     fun togglePlayPause()
+
+    /** Pula para a música da fila de posição original [index] e toca. */
+    fun playQueueItem(index: Int)
+
     fun next()
     fun previous()
     fun seekTo(positionMs: Long)

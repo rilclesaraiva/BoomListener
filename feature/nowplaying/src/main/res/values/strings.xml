@@ -12,4 +12,10 @@
     <string name="feature_nowplaying_shuffle">Shuffle</string>
     <string name="feature_nowplaying_repeat">Repeat</string>
     <string name="feature_nowplaying_collapse">Minimize</string>
+    <string name="feature_nowplaying_up_next">Up next</string>
+    <string name="feature_nowplaying_up_next_song">Up next: %1$s</string>
+    <string name="feature_nowplaying_queue_end">Nothing after this song</string>
+    <string name="feature_nowplaying_queue_open">Open queue</string>
+    <string name="feature_nowplaying_queue_close">Close queue</string>
+    <string name="feature_nowplaying_playing">Playing</string>
 </resources>

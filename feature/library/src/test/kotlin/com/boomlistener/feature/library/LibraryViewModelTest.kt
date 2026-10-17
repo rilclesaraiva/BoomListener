@@ -38,6 +38,7 @@ internal class FakePlaybackController : PlaybackController {
         lastIndex = startIndex
     }
     override fun togglePlayPause() = Unit
+    override fun playQueueItem(index: Int) = Unit
     override fun next() = Unit
     override fun previous() = Unit
     override fun seekTo(positionMs: Long) = Unit

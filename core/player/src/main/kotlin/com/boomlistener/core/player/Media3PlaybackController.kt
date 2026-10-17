@@ -8,6 +8,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -40,8 +41,19 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     private val pending = mutableListOf<(MediaController) -> Unit>()
     private var progressJob: Job? = null
 
+    // A fila só muda quando a lista ou o modo aleatório mudam; montá-la a cada
+    // atualização de progresso (2x por segundo) seria desperdício.
+    private var queueCache: List<QueueEntry> = emptyList()
+
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
+            if (events.containsAny(
+                    Player.EVENT_TIMELINE_CHANGED,
+                    Player.EVENT_SHUFFLE_MODE_ENABLED_CHANGED,
+                )
+            ) {
+                queueCache = buildQueue(player)
+            }
             publish(player)
             if (player.isPlaying) startProgressUpdates() else stopProgressUpdates()
         }
@@ -55,6 +67,7 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
                 val connected = runCatching { future.get() }.getOrNull() ?: return@addListener
                 controller = connected
                 connected.addListener(listener)
+                queueCache = buildQueue(connected)
                 publish(connected)
                 pending.forEach { it(connected) }
                 pending.clear()
@@ -75,6 +88,13 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
             player.pause()
         } else {
             if (player.playbackState == Player.STATE_ENDED) player.seekToDefaultPosition()
+            player.play()
+        }
+    }
+
+    override fun playQueueItem(index: Int) = withController { player ->
+        if (index in 0 until player.mediaItemCount) {
+            player.seekToDefaultPosition(index)
             player.play()
         }
     }
@@ -133,7 +153,22 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
             repeatMode = player.repeatMode.toRepeatMode(),
             queueIndex = player.currentMediaItemIndex,
             queueSize = player.mediaItemCount,
+            queue = queueCache,
         )
+    }
+
+    /** A fila na ordem real de reprodução (segue o embaralhamento, se ligado). */
+    private fun buildQueue(player: Player): List<QueueEntry> {
+        val timeline = player.currentTimeline
+        if (timeline.isEmpty) return emptyList()
+        val shuffle = player.shuffleModeEnabled
+        val entries = ArrayList<QueueEntry>(timeline.windowCount)
+        var index = timeline.getFirstWindowIndex(shuffle)
+        while (index != C.INDEX_UNSET && entries.size < timeline.windowCount) {
+            entries += QueueEntry(index, player.getMediaItemAt(index).toNowPlayingItem())
+            index = timeline.getNextWindowIndex(index, Player.REPEAT_MODE_OFF, shuffle)
+        }
+        return entries
     }
 
     private fun startProgressUpdates() {
@@ -157,6 +192,13 @@ private fun Int.toRepeatMode(): RepeatMode = when (this) {
     Player.REPEAT_MODE_ALL -> RepeatMode.All
     else -> RepeatMode.Off
 }
+
+private fun MediaItem.toNowPlayingItem(): NowPlayingItem = NowPlayingItem(
+    uri = mediaId,
+    title = mediaMetadata.title?.toString() ?: "",
+    artist = mediaMetadata.artist?.toString(),
+    album = mediaMetadata.albumTitle?.toString(),
+)
 
 /** A música vira um item do Media3. O mediaId é o próprio endereço do arquivo. */
 private fun Track.toMediaItem(): MediaItem =

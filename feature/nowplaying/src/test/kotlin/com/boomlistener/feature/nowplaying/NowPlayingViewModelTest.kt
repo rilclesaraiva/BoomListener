@@ -16,9 +16,11 @@ import org.junit.Test
 
 private class FakeController(duration: Long) : PlaybackController {
     var seekedTo: Long? = null
+    var playedIndex: Int? = null
     override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState(durationMs = duration))
     override fun play(tracks: List<Track>, startIndex: Int) = Unit
     override fun togglePlayPause() = Unit
+    override fun playQueueItem(index: Int) { playedIndex = index }
     override fun next() = Unit
     override fun previous() = Unit
     override fun seekTo(positionMs: Long) { seekedTo = positionMs }
@@ -45,6 +47,13 @@ class NowPlayingViewModelTest {
         val controller = FakeController(duration = 0)
         NowPlayingViewModel(controller, NoLibrary).seekToFraction(0.5f)
         assertNull(controller.seekedTo)
+    }
+
+    @Test
+    fun tocarDaFilaUsaAPosicaoOriginal() {
+        val controller = FakeController(duration = 1000)
+        NowPlayingViewModel(controller, NoLibrary).playQueueItem(7)
+        assertEquals(7, controller.playedIndex)
     }
 
     @Test

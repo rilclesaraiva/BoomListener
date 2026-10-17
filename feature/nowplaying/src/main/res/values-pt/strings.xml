@@ -12,4 +12,10 @@
     <string name="feature_nowplaying_shuffle">Aleatório</string>
     <string name="feature_nowplaying_repeat">Repetir</string>
     <string name="feature_nowplaying_collapse">Minimizar</string>
+    <string name="feature_nowplaying_up_next">A seguir</string>
+    <string name="feature_nowplaying_up_next_song">A seguir: %1$s</string>
+    <string name="feature_nowplaying_queue_end">Nada depois desta música</string>
+    <string name="feature_nowplaying_queue_open">Abrir fila</string>
+    <string name="feature_nowplaying_queue_close">Fechar fila</string>
+    <string name="feature_nowplaying_playing">Tocando</string>
 </resources>

@@ -14,6 +14,16 @@ data class NowPlayingItem(
     val album: String?,
 )
 
+/**
+ * Uma música da fila. [index] é a posição dela na lista original (é o que se
+ * usa para pular até ela); a ordem da lista de fila já é a ordem em que vão
+ * tocar, inclusive no modo aleatório.
+ */
+data class QueueEntry(
+    val index: Int,
+    val item: NowPlayingItem,
+)
+
 /** Tudo o que as telas precisam saber do player, num retrato só. */
 data class PlaybackState(
     val item: NowPlayingItem? = null,
@@ -24,6 +34,8 @@ data class PlaybackState(
     val repeatMode: RepeatMode = RepeatMode.Off,
     val queueIndex: Int = 0,
     val queueSize: Int = 0,
+    /** A fila na ordem em que vai tocar. */
+    val queue: List<QueueEntry> = emptyList(),
 ) {
     /** Progresso de 0 a 1, para barras de progresso. */
     val progress: Float

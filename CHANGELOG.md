@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.7.0] — 2026-10-17
+
+### ✨ New
+- **Playing queue**: the bottom of the player now shows what's up next. Tap it or swipe it up to open the full queue, in the real play order (shuffle included), with the current song highlighted. Tap any song to jump to it. Swipe the queue down, tap the arrow or use the back gesture to close it.
+
+### 🎨 Visual tweaks
+- **Shuffle and repeat look pressed when on**: they get a filled background instead of just changing color, so it's obvious at a glance.
+
 ## [0.6.2] — 2026-10-17
 
 ### 🐛 Fixes
