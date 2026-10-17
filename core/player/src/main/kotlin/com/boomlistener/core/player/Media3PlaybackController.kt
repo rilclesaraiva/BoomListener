@@ -45,6 +45,12 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     // atualização de progresso (2x por segundo) seria desperdício.
     private var queueCache: List<QueueEntry> = emptyList()
 
+    // Embaralhamento próprio (ver ShuffleState). O "shuffleModeEnabled" do
+    // player só guarda se o aleatório está ligado: o serviço usa uma ordem de
+    // embaralhamento neutra, então a fila do player é sempre a ordem real.
+    private val shuffle = ShuffleState<MediaItem>(keyOf = { it.mediaId })
+    private var lastIndex = C.INDEX_UNSET
+
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
             if (events.containsAny(
@@ -54,6 +60,7 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
             ) {
                 queueCache = buildQueue(player)
             }
+            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) onTransition(player)
             publish(player)
             if (player.isPlaying) startProgressUpdates() else stopProgressUpdates()
         }
@@ -78,7 +85,26 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     }
 
     override fun play(tracks: List<Track>, startIndex: Int) = withController { player ->
-        player.setMediaItems(tracks.map { it.toMediaItem() }, startIndex, 0L)
+        val items = tracks.map { it.toMediaItem() }
+        shuffle.clear()
+        if (player.shuffleModeEnabled && items.isNotEmpty()) {
+            // Aleatório continua ligado: a escolhida toca primeiro e o resto
+            // vem embaralhado, guardando a ordem da lista para depois.
+            player.setMediaItems(shuffle.start(items, startIndex), 0, 0L)
+        } else {
+            player.setMediaItems(items, startIndex, 0L)
+        }
+        player.prepare()
+        player.play()
+    }
+
+    override fun playShuffled(tracks: List<Track>) = withController { player ->
+        if (tracks.isEmpty()) return@withController
+        val items = tracks.map { it.toMediaItem() }
+        shuffle.clear()
+        val order = shuffle.start(items, currentIndex = kotlin.random.Random.nextInt(items.size))
+        player.shuffleModeEnabled = true
+        player.setMediaItems(order, 0, 0L)
         player.prepare()
         player.play()
     }
@@ -105,7 +131,10 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     }
 
     override fun removeQueueItem(index: Int) = withController { player ->
-        if (index in 0 until player.mediaItemCount) player.removeMediaItem(index)
+        if (index in 0 until player.mediaItemCount) {
+            shuffle.remove(player.getMediaItemAt(index))
+            player.removeMediaItem(index)
+        }
     }
 
     override fun next() = withController { it.seekToNext() }
@@ -119,7 +148,53 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         publish(it)
     }
 
-    override fun toggleShuffle() = withController { it.shuffleModeEnabled = !it.shuffleModeEnabled }
+    override fun toggleShuffle() = withController { player ->
+        if (player.shuffleModeEnabled) disableShuffle(player) else enableShuffle(player)
+    }
+
+    /**
+     * Liga o aleatório sem interromper a música: ela vai para o topo da fila e
+     * o resto é trocado pela versão embaralhada.
+     */
+    private fun enableShuffle(player: Player) {
+        val count = player.mediaItemCount
+        if (count > 0) {
+            val current = player.currentMediaItemIndex.coerceAtLeast(0)
+            val order = shuffle.start(player.allItems(), current)
+            if (current != 0) player.moveMediaItem(current, 0)
+            if (count > 1) player.replaceMediaItems(1, count, order.drop(1))
+        }
+        player.shuffleModeEnabled = true
+    }
+
+    /** Desliga o aleatório: volta à ordem original em volta da música atual. */
+    private fun disableShuffle(player: Player) {
+        val restored = shuffle.stop(player.currentMediaItem)
+        if (restored != null) {
+            val (before, after) = restored
+            val current = player.currentMediaItemIndex
+            val count = player.mediaItemCount
+            // Primeiro o que vem depois (não mexe na posição da atual), depois o antes.
+            player.replaceMediaItems(current + 1, count, after)
+            player.replaceMediaItems(0, current, before)
+        }
+        player.shuffleModeEnabled = false
+    }
+
+    /**
+     * "Repetir tudo" com aleatório: quando a fila dá a volta (da última para a
+     * primeira), embaralha de novo o resto para a próxima rodada.
+     */
+    private fun onTransition(player: Player) {
+        val count = player.mediaItemCount
+        val index = player.currentMediaItemIndex
+        val wrapped = lastIndex == count - 1 && index == 0 && count > 2
+        if (wrapped && player.shuffleModeEnabled && player.repeatMode == Player.REPEAT_MODE_ALL) {
+            val round = shuffle.newRound(player.allItems())
+            player.replaceMediaItems(1, count, round.drop(1))
+        }
+        lastIndex = index
+    }
 
     override fun cycleRepeatMode() = withController { player ->
         player.repeatMode = when (player.repeatMode.toRepeatMode().next()) {
@@ -130,6 +205,8 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     }
 
     override fun stop() = withController {
+        shuffle.clear()
+        it.shuffleModeEnabled = false
         it.stop()
         it.clearMediaItems()
         publish(it)
@@ -166,19 +243,19 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         )
     }
 
-    /** A fila na ordem real de reprodução (segue o embaralhamento, se ligado). */
+    /** A fila na ordem real de reprodução. */
     private fun buildQueue(player: Player): List<QueueEntry> {
         val timeline = player.currentTimeline
         if (timeline.isEmpty) return emptyList()
-        val shuffle = player.shuffleModeEnabled
+        // A ordem do player já é a ordem real (o embaralhamento é nosso).
         val entries = ArrayList<QueueEntry>(timeline.windowCount)
         val seen = HashMap<String, Int>()
-        var index = timeline.getFirstWindowIndex(shuffle)
+        var index = timeline.getFirstWindowIndex(false)
         while (index != C.INDEX_UNSET && entries.size < timeline.windowCount) {
             val item = player.getMediaItemAt(index).toNowPlayingItem()
             val occurrence = seen.merge(item.uri, 1, Int::plus) ?: 1
             entries += QueueEntry(index, item, key = "${item.uri}#$occurrence")
-            index = timeline.getNextWindowIndex(index, Player.REPEAT_MODE_OFF, shuffle)
+            index = timeline.getNextWindowIndex(index, Player.REPEAT_MODE_OFF, false)
         }
         return entries
     }
@@ -204,6 +281,8 @@ private fun Int.toRepeatMode(): RepeatMode = when (this) {
     Player.REPEAT_MODE_ALL -> RepeatMode.All
     else -> RepeatMode.Off
 }
+
+private fun Player.allItems(): List<MediaItem> = (0 until mediaItemCount).map(::getMediaItemAt)
 
 private fun MediaItem.toNowPlayingItem(): NowPlayingItem = NowPlayingItem(
     uri = mediaId,

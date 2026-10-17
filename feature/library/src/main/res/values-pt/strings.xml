@@ -21,4 +21,5 @@
         <item quantity="one">%1$d música</item>
         <item quantity="other">%1$d músicas</item>
     </plurals>
+    <string name="feature_library_shuffle_all">Aleatório</string>
 </resources>

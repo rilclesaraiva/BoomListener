@@ -32,10 +32,14 @@ private class FakeLibraryRepository(private val tracks: List<Track>) : LibraryRe
 internal class FakePlaybackController : PlaybackController {
     var lastQueue: List<Track> = emptyList()
     var lastIndex: Int = -1
+    var lastShuffled: List<Track> = emptyList()
     override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState())
     override fun play(tracks: List<Track>, startIndex: Int) {
         lastQueue = tracks
         lastIndex = startIndex
+    }
+    override fun playShuffled(tracks: List<Track>) {
+        lastShuffled = tracks
     }
     override fun togglePlayPause() = Unit
     override fun playQueueItem(index: Int) = Unit
@@ -93,5 +97,9 @@ class LibraryViewModelTest {
         viewModel.play(filtered.tracks[0])
         assertEquals(listOf(2L), player.lastQueue.map { it.id })
         assertEquals(0, player.lastIndex)
+
+        // Aleatório da Biblioteca usa o que está na tela (aqui, a busca).
+        viewModel.shuffleAll()
+        assertEquals(listOf(2L), player.lastShuffled.map { it.id })
     }
 }

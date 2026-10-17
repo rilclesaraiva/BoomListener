@@ -8,6 +8,7 @@ import android.content.Intent
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ShuffleOrder
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 
@@ -33,6 +34,11 @@ class PlaybackService : MediaSessionService() {
             // Pausa quando o fone é desconectado.
             .setHandleAudioBecomingNoisy(true)
             .build()
+            .apply {
+                // Ordem de embaralhamento neutra: o app embaralha a fila ele
+                // mesmo (ShuffleState), então o player nunca reordena nada.
+                setShuffleOrder(ShuffleOrder.UnshuffledShuffleOrder(0))
+            }
 
         val builder = MediaSession.Builder(this, player)
         openAppIntent()?.let { builder.setSessionActivity(it) }

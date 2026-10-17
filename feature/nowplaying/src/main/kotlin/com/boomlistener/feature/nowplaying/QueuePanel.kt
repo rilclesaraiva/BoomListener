@@ -93,7 +93,6 @@ internal fun QueuePanel(
             localQueue = localQueue.toMutableList().apply { add(to.index, removeAt(from.index)) }
         }
     }
-    val canReorder = !state.shuffle
     val currentPosition = localQueue.indexOfFirst { it.index == state.queueIndex }
 
     // Ao abrir, a lista já começa na música que está tocando.
@@ -135,10 +134,7 @@ internal fun QueuePanel(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = stringResource(
-                                if (canReorder) R.string.feature_nowplaying_reorder
-                                else R.string.feature_nowplaying_reorder_shuffle,
-                            ),
+                            text = stringResource(R.string.feature_nowplaying_reorder),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -166,7 +162,7 @@ internal fun QueuePanel(
                                                 Icon(BoomIcons.Remove, stringResource(R.string.feature_nowplaying_remove))
                                             }
                                         }
-                                        if (canReorder) {
+                                        run {
                                             // Segurar aqui e arrastar move a música
                                             // para qualquer ponto da fila.
                                             Box(
@@ -182,7 +178,7 @@ internal fun QueuePanel(
                                                             dragging = false
                                                             val end = localQueue.indexOfFirst { it.key == entry.key }
                                                             if (dragStartPosition >= 0 && end >= 0) {
-                                                                // Sem aleatório, posição na tela = posição no player.
+                                                                // A fila na tela é a ordem real do player.
                                                                 viewModel.moveQueueItem(dragStartPosition, end)
                                                             }
                                                         },

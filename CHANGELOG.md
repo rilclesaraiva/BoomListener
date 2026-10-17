@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.9.0] — 2026-10-17
+
+### ✨ New
+- **A real shuffle.** Turning shuffle on now mixes the whole queue once, so **no song repeats until every song has played**, and the queue shows the true order. Turn shuffle off and the original order comes back, continuing from the song that's playing.
+- **Reorder and remove work with shuffle on too.** Songs you remove while shuffling also leave the original order.
+- **Shuffle button in the Library**: plays everything on screen (or just your search results) in random order.
+- With **repeat all + shuffle**, every new round is shuffled again.
+- Picking a song while shuffle is on plays it first and shuffles the rest.
+
 ## [0.8.0] — 2026-10-17
 
 ### ✨ New
@@ -12,9 +21,6 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ### 🐛 Fixes
 - **While the queue is open, it owns the screen.** Swiping down anywhere, the arrow at the top and the back gesture now close only the queue; before, swiping above the queue closed the whole player along with it.
-
-### Known limitation
-- Reordering is available with shuffle off (the queue says so when shuffle is on). Removing works in both modes.
 
 ## [0.7.0] — 2026-10-17
 

@@ -57,6 +57,12 @@ internal class LibraryViewModel(
         player.play(visible, index)
     }
 
+    /** "Tocar aleatório": embaralha o que está na tela (toda a lista ou a busca). */
+    fun shuffleAll() {
+        val visible = (uiState.value as? LibraryUiState.Success)?.tracks ?: return
+        if (visible.isNotEmpty()) player.playShuffled(visible)
+    }
+
     suspend fun artwork(track: Track, sizePx: Int): Bitmap? =
         repository.loadArtwork(track.uri, sizePx)
 }

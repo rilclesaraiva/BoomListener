@@ -125,7 +125,7 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 - Biblioteca dividida em **Músicas, Álbuns, Artistas e Gêneros** (abas ou filtros no topo).
 - **Ajustes ainda por vir** (seguindo o modelo das telas de referência): Gestão de música (pastas, ignorar áudios curtos), Reprodução (pular silêncio, crossfade), Equalizador, Notificações (radar de lançamentos), Integrações (Last.fm, Deezer), Cópia e restauração.
 - Cor do player tirada da capa.
-- **Embaralhamento próprio do app (próxima mudança grande do player)** — combinado com o rilclesaraiva para entrar junto com as próximas ideias dele. Regras:
+- **Embaralhamento próprio do app** — ✅ feito na 0.9.0 (`core/player/ShuffleState`). Regras:
   - **Algoritmo sem repetição:** embaralhamento de Fisher-Yates sobre a fila inteira. Cada música toca **uma vez** por rodada; nenhuma se repete antes de todas terem tocado.
   - **Vale para qualquer origem do aleatório:** botão dentro do player, um futuro "Tocar em ordem aleatória" na Biblioteca, álbum, artista etc. Todos passam pelo mesmo embaralhador em `core/player`.
   - **A ordem embaralhada fica fixa** e é a fila real (o ExoPlayer não embaralha nada): a tela mostra a ordem verdadeira, e reordenar e remover funcionam igual com ou sem aleatório.

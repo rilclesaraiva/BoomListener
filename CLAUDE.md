@@ -86,6 +86,7 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 - Notificação, tela de bloqueio, fone Bluetooth e Android Auto vêm de graça do `MediaSession`; não crie notificação de mídia à mão.
 - Desde o Media3 1.11, o `MediaSession` exige ser usado na thread principal. O controller já posta tudo no `Looper` principal; mantenha assim.
 - O player em tela cheia **não é uma tela da navegação**: é um painel (`PlayerSheet`) por cima do app inteiro, controlado por `PlayerSheetState` (0 = fechado, 1 = aberto). O mini player abre (toque ou puxar para cima) e encerra a música (puxar para baixo). O "voltar" do sistema fecha o painel com voltar preditivo.
+- **Aleatório é nosso, não do ExoPlayer.** O serviço usa `ShuffleOrder.UnshuffledShuffleOrder`, então a fila do player é sempre a ordem real. `ShuffleState` (classe pura, testada) embaralha com Fisher-Yates, guarda a ordem original e restaura ao desligar. `shuffleModeEnabled` só guarda se o aleatório está ligado. Toda nova forma de tocar aleatório passa por `PlaybackController.playShuffled` ou `toggleShuffle`.
 - Todo movimento usa `boomSpatialSpec` / `boomFastSpatialSpec` / `boomEffectsSpec` (`core/designsystem/theme/Motion.kt`), que vêm do motionScheme. Nada de `tween(300)` à mão.
 - Ícones de player (pausa, próxima, aleatório…) são desenhados em `BoomIcons` a partir dos caminhos dos Material Icons. Não adicione o pacote `material-icons-extended` (pesa vários MB).
 

@@ -18,6 +18,9 @@ interface PlaybackController {
     /** Substitui a fila por [tracks] e começa a tocar a de posição [startIndex]. */
     fun play(tracks: List<Track>, startIndex: Int)
 
+    /** Toca [tracks] em ordem aleatória (liga o aleatório). */
+    fun playShuffled(tracks: List<Track>)
+
     fun togglePlayPause()
 
     /** Pula para a música da fila de posição original [index] e toca. */

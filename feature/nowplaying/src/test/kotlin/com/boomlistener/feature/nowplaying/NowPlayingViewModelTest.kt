@@ -21,6 +21,7 @@ private class FakeController(duration: Long) : PlaybackController {
     var removed: Int? = null
     override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState(durationMs = duration))
     override fun play(tracks: List<Track>, startIndex: Int) = Unit
+    override fun playShuffled(tracks: List<Track>) = Unit
     override fun togglePlayPause() = Unit
     override fun playQueueItem(index: Int) { playedIndex = index }
     override fun moveQueueItem(from: Int, to: Int) { moved = from to to }

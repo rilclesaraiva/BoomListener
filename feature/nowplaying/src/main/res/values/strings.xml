@@ -19,6 +19,5 @@
     <string name="feature_nowplaying_queue_close">Close queue</string>
     <string name="feature_nowplaying_playing">Playing</string>
     <string name="feature_nowplaying_reorder">Hold and drag to reorder</string>
-    <string name="feature_nowplaying_reorder_shuffle">Turn off shuffle to reorder the queue</string>
     <string name="feature_nowplaying_remove">Remove from queue</string>
 </resources>
