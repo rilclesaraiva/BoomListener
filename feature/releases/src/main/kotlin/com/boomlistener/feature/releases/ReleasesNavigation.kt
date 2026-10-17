@@ -11,6 +11,6 @@ const val RELEASES_ROUTE = "releases"
 
 fun NavController.navigateToReleases() = navigate(RELEASES_ROUTE)
 
-fun NavGraphBuilder.releasesScreen() {
-    composable(RELEASES_ROUTE) { ReleasesScreen() }
+fun NavGraphBuilder.releasesScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
+    composable(RELEASES_ROUTE) { ReleasesScreen(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings) }
 }

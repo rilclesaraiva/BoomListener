@@ -4,6 +4,16 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.15.0] — 2026-10-17
+
+### ✨ New
+- **New Library tab.** A carousel at the top switches between **Genres**, **Artists**, **Playlists** and **Albums**, each card showing a cover from that section. Open a genre or an album to see its songs with **Play** and **Shuffle**; artists open their profile.
+- **Playlists.** Create, rename and delete your own playlists. Add songs from any song's ⋮ menu (library, playlists, albums, genres and the player), remove them, and hold the handle to reorder. They stay on your phone.
+- **Listening history.** Every song you listen to for 30 seconds or more, grouped into **Today**, **Yesterday**, **Earlier this week**, **Last week** and past months, with the time you heard it. Tap a song to play that group from there. You can clear it anytime.
+
+### 🎨 Visual tweaks
+- **Settings and History moved to the top right corner** of every tab. The bottom bar is now **Home** (your songs), **Releases** and **Library**.
+
 ## [0.14.1] — 2026-10-17
 
 ### 🐛 Fixes

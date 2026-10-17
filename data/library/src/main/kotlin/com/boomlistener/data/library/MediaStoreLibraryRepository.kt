@@ -66,7 +66,7 @@ internal class MediaStoreLibraryRepository(
             MediaStore.Audio.Media.TRACK,
             MediaStore.Audio.Media.YEAR,
             MediaStore.Audio.Media.DATE_ADDED,
-        )
+        ) + if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) arrayOf(MediaStore.Audio.Media.GENRE) else emptyArray()
         // Só músicas: deixa de fora toques, notificações, alarmes e gravações.
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
 
@@ -82,7 +82,9 @@ internal class MediaStoreLibraryRepository(
         } catch (_: SecurityException) {
             // Sem permissão: a tela já trata esse caso antes de chegar aqui.
         }
-        tracks.sortedWith { a, b -> collator.compare(a.title, b.title) }
+        // Até o Android 10 o gênero não vem junto: fica numa tabela à parte.
+        val withGenres = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) tracks else addLegacyGenres(tracks)
+        withGenres.sortedWith { a, b -> collator.compare(a.title, b.title) }
     }
 
     override suspend fun loadArtwork(trackUri: String, sizePx: Int): Bitmap? {
@@ -144,7 +146,39 @@ internal class MediaStoreLibraryRepository(
             trackNumber = parseTrackNumber(rawTrack),
             year = getIntOrNull(MediaStore.Audio.Media.YEAR)?.takeIf { it > 0 },
             dateAddedSeconds = getLong(getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)),
+            genre = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                getStringOrNull(MediaStore.Audio.Media.GENRE)?.let(::cleanGenre)
+            } else {
+                null
+            },
         )
+    }
+
+    /** Android 8 a 10: lê a tabela de gêneros e marca cada música. */
+    @Suppress("DEPRECATION")
+    private fun addLegacyGenres(tracks: List<Track>): List<Track> {
+        val genreById = HashMap<Long, String>()
+        runCatching {
+            context.contentResolver.query(
+                MediaStore.Audio.Genres.EXTERNAL_CONTENT_URI,
+                arrayOf(MediaStore.Audio.Genres._ID, MediaStore.Audio.Genres.NAME),
+                null, null, null,
+            )?.use { genres ->
+                while (genres.moveToNext()) {
+                    val genreId = genres.getLong(0)
+                    val name = genres.getString(1)?.let(::cleanGenre) ?: continue
+                    context.contentResolver.query(
+                        MediaStore.Audio.Genres.Members.getContentUri("external", genreId),
+                        arrayOf(MediaStore.Audio.Genres.Members.AUDIO_ID),
+                        null, null, null,
+                    )?.use { members ->
+                        while (members.moveToNext()) genreById.putIfAbsent(members.getLong(0), name)
+                    }
+                }
+            }
+        }
+        if (genreById.isEmpty()) return tracks
+        return tracks.map { track -> genreById[track.id]?.let { track.copy(genre = it) } ?: track }
     }
 
     private fun Cursor.getStringOrNull(column: String): String? {
@@ -166,3 +200,6 @@ internal fun parseTrackNumber(raw: Int?): Int? = raw?.let { it % 1000 }?.takeIf 
 /** O Android usa "<unknown>" quando o arquivo não tem a tag. */
 internal fun cleanUnknownTag(value: String): String? =
     value.takeIf { it.isNotBlank() && it != "<unknown>" }
+
+/** Gênero da tag: sem espaços sobrando; vazio ou "<unknown>" vira null. */
+internal fun cleanGenre(raw: String): String? = cleanUnknownTag(raw.trim())

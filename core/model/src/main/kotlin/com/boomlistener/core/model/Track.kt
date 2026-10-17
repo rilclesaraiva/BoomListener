@@ -20,4 +20,6 @@ data class Track(
     val trackNumber: Int?,
     val year: Int?,
     val dateAddedSeconds: Long,
+    /** Gênero da tag (null sem a tag). */
+    val genre: String? = null,
 )

@@ -9,4 +9,15 @@
         <item quantity="one">%1$d vez</item>
         <item quantity="other">%1$d vezes</item>
     </plurals>
+    <string name="feature_wellbeing_history_title">Histórico</string>
+    <string name="feature_wellbeing_history_today">Hoje</string>
+    <string name="feature_wellbeing_history_yesterday">Ontem</string>
+    <string name="feature_wellbeing_history_this_week">Antes, nesta semana</string>
+    <string name="feature_wellbeing_history_last_week">Semana passada</string>
+    <string name="feature_wellbeing_history_empty_title">Nada por aqui ainda</string>
+    <string name="feature_wellbeing_history_empty_message">Toda música que você ouvir por 30 segundos ou mais aparece aqui, separada por dia e semana. O histórico fica só no seu celular.</string>
+    <string name="feature_wellbeing_history_clear">Limpar histórico</string>
+    <string name="feature_wellbeing_history_clear_title">Limpar o histórico de escuta?</string>
+    <string name="feature_wellbeing_history_clear_message">Isso apaga a lista de músicas que você ouviu. As mais ouvidas não mudam.</string>
+    <string name="feature_wellbeing_cancel">Cancelar</string>
 </resources>

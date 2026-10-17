@@ -82,17 +82,21 @@ class PlaybackService : MediaSessionService() {
 
     private fun reportIfCounted() {
         val player = mediaSession?.player ?: return
-        val key = playCounter.check(SystemClock.elapsedRealtime()) ?: return
-        val item = player.currentMediaItem?.takeIf { it.mediaId == key } ?: return
+        val now = SystemClock.elapsedRealtime()
+        // Histórico (toda música ouvida 30 s) e "mais ouvidas" (com as regras do aleatório).
+        playCounter.checkListened(now)?.let { key -> playOf(player, key)?.let { PlaybackHooks.onListened?.invoke(it) } }
+        playCounter.check(now)?.let { key -> playOf(player, key)?.let { PlaybackHooks.onPlayCounted?.invoke(it) } }
+    }
+
+    private fun playOf(player: Player, key: String): CountedPlay? {
+        val item = player.currentMediaItem?.takeIf { it.mediaId == key } ?: return null
         val metadata = item.mediaMetadata
-        PlaybackHooks.onPlayCounted?.invoke(
-            CountedPlay(
-                uri = key,
-                title = metadata.title?.toString().orEmpty(),
-                artist = metadata.artist?.toString(),
-                album = metadata.albumTitle?.toString(),
-                timestampMs = System.currentTimeMillis(),
-            ),
+        return CountedPlay(
+            uri = key,
+            title = metadata.title?.toString().orEmpty(),
+            artist = metadata.artist?.toString(),
+            album = metadata.albumTitle?.toString(),
+            timestampMs = System.currentTimeMillis(),
         )
     }
 

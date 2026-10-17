@@ -24,7 +24,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-private class FakeLibraryRepository(private val tracks: List<Track>) : LibraryRepository {
+internal class FakeLibraryRepository(private val tracks: List<Track>) : LibraryRepository {
     override suspend fun getTracks(): List<Track> = tracks
     override suspend fun loadArtwork(trackUri: String, sizePx: Int): Bitmap? = null
 }

@@ -19,6 +19,13 @@ data class CountedPlay(
 object PlaybackHooks {
     @Volatile
     var onPlayCounted: ((CountedPlay) -> Unit)? = null
+
+    /**
+     * Histórico: toda música ouvida por 30 s (inclusive as que vieram do
+     * aleatório). Avisa uma vez por reprodução.
+     */
+    @Volatile
+    var onListened: ((CountedPlay) -> Unit)? = null
 }
 
 /**
@@ -55,6 +62,7 @@ internal class PlayCountTracker(private val minListenMs: Long = 30_000) {
     private var key: String? = null
     private var eligible = false
     private var counted = false
+    private var listenedReported = false
     private var listenedMs = 0L
     private var playingSinceMs: Long? = null
     private var thresholdMs = minListenMs
@@ -64,6 +72,7 @@ internal class PlayCountTracker(private val minListenMs: Long = 30_000) {
         this.key = key
         eligible = chosen || !shuffle
         counted = false
+        listenedReported = false
         listenedMs = 0
         playingSinceMs = if (isPlaying) nowMs else null
         thresholdMs = if (durationMs in 1 until minListenMs) (durationMs * 8 / 10) else minListenMs
@@ -77,6 +86,18 @@ internal class PlayCountTracker(private val minListenMs: Long = 30_000) {
             listenedMs += nowMs - since
             playingSinceMs = null
         }
+    }
+
+    /**
+     * Histórico: devolve a chave uma vez, quando a música passa do tempo
+     * mínimo ouvido, valha ou não para "mais ouvidas".
+     */
+    fun checkListened(nowMs: Long): String? {
+        if (listenedReported) return null
+        val total = listenedMs + (playingSinceMs?.let { nowMs - it } ?: 0L)
+        if (total < thresholdMs) return null
+        listenedReported = true
+        return key
     }
 
     /** Devolve a chave da música no momento em que ela passa a contar; senão null. */

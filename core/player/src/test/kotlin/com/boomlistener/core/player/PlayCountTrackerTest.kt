@@ -61,4 +61,14 @@ class PlayCountTrackerTest {
         assertNull(tracker.check(200_000))
         assertEquals("a", tracker.check(210_000))
     }
+
+    @Test
+    fun historicoIncluiAleatorioUmaVezSo() {
+        val tracker = PlayCountTracker()
+        tracker.start("aleatoria", minute, chosen = false, shuffle = true, isPlaying = true, nowMs = 0)
+        assertNull(tracker.checkListened(29_000))
+        assertEquals("aleatoria", tracker.checkListened(30_000))
+        assertNull(tracker.checkListened(50_000)) // uma vez por reprodução
+        assertNull(tracker.check(50_000)) // mas não conta nas mais ouvidas
+    }
 }

@@ -64,6 +64,7 @@ import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSearchTopBar
+import com.boomlistener.core.designsystem.component.BoomTopActions
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
@@ -74,9 +75,12 @@ import com.boomlistener.data.library.LibraryData
 internal fun LibraryScreen(
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    var addToPlaylist by remember { mutableStateOf<Track?>(null) }
     val viewModel: LibraryViewModel = viewModel {
         LibraryViewModel(
             LibraryData.repository(context.applicationContext),
@@ -131,6 +135,7 @@ internal fun LibraryScreen(
                     Icon(BoomIcons.Search, contentDescription = stringResource(R.string.feature_library_search))
                 }
             }
+            BoomTopActions(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings)
         },
         topBar = if (searching) searchBar else null,
     ) { padding ->
@@ -154,10 +159,15 @@ internal fun LibraryScreen(
                     onOpenTrack = viewModel::play,
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
+                    onAddToPlaylist = { addToPlaylist = it },
                     contentPadding = padding,
                 )
             }
         }
+    }
+
+    addToPlaylist?.let { track ->
+        AddToPlaylistSheet(trackUris = listOf(track.uri), onDismiss = { addToPlaylist = null })
     }
 }
 
@@ -170,6 +180,7 @@ private fun TrackList(
     onOpenTrack: (Track) -> Unit,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onAddToPlaylist: (Track) -> Unit,
     contentPadding: PaddingValues,
 ) {
     when {
@@ -213,6 +224,7 @@ private fun TrackList(
                     onClick = { onOpenTrack(track) },
                     onOpenArtist = track.artist?.let { name -> { onOpenArtist(name) } },
                     onEditTags = { onEditTags(track) },
+                    onAddToPlaylist = { onAddToPlaylist(track) },
                 )
             }
         }
@@ -228,6 +240,7 @@ private fun TrackItem(
     onClick: () -> Unit,
     onOpenArtist: (() -> Unit)?,
     onEditTags: () -> Unit,
+    onAddToPlaylist: () -> Unit,
 ) {
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     // [version] muda quando alguma tag foi editada: a capa é lida de novo.
@@ -252,6 +265,7 @@ private fun TrackItem(
         trailingContent = {
             BoomMoreMenu(
                 actions = listOfNotNull(
+                    BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), onClick = onAddToPlaylist),
                     onOpenArtist?.let { BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), onClick = it) },
                     BoomMenuAction(stringResource(R.string.feature_library_edit_tags), onClick = onEditTags),
                     BoomMenuAction(

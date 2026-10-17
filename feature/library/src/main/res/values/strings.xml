@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_library_title">Library</string>
+    <string name="feature_library_title">Home</string>
     <string name="feature_library_search">Search</string>
     <string name="feature_library_search_hint">Search songs, artists, albums</string>
     <string name="feature_library_more">More options</string>
@@ -22,4 +22,31 @@
         <item quantity="other">%1$d songs</item>
     </plurals>
     <string name="feature_library_shuffle_all">Shuffle</string>
+    <string name="feature_library_add_to_playlist">Add to playlist</string>
+    <string name="feature_library_albums">Albums</string>
+    <string name="feature_library_albums_empty">Albums show up here once your songs have an album tag.</string>
+    <string name="feature_library_artists">Artists</string>
+    <string name="feature_library_artists_empty">Artists show up here once your songs have an artist tag.</string>
+    <string name="feature_library_cancel">Cancel</string>
+    <string name="feature_library_collection_missing_title">Not here anymore</string>
+    <string name="feature_library_collection_missing_message">This was deleted, or its songs are no longer on your device.</string>
+    <string name="feature_library_collections_title">Library</string>
+    <string name="feature_library_create">Create</string>
+    <string name="feature_library_delete">Delete</string>
+    <string name="feature_library_delete_playlist">Delete playlist</string>
+    <string name="feature_library_delete_playlist_message">The songs stay on your device; only the playlist is removed.</string>
+    <string name="feature_library_delete_playlist_title">Delete “%1$s”?</string>
+    <string name="feature_library_genres">Genres</string>
+    <string name="feature_library_genres_empty">Genres show up here once your songs have a genre tag. You can add one in the tag editor.</string>
+    <string name="feature_library_new_playlist">New playlist</string>
+    <string name="feature_library_play">Play</string>
+    <string name="feature_library_playlist_default_name">Playlist %1$d</string>
+    <string name="feature_library_playlist_empty">No songs yet. Add some from any song’s ⋮ menu.</string>
+    <string name="feature_library_playlist_name">Name</string>
+    <string name="feature_library_playlists">Playlists</string>
+    <string name="feature_library_playlists_empty">Create a playlist, then add songs from any song’s ⋮ menu.</string>
+    <string name="feature_library_remove_from_playlist">Remove from playlist</string>
+    <string name="feature_library_rename_playlist">Rename</string>
+    <string name="feature_library_reorder">Hold and drag to reorder</string>
+    <string name="feature_library_save">Save</string>
 </resources>

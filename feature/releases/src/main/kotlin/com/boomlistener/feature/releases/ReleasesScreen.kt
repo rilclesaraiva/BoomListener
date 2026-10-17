@@ -9,10 +9,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import com.boomlistener.core.designsystem.component.BoomTopActions
 
 @Composable
-internal fun ReleasesScreen(modifier: Modifier = Modifier) {
-    BoomScreenScaffold(title = stringResource(R.string.feature_releases_title), modifier = modifier) { padding ->
+internal fun ReleasesScreen(
+    onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoomScreenScaffold(
+        title = stringResource(R.string.feature_releases_title),
+        modifier = modifier,
+        actions = { BoomTopActions(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings) },
+    ) { padding ->
         BoomPlaceholder(
             title = stringResource(R.string.feature_releases_title),
             message = stringResource(R.string.feature_releases_message),

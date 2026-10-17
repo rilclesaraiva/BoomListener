@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_library_title">Biblioteca</string>
+    <string name="feature_library_title">Início</string>
     <string name="feature_library_search">Buscar</string>
     <string name="feature_library_search_hint">Buscar músicas, artistas, álbuns</string>
     <string name="feature_library_more">Mais opções</string>
@@ -22,4 +22,31 @@
         <item quantity="other">%1$d músicas</item>
     </plurals>
     <string name="feature_library_shuffle_all">Aleatório</string>
+    <string name="feature_library_add_to_playlist">Adicionar à playlist</string>
+    <string name="feature_library_albums">Álbuns</string>
+    <string name="feature_library_albums_empty">Os álbuns aparecem aqui quando suas músicas têm a tag de álbum.</string>
+    <string name="feature_library_artists">Artistas</string>
+    <string name="feature_library_artists_empty">Os artistas aparecem aqui quando suas músicas têm a tag de artista.</string>
+    <string name="feature_library_cancel">Cancelar</string>
+    <string name="feature_library_collection_missing_title">Não está mais aqui</string>
+    <string name="feature_library_collection_missing_message">Isto foi apagado, ou as músicas não estão mais no seu aparelho.</string>
+    <string name="feature_library_collections_title">Biblioteca</string>
+    <string name="feature_library_create">Criar</string>
+    <string name="feature_library_delete">Apagar</string>
+    <string name="feature_library_delete_playlist">Apagar playlist</string>
+    <string name="feature_library_delete_playlist_message">As músicas continuam no seu aparelho; só a playlist é apagada.</string>
+    <string name="feature_library_delete_playlist_title">Apagar “%1$s”?</string>
+    <string name="feature_library_genres">Gêneros</string>
+    <string name="feature_library_genres_empty">Os gêneros aparecem aqui quando suas músicas têm a tag de gênero. Dá para pôr no editor de tags.</string>
+    <string name="feature_library_new_playlist">Nova playlist</string>
+    <string name="feature_library_play">Tocar</string>
+    <string name="feature_library_playlist_default_name">Playlist %1$d</string>
+    <string name="feature_library_playlist_empty">Nenhuma música ainda. Adicione pelo menu ⋮ de qualquer música.</string>
+    <string name="feature_library_playlist_name">Nome</string>
+    <string name="feature_library_playlists">Playlists</string>
+    <string name="feature_library_playlists_empty">Crie uma playlist e depois adicione músicas pelo menu ⋮ de qualquer música.</string>
+    <string name="feature_library_remove_from_playlist">Tirar da playlist</string>
+    <string name="feature_library_rename_playlist">Renomear</string>
+    <string name="feature_library_reorder">Segure e arraste para mudar a ordem</string>
+    <string name="feature_library_save">Salvar</string>
 </resources>

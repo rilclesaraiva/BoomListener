@@ -7,20 +7,21 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.boomlistener.app.R
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.feature.library.COLLECTIONS_ROUTE
 import com.boomlistener.feature.library.LIBRARY_ROUTE
 import com.boomlistener.feature.releases.RELEASES_ROUTE
-import com.boomlistener.feature.settings.SETTINGS_ROUTE
 
 /**
  * As abas da barra de navegação inferior (máximo de 5, regra do M3).
- * Bem-estar não é aba: fica dentro de Ajustes.
+ * Ajustes e histórico não são abas: ficam no canto superior direito de cada
+ * aba. Bem-estar fica dentro de Ajustes.
  */
 enum class TopLevelDestination(
     val route: String,
     val icon: ImageVector,
     @StringRes val label: Int,
 ) {
-    Library(LIBRARY_ROUTE, BoomIcons.Library, R.string.nav_library),
+    Home(LIBRARY_ROUTE, BoomIcons.Library, R.string.nav_home),
     Releases(RELEASES_ROUTE, BoomIcons.Releases, R.string.nav_releases),
-    Settings(SETTINGS_ROUTE, BoomIcons.Settings, R.string.nav_settings),
+    Collections(COLLECTIONS_ROUTE, BoomIcons.Collection, R.string.nav_collections),
 }

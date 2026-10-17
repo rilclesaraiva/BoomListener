@@ -45,7 +45,13 @@ import com.boomlistener.feature.releases.releasesScreen
 import com.boomlistener.feature.settings.settingsScreen
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
+import com.boomlistener.feature.wellbeing.navigateToHistory
 import com.boomlistener.feature.wellbeing.navigateToWellbeing
+import com.boomlistener.feature.settings.navigateToSettings
+import com.boomlistener.feature.library.AddToPlaylistSheet
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.boomlistener.feature.wellbeing.wellbeingScreen
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
@@ -65,6 +71,8 @@ fun BoomListenerApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val playerSheet = rememberPlayerSheetState()
+    // Música do player a adicionar numa playlist (a folha aparece por cima de tudo).
+    var addToPlaylistUri by remember { mutableStateOf<String?>(null) }
 
     // Telas internas entram deslizando por cima da anterior (que recua um
     // pouco e escurece) e saem deslizando de volta; trocar de aba só esmaece.
@@ -94,7 +102,10 @@ fun BoomListenerApp() {
                     MiniPlayer(sheetState = playerSheet)
                     NavigationBar {
                         TopLevelDestination.entries.forEach { destination ->
-                            val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
+                            // A aba fica marcada também nas telas de dentro dela (ex.: um álbum da Biblioteca).
+                            val selected = currentDestination?.hierarchy?.any { node ->
+                                node.route == destination.route || node.route?.startsWith(destination.route + "/") == true
+                            } == true
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = {
@@ -127,9 +138,14 @@ fun BoomListenerApp() {
                 predictivePopExitTransition = { popExit(this) },
             ) {
                 val back: () -> Unit = { navController.popBackStack() }
+                val openHistory: () -> Unit = { navController.navigateToHistory() }
+                val openSettings: () -> Unit = { navController.navigateToSettings() }
                 libraryScreen(
+                    navController = navController,
                     onOpenArtist = navController::navigateToArtist,
                     onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
+                    onOpenHistory = openHistory,
+                    onOpenSettings = openSettings,
                 )
                 artistScreen(
                     navController = navController,
@@ -137,7 +153,7 @@ fun BoomListenerApp() {
                     onOpenArtist = navController::navigateToArtist,
                 )
                 tageditorScreen(onBack = back)
-                releasesScreen()
+                releasesScreen(onOpenHistory = openHistory, onOpenSettings = openSettings)
                 settingsScreen(
                     navController = navController,
                     onOpenWellbeing = navController::navigateToWellbeing,
@@ -159,6 +175,11 @@ fun BoomListenerApp() {
                 playerSheet.collapse()
                 navController.navigateToTagEditor(uri)
             },
+            onAddToPlaylist = { uri -> addToPlaylistUri = uri },
         )
+
+        addToPlaylistUri?.let { uri ->
+            AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
+        }
     }
 }

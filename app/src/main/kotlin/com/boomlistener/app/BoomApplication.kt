@@ -5,6 +5,8 @@ package com.boomlistener.app
 
 import android.app.Application
 import com.boomlistener.core.player.PlaybackHooks
+import com.boomlistener.data.wellbeing.HistoryData
+import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.StatsData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +24,12 @@ class BoomApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         val stats = StatsData.repository(this)
+        val history = HistoryData.repository(this)
+        PlaybackHooks.onListened = { play ->
+            appScope.launch {
+                history.record(HistoryEntry(play.uri, play.title, play.artist, play.album, play.timestampMs))
+            }
+        }
         PlaybackHooks.onPlayCounted = { play ->
             appScope.launch {
                 stats.recordPlay(play.uri, play.title, play.artist, play.album, play.timestampMs)

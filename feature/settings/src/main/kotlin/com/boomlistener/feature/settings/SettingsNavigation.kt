@@ -13,7 +13,7 @@ internal const val ABOUT_ROUTE = "settings/about"
 internal const val PRIVACY_ROUTE = "settings/privacy"
 internal const val LICENSES_ROUTE = "settings/licenses"
 
-fun NavController.navigateToSettings() = navigate(SETTINGS_ROUTE)
+fun NavController.navigateToSettings() = navigate(SETTINGS_ROUTE) { launchSingleTop = true }
 
 /**
  * Ajustes e suas telas internas. [onOpenWellbeing] é ligado pelo :app (uma
@@ -31,6 +31,7 @@ fun NavGraphBuilder.settingsScreen(
             onOpenAbout = { navController.navigate(ABOUT_ROUTE) },
             onOpenPrivacy = { navController.navigate(PRIVACY_ROUTE) },
             onOpenLicenses = { navController.navigate(LICENSES_ROUTE) },
+            onBack = back,
         )
     }
     composable(APPEARANCE_ROUTE) { AppearanceScreen(onBack = back) }

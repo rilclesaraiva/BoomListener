@@ -31,6 +31,7 @@ fun PlayerSheet(
     state: PlayerSheetState,
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (trackUri: String) -> Unit,
+    onAddToPlaylist: (trackUri: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel = nowPlayingViewModel()
@@ -77,6 +78,7 @@ fun PlayerSheet(
             queueState = queueState,
             onOpenArtist = onOpenArtist,
             onEditTags = onEditTags,
+            onAddToPlaylist = onAddToPlaylist,
             modifier = Modifier
                 .graphicsLayer {
                     translationY = (1f - state.progress) * heightPx

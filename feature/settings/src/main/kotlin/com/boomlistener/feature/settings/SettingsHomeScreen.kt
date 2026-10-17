@@ -33,6 +33,7 @@ internal fun SettingsScreen(
     onOpenAbout: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -72,6 +73,7 @@ internal fun SettingsScreen(
     }
     BoomScreenScaffold(
         title = stringResource(R.string.feature_settings_title),
+        onBack = onBack,
         largeTitle = true,
         modifier = modifier,
     ) { padding ->

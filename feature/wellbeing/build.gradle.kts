@@ -12,4 +12,7 @@ android {
 dependencies {
     implementation(project(":data:wellbeing"))
     implementation(project(":data:library"))
+    implementation(project(":core:player"))
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }

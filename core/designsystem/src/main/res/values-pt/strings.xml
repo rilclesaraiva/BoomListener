@@ -7,4 +7,6 @@
     <string name="core_designsystem_share">Compartilhar</string>
     <string name="core_designsystem_youtube_music">Ouvir no YouTube Music</string>
     <string name="core_designsystem_open_deezer">Abrir no Deezer</string>
+    <string name="core_designsystem_history">Histórico de escuta</string>
+    <string name="core_designsystem_settings">Ajustes</string>
 </resources>

@@ -16,6 +16,8 @@ dependencies {
     implementation(project(":core:player"))
     // Pedido de permissão (rememberLauncherForActivityResult).
     implementation(libs.androidx.activity.compose)
+    // Segurar e arrastar para reordenar a playlist.
+    implementation(libs.reorderable)
 
     testImplementation(libs.kotlinx.coroutines.test)
 }
