@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_designsystem_back">Voltar</string>
+    <string name="core_designsystem_close_search">Fechar busca</string>
+    <string name="core_designsystem_clear">Limpar</string>
+</resources>

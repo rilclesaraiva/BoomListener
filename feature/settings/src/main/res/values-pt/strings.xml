@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_settings_title">Ajustes</string>
+    <string name="feature_settings_section_general">Geral</string>
+    <string name="feature_settings_section_about">Sobre</string>
+    <string name="feature_settings_appearance">Aparência</string>
+    <string name="feature_settings_appearance_summary">Tema, cores e modo AMOLED</string>
+    <string name="feature_settings_wellbeing">Bem-estar</string>
+    <string name="feature_settings_wellbeing_summary">Tempo de escuta e avisos de pausa</string>
+    <string name="feature_settings_about">Sobre o Boom, listener!</string>
+    <string name="feature_settings_about_summary">Versão %1$s, licença e código-fonte</string>
+    <string name="feature_settings_privacy">Privacidade</string>
+    <string name="feature_settings_privacy_summary">O que fica no seu aparelho e o que sai dele</string>
+    <string name="feature_settings_licenses">Licenças e atribuições</string>
+    <string name="feature_settings_licenses_summary">Bibliotecas e serviços usados no app</string>
+    <string name="feature_settings_updates">Verificar atualizações</string>
+    <string name="feature_settings_updates_summary">Procurar uma versão mais nova no GitHub</string>
+    <string name="feature_settings_updates_checking">Verificando…</string>
+    <string name="feature_settings_updates_up_to_date">Você já está na versão mais nova (%1$s)</string>
+    <string name="feature_settings_updates_no_releases">Nenhuma versão foi publicada ainda</string>
+    <string name="feature_settings_updates_failed">Não deu para verificar. Você está conectado?</string>
+    <string name="feature_settings_updates_available">A versão %1$s está disponível</string>
+    <string name="feature_settings_updates_dialog_title">Atualização disponível</string>
+    <string name="feature_settings_updates_dialog_text">Saiu a versão %1$s (você tem a %2$s). Baixe e instale para atualizar; sua biblioteca e seus ajustes são mantidos.</string>
+    <string name="feature_settings_updates_download">Baixar</string>
+    <string name="feature_settings_updates_later">Depois</string>
+    <string name="feature_settings_theme">Tema</string>
+    <string name="feature_settings_theme_system">Seguir o sistema</string>
+    <string name="feature_settings_theme_system_summary">Claro ou escuro, igual ao celular</string>
+    <string name="feature_settings_theme_light">Claro</string>
+    <string name="feature_settings_theme_dark">Escuro</string>
+    <string name="feature_settings_theme_amoled">AMOLED</string>
+    <string name="feature_settings_theme_amoled_summary">Preto puro, economiza bateria em telas OLED</string>
+    <string name="feature_settings_colors">Cores</string>
+    <string name="feature_settings_dynamic_color">Cores do papel de parede</string>
+    <string name="feature_settings_dynamic_color_summary">O app usa as cores do seu papel de parede</string>
+    <string name="feature_settings_dynamic_color_unavailable">Disponível a partir do Android 12</string>
+    <string name="feature_settings_version">Versão</string>
+    <string name="feature_settings_source">Código-fonte</string>
+    <string name="feature_settings_source_summary">github.com/rilclesaraiva/BoomListener</string>
+    <string name="feature_settings_license">Licença</string>
+    <string name="feature_settings_license_summary">GNU GPL v3: livre para usar, estudar, modificar e compartilhar</string>
+    <string name="feature_settings_about_text">Reprodutor de música local, gratuito, sem anúncios e sem conta. Feito em Belém, com auxílio de IA, sob direção e revisão do autor.</string>
+    <string name="feature_settings_privacy_text">Sua biblioteca, suas preferências e suas estatísticas de escuta ficam só no seu aparelho. O app não tem conta, não tem anúncios e não envia nada sobre você para lugar nenhum.\n\nQuando a página de artista e o radar de lançamentos chegarem, o app vai consultar o Deezer e o Last.fm apenas para buscar informações públicas de artistas e álbuns. O scrobble no Last.fm só acontece se você ativar.\n\n“Verificar atualizações” só contata o GitHub quando você toca nele.\n\nA única permissão pedida é a de música e áudio, para ler as músicas do seu celular. O app não pede acesso a fotos, vídeos, contatos ou localização.</string>
+</resources>

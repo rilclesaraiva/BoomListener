@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_wellbeing_title">Bem-estar</string>
-    <string name="feature_wellbeing_message">Seu tempo de escuta e os avisos de pausa.</string>
+    <string name="feature_wellbeing_title">Wellbeing</string>
+    <string name="feature_wellbeing_message">Your listening time and break reminders.</string>
 </resources>

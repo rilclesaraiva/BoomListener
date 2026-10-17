@@ -95,11 +95,11 @@ internal fun PrivacyScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 private data class Attribution(val name: String, val detail: String)
 
 private val attributions = listOf(
-    Attribution("Jetpack Compose e AndroidX", "Google · Apache License 2.0"),
-    Attribution("Material 3 e Material Icons", "Google · Apache License 2.0"),
+    Attribution("Jetpack Compose & AndroidX", "Google · Apache License 2.0"),
+    Attribution("Material 3 & Material Icons", "Google · Apache License 2.0"),
     Attribution("Media3 (ExoPlayer)", "Google · Apache License 2.0"),
     Attribution("DataStore", "Google · Apache License 2.0"),
-    Attribution("Kotlin e kotlinx.coroutines", "JetBrains · Apache License 2.0"),
+    Attribution("Kotlin & kotlinx.coroutines", "JetBrains · Apache License 2.0"),
 )
 
 @Composable
@@ -119,7 +119,7 @@ internal fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-private fun Context.openUrl(url: String) {
+internal fun Context.openUrl(url: String) {
     try {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     } catch (_: ActivityNotFoundException) {

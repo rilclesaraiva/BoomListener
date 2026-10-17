@@ -45,16 +45,25 @@ O visual segue o **Material 3 Expressive** (m3.material.io). Detalhes em `docs/A
 - Componentes marcados como experimentais (`@ExperimentalMaterial3ExpressiveApi`) podem ser usados, mas **só dentro de `core/designsystem`**, embrulhados num componente nosso. Assim uma mudança de API da Google se corrige em um lugar só.
 - App sempre edge-to-edge, com tema claro, escuro e AMOLED (igual ao BusBus).
 
-## Regra fixa: manter o CHANGELOG.md atualizado
+## Regra fixa: manter o CHANGELOG.md atualizado (em inglês)
+
+O app é internacional: **o CHANGELOG e as Releases são sempre em inglês.**
 
 Toda mudança que vire versão nova (correção, novidade, ajuste visual):
-1. Atualize o `CHANGELOG.md` no formato já usado (`✨ Novidades`, `🐛 Correções`, `🎨 Ajustes visuais`), escrito para quem usa o app, não para programador.
+1. Atualize o `CHANGELOG.md` no formato já usado (`✨ New`, `🐛 Fixes`, `🎨 Visual tweaks`), em inglês, escrito para quem usa o app, não para programador.
 2. Faça isso **no mesmo momento** do bump de versão, nunca depois.
 3. A nota tem que estar pronta antes do push: a Action usa ela como texto da Release.
 
+## Regra fixa: idiomas do app
+
+- **Inglês é o padrão**: todo texto de tela vai em `res/values/strings.xml` em inglês.
+- **Português sempre junto**: a mesma chave em `res/values-pt/strings.xml`. Nunca adicione um texto só num dos dois.
+- Nenhum texto visível escrito direto no código Kotlin (inclusive `contentDescription`). Nomes próprios (bibliotecas, licenças) podem ficar no código.
+- O README é em inglês; o CLAUDE.md, a ARQUITETURA e as mensagens de commit continuam em português.
+
 ## Regra fixa: agrupar bugs antes de commitar
 
-Cada push na `main` dispara build, assinatura e Release. Quando o usuário estiver testando e reportando bugs um a um:
+Cada push na `main` dispara build e assinatura (Release só com autorização). Para guardar trabalho sem gerar build, faça commit e push numa branch `wip/…` e junte na `main` quando ele liberar. Quando o usuário estiver testando e reportando bugs um a um:
 1. Corrija conforme ele reporta, **sem commitar a cada bug**.
 2. Só faça commit, push, bump e changelog quando ele sinalizar que terminou a rodada ("pode mandar", "agora sim", pedir a build).
 3. Se não estiver claro se ele terminou, **pergunte**.

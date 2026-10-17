@@ -34,6 +34,7 @@ data/
   lastfm/         ← API do Last.fm (via proxy): biografia, tags de gênero, similares, scrobble
   releases/       ← artistas seguidos, comparação de discografia, WorkManager diário, notificações
   wellbeing/      ← contagem do tempo de escuta e regras dos avisos de tela
+  updates/        ← "Verificar atualizações": compara a versão instalada com a última Release do GitHub
 
 feature/
   library/        ← telas da biblioteca: músicas, álbuns, artistas, pastas, busca

@@ -36,6 +36,7 @@ include(":data:deezer")
 include(":data:lastfm")
 include(":data:releases")
 include(":data:wellbeing")
+include(":data:updates")
 
 include(":feature:library")
 include(":feature:nowplaying")

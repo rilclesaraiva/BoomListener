@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_library_title">Biblioteca</string>
-    <string name="feature_library_search">Buscar</string>
-    <string name="feature_library_search_hint">Buscar músicas, artistas, álbuns</string>
-    <string name="feature_library_more">Mais opções</string>
-    <string name="feature_library_go_to_artist">Ir para o artista</string>
-    <string name="feature_library_edit_tags">Editar tags</string>
-    <string name="feature_library_duration">Duração: %1$s</string>
-    <string name="feature_library_unknown_artist">Artista desconhecido</string>
+    <string name="feature_library_title">Library</string>
+    <string name="feature_library_search">Search</string>
+    <string name="feature_library_search_hint">Search songs, artists, albums</string>
+    <string name="feature_library_more">More options</string>
+    <string name="feature_library_go_to_artist">Go to artist</string>
+    <string name="feature_library_edit_tags">Edit tags</string>
+    <string name="feature_library_duration">Duration: %1$s</string>
+    <string name="feature_library_unknown_artist">Unknown artist</string>
+    <string name="feature_library_empty_title">No music here yet</string>
+    <string name="feature_library_empty_message">We couldn’t find any music on your device. Copy music files to your phone and they’ll show up here automatically.</string>
+    <string name="feature_library_no_results_title">Nothing found</string>
+    <string name="feature_library_no_results_message">No songs match “%1$s”.</string>
+    <string name="feature_library_permission_title">Your music lives here</string>
+    <string name="feature_library_permission_message">To show and play the music on your device, Boom, listener! needs access to music and audio. Nothing leaves your phone.</string>
+    <string name="feature_library_permission_button">Allow access</string>
+    <string name="feature_library_permission_denied">Access was denied. You can allow it in Permissions → Music and audio.</string>
+    <string name="feature_library_permission_settings">Open settings</string>
     <plurals name="feature_library_count">
-        <item quantity="one">%1$d música</item>
-        <item quantity="other">%1$d músicas</item>
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
     </plurals>
-    <string name="feature_library_empty_title">Nenhuma música por aqui</string>
-    <string name="feature_library_empty_message">Não encontramos músicas no seu aparelho. Coloque arquivos de música no celular e eles aparecem aqui sozinhos.</string>
-    <string name="feature_library_no_results_title">Nada encontrado</string>
-    <string name="feature_library_no_results_message">Nenhuma música combina com “%1$s”.</string>
-    <string name="feature_library_permission_title">Suas músicas moram aqui</string>
-    <string name="feature_library_permission_message">Para mostrar e tocar as músicas do seu aparelho, o Boom, listener! precisa de acesso a música e áudio. Nada sai do seu celular.</string>
-    <string name="feature_library_permission_button">Permitir acesso</string>
-    <string name="feature_library_permission_denied">O acesso foi negado. Você pode liberar em Permissões → Música e áudio.</string>
-    <string name="feature_library_permission_settings">Abrir configurações</string>
 </resources>

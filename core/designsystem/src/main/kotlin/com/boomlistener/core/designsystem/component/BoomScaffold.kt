@@ -30,7 +30,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import com.boomlistener.core.designsystem.R
 
 /**
  * Estrutura padrão de toda tela: barra superior + conteúdo.
@@ -61,7 +63,7 @@ fun BoomScreenScaffold(
     }
     val navigationIcon: @Composable () -> Unit = {
         if (onBack != null) {
-            IconButton(onClick = onBack) { Icon(BoomIcons.Back, contentDescription = "Voltar") }
+            IconButton(onClick = onBack) { Icon(BoomIcons.Back, contentDescription = stringResource(R.string.core_designsystem_back)) }
         }
     }
     Scaffold(
@@ -106,7 +108,7 @@ fun BoomSearchTopBar(
 
     TopAppBar(
         navigationIcon = {
-            IconButton(onClick = onClose) { Icon(BoomIcons.Back, contentDescription = "Fechar busca") }
+            IconButton(onClick = onClose) { Icon(BoomIcons.Back, contentDescription = stringResource(R.string.core_designsystem_close_search)) }
         },
         title = {
             TextField(
@@ -128,7 +130,7 @@ fun BoomSearchTopBar(
         },
         actions = {
             if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) { Icon(BoomIcons.Close, contentDescription = "Limpar") }
+                IconButton(onClick = { onQueryChange("") }) { Icon(BoomIcons.Close, contentDescription = stringResource(R.string.core_designsystem_clear)) }
             }
         },
     )

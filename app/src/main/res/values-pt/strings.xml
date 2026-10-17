@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_library">Biblioteca</string>
+    <string name="nav_releases">Lançamentos</string>
+    <string name="nav_settings">Ajustes</string>
+</resources>

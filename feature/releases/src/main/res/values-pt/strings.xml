@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_releases_title">Lançamentos</string>
+    <string name="feature_releases_message">Os lançamentos novos dos artistas que você segue.</string>
+</resources>

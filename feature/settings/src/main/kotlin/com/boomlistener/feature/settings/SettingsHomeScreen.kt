@@ -7,6 +7,14 @@ import android.content.Context
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.boomlistener.data.updates.UpdateCheckResult
+import com.boomlistener.data.updates.UpdatesData
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,7 +35,41 @@ internal fun SettingsScreen(
     onOpenLicenses: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val version = appVersionName(LocalContext.current)
+    val context = LocalContext.current
+    val version = appVersionName(context)
+    val updatesViewModel: UpdatesViewModel = viewModel {
+        UpdatesViewModel(UpdatesData.repository(context.applicationContext))
+    }
+    val updatesState by updatesViewModel.state.collectAsStateWithLifecycle()
+    val showUpdateDialog by updatesViewModel.showDialog.collectAsStateWithLifecycle()
+
+    val available = (updatesState as? UpdatesUiState.Done)?.result as? UpdateCheckResult.Available
+    if (showUpdateDialog && available != null) {
+        AlertDialog(
+            onDismissRequest = updatesViewModel::dismissDialog,
+            title = { Text(stringResource(R.string.feature_settings_updates_dialog_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.feature_settings_updates_dialog_text,
+                        available.latestVersion,
+                        available.currentVersion,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    updatesViewModel.dismissDialog()
+                    context.openUrl(available.downloadUrl ?: available.pageUrl)
+                }) { Text(stringResource(R.string.feature_settings_updates_download)) }
+            },
+            dismissButton = {
+                TextButton(onClick = updatesViewModel::dismissDialog) {
+                    Text(stringResource(R.string.feature_settings_updates_later))
+                }
+            },
+        )
+    }
     BoomScreenScaffold(
         title = stringResource(R.string.feature_settings_title),
         largeTitle = true,
@@ -62,6 +104,16 @@ internal fun SettingsScreen(
                         onClick = onOpenAbout,
                     )
                     BoomSettingsItem(
+                        icon = BoomIcons.Update,
+                        accent = BoomAccent.Primary,
+                        title = stringResource(R.string.feature_settings_updates),
+                        subtitle = updatesSubtitle(updatesState),
+                        onClick = {
+                            if (available != null) context.openUrl(available.downloadUrl ?: available.pageUrl)
+                            else updatesViewModel.check()
+                        },
+                    )
+                    BoomSettingsItem(
                         icon = BoomIcons.Privacy,
                         title = stringResource(R.string.feature_settings_privacy),
                         subtitle = stringResource(R.string.feature_settings_privacy_summary),
@@ -80,8 +132,22 @@ internal fun SettingsScreen(
     }
 }
 
+@Composable
+private fun updatesSubtitle(state: UpdatesUiState): String = when (state) {
+    UpdatesUiState.Idle -> stringResource(R.string.feature_settings_updates_summary)
+    UpdatesUiState.Checking -> stringResource(R.string.feature_settings_updates_checking)
+    is UpdatesUiState.Done -> when (val result = state.result) {
+        is UpdateCheckResult.UpToDate ->
+            stringResource(R.string.feature_settings_updates_up_to_date, result.currentVersion)
+        is UpdateCheckResult.Available ->
+            stringResource(R.string.feature_settings_updates_available, result.latestVersion)
+        UpdateCheckResult.NoReleases -> stringResource(R.string.feature_settings_updates_no_releases)
+        UpdateCheckResult.Failed -> stringResource(R.string.feature_settings_updates_failed)
+    }
+}
+
 /** Versão instalada (vem do APP_VERSION, via versionName). */
 @Suppress("DEPRECATION")
 internal fun appVersionName(context: Context): String =
     runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
-        .getOrNull() ?: "?"
+        .getOrNull()?.removeSuffix("-debug") ?: "?"

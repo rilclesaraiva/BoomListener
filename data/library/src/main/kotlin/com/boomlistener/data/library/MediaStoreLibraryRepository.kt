@@ -45,6 +45,7 @@ internal class MediaStoreLibraryRepository(
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.DISPLAY_NAME,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.ALBUM_ID,
@@ -119,7 +120,10 @@ internal class MediaStoreLibraryRepository(
         return Track(
             id = id,
             uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id).toString(),
-            title = getStringOrNull(MediaStore.Audio.Media.TITLE)?.takeIf { it.isNotBlank() } ?: "(sem título)",
+            // Sem tag de título: usa o nome do arquivo (sem extensão), que vale em qualquer idioma.
+            title = getStringOrNull(MediaStore.Audio.Media.TITLE)?.takeIf { it.isNotBlank() }
+                ?: getStringOrNull(MediaStore.Audio.Media.DISPLAY_NAME)?.substringBeforeLast('.')
+                ?: "—",
             artist = getStringOrNull(MediaStore.Audio.Media.ARTIST)?.cleanUnknown(),
             album = getStringOrNull(MediaStore.Audio.Media.ALBUM)?.cleanUnknown(),
             albumId = getLong(getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)),

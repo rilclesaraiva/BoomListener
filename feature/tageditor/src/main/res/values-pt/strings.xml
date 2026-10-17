@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_tageditor_title">Editar tags</string>
+    <string name="feature_tageditor_message">Título, artista, álbum, ano, gênero, capa e letra.</string>
+</resources>
