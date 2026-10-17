@@ -72,6 +72,7 @@ dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":core:player"))
     implementation(project(":data:wellbeing"))
+    implementation(project(":data:social"))
 
     implementation(project(":feature:library"))
     implementation(project(":feature:nowplaying"))
@@ -80,6 +81,7 @@ dependencies {
     implementation(project(":feature:releases"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:wellbeing"))
+    implementation(project(":feature:social"))
 
     implementation(libs.androidx.core)
     implementation(libs.androidx.activity.compose)

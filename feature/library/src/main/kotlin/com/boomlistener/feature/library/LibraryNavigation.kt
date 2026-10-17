@@ -39,11 +39,13 @@ fun NavGraphBuilder.libraryScreen(
     onEditTags: (Track) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
+    onRecommend: (Track) -> Unit,
 ) {
     composable(LIBRARY_ROUTE) {
         LibraryScreen(
             onOpenArtist = onOpenArtist,
             onEditTags = onEditTags,
+            onRecommend = onRecommend,
             onOpenHistory = onOpenHistory,
             onOpenSettings = onOpenSettings,
         )
@@ -89,6 +91,7 @@ fun NavGraphBuilder.libraryScreen(
                 onBack = back,
                 onOpenArtist = onOpenArtist,
                 onEditTags = onEditTags,
+                onRecommend = onRecommend,
             )
         }
     }

@@ -70,6 +70,7 @@ class PlaybackService : MediaSessionService() {
 
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                reportNowPlaying()
                 val item = mediaItem ?: return
                 playCounter.start(
                     key = item.mediaId,
@@ -86,6 +87,7 @@ class PlaybackService : MediaSessionService() {
                 tickHandler.removeCallbacks(tick)
                 if (isPlaying) tickHandler.post(tick) else reportIfCounted()
                 scheduleSave()
+                reportNowPlaying()
             }
 
             override fun onEvents(player: Player, events: Player.Events) {
@@ -116,6 +118,13 @@ class PlaybackService : MediaSessionService() {
         // Histórico (toda música ouvida 30 s) e "mais ouvidas" (com as regras do aleatório).
         playCounter.checkListened(now)?.let { key -> playOf(player, key)?.let { PlaybackHooks.onListened?.invoke(it) } }
         playCounter.check(now)?.let { key -> playOf(player, key)?.let { PlaybackHooks.onPlayCounted?.invoke(it) } }
+    }
+
+    private fun reportNowPlaying() {
+        val player = mediaSession?.player ?: return
+        val current = player.currentMediaItem
+        val play = if (player.isPlaying && current != null) playOf(player, current.mediaId) else null
+        PlaybackHooks.onNowPlaying?.invoke(play)
     }
 
     private fun playOf(player: Player, key: String): CountedPlay? {

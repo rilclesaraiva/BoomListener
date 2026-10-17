@@ -33,6 +33,7 @@ internal fun SettingsScreen(
     onOpenAbout: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
+    onOpenFriends: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,6 +94,13 @@ internal fun SettingsScreen(
                         title = stringResource(R.string.feature_settings_wellbeing),
                         subtitle = stringResource(R.string.feature_settings_wellbeing_summary),
                         onClick = onOpenWellbeing,
+                    )
+                    BoomSettingsItem(
+                        icon = BoomIcons.Chat,
+                        accent = BoomAccent.Secondary,
+                        title = stringResource(R.string.feature_settings_friends),
+                        subtitle = stringResource(R.string.feature_settings_friends_summary),
+                        onClick = onOpenFriends,
                     )
                 }
             }

@@ -4,6 +4,16 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.18.0] — 2026-10-17
+
+### ✨ New
+- **Friends tab.** Create a profile with just a name and an @ (no email, no password) and:
+  - **Chat** with anyone by their @, or in **groups** you invite people to with a code.
+  - **Recommend songs** from any song's ⋮ menu (library, playlists, albums and the player) or from the ♪ button in a chat. Only the song's info goes (title, artist, cover, YouTube Music link), never the audio file. If your friend has the same song, they can play it right there.
+  - **See what friends are listening to**, and their recent songs, if they choose to share it. Sharing is off until you turn it on, and only people you talk to can see it.
+  - Conversations are saved only on your phone. The server just delivers each message and deletes it.
+- **Friends and sharing** in Settings: turn sharing on or off, or delete your profile.
+
 ## [0.17.0] — 2026-10-17
 
 ### ✨ New

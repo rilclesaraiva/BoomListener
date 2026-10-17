@@ -26,6 +26,13 @@ object PlaybackHooks {
      */
     @Volatile
     var onListened: ((CountedPlay) -> Unit)? = null
+
+    /**
+     * "Ouvindo agora": a música que começou a tocar, ou null quando pausa ou
+     * para. Pode repetir o mesmo valor; quem recebe filtra.
+     */
+    @Volatile
+    var onNowPlaying: ((CountedPlay?) -> Unit)? = null
 }
 
 /**

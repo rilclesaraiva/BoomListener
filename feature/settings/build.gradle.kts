@@ -12,6 +12,7 @@ android {
 dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":data:updates"))
+    implementation(project(":data:social"))
 
     testImplementation(libs.kotlinx.coroutines.test)
 }

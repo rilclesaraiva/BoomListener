@@ -72,6 +72,7 @@ internal fun CollectionDetailScreen(
     onBack: () -> Unit,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onRecommend: (Track) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -108,6 +109,7 @@ internal fun CollectionDetailScreen(
                 padding = padding,
                 onOpenArtist = onOpenArtist,
                 onEditTags = onEditTags,
+                onRecommend = onRecommend,
                 onAddToPlaylist = { addToPlaylist = it },
             )
         }
@@ -154,6 +156,7 @@ private fun TrackListWithHeader(
     padding: androidx.compose.foundation.layout.PaddingValues,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onRecommend: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -192,6 +195,7 @@ private fun TrackListWithHeader(
                         onClick = { viewModel.play(local.indexOf(track)) },
                         onOpenArtist = onOpenArtist,
                         onEditTags = onEditTags,
+                        onRecommend = onRecommend,
                         onAddToPlaylist = onAddToPlaylist,
                         dragHandle = {
                             Box(
@@ -270,6 +274,7 @@ private fun DetailTrackRow(
     onClick: () -> Unit,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onRecommend: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
     dragHandle: @Composable () -> Unit,
 ) {
@@ -296,6 +301,7 @@ private fun DetailTrackRow(
                 BoomMoreMenu(
                     actions = listOfNotNull(
                         BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist)) { onAddToPlaylist(track) },
+                        BoomMenuAction(stringResource(R.string.feature_library_recommend)) { onRecommend(track) },
                         if (isPlaylist) {
                             BoomMenuAction(stringResource(R.string.feature_library_remove_from_playlist)) { viewModel.remove(track) }
                         } else {

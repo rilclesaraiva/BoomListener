@@ -77,6 +77,7 @@ import com.boomlistener.data.library.LibraryData
 internal fun LibraryScreen(
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onRecommend: (Track) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -162,6 +163,7 @@ internal fun LibraryScreen(
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
                     onAddToPlaylist = { addToPlaylist = it },
+                    onRecommend = onRecommend,
                     contentPadding = padding,
                 )
             }
@@ -183,6 +185,7 @@ private fun TrackList(
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
+    onRecommend: (Track) -> Unit,
     contentPadding: PaddingValues,
 ) {
     val listState = rememberLazyListState()
@@ -229,6 +232,7 @@ private fun TrackList(
                     onOpenArtist = track.artist?.let { name -> { onOpenArtist(name) } },
                     onEditTags = { onEditTags(track) },
                     onAddToPlaylist = { onAddToPlaylist(track) },
+                    onRecommend = { onRecommend(track) },
                 )
             }
         }
@@ -245,6 +249,7 @@ private fun TrackItem(
     onOpenArtist: (() -> Unit)?,
     onEditTags: () -> Unit,
     onAddToPlaylist: () -> Unit,
+    onRecommend: () -> Unit,
 ) {
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     // [version] muda quando alguma tag foi editada: a capa é lida de novo.
@@ -270,6 +275,7 @@ private fun TrackItem(
             BoomMoreMenu(
                 actions = listOfNotNull(
                     BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), onClick = onAddToPlaylist),
+                    BoomMenuAction(stringResource(R.string.feature_library_recommend), onClick = onRecommend),
                     onOpenArtist?.let { BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), onClick = it) },
                     BoomMenuAction(stringResource(R.string.feature_library_edit_tags), onClick = onEditTags),
                     BoomMenuAction(

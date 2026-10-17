@@ -49,4 +49,5 @@
     <string name="feature_library_rename_playlist">Renomear</string>
     <string name="feature_library_reorder">Segure e arraste para mudar a ordem</string>
     <string name="feature_library_save">Salvar</string>
+    <string name="feature_library_recommend">Recomendar para alguém</string>
 </resources>

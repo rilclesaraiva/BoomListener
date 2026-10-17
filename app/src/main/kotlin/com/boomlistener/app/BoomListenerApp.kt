@@ -54,6 +54,18 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.delay
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.boomlistener.data.social.SocialData
+import com.boomlistener.feature.social.RecommendSheet
+import com.boomlistener.feature.social.socialScreen
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
 import com.boomlistener.feature.wellbeing.navigateToHistory
@@ -84,6 +96,26 @@ fun BoomListenerApp() {
     val playerSheet = rememberPlayerSheetState()
     // Música do player a adicionar numa playlist (a folha aparece por cima de tudo).
     var addToPlaylistUri by remember { mutableStateOf<String?>(null) }
+    // Música a recomendar para alguém (folha de Amigos por cima de tudo).
+    var recommendUri by remember { mutableStateOf<String?>(null) }
+
+    // Amigos: busca mensagens novas a cada 30 s com o app aberto, para o
+    // número de não lidas na aba ficar em dia. Em segundo plano não consulta.
+    val context = LocalContext.current.applicationContext
+    val social = remember { SocialData.repository(context) }
+    val socialAccount by social.account.collectAsStateWithLifecycle()
+    val conversations by social.conversations.collectAsStateWithLifecycle(initialValue = emptyList())
+    val unread = conversations.sumOf { it.unread }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(socialAccount?.id) {
+        if (socialAccount == null) return@LaunchedEffect
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                social.sync()
+                delay(30_000)
+            }
+        }
+    }
     // Tocar de novo na aba aberta: a lista dela sobe até o topo.
     val reselect = remember { MutableSharedFlow<String>(extraBufferCapacity = 1) }
 
@@ -156,7 +188,17 @@ fun BoomListenerApp() {
                                         }
                                     }
                                 },
-                                icon = { Icon(destination.icon, contentDescription = null) },
+                                icon = {
+                                    BadgedBox(
+                                        badge = {
+                                            if (destination == TopLevelDestination.Social && unread > 0) {
+                                                Badge { Text(if (unread > 99) "99+" else unread.toString()) }
+                                            }
+                                        },
+                                    ) {
+                                        Icon(destination.icon, contentDescription = null)
+                                    }
+                                },
                                 label = { Text(stringResource(destination.label)) },
                             )
                         }
@@ -186,6 +228,13 @@ fun BoomListenerApp() {
                     navController = navController,
                     onOpenArtist = navController::navigateToArtist,
                     onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
+                    onOpenHistory = openHistory,
+                    onOpenSettings = openSettings,
+                    onRecommend = { track -> recommendUri = track.uri },
+                )
+                socialScreen(
+                    navController = navController,
+                    onOpenArtist = navController::navigateToArtist,
                     onOpenHistory = openHistory,
                     onOpenSettings = openSettings,
                 )
@@ -223,10 +272,14 @@ fun BoomListenerApp() {
                 navController.navigateToTagEditor(uri)
             },
             onAddToPlaylist = { uri -> addToPlaylistUri = uri },
+            onRecommend = { uri -> recommendUri = uri },
         )
 
         addToPlaylistUri?.let { uri ->
             AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
+        }
+        recommendUri?.let { uri ->
+            RecommendSheet(trackUri = uri, onDismiss = { recommendUri = null })
         }
     }
 }

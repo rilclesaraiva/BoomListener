@@ -130,6 +130,16 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 - **Nenhuma chave secreta no repositório:** nem keystore de release, nem chave do Last.fm. Única exceção: `app/debug.keystore` (senha pública `android`), que existe só para o APK de debug atualizar por cima sem desinstalar. A keystore vive só nos Secrets do GitHub; a chave e o segredo do Last.fm só nos Secrets do Cloudflare Worker (`proxy/`).
 - A **keystore de release** é deste app (não é a do BusBus): `boomlistener-release.p12`, alias `boomlistener`, SHA-256 `8E:66:90:F2:B7:75:BD:FB:13:0F:F7:4F:28:87:18:CA:BD:8C:2B:8C:3B:09:75:11:FA:0A:D2:AE:8C:58:09:A8`. Gerada em PKCS12 moderno (JDK 21), sem o problema de criptografia legada do BusBus. Se ela for perdida, o app não recebe mais atualização. O usuário precisa guardar uma cópia fora do GitHub.
 
+## Amigos (social)
+
+- **Nunca passa áudio.** Ouvir junto por transmissão foi descartado (seria transmitir obra protegida sem licença). Só texto e cartões de música (título, artista, álbum, capa e link), e o "ouvindo agora".
+- Servidor: `social/worker.js` (Cloudflare Worker `boomlistener-social`, um Durable Object `Hub` com SQLite, importado do GitHub com caminho `/social`). Testes do servidor: `node --test social/worker.test.mjs` (rodam aqui na sessão).
+- **Sem login e sem nada do Google** (decisão do rilclesaraiva): o perfil é um @ + nome; o app recebe id + segredo e guarda em `filesDir/social/account.json`. Sem Firebase: mensagens chegam com o app aberto (consulta a cada 30 s; 15 s na aba Amigos; 4 s no chat).
+- Conversas ficam **só no aparelho** (`filesDir/social/chats`); o servidor apaga cada mensagem quando o app confirma que recebeu.
+- "Ouvindo agora" e recentes: **desligado por padrão**, só para quem conversa com a pessoa ou divide grupo. Desligar apaga do servidor.
+- Amigo é por @ (abrir o perfil e mandar mensagem). Código de convite só para grupos.
+- Módulos: `data/social` (cliente e armazenamento) e `feature/social` (aba Amigos, chat, perfil). A folha `RecommendSheet` é usada pelo `:app` nos menus da biblioteca e do player.
+
 ## Proxy do Last.fm
 
 - `proxy/worker.js` (Cloudflare Worker `boomlistener-lastfm`, publicado pelo rilclesaraiva pelo painel). Só aceita métodos públicos de leitura e acrescenta a chave. Endereço no app: `PROXY_URL` em `data/lastfm/ProxyLastfmRepository.kt`.
