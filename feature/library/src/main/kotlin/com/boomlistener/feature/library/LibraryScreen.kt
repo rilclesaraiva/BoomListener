@@ -49,12 +49,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.MediaPermissions
+import com.boomlistener.core.common.openUrl
+import com.boomlistener.core.common.shareText
 import com.boomlistener.core.common.openAppSettings
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
+import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSearchTopBar
@@ -218,7 +223,7 @@ private fun TrackItem(
     val artwork by produceState<ImageBitmap?>(initialValue = null, track.uri) {
         value = loadArtwork(track, sizePx)?.asImageBitmap()
     }
-    var menuOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val unknownArtist = stringResource(R.string.feature_library_unknown_artist)
 
     ListItem(
@@ -233,28 +238,19 @@ private fun TrackItem(
             )
         },
         trailingContent = {
-            Box {
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(BoomIcons.More, contentDescription = stringResource(R.string.feature_library_more))
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    if (onOpenArtist != null) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.feature_library_go_to_artist)) },
-                            onClick = { menuOpen = false; onOpenArtist() },
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.feature_library_edit_tags)) },
-                        onClick = { menuOpen = false; onEditTags() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.feature_library_duration, formatDuration(track.durationMs))) },
-                        onClick = { menuOpen = false },
+            BoomMoreMenu(
+                actions = listOfNotNull(
+                    onOpenArtist?.let { BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), onClick = it) },
+                    BoomMenuAction(stringResource(R.string.feature_library_edit_tags), onClick = onEditTags),
+                    BoomMenuAction(
+                        label = stringResource(R.string.feature_library_duration, formatDuration(track.durationMs)),
                         enabled = false,
-                    )
-                }
-            }
+                        onClick = {},
+                    ),
+                ),
+                onShare = { context.shareText(listOfNotNull(track.title, track.artist).joinToString(" — ")) },
+                onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) },
+            )
         },
     )
 }

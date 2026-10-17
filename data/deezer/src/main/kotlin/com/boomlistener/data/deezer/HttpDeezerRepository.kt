@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
+import com.boomlistener.core.model.AlbumDetail
 import com.boomlistener.core.model.ArtistProfile
 import com.boomlistener.core.model.ExternalArtist
 import com.boomlistener.core.model.PopularTrack
@@ -63,6 +64,26 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             }
         } catch (_: Exception) {
             ProfileResult.Failed
+        }
+    }
+
+    override suspend fun album(albumId: Long): AlbumResult = withContext(Dispatchers.IO) {
+        try {
+            val json = getJson("$API/album/$albumId")
+            val release = json.toRelease()
+            val tracks = json.optJSONObject("tracks")?.optJSONArray("data").objects().map { track ->
+                // As músicas do álbum vêm sem a capa: usam a do próprio álbum.
+                track.toPopularTrack().copy(albumTitle = release.title, coverUrl = release.coverUrl)
+            }
+            AlbumResult.Found(
+                AlbumDetail(
+                    release = release,
+                    artistName = json.optJSONObject("artist")?.str("name").orEmpty(),
+                    tracks = tracks,
+                ),
+            )
+        } catch (_: Exception) {
+            AlbumResult.Failed
         }
     }
 
@@ -147,7 +168,7 @@ private fun JSONObject.toRelease() = Release(
         else -> ReleaseType.Album
     },
     releaseDate = str("release_date"),
-    coverUrl = str("cover_big") ?: str("cover_medium"),
+    coverUrl = str("cover_big") ?: str("cover_xl") ?: str("cover_medium"),
     link = str("link"),
 )
 

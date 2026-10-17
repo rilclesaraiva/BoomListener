@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.nowplaying
 
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -43,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -53,6 +55,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
+import com.boomlistener.core.common.ExternalLinks
+import com.boomlistener.core.common.openUrl
+import com.boomlistener.core.common.shareText
+import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomSeekBar
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
@@ -60,6 +67,7 @@ import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.RepeatMode
+import kotlinx.coroutines.CancellationException
 
 private val ArtworkSizeForLoading = 720.dp
 
@@ -78,6 +86,7 @@ internal fun NowPlayingContent(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val item = state.item
+    val context = LocalContext.current
     val sizePx = with(LocalDensity.current) { ArtworkSizeForLoading.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
     val artworkColor = rememberArtworkColor(artwork)
@@ -85,6 +94,17 @@ internal fun NowPlayingContent(
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     val spatial = boomSpatialSpec<Float>()
     val effects = boomEffectsSpec<Float>()
+
+    // Com a letra aberta, o "voltar" fecha só a letra (a capa volta com a
+    // mesma animação), não o player inteiro. A fila, quando aberta, tem prioridade.
+    PredictiveBackHandler(enabled = showLyrics && !queueState.isVisible) { backEvents ->
+        try {
+            backEvents.collect { }
+            viewModel.toggleLyrics()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        }
+    }
 
     Box(modifier.fillMaxSize()) {
         // Fundo tingido com a cor da capa da música atual.
@@ -135,6 +155,17 @@ internal fun NowPlayingContent(
                         ),
                     ) {
                         Icon(BoomIcons.Lyrics, stringResource(R.string.feature_nowplaying_lyrics))
+                    }
+                    if (item != null) {
+                        BoomMoreMenu(
+                            actions = listOfNotNull(
+                                item.artist?.let { name ->
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
+                                },
+                            ),
+                            onShare = { context.shareText(listOfNotNull(item.title, item.artist).joinToString(" — ")) },
+                            onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(item.title, item.artist)) },
+                        )
                     }
                 }
 

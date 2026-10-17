@@ -83,11 +83,15 @@ fun BoomSeekBar(
 
 /** Linha fina de progresso, para o mini player. */
 @Composable
-fun BoomThinProgress(progress: Float, modifier: Modifier = Modifier) {
+fun BoomThinProgress(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+) {
     LinearProgressIndicator(
         progress = { progress },
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primary,
+        color = color,
         trackColor = Color.Transparent,
         drawStopIndicator = {},
     )

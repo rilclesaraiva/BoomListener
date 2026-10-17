@@ -41,3 +41,15 @@ internal fun ownedPopularIds(top: List<PopularTrack>, localTracks: List<Track>):
     val titles = localTracks.map { comparableTitle(it.title) }.toSet()
     return top.filter { comparableTitle(it.title) in titles }.map { it.id }.toSet()
 }
+
+/**
+ * Para cada música do álbum, a sua versão local (mesmo título, ignorando
+ * versões e acentos), ou null se você não tem. Mesma ordem do álbum.
+ */
+internal fun matchAlbumTracks(
+    albumTracks: List<com.boomlistener.core.model.PopularTrack>,
+    localTracks: List<Track>,
+): List<Track?> {
+    val byTitle = localTracks.groupBy { comparableTitle(it.title) }
+    return albumTracks.map { byTitle[comparableTitle(it.title)]?.firstOrNull() }
+}

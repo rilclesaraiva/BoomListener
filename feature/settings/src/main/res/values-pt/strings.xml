@@ -6,7 +6,7 @@
     <string name="feature_settings_appearance">Aparência</string>
     <string name="feature_settings_appearance_summary">Tema, cores e modo AMOLED</string>
     <string name="feature_settings_wellbeing">Bem-estar</string>
-    <string name="feature_settings_wellbeing_summary">Tempo de escuta e avisos de pausa</string>
+    <string name="feature_settings_wellbeing_summary">Mais ouvidas, tempo de escuta e avisos de pausa</string>
     <string name="feature_settings_about">Sobre o Boom, listener!</string>
     <string name="feature_settings_about_summary">Versão %1$s, licença e código-fonte</string>
     <string name="feature_settings_privacy">Privacidade</string>

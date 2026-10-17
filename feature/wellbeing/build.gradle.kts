@@ -8,3 +8,8 @@ plugins {
 android {
     namespace = "com.boomlistener.feature.wellbeing"
 }
+
+dependencies {
+    implementation(project(":data:wellbeing"))
+    implementation(project(":data:library"))
+}

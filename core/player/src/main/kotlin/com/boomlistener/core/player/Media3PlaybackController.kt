@@ -86,6 +86,8 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
 
     override fun play(tracks: List<Track>, startIndex: Int) = withController { player ->
         val items = tracks.map { it.toMediaItem() }
+        // Música escolhida pelo usuário: conta para "mais ouvidas" mesmo no aleatório.
+        items.getOrNull(startIndex)?.let { ChosenSongSignal.mark(it.mediaId) }
         shuffle.clear()
         if (player.shuffleModeEnabled && items.isNotEmpty()) {
             // Aleatório continua ligado: a escolhida toca primeiro e o resto
@@ -120,6 +122,7 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
 
     override fun playQueueItem(index: Int) = withController { player ->
         if (index in 0 until player.mediaItemCount) {
+            ChosenSongSignal.mark(player.getMediaItemAt(index).mediaId)
             player.seekToDefaultPosition(index)
             player.play()
         }

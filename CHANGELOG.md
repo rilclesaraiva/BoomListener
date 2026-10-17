@@ -4,6 +4,19 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.12.0] — 2026-10-17
+
+### ✨ New
+- **Album pages.** Tapping a release in an artist's discography now opens it inside the app: big cover, year and type, how many of its songs you have, and the full track list. Songs you have play right there; the ones you don't have a button to open them outside the app.
+- **Three-dot menus** on songs and albums (library, player, artist, album): share the Deezer link (or the song's name), listen on YouTube Music, or open in Deezer.
+- **Most played** in Settings → Wellbeing. A song counts after 30 seconds of real listening (skipping ahead doesn't add up), when you picked it yourself or it played in order. Songs that come up on their own in shuffle don't count, but picking one from the shuffled queue does. Everything stays on your phone.
+
+### 🎨 Visual tweaks
+- **The mini player takes a pastel tone from the current cover**, with a soft gradient, so it stands out from the navigation bar. Text switches between light and dark to stay readable.
+
+### 🐛 Fixes
+- **No more abrupt cuts:** opening and closing the Library search now animates, and with the lyrics open the back gesture closes just the lyrics (the cover slides back in) instead of the whole player.
+
 ## [0.11.0] — 2026-10-17
 
 ### ✨ New

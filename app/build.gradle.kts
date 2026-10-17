@@ -70,6 +70,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:model"))
     implementation(project(":core:datastore"))
+    implementation(project(":core:player"))
+    implementation(project(":data:wellbeing"))
 
     implementation(project(":feature:library"))
     implementation(project(":feature:nowplaying"))

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,7 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.core.designsystem.component.BoomArtworkSurface
 import com.boomlistener.core.designsystem.component.BoomThinProgress
+import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomFastSpatialSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
@@ -75,6 +78,8 @@ fun MiniPlayer(
     val visible = liveState.item != null
     val sizePx = with(LocalDensity.current) { 48.dp.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
+    // O mini player ganha o tom pastel da capa, para se destacar da barra de baixo.
+    val artworkColor = rememberArtworkColor(artwork)
 
     val returnSpec = boomFastSpatialSpec<Float>()
     // Quanto o mini player foi puxado para baixo (px), no gesto de encerrar.
@@ -102,9 +107,8 @@ fun MiniPlayer(
                 sheetState.dragBy(-delta)
             }
         }
-        Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        BoomArtworkSurface(
+            seed = artworkColor,
             shape = MaterialTheme.shapes.extraLarge,
             modifier = Modifier
                 .fillMaxWidth()
@@ -177,6 +181,7 @@ fun MiniPlayer(
                 }
                 BoomThinProgress(
                     progress = state.progress,
+                    color = LocalContentColor.current,
                     modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 6.dp),
                 )
             }

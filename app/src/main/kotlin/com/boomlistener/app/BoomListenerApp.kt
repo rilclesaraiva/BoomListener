@@ -128,7 +128,11 @@ fun BoomListenerApp() {
                     onOpenArtist = navController::navigateToArtist,
                     onEditTags = { navController.navigateToTagEditor() },
                 )
-                artistScreen(onBack = back, onOpenArtist = navController::navigateToArtist)
+                artistScreen(
+                    navController = navController,
+                    onBack = back,
+                    onOpenArtist = navController::navigateToArtist,
+                )
                 tageditorScreen(onBack = back)
                 releasesScreen()
                 settingsScreen(

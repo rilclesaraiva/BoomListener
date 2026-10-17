@@ -3,10 +3,7 @@
 
 package com.boomlistener.feature.artist
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -76,7 +73,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.boomlistener.core.common.ExternalLinks
+import com.boomlistener.core.common.openUrl
+import com.boomlistener.core.common.shareText
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
@@ -105,6 +106,7 @@ internal fun ArtistScreen(
     artistName: String,
     onBack: () -> Unit,
     onOpenArtist: (String) -> Unit,
+    onOpenAlbum: (albumId: Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current.applicationContext
@@ -151,7 +153,7 @@ internal fun ArtistScreen(
             }
             when (tab) {
                 0 -> songsTab(state, ready, viewModel, context)
-                1 -> discographyTab(state, ready, viewModel, context)
+                1 -> discographyTab(state, ready, viewModel, context, onOpenAlbum)
                 else -> aboutTab(state, ready, viewModel, onOpenArtist)
             }
         }
@@ -327,7 +329,7 @@ private fun LazyListScope.songsTab(
         if (profile.topTracks.isNotEmpty()) {
             item { SectionTitle(stringResource(R.string.feature_artist_popular)) }
             items(profile.topTracks, key = { "top-${it.id}" }) { popular ->
-                PopularRow(popular, owned = popular.id in state.ownedPopular, viewModel, context)
+                PopularRow(popular, state.name, owned = popular.id in state.ownedPopular, viewModel, context)
             }
         }
     } else {
@@ -340,6 +342,7 @@ private fun LazyListScope.discographyTab(
     profile: ArtistProfile?,
     viewModel: ArtistViewModel,
     context: Context,
+    onOpenAlbum: (Long) -> Unit,
 ) {
     if (profile == null) {
         profileStatus(state, viewModel)
@@ -356,7 +359,7 @@ private fun LazyListScope.discographyTab(
         if (releases.isNotEmpty()) {
             item { SectionTitle(stringResource(titleRes)) }
             items(releases, key = { "release-${it.id}" }) { release ->
-                ReleaseRow(release, owned = release.id in state.ownedReleases, viewModel, context)
+                ReleaseRow(release, state.name, owned = release.id in state.ownedReleases, viewModel, context, onOpen = { onOpenAlbum(release.id) })
             }
         }
     }
@@ -438,7 +441,13 @@ private fun LocalTrackRow(track: Track, viewModel: ArtistViewModel, onClick: () 
 }
 
 @Composable
-private fun PopularRow(track: PopularTrack, owned: Boolean, viewModel: ArtistViewModel, context: Context) {
+private fun PopularRow(
+    track: PopularTrack,
+    artistName: String,
+    owned: Boolean,
+    viewModel: ArtistViewModel,
+    context: Context,
+) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val cover = rememberRemoteImage(viewModel, track.coverUrl, px)
     ListItem(
@@ -451,12 +460,28 @@ private fun PopularRow(track: PopularTrack, owned: Boolean, viewModel: ArtistVie
                 maxLines = 1,
             )
         },
-        trailingContent = { OwnedMark(owned) },
+        trailingContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OwnedMark(owned)
+                BoomMoreMenu(
+                    onShare = track.link?.let { link -> { context.shareText(link) } },
+                    onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, artistName)) },
+                    onDeezer = track.link?.let { link -> { context.openUrl(link) } },
+                )
+            }
+        },
     )
 }
 
 @Composable
-private fun ReleaseRow(release: Release, owned: Boolean, viewModel: ArtistViewModel, context: Context) {
+private fun ReleaseRow(
+    release: Release,
+    artistName: String,
+    owned: Boolean,
+    viewModel: ArtistViewModel,
+    context: Context,
+    onOpen: () -> Unit,
+) {
     val px = with(LocalDensity.current) { 64.dp.roundToPx() }
     val cover = rememberRemoteImage(viewModel, release.coverUrl, px)
     val typeName = stringResource(
@@ -467,12 +492,24 @@ private fun ReleaseRow(release: Release, owned: Boolean, viewModel: ArtistViewMo
             ReleaseType.Compilation -> R.string.feature_artist_type_compilation
         },
     )
+    // Tocar abre o álbum aqui no app (com o que você tem e o que falta).
     ListItem(
-        modifier = Modifier.clickable { release.link?.let(context::openUrl) },
+        modifier = Modifier.clickable(onClick = onOpen),
         leadingContent = { BoomArtwork(image = cover, fallbackText = release.title, size = 64.dp) },
         headlineContent = { Text(release.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
         supportingContent = { Text(listOfNotNull(release.year, typeName).joinToString(" • ")) },
-        trailingContent = { OwnedMark(owned) },
+        trailingContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (owned) {
+                    Icon(BoomIcons.Owned, stringResource(R.string.feature_artist_owned), tint = MaterialTheme.colorScheme.primary)
+                }
+                BoomMoreMenu(
+                    onShare = release.link?.let { link -> { context.shareText(link) } },
+                    onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, artistName)) },
+                    onDeezer = release.link?.let { link -> { context.openUrl(link) } },
+                )
+            }
+        },
     )
 }
 
@@ -527,13 +564,4 @@ private fun rememberLocalArtwork(viewModel: ArtistViewModel, track: Track?, size
         value = track?.let { viewModel.localArtwork(it, sizePx)?.asImageBitmap() }
     }
     return image
-}
-
-/** "Abrir em…": o app nunca toca nada de fora, só leva até lá. */
-private fun Context.openUrl(url: String) {
-    try {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    } catch (_: ActivityNotFoundException) {
-        // Sem navegador nem app do Deezer: não há o que abrir.
-    }
 }

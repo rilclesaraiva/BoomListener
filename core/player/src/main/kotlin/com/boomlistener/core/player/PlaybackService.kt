@@ -5,8 +5,13 @@ package com.boomlistener.core.player
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ShuffleOrder
 import androidx.media3.session.MediaSession
@@ -19,6 +24,16 @@ import androidx.media3.session.MediaSessionService
 class PlaybackService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
+
+    // "Mais ouvidas": decide o que conta (PlayCountTracker) e avisa o app.
+    private val playCounter = PlayCountTracker()
+    private val tickHandler = Handler(Looper.getMainLooper())
+    private val tick = object : Runnable {
+        override fun run() {
+            reportIfCounted()
+            if (mediaSession?.player?.isPlaying == true) tickHandler.postDelayed(this, 1_000)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -40,9 +55,45 @@ class PlaybackService : MediaSessionService() {
                 setShuffleOrder(ShuffleOrder.UnshuffledShuffleOrder(0))
             }
 
+        player.addListener(object : Player.Listener {
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                val item = mediaItem ?: return
+                playCounter.start(
+                    key = item.mediaId,
+                    durationMs = player.duration.takeIf { it > 0 } ?: 0L,
+                    chosen = ChosenSongSignal.consume(item.mediaId),
+                    shuffle = player.shuffleModeEnabled,
+                    isPlaying = player.isPlaying,
+                    nowMs = SystemClock.elapsedRealtime(),
+                )
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                playCounter.setPlaying(isPlaying, SystemClock.elapsedRealtime())
+                tickHandler.removeCallbacks(tick)
+                if (isPlaying) tickHandler.post(tick) else reportIfCounted()
+            }
+        })
+
         val builder = MediaSession.Builder(this, player)
         openAppIntent()?.let { builder.setSessionActivity(it) }
         mediaSession = builder.build()
+    }
+
+    private fun reportIfCounted() {
+        val player = mediaSession?.player ?: return
+        val key = playCounter.check(SystemClock.elapsedRealtime()) ?: return
+        val item = player.currentMediaItem?.takeIf { it.mediaId == key } ?: return
+        val metadata = item.mediaMetadata
+        PlaybackHooks.onPlayCounted?.invoke(
+            CountedPlay(
+                uri = key,
+                title = metadata.title?.toString().orEmpty(),
+                artist = metadata.artist?.toString(),
+                album = metadata.albumTitle?.toString(),
+                timestampMs = System.currentTimeMillis(),
+            ),
+        )
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
@@ -56,6 +107,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        tickHandler.removeCallbacks(tick)
         mediaSession?.run {
             player.release()
             release()

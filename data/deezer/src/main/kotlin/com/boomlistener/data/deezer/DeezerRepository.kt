@@ -5,7 +5,13 @@ package com.boomlistener.data.deezer
 
 import android.content.Context
 import android.graphics.Bitmap
+import com.boomlistener.core.model.AlbumDetail
 import com.boomlistener.core.model.ArtistProfile
+
+sealed interface AlbumResult {
+    data class Found(val album: AlbumDetail) : AlbumResult
+    data object Failed : AlbumResult
+}
 
 sealed interface ProfileResult {
     data class Found(val profile: ArtistProfile) : ProfileResult
@@ -17,6 +23,9 @@ sealed interface ProfileResult {
 interface DeezerRepository {
     /** Acha o artista pelo nome que está nas tags e monta o perfil. */
     suspend fun artistProfile(artistName: String): ProfileResult
+
+    /** Um álbum do Deezer com a lista de músicas. */
+    suspend fun album(albumId: Long): AlbumResult
 
     /** Baixa (ou pega do cache) uma imagem do Deezer em ~[sizePx]. */
     suspend fun image(url: String, sizePx: Int): Bitmap?

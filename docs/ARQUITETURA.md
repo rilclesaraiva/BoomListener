@@ -33,7 +33,7 @@ data/
   deezer/         ← API do Deezer: foto do artista, discografia, lançamentos, faixas
   lastfm/         ← API do Last.fm (via proxy): biografia, tags de gênero, similares, scrobble
   releases/       ← artistas seguidos, comparação de discografia, WorkManager diário, notificações
-  wellbeing/      ← contagem do tempo de escuta e regras dos avisos de tela
+  wellbeing/      ← estatísticas de escuta (mais ouvidas) e, depois, tempo de escuta e avisos de tela
   lyrics/         ← letras: LRCLIB + cache no aparelho + leitor de LRC
   updates/        ← "Verificar atualizações": compara a versão instalada com a última Release do GitHub
 
@@ -124,6 +124,7 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 ## Ideias registradas (ainda sem data)
 
 - Biblioteca dividida em **Músicas, Álbuns, Artistas e Gêneros** (abas ou filtros no topo).
+- **Radar de lançamentos** na aba Lançamentos: para cada artista seguido (`data/releases`), checagem diária no Deezer (WorkManager), lista dos lançamentos recentes e notificação do que é novo.
 - **Ajustes ainda por vir** (seguindo o modelo das telas de referência): Gestão de música (pastas, ignorar áudios curtos), Reprodução (pular silêncio, crossfade), Equalizador, Notificações (radar de lançamentos), Integrações (Last.fm, Deezer), Cópia e restauração.
 - Cor do player tirada da capa.
 - **Embaralhamento próprio do app** — ✅ feito na 0.9.0 (`core/player/ShuffleState`). Regras:

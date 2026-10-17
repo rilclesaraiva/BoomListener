@@ -39,4 +39,7 @@
         <item quantity="one">%1$d album on your device</item>
         <item quantity="other">%1$d albums on your device</item>
     </plurals>
+    <string name="feature_artist_album_failed">Couldn’t load this release. Are you online?</string>
+    <string name="feature_artist_album_owned">You have %1$d of %2$d songs</string>
+    <string name="feature_artist_album_play_owned">Play what you have</string>
 </resources>

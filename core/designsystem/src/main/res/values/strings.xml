@@ -3,4 +3,8 @@
     <string name="core_designsystem_back">Back</string>
     <string name="core_designsystem_close_search">Close search</string>
     <string name="core_designsystem_clear">Clear</string>
+    <string name="core_designsystem_more">More options</string>
+    <string name="core_designsystem_share">Share</string>
+    <string name="core_designsystem_youtube_music">Listen on YouTube Music</string>
+    <string name="core_designsystem_open_deezer">Open in Deezer</string>
 </resources>

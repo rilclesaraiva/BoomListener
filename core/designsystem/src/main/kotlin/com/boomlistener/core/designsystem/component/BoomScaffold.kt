@@ -3,6 +3,12 @@
 
 package com.boomlistener.core.designsystem.component
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -32,6 +38,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.IntOffset
+import com.boomlistener.core.designsystem.theme.boomEffectsSpec
+import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import com.boomlistener.core.designsystem.R
 
 /**
@@ -55,6 +64,8 @@ fun BoomScreenScaffold(
     topBar: (@Composable () -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
+    val effects = boomEffectsSpec<Float>()
+    val spatial = boomSpatialSpec<IntOffset>()
     val topBarState = rememberTopAppBarState()
     val scrollBehavior = if (largeTitle) {
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topBarState)
@@ -69,8 +80,21 @@ fun BoomScreenScaffold(
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = topBar ?: {
-            if (largeTitle) {
+        topBar = {
+            // A troca entre a barra normal e uma barra própria (ex.: busca)
+            // é animada, nunca um corte seco.
+            AnimatedContent(
+                targetState = topBar,
+                transitionSpec = {
+                    (fadeIn(effects) + slideInVertically(spatial) { -it / 3 }) togetherWith
+                        (fadeOut(effects) + slideOutVertically(spatial) { -it / 3 })
+                },
+                contentKey = { it == null },
+                label = "topBar",
+            ) { customBar ->
+              if (customBar != null) {
+                customBar()
+              } else if (largeTitle) {
                 LargeTopAppBar(
                     title = { Text(title) },
                     navigationIcon = navigationIcon,
@@ -84,6 +108,7 @@ fun BoomScreenScaffold(
                     actions = actions,
                     scrollBehavior = scrollBehavior,
                 )
+              }
             }
         },
         content = content,

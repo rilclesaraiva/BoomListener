@@ -25,4 +25,5 @@
     <string name="feature_nowplaying_lyrics_failed">Couldn’t load the lyrics. Are you online?</string>
     <string name="feature_nowplaying_lyrics_retry">Try again</string>
     <string name="feature_nowplaying_lyrics_source">Lyrics from %1$s</string>
+    <string name="feature_nowplaying_go_to_artist">Go to artist</string>
 </resources>

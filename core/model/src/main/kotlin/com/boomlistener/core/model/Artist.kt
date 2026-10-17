@@ -44,3 +44,10 @@ data class ArtistProfile(
     val releases: List<Release>,
     val related: List<ExternalArtist>,
 )
+
+/** Um álbum (ou EP, single…) aberto, com as músicas dele. */
+data class AlbumDetail(
+    val release: Release,
+    val artistName: String,
+    val tracks: List<PopularTrack>,
+)
