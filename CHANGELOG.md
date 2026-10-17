@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.16.1] — 2026-10-17
+
+### 🎨 Visual tweaks
+- **The tab bar only shows on the three tabs.** Artist, album, playlist and genre pages, the tag editor, history and Settings now use the whole screen.
+
+### 🐛 Fixes
+- **Releases no longer goes back decades.** It now shows what came out in the **last 6 months** by default, with pills for the **last month** or the **last year**. An artist's full discography is still on their profile.
+
 ## [0.16.0] — 2026-10-17
 
 ### ✨ New

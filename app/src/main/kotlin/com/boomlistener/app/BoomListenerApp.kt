@@ -87,9 +87,11 @@ fun BoomListenerApp() {
     // Tocar de novo na aba aberta: a lista dela sobe até o topo.
     val reselect = remember { MutableSharedFlow<String>(extraBufferCapacity = 1) }
 
-    // Ajustes (e o que fica dentro dele) são telas de foco: sem mini player e
-    // sem barra de abas. O editor de tags também esconde o mini player.
+    // A barra de abas só aparece nas próprias abas; telas de dentro (artista,
+    // álbum, playlist, editor, ajustes…) ficam com a tela toda. Ajustes e o
+    // editor de tags também escondem o mini player.
     val route = currentDestination?.route.orEmpty()
+    val onTab = route.isEmpty() || route in topLevelRoutes
     val inSettings = route == SETTINGS_ROUTE || route.startsWith("$SETTINGS_ROUTE/") || route == WELLBEING_ROUTE
     val inTagEditor = route.startsWith("tageditor")
     val barSpec = boomSpatialSpec<IntSize>()
@@ -129,7 +131,7 @@ fun BoomListenerApp() {
                         MiniPlayer(sheetState = playerSheet)
                     }
                     AnimatedVisibility(
-                        visible = !inSettings,
+                        visible = onTab,
                         enter = expandVertically(barSpec) + fadeIn(barFade),
                         exit = shrinkVertically(barSpec) + fadeOut(barFade),
                     ) {

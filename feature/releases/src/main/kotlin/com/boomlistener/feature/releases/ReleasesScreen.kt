@@ -137,9 +137,13 @@ internal fun ReleasesScreen(
     }
 }
 
-/** Pílulas: como ver (mais recentes / por artista) e o que ver (álbuns, EPs, singles). */
+/**
+ * Pílulas: como ver (mais recentes / por artista), o que ver (álbuns, EPs,
+ * singles) e até quando (último mês, 6 meses, 1 ano).
+ */
 @Composable
 private fun Filters(state: ReleasesUiState.Ready, viewModel: ReleasesViewModel) {
+    Column {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -172,6 +176,25 @@ private fun Filters(state: ReleasesUiState.Ready, viewModel: ReleasesViewModel) 
                 onClick = { viewModel.setFilter(option) },
             )
         }
+    }
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        items(ReleasePeriod.entries, key = { "p:" + it.name }) { option ->
+            Pill(
+                label = stringResource(
+                    when (option) {
+                        ReleasePeriod.Month -> R.string.feature_releases_period_month
+                        ReleasePeriod.HalfYear -> R.string.feature_releases_period_half_year
+                        ReleasePeriod.Year -> R.string.feature_releases_period_year
+                    },
+                ),
+                selected = state.period == option,
+                onClick = { viewModel.setPeriod(option) },
+            )
+        }
+    }
     }
 }
 

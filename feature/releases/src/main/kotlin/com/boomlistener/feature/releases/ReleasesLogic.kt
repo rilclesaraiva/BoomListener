@@ -19,6 +19,24 @@ internal enum class ReleaseFilter { All, Albums, EPs, Singles }
 
 internal enum class ReleasesView { Latest, ByArtist }
 
+/**
+ * Até quando olhar para trás. Lançamentos é um radar do que é novo: a
+ * discografia inteira fica no perfil do artista.
+ */
+internal enum class ReleasePeriod(val days: Long) { Month(31), HalfYear(183), Year(366) }
+
+/** Saiu dentro do período (ou ainda vai sair). Sem data, fica de fora. */
+internal fun ReleasePeriod.accepts(release: Release, today: LocalDate): Boolean {
+    val date = release.releaseDate?.let {
+        try {
+            LocalDate.parse(it)
+        } catch (_: DateTimeParseException) {
+            null
+        }
+    } ?: return false
+    return !date.isBefore(today.minusDays(days))
+}
+
 internal fun ReleaseFilter.accepts(type: ReleaseType): Boolean = when (this) {
     ReleaseFilter.All -> true
     ReleaseFilter.Albums -> type == ReleaseType.Album
@@ -30,15 +48,27 @@ internal fun ReleaseFilter.accepts(type: ReleaseType): Boolean = when (this) {
  * Todos os lançamentos dos artistas seguidos, do mais novo para o mais antigo.
  * Um álbum com dois artistas seguidos aparece uma vez só.
  */
-internal fun latestReleases(artists: List<ArtistReleases>, filter: ReleaseFilter): List<ReleaseItem> =
+internal fun latestReleases(
+    artists: List<ArtistReleases>,
+    filter: ReleaseFilter,
+    period: ReleasePeriod,
+    today: LocalDate,
+): List<ReleaseItem> =
     artists.flatMap { entry -> entry.releases.map { ReleaseItem(entry.artist, it) } }
-        .filter { filter.accepts(it.release.type) }
+        .filter { filter.accepts(it.release.type) && period.accepts(it.release, today) }
         .distinctBy { it.release.id }
         .sortedByDescending { it.release.releaseDate.orEmpty() }
 
 /** Por artista: quem lançou algo mais recentemente vem primeiro; sem lançamento no filtro, some. */
-internal fun releasesByArtist(artists: List<ArtistReleases>, filter: ReleaseFilter): List<ArtistReleases> =
-    artists.map { entry -> entry.copy(releases = entry.releases.filter { filter.accepts(it.type) }) }
+internal fun releasesByArtist(
+    artists: List<ArtistReleases>,
+    filter: ReleaseFilter,
+    period: ReleasePeriod,
+    today: LocalDate,
+): List<ArtistReleases> =
+    artists.map { entry ->
+        entry.copy(releases = entry.releases.filter { filter.accepts(it.type) && period.accepts(it, today) })
+    }
         .filter { it.releases.isNotEmpty() }
         .sortedByDescending { entry -> entry.releases.maxOfOrNull { it.releaseDate.orEmpty() }.orEmpty() }
 

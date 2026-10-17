@@ -7,7 +7,7 @@
     <string name="feature_releases_failed_message">Check your connection and try again.</string>
     <string name="feature_releases_retry">Try again</string>
     <string name="feature_releases_partial">%1$d artists didn’t load. They’ll show up once you’re back online.</string>
-    <string name="feature_releases_empty_filter">Nothing here with this filter.</string>
+    <string name="feature_releases_empty_filter">Nothing in this period. Try a longer one, or the artist’s profile for their whole discography.</string>
     <string name="feature_releases_view_latest">Latest</string>
     <string name="feature_releases_view_by_artist">By artist</string>
     <string name="feature_releases_filter_all">All</string>
@@ -19,4 +19,7 @@
     <string name="feature_releases_type_ep">EP</string>
     <string name="feature_releases_type_single">Single</string>
     <string name="feature_releases_type_compilation">Compilation</string>
+    <string name="feature_releases_period_month">Last month</string>
+    <string name="feature_releases_period_half_year">Last 6 months</string>
+    <string name="feature_releases_period_year">Last year</string>
 </resources>

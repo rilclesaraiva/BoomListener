@@ -61,11 +61,11 @@ class ReleasesViewModelTest {
         mapOf(
             1L to ArtistReleasesResult.Found(
                 artist(1, "Chikoi The Maid"),
-                listOf(release(10, ReleaseType.Single, "2026-10-10"), release(11, ReleaseType.Album, "2024-03-01")),
+                listOf(release(10, ReleaseType.Single, "2026-10-10"), release(11, ReleaseType.Album, "2025-12-01")),
             ),
             2L to ArtistReleasesResult.Found(
                 artist(2, "Djavan"),
-                listOf(release(20, ReleaseType.EP, "2025-06-01"), release(10, ReleaseType.Single, "2026-10-10")),
+                listOf(release(20, ReleaseType.EP, "2026-05-01"), release(10, ReleaseType.Single, "2026-10-10")),
             ),
         ),
     )
@@ -75,11 +75,19 @@ class ReleasesViewModelTest {
         val vm = ReleasesViewModel(FakeFollows(listOf(FollowedArtist(1, "Chikoi"), FollowedArtist(2, "Djavan"))), deezer, today = { today })
         backgroundScope.launch(dispatcher) { vm.state.collect {} }
 
+        // Padrão: últimos 6 meses (o álbum de dezembro do ano passado fica de fora).
         val ready = vm.state.value as ReleasesUiState.Ready
-        assertEquals(listOf(10L, 20L, 11L), ready.latest.map { it.release.id })
+        assertEquals(listOf(10L, 20L), ready.latest.map { it.release.id })
         // Por artista: quem lançou por último vem primeiro.
         assertEquals(listOf("Chikoi The Maid", "Djavan"), ready.byArtist.map { it.artist.name })
 
+        vm.setPeriod(ReleasePeriod.Year)
+        assertEquals(listOf(10L, 20L, 11L), (vm.state.value as ReleasesUiState.Ready).latest.map { it.release.id })
+
+        vm.setPeriod(ReleasePeriod.Month)
+        assertEquals(listOf(10L), (vm.state.value as ReleasesUiState.Ready).latest.map { it.release.id })
+
+        vm.setPeriod(ReleasePeriod.Year)
         vm.setFilter(ReleaseFilter.Albums)
         assertEquals(listOf(11L), (vm.state.value as ReleasesUiState.Ready).latest.map { it.release.id })
         assertEquals(listOf("Chikoi The Maid"), (vm.state.value as ReleasesUiState.Ready).byArtist.map { it.artist.name })
@@ -98,7 +106,7 @@ class ReleasesViewModelTest {
         backgroundScope.launch(dispatcher) { vm.state.collect {} }
         val ready = vm.state.value as ReleasesUiState.Ready
         assertEquals(1, ready.failed)
-        assertEquals(2, ready.latest.size)
+        assertEquals(1, ready.latest.size)
     }
 
     @Test
@@ -106,6 +114,13 @@ class ReleasesViewModelTest {
         val vm = ReleasesViewModel(FakeFollows(listOf(FollowedArtist(99, "?"))), deezer, today = { today })
         backgroundScope.launch(dispatcher) { vm.state.collect {} }
         assertEquals(ReleasesUiState.Failed, vm.state.value)
+    }
+
+    @Test
+    fun lancamentoMuitoAntigoNuncaAparece() {
+        val old = ArtistReleases(artist(3, "Seatbelts"), listOf(release(30, ReleaseType.Single, "1998-05-21")))
+        assertTrue(latestReleases(listOf(old), ReleaseFilter.All, ReleasePeriod.Year, today).isEmpty())
+        assertTrue(releasesByArtist(listOf(old), ReleaseFilter.All, ReleasePeriod.Year, today).isEmpty())
     }
 
     @Test

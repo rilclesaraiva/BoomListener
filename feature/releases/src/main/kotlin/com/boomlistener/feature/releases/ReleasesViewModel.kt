@@ -39,6 +39,7 @@ internal sealed interface ReleasesUiState {
     data class Ready(
         val view: ReleasesView,
         val filter: ReleaseFilter,
+        val period: ReleasePeriod,
         val latest: List<ReleaseItem>,
         val byArtist: List<ArtistReleases>,
         /** Quantos artistas não carregaram (o resto aparece normalmente). */
@@ -60,9 +61,11 @@ internal class ReleasesViewModel(
     private val loaded = MutableStateFlow<Loaded>(Loaded.Loading)
     private val view = MutableStateFlow(ReleasesView.Latest)
     private val filter = MutableStateFlow(ReleaseFilter.All)
+    private val period = MutableStateFlow(ReleasePeriod.HalfYear)
     private val refreshes = MutableStateFlow(0)
 
-    val state: StateFlow<ReleasesUiState> = combine(loaded, view, filter) { result, currentView, currentFilter ->
+    val state: StateFlow<ReleasesUiState> = combine(loaded, view, filter, period) { result, currentView, currentFilter, currentPeriod ->
+        val now = today()
         when (result) {
             Loaded.Loading -> ReleasesUiState.Loading
             Loaded.NoFollows -> ReleasesUiState.NoFollows
@@ -72,10 +75,11 @@ internal class ReleasesViewModel(
                 ReleasesUiState.Ready(
                     view = currentView,
                     filter = currentFilter,
-                    latest = latestReleases(result.artists, currentFilter),
-                    byArtist = releasesByArtist(result.artists, currentFilter),
+                    period = currentPeriod,
+                    latest = latestReleases(result.artists, currentFilter, currentPeriod, now),
+                    byArtist = releasesByArtist(result.artists, currentFilter, currentPeriod, now),
                     failed = result.failed,
-                    today = today(),
+                    today = now,
                 )
             }
         }
@@ -111,6 +115,10 @@ internal class ReleasesViewModel(
 
     fun setFilter(newFilter: ReleaseFilter) {
         filter.value = newFilter
+    }
+
+    fun setPeriod(newPeriod: ReleasePeriod) {
+        period.value = newPeriod
     }
 
     fun refresh() {
