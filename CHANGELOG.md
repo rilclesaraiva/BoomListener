@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.18.1] — 2026-10-17
+
+### 🐛 Fixes
+- **Creating a Friends profile no longer says every @ is taken** when the server can't be reached. It now says it couldn't connect.
+
 ## [0.18.0] — 2026-10-17
 
 ### ✨ New

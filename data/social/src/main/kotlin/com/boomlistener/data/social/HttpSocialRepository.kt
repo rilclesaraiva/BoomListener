@@ -60,6 +60,8 @@ internal class HttpSocialRepository(context: Context) : SocialRepository {
     override suspend fun checkHandle(handle: String): HandleCheck {
         if (!isValidHandle(handle)) return HandleCheck.Invalid
         val response = call("GET", "/handles/" + encode(normalizeHandle(handle)), auth = false) ?: return HandleCheck.Offline
+        // Resposta que não veio do nosso servidor (fora do ar, ainda não publicado): não dá para saber.
+        if (response.code != 200 || !response.body.has("available")) return HandleCheck.Offline
         return when {
             !response.body.optBoolean("valid", true) -> HandleCheck.Invalid
             response.body.optBoolean("available") -> HandleCheck.Available
@@ -88,7 +90,8 @@ internal class HttpSocialRepository(context: Context) : SocialRepository {
                 SocialResult.Ok(created)
             }
             409 -> SocialResult.HandleTaken
-            else -> SocialResult.Invalid
+            400 -> SocialResult.Invalid
+            else -> SocialResult.Offline
         }
     }
 
