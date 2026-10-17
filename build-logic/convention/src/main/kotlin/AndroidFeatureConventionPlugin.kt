@@ -1,5 +1,5 @@
 // Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
-// Texto completo: https://github.com/rilclesaraiva/boomlistener/blob/main/LICENSE
+// Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project

@@ -8,7 +8,7 @@ Em caso de conflito entre uma instrução antiga do chat e este arquivo, **vale 
 
 ## O app
 
-**Nome:** Boom, listener! (trocadilho com *sonic boom* + ouvinte). No ícone da tela inicial: **BoomListener**. Repositório: `rilclesaraiva/boomlistener`. `applicationId`: `com.boomlistener.app`. **O applicationId nunca muda** depois do primeiro APK publicado.
+**Nome:** Boom, listener! (trocadilho com *sonic boom* + ouvinte). No ícone da tela inicial: **BoomListener**. Repositório: `rilclesaraiva/BoomListener`. `applicationId`: `com.boomlistener.app`. **O applicationId nunca muda** depois do primeiro APK publicado.
 
 Reprodutor de música **local** para Android, em Material 3, com edição completa de tags, página de artista enriquecida (Deezer + Last.fm) e radar de lançamentos dos artistas seguidos. Gratuito, sem anúncios, sem conta.
 
@@ -72,8 +72,10 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 
 ## Limitações desta sessão (aprendidas no BusBus)
 
+- **Artefatos da Action não baixam daqui** (blob storage da Azure dá 403). O usuário baixa o APK pela aba Actions do GitHub ou pela Release.
+
 - **Nada do Gradle compila aqui:** o Google Maven, o Maven Central, o Gradle Plugin Portal e o `services.gradle.org` estão fora da lista de rede liberada. A única prova real é a Action do GitHub. Por isso, antes de usar uma versão nova de biblioteca, confirme na documentação oficial (via WebFetch) que ela existe e o que exige (compileSdk, versão do AGP).
-- **Quando a Action falhar**, ela mesma posta o resumo do erro como comentário no commit. Leia com `gh api repos/rilclesaraiva/boomlistener/commits/<sha>/comments`.
+- **Quando a Action falhar**, ela mesma posta o resumo do erro como comentário no commit. Leia com `gh api repos/rilclesaraiva/BoomListener/commits/<sha>/comments`.
 - **Logs da Action não são legíveis daqui** (`gh run view --log` dá 403). É por isso que o workflow já posta o erro no commit sozinho.
 - **Secrets e Releases do GitHub dão 403 para esta sessão.** Quem cadastra os Secrets de assinatura é o usuário, pelo painel (Settings → Secrets and variables → Actions).
 - **Deletar branches remotas é bloqueado.** Peça ao usuário.
