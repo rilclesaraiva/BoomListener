@@ -75,6 +75,11 @@ object BoomIcons {
         "SystemUpdate",
         "M17,1.01L7,1C5.9,1 5,1.9 5,3v18c0,1.1 0.9,2 2,2h10c1.1,0 2,-0.9 2,-2V3C19,1.9 18.1,1.01 17,1.01zM17,19H7V5h10V19zM16,13h-3V8h-2v5H8l4,4L16,13z",
     )
+    val DragHandle: ImageVector = materialIcon("DragHandle", "M20,9H4v2h16V9zM4,15h16v-2H4v2z")
+    val Remove: ImageVector = materialIcon(
+        "RemoveCircleOutline",
+        "M7,11v2h10v-2L7,11zM12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8 -3.59,8 -8,8z",
+    )
     val Article: ImageVector = materialIcon(
         "Article",
         "M19,3H5C3.9,3 3,3.9 3,5v14c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2V5C21,3.9 20.1,3 19,3zM14,17H7v-2h7V17zM17,13H7v-2h10V13zM17,9H7V7h10V9z",

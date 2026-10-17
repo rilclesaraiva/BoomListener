@@ -53,6 +53,13 @@ class PlayerSheetState internal constructor(
 
     fun collapse() = animateTo(0f)
 
+    /** Fecha na hora, sem animação (ex.: a fila, quando o player some). */
+    internal fun reset() {
+        animation?.cancel()
+        target = 0f
+        progress = 0f
+    }
+
     /** Arraste: [deltaPx] positivo puxa para cima (abre). */
     internal fun dragBy(deltaPx: Float) {
         animation?.cancel()

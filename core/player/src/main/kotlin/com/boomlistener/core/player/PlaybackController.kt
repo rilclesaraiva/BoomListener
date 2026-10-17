@@ -23,6 +23,12 @@ interface PlaybackController {
     /** Pula para a música da fila de posição original [index] e toca. */
     fun playQueueItem(index: Int)
 
+    /** Move a música da posição [from] para [to] (posições da lista original). */
+    fun moveQueueItem(from: Int, to: Int)
+
+    /** Tira da fila a música da posição [index] (da lista original). */
+    fun removeQueueItem(index: Int)
+
     fun next()
     fun previous()
     fun seekTo(positionMs: Long)

@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -63,17 +62,15 @@ private val ArtworkSizeForLoading = 720.dp
 internal fun NowPlayingContent(
     onCollapse: () -> Unit,
     viewModel: NowPlayingViewModel,
+    queueState: PlayerSheetState,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val item = state.item
     val sizePx = with(LocalDensity.current) { ArtworkSizeForLoading.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
-    val queueState = rememberPlayerSheetState()
 
-    BoxWithConstraints(modifier.fillMaxSize()) {
-        queueState.screenHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
-
+    Box(modifier.fillMaxSize()) {
         Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier

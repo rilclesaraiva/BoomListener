@@ -17,10 +17,14 @@ import org.junit.Test
 private class FakeController(duration: Long) : PlaybackController {
     var seekedTo: Long? = null
     var playedIndex: Int? = null
+    var moved: Pair<Int, Int>? = null
+    var removed: Int? = null
     override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState(durationMs = duration))
     override fun play(tracks: List<Track>, startIndex: Int) = Unit
     override fun togglePlayPause() = Unit
     override fun playQueueItem(index: Int) { playedIndex = index }
+    override fun moveQueueItem(from: Int, to: Int) { moved = from to to }
+    override fun removeQueueItem(index: Int) { removed = index }
     override fun next() = Unit
     override fun previous() = Unit
     override fun seekTo(positionMs: Long) { seekedTo = positionMs }
@@ -54,6 +58,16 @@ class NowPlayingViewModelTest {
         val controller = FakeController(duration = 1000)
         NowPlayingViewModel(controller, NoLibrary).playQueueItem(7)
         assertEquals(7, controller.playedIndex)
+    }
+
+    @Test
+    fun reordenarERemoverChegamAoPlayer() {
+        val controller = FakeController(duration = 1000)
+        val viewModel = NowPlayingViewModel(controller, NoLibrary)
+        viewModel.moveQueueItem(2, 9)
+        viewModel.removeQueueItem(4)
+        assertEquals(2 to 9, controller.moved)
+        assertEquals(4, controller.removed)
     }
 
     @Test

@@ -22,6 +22,8 @@ data class NowPlayingItem(
 data class QueueEntry(
     val index: Int,
     val item: NowPlayingItem,
+    /** Identidade estável na tela (a mesma música pode aparecer duas vezes). */
+    val key: String,
 )
 
 /** Tudo o que as telas precisam saber do player, num retrato só. */

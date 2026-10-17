@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.8.0] — 2026-10-17
+
+### ✨ New
+- **Reorder the queue**: hold the handle on the right of any song and drag it anywhere in the queue, top to bottom.
+- **Remove songs from the queue** with the button next to each one.
+
+### 🐛 Fixes
+- **While the queue is open, it owns the screen.** Swiping down anywhere, the arrow at the top and the back gesture now close only the queue; before, swiping above the queue closed the whole player along with it.
+
+### Known limitation
+- Reordering is available with shuffle off (the queue says so when shuffle is on). Removing works in both modes.
+
 ## [0.7.0] — 2026-10-17
 
 ### ✨ New

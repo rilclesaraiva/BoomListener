@@ -99,6 +99,15 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         }
     }
 
+    override fun moveQueueItem(from: Int, to: Int) = withController { player ->
+        val count = player.mediaItemCount
+        if (from != to && from in 0 until count && to in 0 until count) player.moveMediaItem(from, to)
+    }
+
+    override fun removeQueueItem(index: Int) = withController { player ->
+        if (index in 0 until player.mediaItemCount) player.removeMediaItem(index)
+    }
+
     override fun next() = withController { it.seekToNext() }
 
     // Igual aos players comuns: depois de 3 s volta ao começo da música; antes
@@ -163,9 +172,12 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         if (timeline.isEmpty) return emptyList()
         val shuffle = player.shuffleModeEnabled
         val entries = ArrayList<QueueEntry>(timeline.windowCount)
+        val seen = HashMap<String, Int>()
         var index = timeline.getFirstWindowIndex(shuffle)
         while (index != C.INDEX_UNSET && entries.size < timeline.windowCount) {
-            entries += QueueEntry(index, player.getMediaItemAt(index).toNowPlayingItem())
+            val item = player.getMediaItemAt(index).toNowPlayingItem()
+            val occurrence = seen.merge(item.uri, 1, Int::plus) ?: 1
+            entries += QueueEntry(index, item, key = "${item.uri}#$occurrence")
             index = timeline.getNextWindowIndex(index, Player.REPEAT_MODE_OFF, shuffle)
         }
         return entries

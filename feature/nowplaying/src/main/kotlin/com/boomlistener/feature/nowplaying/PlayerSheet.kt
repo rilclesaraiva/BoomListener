@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -48,24 +51,41 @@ fun PlayerSheet(
         }
     }
 
+    // A fila mora aqui (e não dentro do conteúdo) porque, enquanto ela está
+    // aberta, os gestos e o "voltar" pertencem só a ela.
+    val queueState = rememberPlayerSheetState()
+    LaunchedEffect(state.isVisible) {
+        if (!state.isVisible) queueState.reset()
+    }
+    // Decidido no começo de cada arraste: com a fila aberta, arrastar em
+    // qualquer ponto do player mexe só na fila, nunca fecha o player junto.
+    var dragTargetsQueue by remember { mutableStateOf(false) }
+
     // Mede a tela sempre, mesmo fechado: o mini player precisa da altura para
     // o arraste para cima acompanhar o dedo na proporção certa.
     BoxWithConstraints(modifier.fillMaxSize()) {
         val heightPx = with(LocalDensity.current) { maxHeight.toPx() }
         state.screenHeightPx = heightPx
+        queueState.screenHeightPx = heightPx
         if (!state.isVisible) return@BoxWithConstraints
 
         NowPlayingContent(
-            onCollapse = state::collapse,
+            onCollapse = { if (queueState.isVisible) queueState.collapse() else state.collapse() },
             viewModel = viewModel,
+            queueState = queueState,
             modifier = Modifier
                 .graphicsLayer {
                     translationY = (1f - state.progress) * heightPx
                 }
                 .draggable(
-                    state = rememberDraggableState { delta -> state.dragBy(-delta) },
+                    state = rememberDraggableState { delta ->
+                        if (dragTargetsQueue) queueState.dragBy(-delta) else state.dragBy(-delta)
+                    },
                     orientation = Orientation.Vertical,
-                    onDragStopped = { velocity -> state.settle(-velocity) },
+                    onDragStarted = { dragTargetsQueue = queueState.isVisible },
+                    onDragStopped = { velocity ->
+                        if (dragTargetsQueue) queueState.settle(-velocity) else state.settle(-velocity)
+                    },
                 ),
         )
     }

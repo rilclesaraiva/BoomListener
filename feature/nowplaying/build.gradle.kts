@@ -12,6 +12,8 @@ android {
 dependencies {
     implementation(project(":core:player"))
     implementation(project(":data:library"))
+    // Arrastar para reordenar a fila.
+    implementation(libs.reorderable)
 
     testImplementation(libs.kotlinx.coroutines.test)
 }

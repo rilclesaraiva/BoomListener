@@ -20,6 +20,8 @@ internal class NowPlayingViewModel(
 
     fun togglePlayPause() = controller.togglePlayPause()
     fun playQueueItem(index: Int) = controller.playQueueItem(index)
+    fun moveQueueItem(from: Int, to: Int) = controller.moveQueueItem(from, to)
+    fun removeQueueItem(index: Int) = controller.removeQueueItem(index)
     fun next() = controller.next()
     fun previous() = controller.previous()
     fun toggleShuffle() = controller.toggleShuffle()
