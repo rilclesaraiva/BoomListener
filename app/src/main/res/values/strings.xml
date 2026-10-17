@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nome curto que aparece embaixo do ícone. O nome completo é "Boom, listener!". -->
+    <string name="app_name">BoomListener</string>
+    <string name="nav_library">Biblioteca</string>
+    <string name="nav_releases">Lançamentos</string>
+    <string name="nav_wellbeing">Bem-estar</string>
+    <string name="nav_settings">Ajustes</string>
+</resources>

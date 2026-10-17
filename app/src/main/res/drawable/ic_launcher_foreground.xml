@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Área segura do ícone adaptativo: círculo de 66dp no centro. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M56,40a20,20 0,0 1,0 28" />
+    <path
+        android:strokeColor="#FFDBC8"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M66,32a32,32 0,0 1,0 44" />
+</vector>

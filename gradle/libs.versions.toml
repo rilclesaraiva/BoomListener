@@ -1,0 +1,50 @@
+# Catálogo de versões: ÚNICA lista de dependências do projeto (ver CLAUDE.md).
+# Nunca escreva uma versão direto num build.gradle.kts.
+
+[versions]
+agp = "9.4.0"
+kotlin = "2.4.21"
+composeBom = "2026.09.00"
+# Material 3 Expressive: a 1.4.0 estável ainda não tem a maioria dos componentes
+# Expressive. Trocar para a 1.5.0 estável assim que sair.
+material3 = "1.5.0-beta01"
+materialIconsCore = "1.7.8"
+activityCompose = "1.13.0"
+androidxCore = "1.19.1"
+lifecycle = "2.11.0"
+navigation = "2.10.2"
+junit = "4.13.2"
+
+[libraries]
+androidx-core = { group = "androidx.core", name = "core", version.ref = "androidxCore" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIconsCore" }
+
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+# Usados só pelo build-logic (plugins de convenção).
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+# AGP 9 já traz Kotlin embutido ("built-in Kotlin"), então o plugin
+# kotlin-android NÃO é aplicado em nenhum módulo. Ele só é declarado na raiz
+# (apply false) para fixar a versão do Kotlin usada pelo AGP e pelo Compose.
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+
+# Plugins de convenção (build-logic/convention).
+boomlistener-android-application = { id = "boomlistener.android.application" }
+boomlistener-android-library = { id = "boomlistener.android.library" }
+boomlistener-android-compose = { id = "boomlistener.android.compose" }
+boomlistener-android-feature = { id = "boomlistener.android.feature" }

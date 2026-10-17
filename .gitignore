@@ -1,0 +1,17 @@
+# Gradle e saídas de build (100% reconstruíveis).
+.gradle/
+.kotlin/
+build/
+**/build/
+
+# Configuração local da máquina.
+local.properties
+.idea/
+*.iml
+.DS_Store
+
+# Assinatura: NUNCA vai para o Git (ver CLAUDE.md). Vive só nos Secrets.
+keystore.properties
+*.jks
+*.keystore
+*.p12

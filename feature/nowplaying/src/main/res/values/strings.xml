@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_nowplaying_title">Tocando agora</string>
+    <string name="feature_nowplaying_message">O player em tela cheia vai ficar aqui.</string>
+</resources>

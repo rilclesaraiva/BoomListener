@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema só da janela, antes do Compose desenhar. O tema de verdade é o
+         BoomTheme (core/designsystem). -->
+    <style name="Theme.BoomListener" parent="android:Theme.Material.NoActionBar" />
+</resources>

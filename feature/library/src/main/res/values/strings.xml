@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_library_title">Biblioteca</string>
+    <string name="feature_library_message">Suas músicas, álbuns, artistas e pastas vão aparecer aqui.</string>
+</resources>

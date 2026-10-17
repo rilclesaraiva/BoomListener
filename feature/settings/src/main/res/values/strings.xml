@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_settings_title">Ajustes</string>
+    <string name="feature_settings_message">Tema, fontes de informação, privacidade e sobre o app.</string>
+</resources>
