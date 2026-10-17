@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.17.0] — 2026-10-17
+
+### ✨ New
+- **Pick up where you left off.** Close the app and open it again: the mini player comes back with the same song, the same queue and the same spot in the song, paused. If you had ended the music (swiped the mini player down), the app opens clean.
+
+### 🎨 Visual tweaks
+- **Rounder corners** on the ⋮ menus and on the top of the player while it slides up or down.
+
 ## [0.16.1] — 2026-10-17
 
 ### 🎨 Visual tweaks

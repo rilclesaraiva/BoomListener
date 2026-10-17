@@ -8,6 +8,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,7 +48,13 @@ fun BoomMoreMenu(
         IconButton(onClick = { open = true }) {
             Icon(BoomIcons.More, contentDescription = stringResource(R.string.core_designsystem_more))
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        // Cantos bem arredondados, no mesmo estilo dos cartões do app.
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            shape = MaterialTheme.shapes.large,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ) {
             all.forEach { action ->
                 DropdownMenuItem(
                     text = { Text(action.label) },

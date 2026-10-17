@@ -17,6 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.CancellationException
@@ -66,8 +70,13 @@ fun PlayerSheet(
 
     // Mede a tela sempre, mesmo fechado: o mini player precisa da altura para
     // o arraste para cima acompanhar o dedo na proporção certa.
+    // Cantos de cima arredondados enquanto o painel sobe ou desce; aberto de
+    // vez, ocupa a tela toda com cantos retos.
+    val corner = MaterialTheme.shapes.extraLarge.topStart
+    val density = LocalDensity.current
     BoxWithConstraints(modifier.fillMaxSize()) {
         val heightPx = with(LocalDensity.current) { maxHeight.toPx() }
+        val cornerPx = corner.toPx(Size(heightPx, heightPx), density)
         state.screenHeightPx = heightPx
         queueState.screenHeightPx = heightPx
         if (!state.isVisible) return@BoxWithConstraints
@@ -82,6 +91,9 @@ fun PlayerSheet(
             modifier = Modifier
                 .graphicsLayer {
                     translationY = (1f - state.progress) * heightPx
+                    val radius = CornerSize(cornerPx * ((1f - state.progress) * 4f).coerceIn(0f, 1f))
+                    shape = RoundedCornerShape(topStart = radius, topEnd = radius, bottomStart = CornerSize(0f), bottomEnd = CornerSize(0f))
+                    clip = true
                 }
                 .draggable(
                     state = rememberDraggableState { delta ->
