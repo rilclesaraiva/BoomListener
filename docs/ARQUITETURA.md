@@ -125,7 +125,13 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 - Biblioteca dividida em **Músicas, Álbuns, Artistas e Gêneros** (abas ou filtros no topo).
 - **Ajustes ainda por vir** (seguindo o modelo das telas de referência): Gestão de música (pastas, ignorar áudios curtos), Reprodução (pular silêncio, crossfade), Equalizador, Notificações (radar de lançamentos), Integrações (Last.fm, Deezer), Cópia e restauração.
 - Cor do player tirada da capa.
-- **Embaralhamento próprio do app (próxima mudança grande do player):** ao ligar o aleatório, o próprio app embaralha a fila uma vez e grava essa ordem fixa (guardando a original para desfazer ao desligar), em vez de deixar o embaralhamento com o ExoPlayer. Assim a ordem da fila na tela é sempre a ordem real, e reordenar e remover funcionam igual com ou sem aleatório. Combinado com o rilclesaraiva para entrar junto com as próximas ideias dele.
+- **Embaralhamento próprio do app (próxima mudança grande do player)** — combinado com o rilclesaraiva para entrar junto com as próximas ideias dele. Regras:
+  - **Algoritmo sem repetição:** embaralhamento de Fisher-Yates sobre a fila inteira. Cada música toca **uma vez** por rodada; nenhuma se repete antes de todas terem tocado.
+  - **Vale para qualquer origem do aleatório:** botão dentro do player, um futuro "Tocar em ordem aleatória" na Biblioteca, álbum, artista etc. Todos passam pelo mesmo embaralhador em `core/player`.
+  - **A ordem embaralhada fica fixa** e é a fila real (o ExoPlayer não embaralha nada): a tela mostra a ordem verdadeira, e reordenar e remover funcionam igual com ou sem aleatório.
+  - **A ordem original é guardada** ao ligar o aleatório e restaurada ao desligar, continuando da música que está tocando. Músicas removidas durante o aleatório também saem da ordem original; músicas movidas ficam onde o usuário pôs só na ordem embaralhada.
+  - **Com "repetir tudo" + aleatório:** ao fim de uma rodada, embaralha de novo, sem deixar a última música da rodada anterior ser a primeira da nova.
+  - A lógica do embaralhador fica numa classe pura (sem Android), com testes: sem repetição, ordem original restaurada, remoção refletida nas duas ordens, virada de rodada.
 - **Injeção de dependências:** enquanto o Hilt não entra, cada `data` expõe um ponto de acesso provisório (ex.: `LibraryData.repository(context)`) que devolve sempre a mesma instância.
 
 ## Stack
