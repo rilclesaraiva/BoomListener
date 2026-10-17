@@ -107,3 +107,15 @@ object BoomIcons {
         "M21,19V5c0,-1.1 -0.9,-2 -2,-2H5c-1.1,0 -2,0.9 -2,2v14c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2zM8.5,13.5l2.5,3.01L14.5,12l4.5,6H5l3.5,-4.5z",
     )
 }
+
+private fun materialIcon(name: String, pathData: String): ImageVector =
+    ImageVector.Builder(
+        name = name,
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).addPath(
+        pathData = addPathNodes(pathData),
+        fill = SolidColor(Color.Black), // a cor real vem do tint do Icon
+    ).build()
