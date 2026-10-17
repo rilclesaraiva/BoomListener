@@ -16,6 +16,7 @@ Reprodutor de música **local** para Android, em Material 3, com edição comple
 - O app **nunca reproduz** conteúdo de serviços externos (YouTube Music, Spotify, Deezer…). Fontes externas servem só para **informação** e para links "abrir em…".
 - **Bandcamp não é usado** (não tem API pública).
 - Nada de dados do usuário sai do aparelho, exceto as consultas de metadados e o scrobble no Last.fm quando o próprio usuário ativar.
+- **Permissões de mídia: só áudio** (`READ_MEDIA_AUDIO`, e `READ_EXTERNAL_STORAGE` até o Android 12). **Nunca** peça fotos ou vídeos: a política da Play Store só aceita essas permissões quando galeria é a função principal do app, e as capas não precisam delas (vêm de dentro dos arquivos e do MediaStore de áudio). Capa escolhida pelo usuário no editor de tags usa o **Photo Picker**, que não exige permissão.
 - A identidade visual é própria: inspiração de layout é permitida, copiar a marca ou o visual de outro app não.
 
 ## Regra fixa: modularidade

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_library_title">Biblioteca</string>
-    <string name="feature_library_message">Suas músicas, álbuns, artistas e pastas vão aparecer aqui.</string>
+    <string name="feature_library_message">Acesso liberado! A lista das suas músicas chega na próxima versão.</string>
+    <string name="feature_library_permission_title">Suas músicas moram aqui</string>
+    <string name="feature_library_permission_message">Para mostrar e tocar as músicas do seu aparelho, o Boom, listener! precisa de acesso a música e áudio. Nada sai do seu celular.</string>
+    <string name="feature_library_permission_button">Permitir acesso</string>
+    <string name="feature_library_permission_denied">O acesso foi negado. Você pode liberar em Permissões → Música e áudio.</string>
+    <string name="feature_library_permission_settings">Abrir configurações</string>
 </resources>

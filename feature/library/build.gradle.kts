@@ -8,3 +8,8 @@ plugins {
 android {
     namespace = "com.boomlistener.feature.library"
 }
+
+dependencies {
+    // Pedido de permissão (rememberLauncherForActivityResult).
+    implementation(libs.androidx.activity.compose)
+}

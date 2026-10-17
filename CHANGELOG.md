@@ -4,6 +4,11 @@ Todas as mudanças do **Boom, listener!** ficam registradas aqui, por versão, t
 
 Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/). Versionamento [SemVer](https://semver.org/lang/pt-BR/): `MAJOR.MINOR.PATCH`.
 
+## [0.2.0] — 2026-10-17
+
+### ✨ Novidades
+- **Acesso às suas músicas**: a aba Biblioteca agora explica por que o app precisa de acesso a música e áudio e pede a permissão. Se ela for negada duas vezes, aparece um botão que leva direto às configurações do Android.
+
 ## [0.1.0] — 2026-10-17
 
 Primeira versão: o esqueleto do app, ainda sem tocar música.
