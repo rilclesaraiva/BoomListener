@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -65,6 +66,8 @@ import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSearchTopBar
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
+import com.boomlistener.data.deezer.DeezerData
+import kotlinx.coroutines.launch
 import com.boomlistener.data.library.LibraryData
 
 @Composable
@@ -78,6 +81,7 @@ internal fun LibraryScreen(
         LibraryViewModel(
             LibraryData.repository(context.applicationContext),
             PlayerConnection.controller(context.applicationContext),
+            songLink = DeezerData.repository(context.applicationContext)::youtubeMusicLinkForSong,
         )
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -146,6 +150,7 @@ internal fun LibraryScreen(
                     state = state,
                     onShuffleAll = viewModel::shuffleAll,
                     loadArtwork = viewModel::artwork,
+                    shareUrl = viewModel::shareUrl,
                     onOpenTrack = viewModel::play,
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
@@ -161,6 +166,7 @@ private fun TrackList(
     state: LibraryUiState.Success,
     onShuffleAll: () -> Unit,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    shareUrl: suspend (Track) -> String,
     onOpenTrack: (Track) -> Unit,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
@@ -203,6 +209,7 @@ private fun TrackList(
                     track = track,
                     version = state.version,
                     loadArtwork = loadArtwork,
+                    shareUrl = shareUrl,
                     onClick = { onOpenTrack(track) },
                     onOpenArtist = track.artist?.let { name -> { onOpenArtist(name) } },
                     onEditTags = { onEditTags(track) },
@@ -217,6 +224,7 @@ private fun TrackItem(
     track: Track,
     version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    shareUrl: suspend (Track) -> String,
     onClick: () -> Unit,
     onOpenArtist: (() -> Unit)?,
     onEditTags: () -> Unit,
@@ -227,6 +235,7 @@ private fun TrackItem(
         value = loadArtwork(track, sizePx)?.asImageBitmap()
     }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val unknownArtist = stringResource(R.string.feature_library_unknown_artist)
 
     ListItem(
@@ -252,10 +261,12 @@ private fun TrackItem(
                     ),
                 ),
                 onShare = {
-                    context.shareLink(
-                        url = ExternalLinks.youtubeMusicSearch(track.title, track.artist),
-                        title = listOfNotNull(track.title, track.artist).joinToString(" — "),
-                    )
+                    scope.launch {
+                        context.shareLink(
+                            url = shareUrl(track),
+                            title = listOfNotNull(track.title, track.artist).joinToString(" — "),
+                        )
+                    }
                 },
                 onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) },
             )

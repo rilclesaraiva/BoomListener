@@ -78,7 +78,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
-import com.boomlistener.core.common.shareText
+import com.boomlistener.core.common.shareLink
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomIcons
@@ -530,6 +532,7 @@ private fun PopularRow(
 ) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val cover = rememberRemoteImage(viewModel, track.coverUrl, px)
+    val scope = rememberCoroutineScope()
     ListItem(
         modifier = Modifier.clickable { track.link?.let(context::openUrl) },
         leadingContent = { BoomArtwork(image = cover, fallbackText = track.title) },
@@ -544,7 +547,7 @@ private fun PopularRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OwnedMark(owned)
                 BoomMoreMenu(
-                    onShare = track.link?.let { link -> { context.shareText(link) } },
+                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.link, track.title, artistName), track.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, artistName)) },
                     onDeezer = track.link?.let { link -> { context.openUrl(link) } },
                 )
@@ -564,6 +567,7 @@ private fun ReleaseRow(
 ) {
     val px = with(LocalDensity.current) { 64.dp.roundToPx() }
     val cover = rememberRemoteImage(viewModel, release.coverUrl, px)
+    val scope = rememberCoroutineScope()
     val typeName = stringResource(
         when (release.type) {
             ReleaseType.Album -> R.string.feature_artist_type_album
@@ -584,7 +588,7 @@ private fun ReleaseRow(
                     Icon(BoomIcons.Owned, stringResource(R.string.feature_artist_owned), tint = MaterialTheme.colorScheme.primary)
                 }
                 BoomMoreMenu(
-                    onShare = release.link?.let { link -> { context.shareText(link) } },
+                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.link, release.title, artistName), release.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, artistName)) },
                     onDeezer = release.link?.let { link -> { context.openUrl(link) } },
                 )

@@ -15,6 +15,8 @@ dependencies {
     implementation(project(":data:lyrics"))
     // Letra guardada dentro do arquivo.
     implementation(project(":data:tags"))
+    // Link do YouTube Music para compartilhar (via Deezer + song.link).
+    implementation(project(":data:deezer"))
     // Arrastar para reordenar a fila.
     implementation(libs.reorderable)
 

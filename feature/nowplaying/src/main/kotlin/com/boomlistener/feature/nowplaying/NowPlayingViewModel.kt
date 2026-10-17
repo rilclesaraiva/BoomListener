@@ -14,6 +14,8 @@ import com.boomlistener.data.lyrics.LyricsQuery
 import com.boomlistener.data.lyrics.LyricsRepository
 import com.boomlistener.data.lyrics.LyricsResult
 import com.boomlistener.data.lyrics.lyricsFromText
+import com.boomlistener.core.common.ExternalLinks
+import com.boomlistener.core.player.NowPlayingItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +42,8 @@ internal class NowPlayingViewModel(
     private val lyricsRepository: LyricsRepository,
     /** Letra guardada dentro do arquivo (tag), que tem prioridade sobre a internet. */
     private val embeddedLyrics: suspend (uri: String) -> String? = { null },
+    /** Link do YouTube Music de uma música do aparelho (null se não achar). */
+    private val songLink: suspend (title: String, artist: String?, durationMs: Long) -> String? = { _, _, _ -> null },
 ) : ViewModel() {
 
     val state: StateFlow<PlaybackState> = controller.state
@@ -99,6 +103,11 @@ internal class NowPlayingViewModel(
             }
         }
     }
+
+    /** Link para compartilhar a música atual: no YouTube Music, ou a busca por ela. */
+    suspend fun shareUrl(item: NowPlayingItem): String =
+        runCatching { songLink(item.title, item.artist, controller.state.value.durationMs) }.getOrNull()
+            ?: ExternalLinks.youtubeMusicSearch(item.title, item.artist)
 
     fun toggleLyrics() {
         _showLyrics.value = !_showLyrics.value

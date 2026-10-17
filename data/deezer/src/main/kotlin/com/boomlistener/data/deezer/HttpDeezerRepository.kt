@@ -26,9 +26,13 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.security.MessageDigest
+import java.util.Locale
 
 private const val API = "https://api.deezer.com"
 // Respostas da API ficam guardadas por um dia (discografia muda pouco).
+// song.link (Odesli): gratuito, sem chave, até 10 consultas por minuto.
+private const val SONG_LINK_API = "https://api.song-link.io/v1-alpha.1/links"
+private const val SHARE_CONFIDENCE = 0.6f
 private const val JSON_TTL_MS = 24L * 60 * 60 * 1000
 
 internal class HttpDeezerRepository(context: Context) : DeezerRepository {
@@ -141,6 +145,26 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             }
             file.readBytes()
         }.getOrNull()
+    }
+
+    override suspend fun youtubeMusicLink(deezerUrl: String): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val country = Locale.getDefault().country.ifBlank { "US" }
+            val json = getJson(
+                "$SONG_LINK_API?userCountry=$country&url=" + URLEncoder.encode(deezerUrl, "UTF-8"),
+            )
+            val links = json.optJSONObject("linksByPlatform")
+            val raw = links?.optJSONObject("youtubeMusic")?.str("url") ?: links?.optJSONObject("youtube")?.str("url")
+            raw?.let(::youtubeMusicShareUrl)
+        }.getOrNull()
+    }
+
+    override suspend fun youtubeMusicLinkForSong(title: String, artist: String?, durationMs: Long): String? {
+        val found = searchTrack(LocalTrackInfo(title, artist, album = null, durationMs)) as? TrackSearchResult.Found
+            ?: return null
+        // Só com boa certeza: melhor o link de busca do que a música errada.
+        val best = found.candidates.first().takeIf { it.confidence >= SHARE_CONFIDENCE } ?: return null
+        return best.link?.let { youtubeMusicLink(it) }
     }
 
     override suspend fun image(url: String, sizePx: Int): Bitmap? {

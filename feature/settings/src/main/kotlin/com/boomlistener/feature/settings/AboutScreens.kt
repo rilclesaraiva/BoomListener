@@ -103,6 +103,7 @@ private val attributions = listOf(
     Attribution("Palette", "Google · Apache License 2.0"),
     Attribution("Reorderable", "Calvin Liang · Apache License 2.0"),
     Attribution("LRCLIB", "lrclib.net · lyrics database"),
+    Attribution("song.link", "Odesli · links between music services"),
     Attribution("TagLib", "TagLib team · LGPL 2.1 / MPL 1.1"),
     Attribution("TagLib for Android", "Kyant · Apache License 2.0"),
     Attribution("Deezer API", "Deezer · artist information"),

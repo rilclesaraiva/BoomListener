@@ -11,6 +11,8 @@ android {
 
 dependencies {
     implementation(project(":data:library"))
+    // Link do YouTube Music para compartilhar (via Deezer + song.link).
+    implementation(project(":data:deezer"))
     implementation(project(":core:player"))
     // Pedido de permissão (rememberLauncherForActivityResult).
     implementation(libs.androidx.activity.compose)

@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.artist
 
+import com.boomlistener.core.common.ExternalLinks
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -65,4 +66,11 @@ internal class AlbumViewModel(
     }
 
     suspend fun image(url: String, sizePx: Int): Bitmap? = deezer.image(url, sizePx)
+
+    /**
+     * Link para compartilhar uma música ou álbum do Deezer: o mesmo no YouTube
+     * Music (pelo song.link) ou, se não achar, a busca por ele lá.
+     */
+    suspend fun shareUrl(deezerLink: String?, title: String, artist: String?): String =
+        deezerLink?.let { deezer.youtubeMusicLink(it) } ?: ExternalLinks.youtubeMusicSearch(title, artist)
 }

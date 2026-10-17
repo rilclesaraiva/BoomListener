@@ -14,6 +14,7 @@ import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.lyrics.LyricsData
 import com.boomlistener.data.tags.TagsData
+import com.boomlistener.data.deezer.DeezerData
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
@@ -25,6 +26,7 @@ internal fun nowPlayingViewModel(): NowPlayingViewModel {
             LibraryData.repository(context),
             LyricsData.repository(context),
             embeddedLyrics = TagsData.repository(context)::readLyrics,
+            songLink = DeezerData.repository(context)::youtubeMusicLinkForSong,
         )
     }
 }

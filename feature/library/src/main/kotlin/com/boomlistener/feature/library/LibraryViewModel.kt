@@ -12,6 +12,7 @@ import com.boomlistener.data.library.LibraryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import com.boomlistener.core.common.ExternalLinks
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.stateIn
@@ -20,6 +21,8 @@ import kotlinx.coroutines.launch
 internal class LibraryViewModel(
     private val repository: LibraryRepository,
     private val player: PlaybackController,
+    /** Link do YouTube Music de uma música do aparelho (null se não achar). */
+    private val songLink: suspend (title: String, artist: String?, durationMs: Long) -> String? = { _, _, _ -> null },
 ) : ViewModel() {
 
     // null = ainda não carregou.
@@ -71,6 +74,11 @@ internal class LibraryViewModel(
         val visible = (uiState.value as? LibraryUiState.Success)?.tracks ?: return
         if (visible.isNotEmpty()) player.playShuffled(visible)
     }
+
+    /** Link para compartilhar: a música no YouTube Music, ou a busca por ela. */
+    suspend fun shareUrl(track: Track): String =
+        runCatching { songLink(track.title, track.artist, track.durationMs) }.getOrNull()
+            ?: ExternalLinks.youtubeMusicSearch(track.title, track.artist)
 
     suspend fun artwork(track: Track, sizePx: Int): Bitmap? =
         repository.loadArtwork(track.uri, sizePx)

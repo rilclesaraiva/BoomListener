@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.14.1] — 2026-10-17
+
+### 🐛 Fixes
+- **Sharing now sends the song's own YouTube Music link** (`music.youtube.com/watch?v=…`), which opens straight in the app of whoever receives it. The song is matched on Deezer and converted with song.link; if no match is found, the YouTube Music search link is shared instead. Works for songs in the library, the player, artist pages and album pages, and for albums too.
+
 ## [0.14.0] — 2026-10-17
 
 ### ✨ New

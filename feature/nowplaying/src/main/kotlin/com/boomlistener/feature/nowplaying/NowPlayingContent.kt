@@ -41,6 +41,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -88,6 +90,7 @@ internal fun NowPlayingContent(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val item = state.item
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val sizePx = with(LocalDensity.current) { ArtworkSizeForLoading.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
     val artworkColor = rememberArtworkColor(artwork)
@@ -160,10 +163,12 @@ internal fun NowPlayingContent(
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags)) { onEditTags(item.uri) },
                             ),
                             onShare = {
-                                context.shareLink(
-                                    url = ExternalLinks.youtubeMusicSearch(item.title, item.artist),
-                                    title = listOfNotNull(item.title, item.artist).joinToString(" — "),
-                                )
+                                scope.launch {
+                                    context.shareLink(
+                                        url = viewModel.shareUrl(item),
+                                        title = listOfNotNull(item.title, item.artist).joinToString(" — "),
+                                    )
+                                }
                             },
                             onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(item.title, item.artist)) },
                         )

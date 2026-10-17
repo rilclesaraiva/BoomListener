@@ -48,7 +48,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
-import com.boomlistener.core.common.shareText
+import com.boomlistener.core.common.shareLink
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
@@ -108,6 +110,7 @@ internal fun AlbumScreen(
 @Composable
 private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val album = state.album
     val release = album.release
     val coverPx = with(LocalDensity.current) { 280.dp.roundToPx() }
@@ -165,7 +168,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
                     Icon(BoomIcons.OpenExternal, stringResource(R.string.feature_artist_open_external))
                 }
                 BoomMoreMenu(
-                    onShare = release.link?.let { link -> { context.shareText(link) } },
+                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.link, release.title, album.artistName), release.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, album.artistName)) },
                     onDeezer = release.link?.let { link -> { context.openUrl(link) } },
                 )
@@ -211,7 +214,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
                             }
                         }
                         BoomMoreMenu(
-                            onShare = track.link?.let { link -> { context.shareText(link) } },
+                            onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.link, track.title, album.artistName), track.title) } },
                             onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, album.artistName)) },
                             onDeezer = track.link?.let { link -> { context.openUrl(link) } },
                         )
