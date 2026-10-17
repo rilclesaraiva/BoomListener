@@ -41,12 +41,13 @@ import com.boomlistener.core.player.RepeatMode
 
 private val ArtworkSizeForLoading = 720.dp
 
+/** O conteúdo do player em tela cheia (o painel que desliza fica em [PlayerSheet]). */
 @Composable
-internal fun NowPlayingScreen(
-    onBack: () -> Unit,
+internal fun NowPlayingContent(
+    onCollapse: () -> Unit,
+    viewModel: NowPlayingViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val viewModel = nowPlayingViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val item = state.item
     val sizePx = with(LocalDensity.current) { ArtworkSizeForLoading.roundToPx() }
@@ -65,7 +66,7 @@ internal fun NowPlayingScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             ) {
-                IconButton(onClick = onBack) {
+                IconButton(onClick = onCollapse) {
                     Icon(BoomIcons.Collapse, stringResource(R.string.feature_nowplaying_collapse))
                 }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {

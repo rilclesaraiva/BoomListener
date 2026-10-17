@@ -23,6 +23,7 @@ internal class NowPlayingViewModel(
     fun previous() = controller.previous()
     fun toggleShuffle() = controller.toggleShuffle()
     fun cycleRepeatMode() = controller.cycleRepeatMode()
+    fun stop() = controller.stop()
 
     /** Recebe a posição de 0 a 1 vinda da barra de progresso. */
     fun seekToFraction(fraction: Float) {

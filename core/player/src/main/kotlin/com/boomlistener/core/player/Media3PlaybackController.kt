@@ -100,6 +100,12 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         }
     }
 
+    override fun stop() = withController {
+        it.stop()
+        it.clearMediaItems()
+        publish(it)
+    }
+
     /** Executa já, ou assim que a conexão com o serviço ficar pronta. */
     private fun withController(command: (MediaController) -> Unit) {
         mainHandler.post {

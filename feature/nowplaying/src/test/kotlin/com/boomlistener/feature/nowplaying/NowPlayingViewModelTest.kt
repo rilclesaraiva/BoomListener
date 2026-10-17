@@ -24,6 +24,7 @@ private class FakeController(duration: Long) : PlaybackController {
     override fun seekTo(positionMs: Long) { seekedTo = positionMs }
     override fun toggleShuffle() = Unit
     override fun cycleRepeatMode() = Unit
+    override fun stop() = Unit
 }
 
 private object NoLibrary : LibraryRepository {

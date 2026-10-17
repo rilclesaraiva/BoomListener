@@ -43,6 +43,7 @@ internal class FakePlaybackController : PlaybackController {
     override fun seekTo(positionMs: Long) = Unit
     override fun toggleShuffle() = Unit
     override fun cycleRepeatMode() = Unit
+    override fun stop() = Unit
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

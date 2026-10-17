@@ -24,6 +24,9 @@ interface PlaybackController {
     fun seekTo(positionMs: Long)
     fun toggleShuffle()
     fun cycleRepeatMode()
+
+    /** Para de tocar e esvazia a fila (some o mini player e a notificação). */
+    fun stop()
 }
 
 /**

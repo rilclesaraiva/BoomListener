@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.6.0] — 2026-10-17
+
+### ✨ New
+- **Gestures for the player**: swipe the mini player up to open the full player, swipe the full player down to close it, and swipe the mini player down to stop playback. Everything follows your finger and finishes with a smooth spring.
+- **Predictive back on the player**: the system back gesture shrinks the player as you swipe, and closes it when you let go (or puts it back if you change your mind).
+
+### 🐛 Fixes
+- **Smooth transitions everywhere.** Opening and closing screens now slides gently, and switching tabs fades. Before, the system back gesture could show a broken, half-drawn screen, because the player was a regular page and the bottom bars popped in and out.
+
 ## [0.5.0] — 2026-10-17
 
 ### ✨ New
