@@ -13,7 +13,7 @@ Em caso de conflito entre uma instrução antiga do chat e este arquivo, **vale 
 Reprodutor de música **local** para Android, em Material 3, com edição completa de tags, página de artista enriquecida (Deezer + Last.fm) e radar de lançamentos dos artistas seguidos. Gratuito, sem anúncios, sem conta.
 
 **Limites que não mudam:**
-- O app **nunca reproduz** conteúdo de serviços externos (YouTube Music, Spotify, Deezer…). Fontes externas servem só para **informação** e para links "abrir em…".
+- O app **nunca reproduz** conteúdo de serviços externos (YouTube Music, Spotify, Deezer…). Fontes externas servem só para **informação** e para links "abrir em…". Compartilhar manda o link do YouTube Music da própria música no formato `https://music.youtube.com/watch?v=ID&drli=1` (Deezer → song.link → `youtubeMusicShareUrl`, em `data/deezer`); sem resultado confiável, o link de busca.
 - **Bandcamp não é usado** (não tem API pública).
 - Nada de dados do usuário sai do aparelho, exceto as consultas de metadados e o scrobble no Last.fm quando o próprio usuário ativar.
 - **Permissões de mídia: só áudio** (`READ_MEDIA_AUDIO`, e `READ_EXTERNAL_STORAGE` até o Android 12). **Nunca** peça fotos ou vídeos: a política da Play Store só aceita essas permissões quando galeria é a função principal do app, e as capas não precisam delas (vêm de dentro dos arquivos e do MediaStore de áudio). Capa escolhida pelo usuário no editor de tags usa o **Photo Picker**, que não exige permissão.
