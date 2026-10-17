@@ -124,7 +124,8 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 
 - Biblioteca dividida em **Músicas, Álbuns, Artistas e Gêneros** (abas ou filtros no topo).
 - **Ajustes ainda por vir** (seguindo o modelo das telas de referência): Gestão de música (pastas, ignorar áudios curtos), Reprodução (pular silêncio, crossfade), Equalizador, Notificações (radar de lançamentos), Integrações (Last.fm, Deezer), Cópia e restauração.
-- Fila visível na tela cheia do player, cor do player tirada da capa, gesto de arrastar o mini player.
+- Cor do player tirada da capa.
+- **Embaralhamento próprio do app (próxima mudança grande do player):** ao ligar o aleatório, o próprio app embaralha a fila uma vez e grava essa ordem fixa (guardando a original para desfazer ao desligar), em vez de deixar o embaralhamento com o ExoPlayer. Assim a ordem da fila na tela é sempre a ordem real, e reordenar e remover funcionam igual com ou sem aleatório. Combinado com o rilclesaraiva para entrar junto com as próximas ideias dele.
 - **Injeção de dependências:** enquanto o Hilt não entra, cada `data` expõe um ponto de acesso provisório (ex.: `LibraryData.repository(context)`) que devolve sempre a mesma instância.
 
 ## Stack
