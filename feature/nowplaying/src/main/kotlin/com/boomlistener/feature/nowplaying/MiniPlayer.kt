@@ -28,8 +28,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -60,8 +62,17 @@ fun MiniPlayer(
     modifier: Modifier = Modifier,
 ) {
     val viewModel = nowPlayingViewModel()
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveState by viewModel.state.collectAsStateWithLifecycle()
+
+    // Ao encerrar a música, a fila esvazia na hora, mas o mini player ainda
+    // está saindo com animação. Sem isto ele piscaria vazio ("Artista
+    // desconhecido", capa em branco, botão de tocar) nesse meio-tempo; com
+    // isto ele sai mostrando a última música, como estava.
+    var lastShownState by remember { mutableStateOf(liveState) }
+    SideEffect { if (liveState.item != null) lastShownState = liveState }
+    val state = if (liveState.item != null) liveState else lastShownState
     val item = state.item
+    val visible = liveState.item != null
     val sizePx = with(LocalDensity.current) { 48.dp.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
 
@@ -71,14 +82,14 @@ fun MiniPlayer(
     var dismissOffset by remember { mutableFloatStateOf(0f) }
     var heightPx by remember { mutableFloatStateOf(1f) }
 
-    // Quando a fila esvazia (música encerrada), volta o mini player para o
-    // lugar, pronto para a próxima vez que algo tocar.
-    LaunchedEffect(item == null) {
-        if (item == null) dismissOffset = 0f
+    // Só volta o mini player para o lugar quando algo começar a tocar de novo
+    // (antes disso ele ainda está saindo, e voltar agora causaria um salto).
+    LaunchedEffect(visible) {
+        if (visible) dismissOffset = 0f
     }
 
     AnimatedVisibility(
-        visible = item != null,
+        visible = visible,
         enter = expandVertically(boomSpatialSpec()) + fadeIn(boomEffectsSpec()),
         exit = shrinkVertically(boomSpatialSpec()) + fadeOut(boomEffectsSpec()),
         modifier = modifier,
@@ -110,10 +121,13 @@ fun MiniPlayer(
                         if (dismissOffset > 0f) {
                             val dismiss = dismissOffset > heightPx * 0.4f || velocity > 1500f
                             if (dismiss) {
-                                // Primeiro encerra a música de verdade; o mini
-                                // player some sozinho com a animação de saída
-                                // quando a fila esvazia.
+                                // Primeiro encerra a música de verdade; depois
+                                // termina de levar o mini player para baixo
+                                // enquanto ele encolhe e some.
                                 viewModel.stop()
+                                animate(dismissOffset, heightPx, animationSpec = returnSpec) { value, _ ->
+                                    dismissOffset = value
+                                }
                             } else {
                                 animate(dismissOffset, 0f, animationSpec = returnSpec) { value, _ ->
                                     dismissOffset = value

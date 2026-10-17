@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.6.2] — 2026-10-17
+
+### 🐛 Fixes
+- **No more flicker when you swipe the mini player away.** For a split second it used to show an empty song ("Unknown artist", blank cover) before disappearing; now it slides down and fades out still showing the song you closed.
+
 ## [0.6.1] — 2026-10-17
 
 ### 🐛 Fixes
