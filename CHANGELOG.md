@@ -4,6 +4,17 @@ Todas as mudanças do **Boom, listener!** ficam registradas aqui, por versão, t
 
 Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/). Versionamento [SemVer](https://semver.org/lang/pt-BR/): `MAJOR.MINOR.PATCH`.
 
+## [0.3.0] — 2026-10-17
+
+### ✨ Novidades
+- **Lista de músicas**: a Biblioteca agora mostra todas as músicas do aparelho, em ordem alfabética, com capa, artista e álbum. Toques de celular, alarmes e gravações ficam de fora.
+- **Busca**: a lupa no topo da Biblioteca procura por título, artista ou álbum, sem se importar com acentos ou maiúsculas ("joao" encontra "João").
+- **Menu de cada música** (os três pontinhos): ir para o artista, editar tags e ver a duração.
+- **Bem-estar mudou de lugar**: saiu da barra de baixo e agora fica em **Ajustes → Bem-estar**.
+
+### 🎨 Ajustes visuais
+- Todas as telas ganharam barra no topo com título, e as telas internas (artista, editor de tags, tocando agora, bem-estar) ganharam a seta de voltar.
+
 ## [0.2.0] — 2026-10-17
 
 ### ✨ Novidades

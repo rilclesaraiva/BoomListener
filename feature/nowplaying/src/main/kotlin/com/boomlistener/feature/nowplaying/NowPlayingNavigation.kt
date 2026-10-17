@@ -11,7 +11,6 @@ const val NOWPLAYING_ROUTE = "nowplaying"
 
 fun NavController.navigateToNowPlaying() = navigate(NOWPLAYING_ROUTE)
 
-fun NavGraphBuilder.nowplayingScreen(
-) {
-    composable(NOWPLAYING_ROUTE) { NowPlayingScreen() }
+fun NavGraphBuilder.nowplayingScreen(onBack: () -> Unit) {
+    composable(NOWPLAYING_ROUTE) { NowPlayingScreen(onBack = onBack) }
 }

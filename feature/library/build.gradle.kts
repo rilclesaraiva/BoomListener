@@ -10,6 +10,9 @@ android {
 }
 
 dependencies {
+    implementation(project(":data:library"))
     // Pedido de permissão (rememberLauncherForActivityResult).
     implementation(libs.androidx.activity.compose)
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }

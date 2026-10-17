@@ -11,7 +11,6 @@ const val TAGEDITOR_ROUTE = "tageditor"
 
 fun NavController.navigateToTagEditor() = navigate(TAGEDITOR_ROUTE)
 
-fun NavGraphBuilder.tageditorScreen(
-) {
-    composable(TAGEDITOR_ROUTE) { TagEditorScreen() }
+fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit) {
+    composable(TAGEDITOR_ROUTE) { TagEditorScreen(onBack = onBack) }
 }

@@ -119,6 +119,11 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 | Álbuns e lançamentos em destaque | `Carousel` |
 | Listas de faixas | List items Expressive (agrupados, com cantos que se adaptam) |
 
+## Ideias registradas (ainda sem data)
+
+- Biblioteca dividida em **Músicas, Álbuns, Artistas e Gêneros** (abas ou filtros no topo).
+- **Injeção de dependências:** enquanto o Hilt não entra, cada `data` expõe um ponto de acesso provisório (ex.: `LibraryData.repository(context)`) que devolve sempre a mesma instância.
+
 ## Stack
 
 Na versão 0.1.0 só o Compose, o Material 3 e a navegação estão em uso. O resto entra módulo a módulo, conforme cada funcionalidade for construída.

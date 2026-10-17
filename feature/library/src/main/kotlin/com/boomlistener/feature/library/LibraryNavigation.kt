@@ -6,15 +6,18 @@ package com.boomlistener.feature.library
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import com.boomlistener.core.model.Track
 
 const val LIBRARY_ROUTE = "library"
 
 fun NavController.navigateToLibrary() = navigate(LIBRARY_ROUTE)
 
 fun NavGraphBuilder.libraryScreen(
-    onOpenArtist: (artistId: String) -> Unit,
-    onOpenTagEditor: () -> Unit,
-    onOpenNowPlaying: () -> Unit,
+    onOpenTrack: (Track) -> Unit,
+    onOpenArtist: (artistName: String) -> Unit,
+    onEditTags: (Track) -> Unit,
 ) {
-    composable(LIBRARY_ROUTE) { LibraryScreen(onOpenArtist = onOpenArtist, onOpenTagEditor = onOpenTagEditor, onOpenNowPlaying = onOpenNowPlaying) }
+    composable(LIBRARY_ROUTE) {
+        LibraryScreen(onOpenTrack = onOpenTrack, onOpenArtist = onOpenArtist, onEditTags = onEditTags)
+    }
 }

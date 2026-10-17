@@ -29,6 +29,7 @@ import com.boomlistener.feature.releases.releasesScreen
 import com.boomlistener.feature.settings.settingsScreen
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
+import com.boomlistener.feature.wellbeing.navigateToWellbeing
 import com.boomlistener.feature.wellbeing.wellbeingScreen
 
 /**
@@ -65,19 +66,21 @@ fun BoomListenerApp() {
         NavHost(
             navController = navController,
             startDestination = LIBRARY_ROUTE,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
         ) {
+            val back: () -> Unit = { navController.popBackStack() }
             libraryScreen(
+                // O player ainda não existe: tocar uma música abre a tela provisória.
+                onOpenTrack = { navController.navigateToNowPlaying() },
                 onOpenArtist = navController::navigateToArtist,
-                onOpenTagEditor = navController::navigateToTagEditor,
-                onOpenNowPlaying = navController::navigateToNowPlaying,
+                onEditTags = { navController.navigateToTagEditor() },
             )
-            artistScreen()
-            tageditorScreen()
-            nowplayingScreen()
+            artistScreen(onBack = back)
+            tageditorScreen(onBack = back)
+            nowplayingScreen(onBack = back)
             releasesScreen()
-            wellbeingScreen()
-            settingsScreen()
+            settingsScreen(onOpenWellbeing = navController::navigateToWellbeing)
+            wellbeingScreen(onBack = back)
         }
     }
 }

@@ -10,9 +10,11 @@ import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.feature.library.LIBRARY_ROUTE
 import com.boomlistener.feature.releases.RELEASES_ROUTE
 import com.boomlistener.feature.settings.SETTINGS_ROUTE
-import com.boomlistener.feature.wellbeing.WELLBEING_ROUTE
 
-/** As abas da barra de navegação inferior (máximo de 5, regra do M3). */
+/**
+ * As abas da barra de navegação inferior (máximo de 5, regra do M3).
+ * Bem-estar não é aba: fica dentro de Ajustes.
+ */
 enum class TopLevelDestination(
     val route: String,
     val icon: ImageVector,
@@ -20,6 +22,5 @@ enum class TopLevelDestination(
 ) {
     Library(LIBRARY_ROUTE, BoomIcons.Library, R.string.nav_library),
     Releases(RELEASES_ROUTE, BoomIcons.Releases, R.string.nav_releases),
-    Wellbeing(WELLBEING_ROUTE, BoomIcons.Wellbeing, R.string.nav_wellbeing),
     Settings(SETTINGS_ROUTE, BoomIcons.Settings, R.string.nav_settings),
 }

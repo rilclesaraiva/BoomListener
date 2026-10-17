@@ -3,18 +3,20 @@
 
 package com.boomlistener.feature.releases
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
+import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 
 @Composable
-internal fun ReleasesScreen(
-    modifier: Modifier = Modifier,
-) {
-    BoomPlaceholder(
-        title = stringResource(R.string.feature_releases_title),
-        message = stringResource(R.string.feature_releases_message),
-        modifier = modifier,
-    )
+internal fun ReleasesScreen(modifier: Modifier = Modifier) {
+    BoomScreenScaffold(title = stringResource(R.string.feature_releases_title), modifier = modifier) { padding ->
+        BoomPlaceholder(
+            title = stringResource(R.string.feature_releases_title),
+            message = stringResource(R.string.feature_releases_message),
+            modifier = Modifier.padding(padding),
+        )
+    }
 }

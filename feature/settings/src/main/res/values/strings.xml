@@ -2,4 +2,6 @@
 <resources>
     <string name="feature_settings_title">Ajustes</string>
     <string name="feature_settings_message">Tema, fontes de informação, privacidade e sobre o app.</string>
+    <string name="feature_settings_wellbeing">Bem-estar</string>
+    <string name="feature_settings_wellbeing_summary">Tempo de escuta e avisos de pausa</string>
 </resources>

@@ -11,7 +11,6 @@ const val WELLBEING_ROUTE = "wellbeing"
 
 fun NavController.navigateToWellbeing() = navigate(WELLBEING_ROUTE)
 
-fun NavGraphBuilder.wellbeingScreen(
-) {
-    composable(WELLBEING_ROUTE) { WellbeingScreen() }
+fun NavGraphBuilder.wellbeingScreen(onBack: () -> Unit) {
+    composable(WELLBEING_ROUTE) { WellbeingScreen(onBack = onBack) }
 }

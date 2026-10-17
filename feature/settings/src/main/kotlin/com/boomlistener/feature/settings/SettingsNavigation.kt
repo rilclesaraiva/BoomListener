@@ -11,7 +11,7 @@ const val SETTINGS_ROUTE = "settings"
 
 fun NavController.navigateToSettings() = navigate(SETTINGS_ROUTE)
 
-fun NavGraphBuilder.settingsScreen(
-) {
-    composable(SETTINGS_ROUTE) { SettingsScreen() }
+/** [onOpenWellbeing] é ligado pelo :app (uma feature não conhece a outra). */
+fun NavGraphBuilder.settingsScreen(onOpenWellbeing: () -> Unit) {
+    composable(SETTINGS_ROUTE) { SettingsScreen(onOpenWellbeing = onOpenWellbeing) }
 }
