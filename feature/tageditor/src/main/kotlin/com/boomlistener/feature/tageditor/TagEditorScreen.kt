@@ -161,9 +161,10 @@ internal fun TagEditorScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         actions = {
             if (!state.loading && !state.loadFailed) {
+                val effects = boomEffectsSpec<Float>()
                 AnimatedContent(
                     targetState = state.saving,
-                    transitionSpec = { fadeIn(boomEffectsSpec()) togetherWith fadeOut(boomEffectsSpec()) },
+                    transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
                     label = "save",
                 ) { saving ->
                     if (saving) {
@@ -334,6 +335,7 @@ private fun CoverRow(state: TagEditorUiState, onPickCover: () -> Unit, onRemoveC
 /** Cartão das tags automáticas: buscar, ver o que foi preenchido, trocar ou desfazer. */
 @Composable
 private fun AutoTagCard(state: TagEditorUiState, viewModel: TagEditorViewModel) {
+    val effects = boomEffectsSpec<Float>()
     Surface(
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -352,7 +354,7 @@ private fun AutoTagCard(state: TagEditorUiState, viewModel: TagEditorViewModel) 
             AnimatedContent(
                 targetState = state.autoTag,
                 contentKey = { it::class },
-                transitionSpec = { fadeIn(boomEffectsSpec()) togetherWith fadeOut(boomEffectsSpec()) },
+                transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
                 label = "autoTag",
             ) { auto ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
