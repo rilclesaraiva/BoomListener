@@ -16,6 +16,9 @@ import com.boomlistener.core.model.AlbumDetail
 import com.boomlistener.data.deezer.AlbumResult
 import com.boomlistener.data.deezer.DeezerRepository
 import com.boomlistener.data.deezer.ProfileResult
+import com.boomlistener.data.lastfm.ArtistBio
+import com.boomlistener.data.lastfm.BioResult
+import com.boomlistener.data.lastfm.LastfmRepository
 import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
@@ -103,6 +106,14 @@ private class FakeFollows : FollowRepository {
     override suspend fun unfollow(deezerId: Long) = followed.update { list -> list.filterNot { it.deezerId == deezerId } }
 }
 
+private class FakeLastfm(private val result: BioResult = BioResult.NotFound) : LastfmRepository {
+    var askedFor: String? = null
+    override suspend fun artistBio(artistName: String, language: String): BioResult {
+        askedFor = artistName
+        return result
+    }
+}
+
 private class FakePlayer : PlaybackController {
     var shuffled: List<Track> = emptyList()
     var played: Pair<List<Track>, Int>? = null
@@ -142,18 +153,24 @@ class ArtistViewModelTest {
     fun seguirETocarAleatorio() = runTest(dispatcher) {
         val follows = FakeFollows()
         val player = FakePlayer()
+        val bio = ArtistBio("Cantor e compositor.", null, listOf("mpb"), 1000, null)
+        val lastfm = FakeLastfm(BioResult.Found(bio))
         val viewModel = ArtistViewModel(
             "Djavan",
             FakeLibrary(listOf(track(1, "Açaí", "Djavan", "Luz"), track(2, "Outra", "Outro", "X"))),
             FakeDeezer(ProfileResult.Found(profile)),
             follows,
             player,
+            lastfm,
+            "pt",
         )
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
 
         assertEquals(listOf(1L), viewModel.uiState.value.localTracks.map { it.id })
         assertEquals(setOf(10L), viewModel.uiState.value.ownedReleases)
         assertFalse(viewModel.uiState.value.following)
+        assertEquals(BioState.Ready(bio), viewModel.uiState.value.bio)
+        assertEquals("Djavan", lastfm.askedFor)
 
         viewModel.toggleFollow()
         assertTrue(viewModel.uiState.value.following)

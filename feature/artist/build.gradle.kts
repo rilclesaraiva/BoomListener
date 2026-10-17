@@ -13,6 +13,7 @@ dependencies {
     implementation(project(":data:library"))
     implementation(project(":data:deezer"))
     implementation(project(":data:releases"))
+    implementation(project(":data:lastfm"))
     implementation(project(":core:player"))
 
     testImplementation(libs.kotlinx.coroutines.test)

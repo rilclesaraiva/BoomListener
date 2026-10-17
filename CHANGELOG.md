@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.13.0] — 2026-10-17
+
+### ✨ New
+- **Artist biographies** in the About tab, from Last.fm, in your phone's language when available (English otherwise). Read the summary or tap **Read more** for the full text, see the artist's genre tags and how many listeners they have on Last.fm.
+
 ## [0.12.0] — 2026-10-17
 
 ### ✨ New

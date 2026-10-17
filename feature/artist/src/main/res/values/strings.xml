@@ -21,7 +21,6 @@
     <string name="feature_artist_singles">Singles</string>
     <string name="feature_artist_compilations">Compilations</string>
     <string name="feature_artist_biography">Biography</string>
-    <string name="feature_artist_biography_soon">The biography will come from Last.fm in a future update.</string>
     <string name="feature_artist_related">Similar artists</string>
     <string name="feature_artist_source">Artist info from Deezer</string>
     <string name="feature_artist_owned">In your library</string>
@@ -42,4 +41,10 @@
     <string name="feature_artist_album_failed">Couldn’t load this release. Are you online?</string>
     <string name="feature_artist_album_owned">You have %1$d of %2$d songs</string>
     <string name="feature_artist_album_play_owned">Play what you have</string>
+    <string name="feature_artist_biography_missing">Last.fm doesn’t have a biography for this artist yet.</string>
+    <string name="feature_artist_biography_failed">Couldn’t load the biography. Are you online?</string>
+    <string name="feature_artist_read_more">Read more</string>
+    <string name="feature_artist_read_less">Read less</string>
+    <string name="feature_artist_biography_source">Biography from Last.fm</string>
+    <string name="feature_artist_listeners">%1$s listeners on Last.fm</string>
 </resources>

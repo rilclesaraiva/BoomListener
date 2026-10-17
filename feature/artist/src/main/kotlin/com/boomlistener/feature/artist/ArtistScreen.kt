@@ -4,6 +4,7 @@
 package com.boomlistener.feature.artist
 
 import android.content.Context
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -44,6 +45,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,6 +53,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -90,6 +93,7 @@ import com.boomlistener.core.model.ReleaseType
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
+import com.boomlistener.data.lastfm.LastfmData
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.releases.ReleasesData
 import java.text.NumberFormat
@@ -117,6 +121,9 @@ internal fun ArtistScreen(
             deezer = DeezerData.repository(context),
             follows = ReleasesData.follows(context),
             player = PlayerConnection.controller(context),
+            lastfm = LastfmData.repository(context),
+            // Biografia no idioma do aparelho (o Last.fm cai para inglês se não houver).
+            language = java.util.Locale.getDefault().language,
         )
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -371,15 +378,7 @@ private fun LazyListScope.aboutTab(
     viewModel: ArtistViewModel,
     onOpenArtist: (String) -> Unit,
 ) {
-    item {
-        SectionTitle(stringResource(R.string.feature_artist_biography))
-        Text(
-            text = stringResource(R.string.feature_artist_biography_soon),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-    }
+    item { Biography(state.bio, onRetry = viewModel::loadBio) }
     if (profile == null) {
         profileStatus(state, viewModel)
         return
@@ -405,6 +404,87 @@ private fun LazyListScope.aboutTab(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
         )
     }
+}
+
+@Composable
+private fun Biography(bio: BioState, onRetry: () -> Unit) {
+    val context = LocalContext.current
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Column {
+        SectionTitle(stringResource(R.string.feature_artist_biography))
+        when (bio) {
+            BioState.Loading -> BoomLoading(Modifier.height(96.dp))
+            BioState.NotFound -> BioText(stringResource(R.string.feature_artist_biography_missing))
+            BioState.Failed -> Column(Modifier.padding(horizontal = 20.dp)) {
+                Text(
+                    text = stringResource(R.string.feature_artist_biography_failed),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                TextButton(onClick = onRetry) { Text(stringResource(R.string.feature_artist_retry)) }
+            }
+            is BioState.Ready -> {
+                val info = bio.bio
+                val full = info.content
+                AnimatedContent(
+                    targetState = expanded && full != null,
+                    label = "bio",
+                ) { showFull ->
+                    BioText(if (showFull) full.orEmpty() else info.summary)
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                ) {
+                    if (full != null) {
+                        TextButton(onClick = { expanded = !expanded }) {
+                            Text(
+                                stringResource(
+                                    if (expanded) R.string.feature_artist_read_less else R.string.feature_artist_read_more,
+                                ),
+                            )
+                        }
+                    }
+                    info.url?.let { link ->
+                        TextButton(onClick = { context.openUrl(link) }) {
+                            Text(stringResource(R.string.feature_artist_biography_source))
+                        }
+                    }
+                }
+                if (info.tags.isNotEmpty()) {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(info.tags) { tag ->
+                            SuggestionChip(onClick = {}, label = { Text(tag) })
+                        }
+                    }
+                }
+                if (info.listeners > 0) {
+                    Text(
+                        text = stringResource(
+                            R.string.feature_artist_listeners,
+                            NumberFormat.getIntegerInstance().format(info.listeners),
+                        ),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BioText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(horizontal = 20.dp),
+    )
 }
 
 @Composable

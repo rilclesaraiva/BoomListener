@@ -21,7 +21,6 @@
     <string name="feature_artist_singles">Singles</string>
     <string name="feature_artist_compilations">Coletâneas</string>
     <string name="feature_artist_biography">Biografia</string>
-    <string name="feature_artist_biography_soon">A biografia vem do Last.fm numa próxima atualização.</string>
     <string name="feature_artist_related">Artistas parecidos</string>
     <string name="feature_artist_source">Informações do artista: Deezer</string>
     <string name="feature_artist_owned">Na sua biblioteca</string>
@@ -42,4 +41,10 @@
     <string name="feature_artist_album_failed">Não deu para carregar este lançamento. Você está conectado?</string>
     <string name="feature_artist_album_owned">Você tem %1$d de %2$d músicas</string>
     <string name="feature_artist_album_play_owned">Tocar o que você tem</string>
+    <string name="feature_artist_biography_missing">O Last.fm ainda não tem biografia deste artista.</string>
+    <string name="feature_artist_biography_failed">Não deu para carregar a biografia. Você está conectado?</string>
+    <string name="feature_artist_read_more">Ler mais</string>
+    <string name="feature_artist_read_less">Ler menos</string>
+    <string name="feature_artist_biography_source">Biografia do Last.fm</string>
+    <string name="feature_artist_listeners">%1$s ouvintes no Last.fm</string>
 </resources>

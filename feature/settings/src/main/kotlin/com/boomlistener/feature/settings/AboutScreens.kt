@@ -104,6 +104,7 @@ private val attributions = listOf(
     Attribution("Reorderable", "Calvin Liang · Apache License 2.0"),
     Attribution("LRCLIB", "lrclib.net · lyrics database"),
     Attribution("Deezer API", "Deezer · artist information"),
+    Attribution("Last.fm API", "Last.fm · biographies (CC BY-SA)"),
 )
 
 @Composable

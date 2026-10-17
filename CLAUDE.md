@@ -123,6 +123,12 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 - **Nenhuma chave secreta no repositório:** nem keystore de release, nem chave do Last.fm. Única exceção: `app/debug.keystore` (senha pública `android`), que existe só para o APK de debug atualizar por cima sem desinstalar. A keystore vive só nos Secrets do GitHub; a chave e o segredo do Last.fm só nos Secrets do Cloudflare Worker (`proxy/`).
 - A **keystore de release** é deste app (não é a do BusBus): `boomlistener-release.p12`, alias `boomlistener`, SHA-256 `8E:66:90:F2:B7:75:BD:FB:13:0F:F7:4F:28:87:18:CA:BD:8C:2B:8C:3B:09:75:11:FA:0A:D2:AE:8C:58:09:A8`. Gerada em PKCS12 moderno (JDK 21), sem o problema de criptografia legada do BusBus. Se ela for perdida, o app não recebe mais atualização. O usuário precisa guardar uma cópia fora do GitHub.
 
+## Proxy do Last.fm
+
+- `proxy/worker.js` (Cloudflare Worker `boomlistener-lastfm`, publicado pelo rilclesaraiva pelo painel). Só aceita métodos públicos de leitura e acrescenta a chave. Endereço no app: `PROXY_URL` em `data/lastfm/ProxyLastfmRepository.kt`.
+- A chave e o segredo do Last.fm ficam **só** nos Secrets do Worker (`LASTFM_API_KEY`, `LASTFM_SHARED_SECRET`). Nunca escreva os valores em arquivo, commit, log ou mensagem.
+- Esta sessão não tem acesso à Cloudflare: qualquer mudança no `worker.js` precisa ser colada de novo no painel pelo usuário.
+
 ## Licença
 
 GPL-3.0, igual ao BusBus. Cabeçalho de licença no topo de cada arquivo-fonte.
