@@ -72,15 +72,6 @@ fun NavGraphBuilder.libraryScreen(
             onOpenGenre = { navController.openCollection("genre", it) },
             onOpenArtist = onOpenArtist,
             onOpenAlbum = { navController.openCollection("album", it) },
-            onSeeAll = { kind ->
-                // Vai para a aba Biblioteca já na pílula escolhida (como tocar na aba).
-                CollectionsRequest.kind.value = kind
-                navController.navigate(COLLECTIONS_ROUTE) {
-                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
             onOpenPlaylist = { navController.openCollection("playlist", it.toString()) },
             onOpenHistory = onOpenHistory,
             onOpenSettings = onOpenSettings,
