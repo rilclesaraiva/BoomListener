@@ -3,6 +3,12 @@
 
 package com.boomlistener.feature.social
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import com.boomlistener.data.social.ProfileImage
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -101,14 +107,31 @@ internal fun FriendProfileScreen(
 
 @Composable
 private fun Header(profile: FriendProfile, onMessage: () -> Unit, onToggleBlock: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth().padding(20.dp),
-    ) {
-        Avatar(profile.user.name, size = 96.dp)
+    val banner = rememberProfileImage(profile.user.id, ProfileImage.Banner, profile.bannerVersion)
+    val photo = rememberProfileImage(profile.user.id, ProfileImage.Avatar, profile.avatarVersion)
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        // Capa no topo, com a foto encaixada na borda de baixo.
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp), contentAlignment = Alignment.BottomCenter) {
+            ProfileBanner(banner, Modifier.padding(bottom = 48.dp).clip(MaterialTheme.shapes.extraLarge))
+            Avatar(
+                profile.user.name,
+                size = 104.dp,
+                image = photo,
+                modifier = Modifier.border(4.dp, MaterialTheme.colorScheme.surface, CircleShape),
+            )
+        }
         Spacer(Modifier.height(12.dp))
         Text(profile.user.name, style = MaterialTheme.typography.headlineSmall)
         Text("@" + profile.user.handle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (profile.bio.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                profile.bio,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp),
+            )
+        }
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Button(onClick = onMessage, enabled = !profile.blockedByMe) {
@@ -120,6 +143,7 @@ private fun Header(profile: FriendProfile, onMessage: () -> Unit, onToggleBlock:
                 Text(stringResource(if (profile.blockedByMe) R.string.feature_social_unblock else R.string.feature_social_block))
             }
         }
+        Spacer(Modifier.height(16.dp))
     }
 }
 

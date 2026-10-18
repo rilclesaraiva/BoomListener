@@ -3,6 +3,13 @@
 
 package com.boomlistener.app
 
+import android.graphics.BitmapFactory
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import com.boomlistener.data.social.ProfileImage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -155,10 +162,20 @@ fun BoomListenerApp() {
     }
 
     // Seu perfil no canto superior direito de toda aba (inicial do nome, ou ícone sem perfil).
-    val profileShortcut = remember(socialAccount?.name) {
+    val profilePhoto by produceState<ImageBitmap?>(null, socialAccount?.id, socialAccount?.avatarVersion) {
+        val account = socialAccount
+        value = if (account == null || account.avatarVersion <= 0) {
+            null
+        } else {
+            SocialData.repository(context).profileImage(account.id, ProfileImage.Avatar, account.avatarVersion)
+                ?.let { bytes -> withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() } }
+        }
+    }
+    val profileShortcut = remember(socialAccount?.name, profilePhoto) {
         ProfileShortcut(
             initial = socialAccount?.name?.trim()?.firstOrNull()?.uppercase(),
             onClick = { navController.navigateToMyProfile() },
+            photo = profilePhoto,
         )
     }
     CompositionLocalProvider(LocalTabReselect provides reselect, LocalProfileShortcut provides profileShortcut) {

@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -78,6 +79,16 @@ internal fun CollectionsScreen(
     var creating by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(COLLECTIONS_ROUTE, listState)
+    // Veio do "Ver todos" do Início: abre a pílula pedida, do começo.
+    LaunchedEffect(Unit) {
+        CollectionsRequest.kind.collect { kind ->
+            if (kind != null) {
+                viewModel.select(kind)
+                CollectionsRequest.kind.value = null
+                listState.scrollToItem(0)
+            }
+        }
+    }
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_collections_title),

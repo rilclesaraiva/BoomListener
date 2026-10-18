@@ -5,6 +5,7 @@ package com.boomlistener.feature.social
 
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
+import com.boomlistener.data.social.ProfileImage
 import com.boomlistener.data.social.SocialAccount
 import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.ListeningHistoryRepository
@@ -22,6 +23,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
@@ -81,5 +84,33 @@ class MyProfileViewModelTest {
 
         vm.setSharing(true)
         assertEquals(true, social.account.value?.sharing)
+    }
+
+    @Test
+    fun descricaoFotoECapa() = runTest(dispatcher) {
+        val social = FakeSocial().apply { account.value = SocialAccount("me", "rilcle", "Rilcle", "t", sharing = false) }
+        val vm = MyProfileViewModel(
+            social, FakeHistory(emptyList()), FakeStats(emptyList()), FakeLibrary(), FakeFollows(), FakePlayer(),
+            zone = zone, today = { LocalDate.of(2026, 10, 17) },
+        )
+        backgroundScope.launch(dispatcher) { vm.state.collect {} }
+
+        // Descrição passa do limite: fica nos 160.
+        vm.setBio("x".repeat(200))
+        assertEquals(MAX_BIO, social.account.value?.bio?.length)
+
+        vm.setImage(ProfileImage.Avatar, "content://media/picker/1")
+        assertEquals(99L, social.account.value?.avatarVersion)
+        assertNull(vm.uploading.value)
+
+        vm.setImage(ProfileImage.Banner, "content://media/picker/2")
+        vm.setImage(ProfileImage.Banner, null)
+        assertEquals(0L, social.account.value?.bannerVersion)
+        assertEquals(3, social.imageCalls.size)
+
+        // Sem internet: avisa que não salvou.
+        social.online = false
+        vm.setImage(ProfileImage.Avatar, "content://media/picker/3")
+        assertTrue(vm.saveFailed.value)
     }
 }

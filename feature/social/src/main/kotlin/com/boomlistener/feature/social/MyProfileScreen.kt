@@ -3,6 +3,20 @@
 
 package com.boomlistener.feature.social
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import com.boomlistener.data.social.ProfileImage
+import com.boomlistener.data.social.SocialAccount
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -97,7 +111,7 @@ internal fun MyProfileScreen(
         actions = {
             if (state?.account != null) {
                 IconButton(onClick = { renaming = true }) {
-                    Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_social_edit_name))
+                    Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_social_edit_profile))
                 }
             }
         },
@@ -109,7 +123,13 @@ internal fun MyProfileScreen(
         }
         LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 32.dp)) {
             item(key = "header") {
-                Header(current, viewModel, onCreateProfile, onToggleSharing = viewModel::setSharing)
+                Header(
+                    current,
+                    viewModel,
+                    onCreateProfile,
+                    onToggleSharing = viewModel::setSharing,
+                    onEdit = { renaming = true },
+                )
                 if (saveFailed) {
                     Text(
                         stringResource(R.string.feature_social_offline),
@@ -196,62 +216,80 @@ internal fun MyProfileScreen(
 
     val account = state?.account
     if (renaming && account != null) {
-        var name by remember { mutableStateOf(account.name) }
-        AlertDialog(
-            onDismissRequest = { renaming = false },
-            title = { Text(stringResource(R.string.feature_social_edit_name)) },
-            text = {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it.take(40) },
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.feature_social_name)) },
-                )
-            },
-            confirmButton = {
-                TextButton(enabled = name.isNotBlank(), onClick = {
-                    renaming = false
-                    viewModel.rename(name)
-                }) { Text(stringResource(R.string.feature_social_save)) }
-            },
-            dismissButton = { TextButton(onClick = { renaming = false }) { Text(stringResource(R.string.feature_social_cancel)) } },
-        )
+        EditProfileSheet(account = account, viewModel = viewModel, onDismiss = { renaming = false })
     }
 }
 
-/** Cabeçalho tingido pela capa da sua mais ouvida, com foto, nome, @ e o compartilhamento. */
+/**
+ * Cabeçalho: a capa (ou o tom da sua mais ouvida, se ainda não tiver capa),
+ * a foto encaixada na borda, nome, @, descrição e o compartilhamento.
+ */
 @Composable
 private fun Header(
     state: MyProfileUiState,
     viewModel: MyProfileViewModel,
     onCreateProfile: () -> Unit,
     onToggleSharing: (Boolean) -> Unit,
+    onEdit: () -> Unit,
 ) {
+    val account = state.account
+    val banner = rememberProfileImage(account?.id, ProfileImage.Banner, account?.bannerVersion ?: 0)
+    val photo = rememberProfileImage(account?.id, ProfileImage.Avatar, account?.avatarVersion ?: 0)
     val coverUri = state.topSongs.firstOrNull()?.uri
     val cover = rememberLocalArtwork(viewModel, coverUri, 256.dp)
     val seed = rememberArtworkColor(cover)
-    val account = state.account
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .artworkTintedBackground(seed)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Avatar(account?.name ?: "?", size = 72.dp)
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    account?.name ?: stringResource(R.string.feature_social_you),
-                    style = MaterialTheme.typography.headlineSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Box(contentAlignment = Alignment.BottomStart) {
+            if (banner != null) {
+                ProfileBanner(banner, Modifier.padding(bottom = 44.dp).clip(MaterialTheme.shapes.extraLarge))
+            } else {
+                // Sem capa: o tom da sua música mais ouvida.
+                Box(
+                    Modifier
+                        .padding(bottom = 44.dp)
+                        .fillMaxWidth()
+                        .aspectRatio(BANNER_RATIO)
+                        .clip(MaterialTheme.shapes.extraLarge)
+                        .artworkTintedBackground(seed),
                 )
-                Text(
-                    account?.let { "@" + it.handle } ?: stringResource(R.string.feature_social_no_profile_yet),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            }
+            Avatar(
+                account?.name ?: "?",
+                size = 96.dp,
+                image = photo,
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                    .clip(CircleShape)
+                    .then(if (account != null) Modifier.clickable(onClick = onEdit) else Modifier),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Column(Modifier.padding(horizontal = 4.dp)) {
+            Text(
+                account?.name ?: stringResource(R.string.feature_social_you),
+                style = MaterialTheme.typography.headlineSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                account?.let { "@" + it.handle } ?: stringResource(R.string.feature_social_no_profile_yet),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (account != null) {
+                Spacer(Modifier.height(8.dp))
+                if (account.bio.isNotBlank()) {
+                    Text(account.bio, style = MaterialTheme.typography.bodyLarge)
+                } else {
+                    // Sem descrição: um convite para escrever uma.
+                    Text(
+                        stringResource(R.string.feature_social_bio_add),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clip(MaterialTheme.shapes.small).clickable(onClick = onEdit),
+                    )
+                }
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -275,6 +313,129 @@ private fun Header(
                     Switch(checked = account.sharing, onCheckedChange = onToggleSharing)
                 }
             }
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+/**
+ * Editar o perfil: capa, foto (do seletor de fotos do Android, sem pedir
+ * permissão), nome e descrição.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewModel, onDismiss: () -> Unit) {
+    val uploading by viewModel.uploading.collectAsStateWithLifecycle()
+    var name by remember { mutableStateOf(account.name) }
+    var bio by remember { mutableStateOf(account.bio) }
+    val banner = rememberProfileImage(account.id, ProfileImage.Banner, account.bannerVersion)
+    val photo = rememberProfileImage(account.id, ProfileImage.Avatar, account.avatarVersion)
+    var picking by remember { mutableStateOf(ProfileImage.Avatar) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) viewModel.setImage(picking, uri.toString())
+    }
+    fun pick(kind: ProfileImage) {
+        picking = kind
+        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(stringResource(R.string.feature_social_edit_profile), style = MaterialTheme.typography.headlineSmall)
+
+            // Capa: tocar troca; o "x" tira.
+            Box(contentAlignment = Alignment.Center) {
+                ProfileBanner(
+                    banner,
+                    Modifier.clip(MaterialTheme.shapes.extraLarge).clickable(enabled = uploading == null) { pick(ProfileImage.Banner) },
+                )
+                ImageEditBadge(uploading == ProfileImage.Banner, stringResource(R.string.feature_social_banner_change))
+            }
+            if (account.bannerVersion > 0) {
+                TextButton(onClick = { viewModel.setImage(ProfileImage.Banner, null) }, enabled = uploading == null) {
+                    Text(stringResource(R.string.feature_social_banner_remove))
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(contentAlignment = Alignment.Center) {
+                    Avatar(
+                        account.name,
+                        size = 88.dp,
+                        image = photo,
+                        modifier = Modifier.clip(CircleShape).clickable(enabled = uploading == null) { pick(ProfileImage.Avatar) },
+                    )
+                    if (uploading == ProfileImage.Avatar) CircularProgressIndicator()
+                }
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    TextButton(onClick = { pick(ProfileImage.Avatar) }, enabled = uploading == null) {
+                        Text(stringResource(R.string.feature_social_photo_change))
+                    }
+                    if (account.avatarVersion > 0) {
+                        TextButton(onClick = { viewModel.setImage(ProfileImage.Avatar, null) }, enabled = uploading == null) {
+                            Text(stringResource(R.string.feature_social_photo_remove))
+                        }
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it.take(40) },
+                singleLine = true,
+                label = { Text(stringResource(R.string.feature_social_name)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = bio,
+                onValueChange = { bio = it.take(MAX_BIO) },
+                minLines = 3,
+                maxLines = 5,
+                label = { Text(stringResource(R.string.feature_social_bio)) },
+                placeholder = { Text(stringResource(R.string.feature_social_bio_hint)) },
+                supportingText = { Text("${bio.length}/$MAX_BIO") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                enabled = name.isNotBlank(),
+                onClick = {
+                    if (name.trim() != account.name) viewModel.rename(name)
+                    if (bio.trim() != account.bio) viewModel.setBio(bio)
+                    onDismiss()
+                },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) { Text(stringResource(R.string.feature_social_save)) }
+        }
+    }
+}
+
+/** Selo no meio da capa: "Trocar capa", ou o carregando enquanto envia. */
+@Composable
+private fun ImageEditBadge(busy: Boolean, label: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = CircleShape,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+            if (busy) {
+                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(BoomIcons.Image, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge)
         }
     }
 }

@@ -25,6 +25,18 @@ interface SocialRepository {
     suspend fun register(name: String, handle: String): SocialResult<SocialAccount>
     suspend fun updateProfile(name: String? = null, sharing: Boolean? = null): SocialResult<SocialAccount>
 
+    /** Muda a descrição do perfil (até 160 letras). */
+    suspend fun updateBio(bio: String): SocialResult<SocialAccount> = SocialResult.Invalid
+
+    /**
+     * Troca a foto ou a capa por [uri] (o content:// do seletor de fotos do
+     * Android); null tira a imagem. O app reduz e recorta antes de enviar.
+     */
+    suspend fun setProfileImage(kind: ProfileImage, uri: String?): SocialResult<SocialAccount> = SocialResult.Invalid
+
+    /** A foto ou capa de alguém (guardada no aparelho por versão); null se não houver. */
+    suspend fun profileImage(userId: String, kind: ProfileImage, version: Long): ByteArray? = null
+
     /** Apaga o perfil no servidor e tudo o que está no aparelho. */
     suspend fun deleteAccount(): SocialResult<Unit>
 

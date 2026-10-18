@@ -32,6 +32,8 @@ const MAX_TEXT = 2000;
 const MAX_BODY_BYTES = 4096;
 const RECENT_KEEP = 20;
 const MESSAGES_PER_MINUTE = 40;
+const MAX_BIO = 160;
+const MAX_IMAGE_BYTES = 400_000;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -66,6 +68,17 @@ function cleanName(value) {
 }
 
 /** Só informações de música, com tamanho limitado. */
+/** Descrição do perfil: texto curto, sem quebras de linha sobrando. */
+function cleanBio(value) {
+  if (typeof value !== "string") return null;
+  return value.replace(/\s*\n\s*\n+/g, "\n").trim().slice(0, MAX_BIO);
+}
+
+/** Foto ou capa: só JPEG, até 400 KB (o app já manda reduzida). */
+function isJpeg(bytes) {
+  return bytes.length >= 3 && bytes.length <= MAX_IMAGE_BYTES && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
+
 function cleanTrack(value) {
   if (!value || typeof value !== "object") return null;
   const str = (v, max) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
@@ -126,7 +139,22 @@ export class Hub extends DurableObject {
         body TEXT NOT NULL, sent INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS inbox_user ON inbox(to_user, sent);
+      CREATE TABLE IF NOT EXISTS images (
+        user_id TEXT NOT NULL, kind TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (user_id, kind)
+      );
     `);
+    // Colunas que chegaram depois (descrição, versões da foto e da capa).
+    for (const column of [
+      "bio TEXT NOT NULL DEFAULT ''",
+      "avatar_v INTEGER NOT NULL DEFAULT 0",
+      "banner_v INTEGER NOT NULL DEFAULT 0",
+    ]) {
+      try {
+        this.sql.exec(`ALTER TABLE users ADD COLUMN ${column}`);
+      } catch {
+        // Já existe.
+      }
+    }
   }
 
   all(query, ...args) {
@@ -147,7 +175,14 @@ export class Hub extends DurableObject {
   }
 
   publicUser(user) {
-    return { id: user.id, handle: user.handle, name: user.name };
+    return {
+      id: user.id,
+      handle: user.handle,
+      name: user.name,
+      bio: user.bio ?? "",
+      avatar: user.avatar_v ?? 0,
+      banner: user.banner_v ?? 0,
+    };
   }
 
   /** Conversaram em particular ou estão num mesmo grupo. */
@@ -206,7 +241,9 @@ export class Hub extends DurableObject {
     const url = new URL(request.url);
     const path = url.pathname.replace(/^\/v1/, "");
     const method = request.method;
-    const body = method === "GET" || method === "DELETE" ? null : await request.json().catch(() => null);
+    const imagePath = path.match(/^\/me\/image\/(avatar|banner)$/);
+    const body =
+      method === "GET" || method === "DELETE" || imagePath ? null : await request.json().catch(() => null);
 
     // ---- Sem login ----
     if (method === "GET" && path.startsWith("/handles/")) {
@@ -242,22 +279,55 @@ export class Hub extends DurableObject {
       const name = body?.name === undefined ? me.name : cleanName(body.name);
       if (!name) return json({ error: "invalid" }, 400);
       const sharing = body?.sharing === undefined ? me.sharing : body.sharing ? 1 : 0;
-      this.sql.exec("UPDATE users SET name = ?, sharing = ? WHERE id = ?", name, sharing, me.id);
+      const bio = body?.bio === undefined ? me.bio ?? "" : cleanBio(body.bio);
+      if (bio === null) return json({ error: "invalid" }, 400);
+      this.sql.exec("UPDATE users SET name = ?, sharing = ?, bio = ? WHERE id = ?", name, sharing, bio, me.id);
       if (!sharing) {
         // Parou de compartilhar: apaga o que estava guardado.
         this.sql.exec("DELETE FROM status WHERE user_id = ?", me.id);
         this.sql.exec("DELETE FROM recent WHERE user_id = ?", me.id);
       }
-      return json({ ...this.publicUser({ ...me, name }), sharing: sharing === 1 });
+      return json({ ...this.publicUser({ ...me, name, bio }), sharing: sharing === 1 });
     }
     if (path === "/me" && method === "DELETE") {
-      for (const table of ["status", "recent"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
+      for (const table of ["status", "recent", "images"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
       this.sql.exec("DELETE FROM members WHERE user_id = ?", me.id);
       this.sql.exec("DELETE FROM contacts WHERE a = ? OR b = ?", me.id, me.id);
       this.sql.exec("DELETE FROM blocks WHERE user_id = ? OR blocked = ?", me.id, me.id);
       this.sql.exec("DELETE FROM inbox WHERE to_user = ? OR sender = ?", me.id, me.id);
       this.sql.exec("DELETE FROM users WHERE id = ?", me.id);
       return json({ ok: true });
+    }
+
+    // Foto de perfil e capa (banner): o app manda o JPEG já reduzido.
+    if (imagePath && method === "PUT") {
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      if (!isJpeg(bytes)) return json({ error: "invalid" }, 400);
+      const kind = imagePath[1];
+      const version = Date.now();
+      this.sql.exec(
+        "INSERT INTO images (user_id, kind, data) VALUES (?, ?, ?) ON CONFLICT(user_id, kind) DO UPDATE SET data = excluded.data",
+        me.id,
+        kind,
+        bytes,
+      );
+      this.sql.exec(`UPDATE users SET ${kind}_v = ? WHERE id = ?`, version, me.id);
+      return json({ ...this.publicUser({ ...me, [`${kind}_v`]: version }), sharing: me.sharing === 1 });
+    }
+    if (imagePath && method === "DELETE") {
+      const kind = imagePath[1];
+      this.sql.exec("DELETE FROM images WHERE user_id = ? AND kind = ?", me.id, kind);
+      this.sql.exec(`UPDATE users SET ${kind}_v = 0 WHERE id = ?`, me.id);
+      return json({ ...this.publicUser({ ...me, [`${kind}_v`]: 0 }), sharing: me.sharing === 1 });
+    }
+    const userImage = method === "GET" && path.match(/^\/users\/([0-9a-f]{32})\/image\/(avatar|banner)$/);
+    if (userImage) {
+      if (this.blocked(userImage[1], me.id)) return json({ error: "not_found" }, 404);
+      const row = this.first("SELECT data FROM images WHERE user_id = ? AND kind = ?", userImage[1], userImage[2]);
+      if (!row) return json({ error: "not_found" }, 404);
+      return new Response(row.data, {
+        headers: { "content-type": "image/jpeg", "cache-control": "private, max-age=31536000" },
+      });
     }
 
     if (path === "/me/now" && method === "PUT") {

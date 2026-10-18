@@ -4,6 +4,16 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.23.0] — 2026-10-18
+
+### ✨ New
+- **Your profile, your way.** You can now add a **cover banner**, a **profile photo** and a short **description** (up to 160 characters). To change them, tap the pencil, or tap your photo. Photos are picked with Android's photo picker, so the app needs no extra permission, and they're resized before upload.
+- Your friends see your cover, photo and description on your profile. Photos also appear in the Friends tab and in the top-right shortcut.
+- **"See all"** on Home: the Albums and Artists sections now have a button that opens the Library tab right on that list.
+
+### 🎨 Visual tweaks
+- On Home, the song count and the shuffle button for recently added songs sit further from the edge, so they no longer collide with the fast-scroll handle.
+
 ## [0.22.0] — 2026-10-18
 
 ### ✨ New

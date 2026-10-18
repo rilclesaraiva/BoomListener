@@ -42,6 +42,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -95,6 +96,7 @@ import com.boomlistener.data.library.LibraryData
 internal fun LibraryScreen(
     onOpenArtist: (artistName: String) -> Unit,
     onOpenAlbum: (albumKey: String) -> Unit,
+    onSeeAll: (CollectionKind) -> Unit,
     onEditTags: (Track) -> Unit,
     onRecommend: (Track) -> Unit,
     onOpenHistory: () -> Unit,
@@ -180,6 +182,7 @@ internal fun LibraryScreen(
                     onPlayRecent = viewModel::playRecent,
                     onShuffleRecent = viewModel::shuffleRecent,
                     onOpenAlbum = onOpenAlbum,
+                    onSeeAll = onSeeAll,
                     loadArtwork = viewModel::artwork,
                     shareUrl = viewModel::shareUrl,
                     onOpenTrack = viewModel::play,
@@ -206,6 +209,7 @@ private fun TrackList(
     onPlayRecent: (Int) -> Unit,
     onShuffleRecent: () -> Unit,
     onOpenAlbum: (String) -> Unit,
+    onSeeAll: (CollectionKind) -> Unit,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
     shareUrl: suspend (Track) -> String,
     onOpenTrack: (Track) -> Unit,
@@ -239,7 +243,8 @@ private fun TrackList(
                 // Aleatório e Tocar, com a contagem do outro lado.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 20.dp, top = 4.dp, bottom = 8.dp),
+                    // Folga à direita: a barra de rolagem rápida fica nessa borda.
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 48.dp, top = 4.dp, bottom = 8.dp),
                 ) {
                     FilledTonalIconButton(
                         onClick = onShuffleAll,
@@ -279,7 +284,10 @@ private fun TrackList(
                 }
                 item(key = "albums") {
                     if (home.albums.isNotEmpty()) {
-                        HomeSectionTitle(stringResource(R.string.feature_library_albums))
+                        HomeSectionTitle(
+                            stringResource(R.string.feature_library_albums),
+                            action = { SeeAllButton { onSeeAll(CollectionKind.Albums) } },
+                        )
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -292,7 +300,10 @@ private fun TrackList(
                 }
                 item(key = "artists") {
                     if (home.artists.isNotEmpty()) {
-                        HomeSectionTitle(stringResource(R.string.feature_library_artists))
+                        HomeSectionTitle(
+                            stringResource(R.string.feature_library_artists),
+                            action = { SeeAllButton { onSeeAll(CollectionKind.Artists) } },
+                        )
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -331,11 +342,21 @@ private fun TrackList(
     }
 }
 
+/** "Ver todos": abre a aba Biblioteca na pílula da seção. */
+@Composable
+private fun SeeAllButton(onClick: () -> Unit) {
+    TextButton(onClick = onClick) {
+        Text(stringResource(R.string.feature_library_see_all))
+        Spacer(Modifier.width(4.dp))
+        Icon(BoomIcons.ChevronRight, contentDescription = null, modifier = Modifier.size(18.dp))
+    }
+}
+
 @Composable
 private fun HomeSectionTitle(title: String, action: (@Composable () -> Unit)? = null) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 20.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 20.dp, end = 40.dp, top = 20.dp, bottom = 8.dp),
     ) {
         Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
         action?.invoke()

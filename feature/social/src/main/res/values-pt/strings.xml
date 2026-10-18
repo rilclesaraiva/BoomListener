@@ -107,4 +107,12 @@
         <item quantity="other">artistas</item>
     </plurals>
     <string name="feature_social_see_profile">Ver perfil</string>
+    <string name="feature_social_edit_profile">Editar perfil</string>
+    <string name="feature_social_bio">Descrição</string>
+    <string name="feature_social_bio_hint">O que você gosta de ouvir?</string>
+    <string name="feature_social_bio_add">+ Adicionar uma descrição</string>
+    <string name="feature_social_banner_change">Trocar capa</string>
+    <string name="feature_social_banner_remove">Tirar capa</string>
+    <string name="feature_social_photo_change">Trocar foto</string>
+    <string name="feature_social_photo_remove">Tirar foto</string>
 </resources>

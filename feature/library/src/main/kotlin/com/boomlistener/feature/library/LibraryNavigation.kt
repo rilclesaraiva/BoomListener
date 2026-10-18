@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
@@ -45,6 +46,15 @@ fun NavGraphBuilder.libraryScreen(
         LibraryScreen(
             onOpenArtist = onOpenArtist,
             onOpenAlbum = { navController.openCollection("album", it) },
+            onSeeAll = { kind ->
+                // Vai para a aba Biblioteca já na pílula escolhida (como tocar na aba).
+                CollectionsRequest.kind.value = kind
+                navController.navigate(COLLECTIONS_ROUTE) {
+                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
             onEditTags = onEditTags,
             onRecommend = onRecommend,
             onOpenHistory = onOpenHistory,
@@ -62,6 +72,15 @@ fun NavGraphBuilder.libraryScreen(
             onOpenGenre = { navController.openCollection("genre", it) },
             onOpenArtist = onOpenArtist,
             onOpenAlbum = { navController.openCollection("album", it) },
+            onSeeAll = { kind ->
+                // Vai para a aba Biblioteca já na pílula escolhida (como tocar na aba).
+                CollectionsRequest.kind.value = kind
+                navController.navigate(COLLECTIONS_ROUTE) {
+                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
             onOpenPlaylist = { navController.openCollection("playlist", it.toString()) },
             onOpenHistory = onOpenHistory,
             onOpenSettings = onOpenSettings,

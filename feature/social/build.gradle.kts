@@ -10,6 +10,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.activity.compose)
     implementation(project(":data:social"))
     implementation(project(":data:library"))
     implementation(project(":data:deezer"))

@@ -17,6 +17,7 @@ import com.boomlistener.data.social.FriendProfile
 import com.boomlistener.data.social.HandleCheck
 import com.boomlistener.data.social.MessageBody
 import com.boomlistener.data.social.MusicKind
+import com.boomlistener.data.social.ProfileImage
 import com.boomlistener.data.social.SocialAccount
 import com.boomlistener.data.social.SocialRepository
 import com.boomlistener.data.social.SocialResult
@@ -55,6 +56,25 @@ internal class FakeSocial : SocialRepository {
     }
     override suspend fun updateProfile(name: String?, sharing: Boolean?): SocialResult<SocialAccount> {
         val updated = account.value!!.copy(sharing = sharing ?: account.value!!.sharing)
+        account.value = updated
+        return SocialResult.Ok(updated)
+    }
+    var online = true
+    val imageCalls = mutableListOf<Pair<ProfileImage, String?>>()
+    override suspend fun updateBio(bio: String): SocialResult<SocialAccount> {
+        if (!online) return SocialResult.Offline
+        val updated = account.value!!.copy(bio = bio)
+        account.value = updated
+        return SocialResult.Ok(updated)
+    }
+    override suspend fun setProfileImage(kind: ProfileImage, uri: String?): SocialResult<SocialAccount> {
+        imageCalls += kind to uri
+        if (!online) return SocialResult.Offline
+        val version = if (uri == null) 0L else 99L
+        val updated = when (kind) {
+            ProfileImage.Avatar -> account.value!!.copy(avatarVersion = version)
+            ProfileImage.Banner -> account.value!!.copy(bannerVersion = version)
+        }
         account.value = updated
         return SocialResult.Ok(updated)
     }

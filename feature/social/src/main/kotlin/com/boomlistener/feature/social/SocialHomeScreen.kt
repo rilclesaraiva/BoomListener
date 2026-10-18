@@ -64,6 +64,7 @@ import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomTopActions
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
+import com.boomlistener.data.social.ProfileImage
 import com.boomlistener.data.social.ChatMessage
 import com.boomlistener.data.social.Conversation
 import com.boomlistener.data.social.FriendProfile
@@ -122,7 +123,11 @@ internal fun SocialHomeScreen(
                                         .clickable(onClick = onOpenMyProfile)
                                         .padding(horizontal = 20.dp, vertical = 8.dp),
                                 ) {
-                                    Avatar(me.name, size = 40.dp)
+                                    Avatar(
+                                        me.name,
+                                        size = 40.dp,
+                                        image = rememberProfileImage(me.id, ProfileImage.Avatar, me.avatarVersion),
+                                    )
                                     Spacer(Modifier.width(12.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text(me.name, style = MaterialTheme.typography.titleMedium)
@@ -227,7 +232,11 @@ private fun ActivityCard(friend: FriendProfile, onClick: () -> Unit) {
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Avatar(friend.user.name, size = 32.dp)
+                Avatar(
+                    friend.user.name,
+                    size = 32.dp,
+                    image = rememberProfileImage(friend.user.id, ProfileImage.Avatar, friend.avatarVersion),
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(friend.user.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -497,7 +506,12 @@ private fun NewConversationSheet(
                     found?.let { profile ->
                         ListItem(
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                            leadingContent = { Avatar(profile.user.name) },
+                            leadingContent = {
+                                Avatar(
+                                    profile.user.name,
+                                    image = rememberProfileImage(profile.user.id, ProfileImage.Avatar, profile.avatarVersion),
+                                )
+                            },
                             headlineContent = { Text(profile.user.name) },
                             supportingContent = { Text("@" + profile.user.handle) },
                         )

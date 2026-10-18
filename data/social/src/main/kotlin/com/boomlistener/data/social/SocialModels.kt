@@ -10,6 +10,11 @@ data class SocialAccount(
     val name: String,
     val token: String,
     val sharing: Boolean,
+    /** Descrição curta do perfil. */
+    val bio: String = "",
+    /** Versão da foto e da capa no servidor (0 = sem imagem). */
+    val avatarVersion: Long = 0,
+    val bannerVersion: Long = 0,
 )
 
 data class SocialUser(val id: String, val handle: String, val name: String)
@@ -27,7 +32,16 @@ data class FriendProfile(
     val updatedMs: Long?,
     val recent: List<ListenedTrack>,
     val blockedByMe: Boolean,
+    val bio: String = "",
+    val avatarVersion: Long = 0,
+    val bannerVersion: Long = 0,
 )
+
+/** Foto de perfil (quadrada) ou capa (faixa larga no topo do perfil). */
+enum class ProfileImage(val path: String, val width: Int, val height: Int) {
+    Avatar("avatar", 320, 320),
+    Banner("banner", 1200, 450),
+}
 
 /** O conteúdo de uma mensagem: texto ou um cartão de música/álbum/artista. */
 sealed interface MessageBody {

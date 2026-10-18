@@ -118,3 +118,59 @@ test("apagar perfil apaga tudo", async () => {
   assert.equal((await call("GET", "/me", null, ana)).status, 401);
   assert.equal((await call("GET", "/handles/ana")).data.available, true);
 });
+
+test("descrição, foto e capa do perfil", async () => {
+  const hub = new mod.Hub({ storage: { sql: fakeSql() } }, {});
+  const send = (method, path, auth, init = {}) =>
+    hub.fetch(
+      new Request("https://x/v1" + path, {
+        method,
+        headers: { authorization: `Bearer ${auth.id}.${auth.token}`, ...(init.headers ?? {}) },
+        body: init.body,
+      }),
+    );
+  const register = async (handle) =>
+    (await (await hub.fetch(new Request("https://x/v1/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: handle, handle }),
+    }))).json());
+  const ana = await register("ana");
+  const beto = await register("beto");
+
+  // Descrição: curta e limpa.
+  const patched = await (await send("PATCH", "/me", ana, {
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ bio: "  Ouço de tudo.\n\n\nMenos sertanejo " + "x".repeat(300) }),
+  })).json();
+  assert.ok(patched.bio.startsWith("Ouço de tudo.\nMenos sertanejo"));
+  assert.equal(patched.bio.length, 160);
+
+  // Só JPEG.
+  assert.equal((await send("PUT", "/me/image/avatar", ana, { body: new Uint8Array([1, 2, 3]) })).status, 400);
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 9, 9, 9]);
+  const withPhoto = await (await send("PUT", "/me/image/avatar", ana, { body: jpeg })).json();
+  assert.ok(withPhoto.avatar > 0);
+  assert.equal(withPhoto.banner, 0);
+
+  // Outra pessoa vê a versão no perfil e baixa a foto.
+  const seen = await (await send("GET", "/users/" + ana.id, beto)).json();
+  assert.equal(seen.avatar, withPhoto.avatar);
+  assert.equal(seen.bio, patched.bio);
+  const image = await send("GET", `/users/${ana.id}/image/avatar`, beto);
+  assert.equal(image.status, 200);
+  assert.equal(image.headers.get("content-type"), "image/jpeg");
+  assert.deepEqual(new Uint8Array(await image.arrayBuffer()), jpeg);
+  assert.equal((await send("GET", `/users/${ana.id}/image/banner`, beto)).status, 404);
+
+  // Bloqueado não vê a foto.
+  await send("POST", "/blocks", ana, {
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: beto.id }),
+  });
+  assert.equal((await send("GET", `/users/${ana.id}/image/avatar`, beto)).status, 404);
+
+  // Tirar a foto.
+  const removed = await (await send("DELETE", "/me/image/avatar", ana)).json();
+  assert.equal(removed.avatar, 0);
+});

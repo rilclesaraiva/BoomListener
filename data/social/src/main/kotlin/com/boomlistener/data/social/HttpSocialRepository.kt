@@ -30,11 +30,12 @@ import java.util.UUID
  */
 private const val SERVER = "https://boomlistener-social.saraivarilcle.workers.dev/v1"
 
-internal class HttpSocialRepository(context: Context) : SocialRepository {
+internal class HttpSocialRepository(private val context: Context) : SocialRepository {
 
     private val dir = File(context.filesDir, "social").apply { mkdirs() }
     private val accountFile = File(dir, "account.json")
     private val chatsDir = File(dir, "chats").apply { mkdirs() }
+    private val imagesDir = File(dir, "images").apply { mkdirs() }
     private val mutex = Mutex()
 
     private val _account = MutableStateFlow(runCatching { readAccount() }.getOrNull())
@@ -102,13 +103,66 @@ internal class HttpSocialRepository(context: Context) : SocialRepository {
         sharing?.let { body.put("sharing", it) }
         val response = call("PATCH", "/me", body) ?: return SocialResult.Offline
         if (response.code != 200) return SocialResult.Invalid
-        val updated = current.copy(
-            name = response.body.optString("name", current.name),
-            sharing = response.body.optBoolean("sharing", current.sharing),
-        )
+        val updated = current.withServerFields(response.body)
         saveAccount(updated)
         return SocialResult.Ok(updated)
     }
+
+    override suspend fun updateBio(bio: String): SocialResult<SocialAccount> {
+        val current = _account.value ?: return SocialResult.Invalid
+        val response = call("PATCH", "/me", JSONObject().put("bio", bio.trim())) ?: return SocialResult.Offline
+        if (response.code != 200) return SocialResult.Invalid
+        val updated = current.withServerFields(response.body)
+        saveAccount(updated)
+        return SocialResult.Ok(updated)
+    }
+
+    override suspend fun setProfileImage(kind: ProfileImage, uri: String?): SocialResult<SocialAccount> {
+        val current = _account.value ?: return SocialResult.Invalid
+        val response = if (uri == null) {
+            call("DELETE", "/me/image/" + kind.path)
+        } else {
+            val jpeg = withContext(Dispatchers.Default) { prepareProfileImage(context, uri, kind) }
+                ?: return SocialResult.Invalid
+            raw("PUT", "/me/image/" + kind.path, jpeg)?.let { (code, bytes) ->
+                if (code == 200) {
+                    // A própria imagem já fica guardada: aparece na hora, sem baixar de volta.
+                    val body = JSONObject(String(bytes))
+                    val version = body.optLong(kind.path)
+                    if (version > 0) cacheImage(current.id, kind, version, jpeg)
+                    Response(code, body)
+                } else {
+                    Response(code, JSONObject())
+                }
+            }
+        } ?: return SocialResult.Offline
+        if (response.code != 200) return SocialResult.Invalid
+        val updated = current.withServerFields(response.body)
+        saveAccount(updated)
+        return SocialResult.Ok(updated)
+    }
+
+    override suspend fun profileImage(userId: String, kind: ProfileImage, version: Long): ByteArray? {
+        if (version <= 0) return null
+        val file = imageFile(userId, kind, version)
+        if (file.exists()) return withContext(Dispatchers.IO) { runCatching { file.readBytes() }.getOrNull() }
+        val (code, bytes) = raw("GET", "/users/${encode(userId)}/image/${kind.path}", null) ?: return null
+        if (code != 200 || bytes.isEmpty()) return null
+        cacheImage(userId, kind, version, bytes)
+        return bytes
+    }
+
+    private fun imageFile(userId: String, kind: ProfileImage, version: Long) =
+        File(imagesDir, "${userId}_${kind.path}_$version.jpg")
+
+    /** Guarda a versão nova e apaga as antigas da mesma pessoa. */
+    private suspend fun cacheImage(userId: String, kind: ProfileImage, version: Long, bytes: ByteArray) =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                imagesDir.listFiles { file -> file.name.startsWith("${userId}_${kind.path}_") }?.forEach { it.delete() }
+                imageFile(userId, kind, version).writeBytes(bytes)
+            }
+        }
 
     override suspend fun deleteAccount(): SocialResult<Unit> {
         val response = call("DELETE", "/me") ?: return SocialResult.Offline
@@ -414,6 +468,9 @@ internal class HttpSocialRepository(context: Context) : SocialRepository {
             name = json.getString("name"),
             token = json.getString("token"),
             sharing = json.optBoolean("sharing"),
+            bio = json.optString("bio"),
+            avatarVersion = json.optLong("avatar"),
+            bannerVersion = json.optLong("banner"),
         )
     }
 
@@ -425,6 +482,9 @@ internal class HttpSocialRepository(context: Context) : SocialRepository {
                 .put("name", account.name)
                 .put("token", account.token)
                 .put("sharing", account.sharing)
+                .put("bio", account.bio)
+                .put("avatar", account.avatarVersion)
+                .put("banner", account.bannerVersion)
             val temp = File(dir, "account.json.tmp")
             temp.writeText(json.toString())
             temp.renameTo(accountFile)
@@ -469,8 +529,47 @@ internal class HttpSocialRepository(context: Context) : SocialRepository {
             }
         }
 
+    /** Envia ou recebe bytes (imagens). null = sem internet. */
+    private suspend fun raw(method: String, path: String, payload: ByteArray?): Pair<Int, ByteArray>? =
+        withContext(Dispatchers.IO) {
+            val account = _account.value ?: return@withContext null
+            val connection = try {
+                URL(SERVER + path).openConnection() as HttpURLConnection
+            } catch (_: IOException) {
+                return@withContext null
+            }
+            try {
+                connection.requestMethod = method
+                connection.connectTimeout = 10_000
+                connection.readTimeout = 20_000
+                connection.setRequestProperty("Authorization", "Bearer ${account.id}.${account.token}")
+                if (payload != null) {
+                    connection.doOutput = true
+                    connection.setRequestProperty("Content-Type", "image/jpeg")
+                    connection.setFixedLengthStreamingMode(payload.size)
+                    connection.outputStream.use { it.write(payload) }
+                }
+                val code = connection.responseCode
+                val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+                code to (stream?.use { it.readBytes() } ?: ByteArray(0))
+            } catch (_: IOException) {
+                null
+            } finally {
+                connection.disconnect()
+            }
+        }
+
     private fun encode(value: String) = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 }
+
+/** Nome, compartilhamento, descrição e versões das imagens, como o servidor respondeu. */
+private fun SocialAccount.withServerFields(json: JSONObject) = copy(
+    name = json.optString("name", name),
+    sharing = json.optBoolean("sharing", sharing),
+    bio = if (json.has("bio")) json.optString("bio") else bio,
+    avatarVersion = if (json.has("avatar")) json.optLong("avatar") else avatarVersion,
+    bannerVersion = if (json.has("banner")) json.optLong("banner") else bannerVersion,
+)
 
 // ---- JSON (formato combinado com social/worker.js) ---------------------
 
@@ -504,6 +603,9 @@ private fun parseProfile(json: JSONObject): FriendProfile {
             parseTrack(item)?.let { ListenedTrack(it, item.optLong("at")) }
         },
         blockedByMe = json.optBoolean("blockedByMe"),
+        bio = json.optString("bio").takeIf { it != "null" }.orEmpty(),
+        avatarVersion = json.optLong("avatar"),
+        bannerVersion = json.optLong("banner"),
     )
 }
 

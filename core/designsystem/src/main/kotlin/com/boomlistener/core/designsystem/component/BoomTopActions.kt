@@ -3,6 +3,11 @@
 
 package com.boomlistener.core.designsystem.component
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -23,9 +28,10 @@ import com.boomlistener.core.designsystem.R
 
 /**
  * Atalho para o seu perfil no canto superior direito. O :app fornece (ele
- * sabe o seu nome); [initial] null mostra o ícone de pessoa.
+ * sabe o seu nome); [photo] é a sua foto de perfil, se tiver; [initial] null
+ * mostra o ícone de pessoa.
  */
-class ProfileShortcut(val initial: String?, val onClick: () -> Unit)
+class ProfileShortcut(val initial: String?, val onClick: () -> Unit, val photo: ImageBitmap? = null)
 
 val LocalProfileShortcut = staticCompositionLocalOf<ProfileShortcut?> { null }
 
@@ -52,7 +58,15 @@ fun BoomTopActions(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     val initial = profile.initial
-                    if (initial != null) {
+                    val photo = profile.photo
+                    if (photo != null) {
+                        Image(
+                            bitmap = photo,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        )
+                    } else if (initial != null) {
                         Text(initial, style = MaterialTheme.typography.titleSmall)
                     } else {
                         Icon(

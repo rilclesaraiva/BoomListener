@@ -11,6 +11,7 @@ import com.boomlistener.core.player.PlaybackController
 import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
+import com.boomlistener.data.social.ProfileImage
 import com.boomlistener.data.social.SocialAccount
 import com.boomlistener.data.social.SocialRepository
 import com.boomlistener.data.social.SocialResult
@@ -27,6 +28,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
+
+/** Tamanho máximo da descrição (o mesmo do servidor). */
+internal const val MAX_BIO = 160
 
 internal data class MyProfileUiState(
     val account: SocialAccount?,
@@ -80,6 +84,26 @@ internal class MyProfileViewModel(
         val clean = name.trim()
         if (clean.isEmpty()) return
         viewModelScope.launch { _saveFailed.value = social.updateProfile(name = clean) !is SocialResult.Ok }
+    }
+
+    /** Descrição do perfil (até 160 letras). */
+    fun setBio(bio: String) {
+        viewModelScope.launch { _saveFailed.value = social.updateBio(bio.take(MAX_BIO)) !is SocialResult.Ok }
+    }
+
+    private val _uploading = MutableStateFlow<ProfileImage?>(null)
+
+    /** A imagem que está sendo enviada agora (para mostrar o carregando). */
+    val uploading: StateFlow<ProfileImage?> = _uploading.asStateFlow()
+
+    /** Troca a foto ou a capa pela imagem [uri] do seletor; null tira a imagem. */
+    fun setImage(kind: ProfileImage, uri: String?) {
+        if (_uploading.value != null) return
+        _uploading.value = kind
+        viewModelScope.launch {
+            _saveFailed.value = social.setProfileImage(kind, uri) !is SocialResult.Ok
+            _uploading.value = null
+        }
     }
 
     fun setSharing(enabled: Boolean) {

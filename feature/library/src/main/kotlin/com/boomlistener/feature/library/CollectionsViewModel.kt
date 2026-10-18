@@ -25,6 +25,14 @@ import kotlinx.coroutines.launch
 /** As seções do carrossel da Biblioteca, na ordem em que aparecem. */
 internal enum class CollectionKind { Genres, Artists, Playlists, Albums }
 
+/**
+ * "Ver todos" do Início: qual pílula abrir quando a aba Biblioteca aparecer.
+ * Fica fora do ViewModel porque o Início e a Biblioteca são telas diferentes.
+ */
+internal object CollectionsRequest {
+    val kind = MutableStateFlow<CollectionKind?>(null)
+}
+
 /** Uma playlist com as músicas que ainda estão no aparelho. */
 internal data class PlaylistSummary(val playlist: Playlist, val tracks: List<Track>)
 
