@@ -10,6 +10,10 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
+private const val KEY_SNOOZED_UNTIL = "snoozed_until"
+private const val KEY_SKIPPED = "skipped_version"
+private const val KEY_LAST_CHECK = "last_auto_check"
+
 private const val LATEST_RELEASE_URL =
     "https://api.github.com/repos/rilclesaraiva/BoomListener/releases/latest"
 
@@ -57,7 +61,28 @@ internal class GitHubUpdatesRepository(
             latestVersion = latest,
             pageUrl = json.getString("html_url"),
             downloadUrl = apkUrl,
+            notes = json.optString("body", "").takeIf { it != "null" }.orEmpty(),
         )
+    }
+
+    private val prefs = context.getSharedPreferences("update_prompt", Context.MODE_PRIVATE)
+
+    override fun promptState() = UpdatePromptState(
+        snoozedUntilMs = prefs.getLong(KEY_SNOOZED_UNTIL, 0),
+        skippedVersion = prefs.getString(KEY_SKIPPED, null),
+        lastAutoCheckMs = prefs.getLong(KEY_LAST_CHECK, 0),
+    )
+
+    override fun snoozePrompt(untilMs: Long) {
+        prefs.edit().putLong(KEY_SNOOZED_UNTIL, untilMs).apply()
+    }
+
+    override fun skipVersion(version: String) {
+        prefs.edit().putString(KEY_SKIPPED, version).apply()
+    }
+
+    override fun markAutoCheck(atMs: Long) {
+        prefs.edit().putLong(KEY_LAST_CHECK, atMs).apply()
     }
 
     @Suppress("DEPRECATION")

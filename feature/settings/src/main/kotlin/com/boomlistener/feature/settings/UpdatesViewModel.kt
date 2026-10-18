@@ -43,4 +43,17 @@ internal class UpdatesViewModel(
     fun dismissDialog() {
         _showDialog.value = false
     }
+
+    /** Adiar os avisos automáticos (o botão de verificar continua funcionando). */
+    fun snooze(period: SnoozePeriod) {
+        repository.snoozePrompt(System.currentTimeMillis() + period.days * 24 * 60 * 60 * 1000L)
+        _showDialog.value = false
+    }
+
+    fun skipVersion() {
+        ((_state.value as? UpdatesUiState.Done)?.result as? UpdateCheckResult.Available)?.let {
+            repository.skipVersion(it.latestVersion)
+        }
+        _showDialog.value = false
+    }
 }

@@ -75,4 +75,22 @@
         <item quantity="one">%d song</item>
         <item quantity="other">%d songs</item>
     </plurals>
+    <string name="feature_settings_update_prompt_title">New version available!</string>
+    <string name="feature_settings_update_prompt_versions">v%1$s · you have v%2$s</string>
+    <string name="feature_settings_update_prompt_later">Not now</string>
+    <string name="feature_settings_update_prompt_snooze">Pause update notices</string>
+    <string name="feature_settings_update_prompt_week">Don’t remind me for a week</string>
+    <string name="feature_settings_update_prompt_month">Don’t remind me for a month</string>
+    <string name="feature_settings_update_prompt_skip">Skip this version</string>
+    <string name="feature_settings_update_prompt_no_notes">Bug fixes and improvements.</string>
+    <string name="feature_settings_about_short">About</string>
+    <string name="feature_settings_about_developer">Developer</string>
+    <string name="feature_settings_about_developer_summary">Made in Belém, Brazil · github.com/rilclesaraiva</string>
+    <string name="feature_settings_about_project">Project</string>
+    <string name="feature_settings_about_changelog">What’s new</string>
+    <string name="feature_settings_about_changelog_summary">Every version and what changed in it</string>
+    <string name="feature_settings_about_issues">Report a problem</string>
+    <string name="feature_settings_about_issues_summary">Found a bug or have an idea? Open an issue</string>
+    <string name="feature_settings_about_build_release">Release</string>
+    <string name="feature_settings_about_build_debug">Debug</string>
 </resources>

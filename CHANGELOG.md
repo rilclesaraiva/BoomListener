@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.22.0] — 2026-10-18
+
+### ✨ New
+- **A new Home.** Shuffle and Play buttons sit at the top. Below them are **Recently added** (numbered, with its own shuffle button), your **Albums** and your **Artists**, followed by the full song list.
+- **Update notice.** When a new version comes out, the app shows what changed in it, with buttons to download it now or later.
+  - The muted bell pauses these notices for a week or a month, or skips that version entirely.
+  - The app checks for updates at most every 6 hours.
+- **A new About page**, with the app icon, version and build type, the developer, the source code, what's new and a place to report problems.
+
+### 🎨 Visual tweaks
+- The wave on the player's progress bar now runs right into the round handle, with no gap in between.
+
 ## [0.21.0] — 2026-10-18
 
 ### ✨ New

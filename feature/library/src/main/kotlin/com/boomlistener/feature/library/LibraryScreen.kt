@@ -17,6 +17,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import com.boomlistener.data.library.TrackGroup
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
@@ -79,6 +94,7 @@ import com.boomlistener.data.library.LibraryData
 @Composable
 internal fun LibraryScreen(
     onOpenArtist: (artistName: String) -> Unit,
+    onOpenAlbum: (albumKey: String) -> Unit,
     onEditTags: (Track) -> Unit,
     onRecommend: (Track) -> Unit,
     onOpenHistory: () -> Unit,
@@ -160,6 +176,10 @@ internal fun LibraryScreen(
                 is LibraryUiState.Success -> TrackList(
                     state = state,
                     onShuffleAll = viewModel::shuffleAll,
+                    onPlayAll = viewModel::playAll,
+                    onPlayRecent = viewModel::playRecent,
+                    onShuffleRecent = viewModel::shuffleRecent,
+                    onOpenAlbum = onOpenAlbum,
                     loadArtwork = viewModel::artwork,
                     shareUrl = viewModel::shareUrl,
                     onOpenTrack = viewModel::play,
@@ -182,6 +202,10 @@ internal fun LibraryScreen(
 private fun TrackList(
     state: LibraryUiState.Success,
     onShuffleAll: () -> Unit,
+    onPlayAll: () -> Unit,
+    onPlayRecent: (Int) -> Unit,
+    onShuffleRecent: () -> Unit,
+    onOpenAlbum: (String) -> Unit,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
     shareUrl: suspend (Track) -> String,
     onOpenTrack: (Track) -> Unit,
@@ -207,24 +231,79 @@ private fun TrackList(
         )
 
         else -> Box(Modifier.fillMaxSize()) {
+            val home = state.home
+            // Itens antes da primeira música (para a letra da barra de rolagem).
+            val headerItems = 1 + (if (home != null) 4 else 0)
           LazyColumn(state = listState, contentPadding = contentPadding) {
             item(key = "header") {
+                // Aleatório e Tocar, com a contagem do outro lado.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 20.dp, top = 4.dp, bottom = 8.dp),
                 ) {
+                    FilledTonalIconButton(
+                        onClick = onShuffleAll,
+                        modifier = Modifier.size(56.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        ),
+                    ) {
+                        Icon(BoomIcons.Shuffle, contentDescription = stringResource(R.string.feature_library_shuffle_all))
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Button(onClick = onPlayAll, modifier = Modifier.height(56.dp)) {
+                        Icon(BoomIcons.Play, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.feature_library_play), style = MaterialTheme.typography.titleMedium)
+                    }
+                    Spacer(Modifier.weight(1f))
                     Text(
                         text = pluralStringResource(R.plurals.feature_library_count, state.tracks.size, state.tracks.size),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
                     )
-                    FilledTonalButton(onClick = onShuffleAll) {
-                        Icon(BoomIcons.Shuffle, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.feature_library_shuffle_all))
+                }
+            }
+            if (home != null) {
+                item(key = "recent") {
+                    HomeSectionTitle(
+                        title = stringResource(R.string.feature_library_recently_added),
+                        action = {
+                            FilledTonalIconButton(onClick = onShuffleRecent) {
+                                Icon(BoomIcons.Shuffle, contentDescription = stringResource(R.string.feature_library_shuffle_recent))
+                            }
+                        },
+                    )
+                    RecentGrid(home.recent, state.version, loadArtwork, onPlayRecent)
+                }
+                item(key = "albums") {
+                    if (home.albums.isNotEmpty()) {
+                        HomeSectionTitle(stringResource(R.string.feature_library_albums))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                        ) {
+                            items(home.albums, key = { it.key }) { album ->
+                                HomeAlbum(album, state.version, loadArtwork, onClick = { onOpenAlbum(album.key) })
+                            }
+                        }
                     }
                 }
+                item(key = "artists") {
+                    if (home.artists.isNotEmpty()) {
+                        HomeSectionTitle(stringResource(R.string.feature_library_artists))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                        ) {
+                            items(home.artists, key = { it.key }) { artist ->
+                                HomeArtist(artist, state.version, loadArtwork, onClick = { onOpenArtist(artist.name) })
+                            }
+                        }
+                    }
+                }
+                item(key = "songsTitle") { HomeSectionTitle(stringResource(R.string.feature_library_songs)) }
             }
             items(state.tracks, key = { it.id }) { track ->
                 TrackItem(
@@ -243,7 +322,7 @@ private fun TrackList(
             // Arrastar pela direita pula pela lista, mostrando a letra.
             BoomFastScroller(
                 state = listState,
-                label = { index -> boomIndexLabel(state.tracks.getOrNull((index - 1).coerceAtLeast(0))?.title) },
+                label = { index -> boomIndexLabel(state.tracks.getOrNull((index - headerItems).coerceAtLeast(0))?.title) },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding()),
@@ -251,6 +330,142 @@ private fun TrackList(
         }
     }
 }
+
+@Composable
+private fun HomeSectionTitle(title: String, action: (@Composable () -> Unit)? = null) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 20.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+    ) {
+        Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+        action?.invoke()
+    }
+}
+
+/** Capa de um item do topo do Início (relê quando as tags mudam). */
+@Composable
+private fun rememberHomeCover(
+    track: Track?,
+    version: Int,
+    size: Dp,
+    loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+): ImageBitmap? {
+    val px = with(LocalDensity.current) { size.roundToPx() }
+    val image by produceState<ImageBitmap?>(initialValue = null, track?.uri, version) {
+        value = track?.let { loadArtwork(it, px)?.asImageBitmap() }
+    }
+    return image
+}
+
+/** Adicionadas recentemente: três linhas que correm para o lado, numeradas. */
+@Composable
+private fun RecentGrid(
+    recent: List<Track>,
+    version: Int,
+    loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    onPlay: (Int) -> Unit,
+) {
+    val rows = minOf(3, recent.size).coerceAtLeast(1)
+    LazyHorizontalGrid(
+        rows = GridCells.Fixed(rows),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().height(RecentRowHeight * rows + 4.dp * (rows - 1)),
+    ) {
+        itemsIndexed(recent, key = { _, track -> track.id }) { index, track ->
+            val cover = rememberHomeCover(track, version, RecentCover, loadArtwork)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .width(RecentItemWidth)
+                    .height(RecentRowHeight)
+                    .clip(MaterialTheme.shapes.medium)
+                    .clickable { onPlay(index) },
+            ) {
+                BoomArtwork(image = cover, fallbackText = track.title, size = RecentCover)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "${index + 1}. ${track.title}",
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        listOfNotNull(formatDuration(track.durationMs), track.artist).joinToString(" · "),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeAlbum(
+    album: TrackGroup,
+    version: Int,
+    loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    onClick: () -> Unit,
+) {
+    val cover = rememberHomeCover(album.tracks.firstOrNull(), version, HomeTile, loadArtwork)
+    // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
+    Column(Modifier.width(HomeTile).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = 8.dp)) {
+        BoomArtwork(image = cover, fallbackText = album.name, size = HomeTile)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            album.name,
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        album.subtitle?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeArtist(
+    artist: TrackGroup,
+    version: Int,
+    loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    onClick: () -> Unit,
+) {
+    val cover = rememberHomeCover(artist.tracks.firstOrNull(), version, HomeTile, loadArtwork)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(HomeTile).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = 8.dp),
+    ) {
+        BoomArtwork(image = cover, fallbackText = artist.name, size = HomeTile, modifier = Modifier.clip(CircleShape))
+        Spacer(Modifier.height(8.dp))
+        Text(
+            artist.name,
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+    }
+}
+
+private val RecentCover = 56.dp
+private val RecentRowHeight = 64.dp
+private val RecentItemWidth = 280.dp
+private val HomeTile = 132.dp
 
 @Composable
 private fun TrackItem(

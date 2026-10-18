@@ -44,6 +44,7 @@ import com.boomlistener.feature.nowplaying.PlayerSheet
 import com.boomlistener.feature.nowplaying.rememberPlayerSheetState
 import com.boomlistener.feature.releases.releasesScreen
 import com.boomlistener.feature.settings.SETTINGS_ROUTE
+import com.boomlistener.feature.settings.UpdatePromptHost
 import com.boomlistener.feature.settings.settingsScreen
 import com.boomlistener.feature.wellbeing.WELLBEING_ROUTE
 import com.boomlistener.core.designsystem.component.LocalTabReselect
@@ -291,6 +292,9 @@ fun BoomListenerApp() {
         recommendUri?.let { uri ->
             RecommendSheet(trackUri = uri, onDismiss = { recommendUri = null })
         }
+
+        // Versão nova no GitHub: aviso em tela cheia (no máximo uma consulta a cada 6 h).
+        UpdatePromptHost()
     }
 }
 }

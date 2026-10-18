@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import com.boomlistener.core.common.ExternalLinks
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,8 +30,11 @@ internal class LibraryViewModel(
     private val allTracks = MutableStateFlow<List<Track>?>(null)
     private val query = MutableStateFlow("")
 
+    // Recentes, álbuns e artistas: só recalcula quando as músicas mudam (não a cada letra da busca).
+    private val home = allTracks.map { tracks -> tracks?.let { buildHomeSections(it) } }
+
     val uiState: StateFlow<LibraryUiState> =
-        combine(allTracks, query, repository.version) { tracks, currentQuery, version ->
+        combine(allTracks, query, repository.version, home) { tracks, currentQuery, version, sections ->
             if (tracks == null) {
                 LibraryUiState.Loading
             } else {
@@ -39,6 +43,7 @@ internal class LibraryViewModel(
                     totalCount = tracks.size,
                     query = currentQuery,
                     version = version,
+                    home = sections?.takeIf { currentQuery.isBlank() && !it.isEmpty },
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryUiState.Loading)
@@ -67,6 +72,23 @@ internal class LibraryViewModel(
         val visible = (uiState.value as? LibraryUiState.Success)?.tracks ?: return
         val index = visible.indexOfFirst { it.id == track.id }.takeIf { it >= 0 } ?: return
         player.play(visible, index)
+    }
+
+    /** "Tocar": a lista da tela, do começo. */
+    fun playAll() {
+        val visible = (uiState.value as? LibraryUiState.Success)?.tracks ?: return
+        if (visible.isNotEmpty()) player.play(visible, 0)
+    }
+
+    /** Toca as adicionadas recentemente, a partir da de posição [index]. */
+    fun playRecent(index: Int) {
+        val recent = (uiState.value as? LibraryUiState.Success)?.home?.recent ?: return
+        if (index in recent.indices) player.play(recent, index)
+    }
+
+    fun shuffleRecent() {
+        val recent = (uiState.value as? LibraryUiState.Success)?.home?.recent ?: return
+        if (recent.isNotEmpty()) player.playShuffled(recent)
     }
 
     /** "Tocar aleatório": embaralha o que está na tela (toda a lista ou a busca). */

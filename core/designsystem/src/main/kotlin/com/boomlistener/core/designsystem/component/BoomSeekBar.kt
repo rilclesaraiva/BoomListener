@@ -49,7 +49,7 @@ private const val WAVE_RADIANS_PER_SECOND = 3.1415927f
 /**
  * Barra de progresso da música: a parte já tocada é uma onda grossa que
  * corre enquanto toca (e fica reta ao pausar), com uma bolinha redonda no
- * ponto atual, uma folga de cada lado e o resto da trilha reto, com um
+ * ponto atual (a onda chega grudada nela), uma folga antes do resto da trilha, reto e com um
  * pontinho no fim. Tocar ou arrastar muda o ponto da música.
  *
  * @param progress de 0 a 1.
@@ -129,8 +129,8 @@ fun BoomSeekBar(
         }
         drawCircle(active, StopDotRadius.toPx(), Offset(endX, cy))
 
-        // Parte tocada: a onda.
-        val waveEnd = thumbX - thumbRadius - gap
+        // Parte tocada: a onda vai até o centro da bolinha (grudada nela, sem folga).
+        val waveEnd = thumbX
         if (waveEnd > startX) {
             val amplitude = WaveAmplitude.toPx() * amplitudeScale
             val k = (2 * PI / WaveLength.toPx()).toFloat()

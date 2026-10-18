@@ -52,4 +52,7 @@
     <string name="feature_library_recommend">Recomendar para alguém</string>
     <string name="feature_library_total_hours">%1$d h %2$02d min</string>
     <string name="feature_library_total_minutes">%d min</string>
+    <string name="feature_library_recently_added">Adicionadas recentemente</string>
+    <string name="feature_library_shuffle_recent">Aleatório das adicionadas recentemente</string>
+    <string name="feature_library_songs">Músicas</string>
 </resources>

@@ -44,6 +44,7 @@ fun NavGraphBuilder.libraryScreen(
     composable(LIBRARY_ROUTE) {
         LibraryScreen(
             onOpenArtist = onOpenArtist,
+            onOpenAlbum = { navController.openCollection("album", it) },
             onEditTags = onEditTags,
             onRecommend = onRecommend,
             onOpenHistory = onOpenHistory,

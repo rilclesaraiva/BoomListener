@@ -48,29 +48,15 @@ internal fun SettingsScreen(
 
     val available = (updatesState as? UpdatesUiState.Done)?.result as? UpdateCheckResult.Available
     if (showUpdateDialog && available != null) {
-        AlertDialog(
-            onDismissRequest = updatesViewModel::dismissDialog,
-            title = { Text(stringResource(R.string.feature_settings_updates_dialog_title)) },
-            text = {
-                Text(
-                    stringResource(
-                        R.string.feature_settings_updates_dialog_text,
-                        available.latestVersion,
-                        available.currentVersion,
-                    ),
-                )
+        UpdatePromptDialog(
+            update = available,
+            onDownload = {
+                updatesViewModel.dismissDialog()
+                context.openUrl(available.downloadUrl ?: available.pageUrl)
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    updatesViewModel.dismissDialog()
-                    context.openUrl(available.downloadUrl ?: available.pageUrl)
-                }) { Text(stringResource(R.string.feature_settings_updates_download)) }
-            },
-            dismissButton = {
-                TextButton(onClick = updatesViewModel::dismissDialog) {
-                    Text(stringResource(R.string.feature_settings_updates_later))
-                }
-            },
+            onLater = updatesViewModel::dismissDialog,
+            onSnooze = updatesViewModel::snooze,
+            onSkip = updatesViewModel::skipVersion,
         )
     }
     BoomScreenScaffold(

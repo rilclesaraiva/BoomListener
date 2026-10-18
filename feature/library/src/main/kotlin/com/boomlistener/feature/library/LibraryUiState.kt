@@ -5,6 +5,9 @@ package com.boomlistener.feature.library
 
 import com.boomlistener.core.common.normalizedForSearch
 import com.boomlistener.core.model.Track
+import com.boomlistener.data.library.TrackGroup
+import com.boomlistener.data.library.groupByAlbum
+import com.boomlistener.data.library.groupByArtist
 
 internal sealed interface LibraryUiState {
     data object Loading : LibraryUiState
@@ -19,6 +22,8 @@ internal sealed interface LibraryUiState {
         val query: String,
         /** Sobe quando tags foram editadas (para recarregar as capas). */
         val version: Int = 0,
+        /** Topo do Início (recentes, álbuns, artistas); null durante a busca. */
+        val home: HomeSections? = null,
     ) : LibraryUiState
 }
 
@@ -53,3 +58,26 @@ internal fun hoursAndMinutes(totalMs: Long): Pair<Long, Long> {
     val minutes = (totalMs.coerceAtLeast(0) + 59_999) / 60_000
     return minutes / 60 to minutes % 60
 }
+
+/** O topo da aba Início, antes da lista de músicas. */
+internal data class HomeSections(
+    /** Últimas músicas que chegaram no aparelho, da mais nova para a mais antiga. */
+    val recent: List<Track>,
+    /** Álbuns, do que recebeu música mais recentemente para o mais antigo. */
+    val albums: List<TrackGroup>,
+    /** Artistas com mais músicas no aparelho primeiro. */
+    val artists: List<TrackGroup>,
+) {
+    val isEmpty: Boolean get() = recent.isEmpty() && albums.isEmpty() && artists.isEmpty()
+}
+
+internal fun buildHomeSections(tracks: List<Track>, recentCount: Int = 12, groupCount: Int = 12): HomeSections =
+    HomeSections(
+        recent = tracks.sortedByDescending { it.dateAddedSeconds }.take(recentCount),
+        albums = groupByAlbum(tracks)
+            .sortedByDescending { album -> album.tracks.maxOf { it.dateAddedSeconds } }
+            .take(groupCount),
+        artists = groupByArtist(tracks)
+            .sortedByDescending { it.tracks.size }
+            .take(groupCount),
+    )
