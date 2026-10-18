@@ -44,3 +44,12 @@ internal fun formatDuration(durationMs: Long): String {
         "%d:%02d".format(minutes, seconds)
     }
 }
+
+/**
+ * Duração total (de um álbum ou playlist) em horas e minutos. Os segundos
+ * que sobram arredondam para cima: 40 s viram "1 min", não "0 min".
+ */
+internal fun hoursAndMinutes(totalMs: Long): Pair<Long, Long> {
+    val minutes = (totalMs.coerceAtLeast(0) + 59_999) / 60_000
+    return minutes / 60 to minutes % 60
+}

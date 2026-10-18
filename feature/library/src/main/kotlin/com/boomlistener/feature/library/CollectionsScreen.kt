@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomFastScroller
+import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
@@ -84,7 +86,8 @@ internal fun CollectionsScreen(
     ) { padding ->
         when (val current = state) {
             CollectionsUiState.Loading -> BoomLoading(Modifier.padding(padding))
-            is CollectionsUiState.Ready -> LazyColumn(state = listState, contentPadding = padding) {
+            is CollectionsUiState.Ready -> Box(Modifier.fillMaxSize()) {
+              LazyColumn(state = listState, contentPadding = padding) {
                 item(key = "chips") {
                     CategoryChips(current, onSelect = viewModel::select)
                     Spacer(Modifier.height(8.dp))
@@ -164,6 +167,16 @@ internal fun CollectionsScreen(
                         }
                     }
                 }
+              }
+                // Letra de cada linha da lista, na mesma ordem dos itens acima.
+                val labels = remember(current) { collectionLabels(current) }
+                BoomFastScroller(
+                    state = listState,
+                    label = { index -> labels.getOrNull(index) ?: labels.firstOrNull { it != null } },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
+                )
             }
         }
     }
@@ -309,4 +322,28 @@ private fun EmptySection(message: Int) {
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 32.dp),
     )
+}
+
+/** O rótulo do índice de cada item da lista (null nos que não são grupo). */
+private fun collectionLabels(state: CollectionsUiState.Ready): List<String?> = buildList {
+    add(null) // pílulas
+    when (state.selected) {
+        CollectionKind.Genres -> {
+            if (state.genres.isEmpty()) add(null)
+            state.genres.forEach { add(boomIndexLabel(it.name)) }
+        }
+        CollectionKind.Artists -> {
+            if (state.artists.isEmpty()) add(null)
+            state.artists.forEach { add(boomIndexLabel(it.name)) }
+        }
+        CollectionKind.Playlists -> {
+            add(null) // botão de nova playlist
+            if (state.playlists.isEmpty()) add(null)
+            state.playlists.forEach { add(boomIndexLabel(it.playlist.name)) }
+        }
+        CollectionKind.Albums -> {
+            if (state.albums.isEmpty()) add(null)
+            state.albums.chunked(2).forEach { add(boomIndexLabel(it.first().name)) }
+        }
+    }
 }

@@ -17,6 +17,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ShuffleOrder
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * Serviço que toca a música de verdade. O Media3 cuida sozinho da notificação,
@@ -25,6 +28,7 @@ import androidx.media3.session.MediaSessionService
 class PlaybackService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
+    private val scope = MainScope()
 
     // "Mais ouvidas": decide o que conta (PlayCountTracker) e avisa o app.
     private val playCounter = PlayCountTracker()
@@ -110,6 +114,12 @@ class PlaybackService : MediaSessionService() {
         val builder = MediaSession.Builder(this, player)
         openAppIntent()?.let { builder.setSessionActivity(it) }
         mediaSession = builder.build()
+
+        // Saída de som escolhida na tela "Dispositivos" (null = o sistema decide).
+        val outputs = AudioOutputsData.internalGet(this)
+        scope.launch {
+            outputs.preferred.collect { id -> player.setPreferredAudioDevice(id?.let(outputs::deviceInfo)) }
+        }
     }
 
     private fun reportIfCounted() {
@@ -205,6 +215,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        scope.cancel()
         tickHandler.removeCallbacks(tick)
         tickHandler.removeCallbacks(saveSoon)
         saveSnapshot()

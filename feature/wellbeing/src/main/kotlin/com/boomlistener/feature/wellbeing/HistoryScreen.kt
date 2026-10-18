@@ -8,6 +8,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import com.boomlistener.core.designsystem.component.BoomFastScroller
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ListItem
@@ -80,7 +85,14 @@ internal fun HistoryScreen(
                     modifier = Modifier.padding(padding),
                 )
             } else {
-                LazyColumn(contentPadding = padding) {
+                val listState = rememberLazyListState()
+                // Rótulo de cada item: o período da seção ("Hoje", "Ontem"…).
+                val titles = current.sections.map { sectionTitle(it) }
+                val labels = remember(current, titles) {
+                    current.sections.zip(titles).flatMap { (section, title) -> List(section.entries.size + 1) { title } }
+                }
+                Box(Modifier.fillMaxSize()) {
+                LazyColumn(state = listState, contentPadding = padding) {
                     current.sections.forEach { section ->
                         stickyHeader(key = "${section.period}-${section.month}") { SectionHeader(section) }
                         items(section.entries, key = { "${it.timestampMs}-${it.uri}" }) { entry ->
@@ -95,6 +107,14 @@ internal fun HistoryScreen(
                             )
                         }
                     }
+                }
+                BoomFastScroller(
+                    state = listState,
+                    label = { index -> labels.getOrNull(index) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
+                )
                 }
             }
         }
@@ -120,16 +140,7 @@ internal fun HistoryScreen(
 
 @Composable
 private fun SectionHeader(section: HistorySection) {
-    val title = when (section.period) {
-        HistoryPeriod.Today -> stringResource(R.string.feature_wellbeing_history_today)
-        HistoryPeriod.Yesterday -> stringResource(R.string.feature_wellbeing_history_yesterday)
-        HistoryPeriod.ThisWeek -> stringResource(R.string.feature_wellbeing_history_this_week)
-        HistoryPeriod.LastWeek -> stringResource(R.string.feature_wellbeing_history_last_week)
-        HistoryPeriod.Earlier -> section.month
-            ?.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault()))
-            ?.replaceFirstChar { it.titlecase(Locale.getDefault()) }
-            .orEmpty()
-    }
+    val title = sectionTitle(section)
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Text(
             text = title,
@@ -139,6 +150,19 @@ private fun SectionHeader(section: HistorySection) {
         )
     }
 }
+
+@Composable
+private fun sectionTitle(section: HistorySection): String =
+    when (section.period) {
+        HistoryPeriod.Today -> stringResource(R.string.feature_wellbeing_history_today)
+        HistoryPeriod.Yesterday -> stringResource(R.string.feature_wellbeing_history_yesterday)
+        HistoryPeriod.ThisWeek -> stringResource(R.string.feature_wellbeing_history_this_week)
+        HistoryPeriod.LastWeek -> stringResource(R.string.feature_wellbeing_history_last_week)
+        HistoryPeriod.Earlier -> section.month
+            ?.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault()))
+            ?.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+            .orEmpty()
+    }
 
 @Composable
 private fun HistoryRow(

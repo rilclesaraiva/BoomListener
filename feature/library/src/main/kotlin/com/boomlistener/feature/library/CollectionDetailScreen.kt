@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -48,6 +49,8 @@ import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
 import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomFastScroller
+import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
@@ -173,6 +176,7 @@ private fun TrackListWithHeader(
         }
     }
 
+    Box(Modifier.fillMaxSize()) {
     LazyColumn(state = listState, contentPadding = padding) {
         item(key = "header") { Header(state, viewModel) }
         if (state.tracks.isEmpty()) {
@@ -201,7 +205,7 @@ private fun TrackListWithHeader(
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(40.dp)
                                     .longPressDraggableHandle(
                                         onDragStarted = {
                                             dragging = true
@@ -225,6 +229,15 @@ private fun TrackListWithHeader(
             }
         }
     }
+    // Arrastar pela direita pula pela lista, mostrando a letra.
+    BoomFastScroller(
+        state = listState,
+        label = { index -> boomIndexLabel(local.getOrNull((index - 1).coerceAtLeast(0))?.title) },
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
+    )
+    }
 }
 
 @Composable
@@ -246,6 +259,8 @@ private fun Header(state: CollectionDetailUiState.Ready, viewModel: CollectionDe
                 state.subtitle,
                 state.year?.toString(),
                 pluralStringResource(R.plurals.feature_library_count, state.tracks.size, state.tracks.size),
+                // Duração do álbum (ou playlist) inteiro: "1 h 05 min".
+                state.tracks.takeIf { it.isNotEmpty() }?.let { tracks -> totalDuration(tracks.sumOf { it.durationMs }) },
             ).joinToString(" · "),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -286,7 +301,13 @@ private fun DetailTrackRow(
     }
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = { BoomArtwork(image = artwork, fallbackText = track.title) },
+        leadingContent = {
+            // Na playlist, o puxador de reordenar fica ao lado da capa.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isPlaylist) dragHandle()
+                BoomArtwork(image = artwork, fallbackText = track.title)
+            }
+        },
         headlineContent = { Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {
             Text(
@@ -297,7 +318,6 @@ private fun DetailTrackRow(
             )
         },
         trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
                 BoomMoreMenu(
                     actions = listOfNotNull(
                         BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist)) { onAddToPlaylist(track) },
@@ -322,8 +342,17 @@ private fun DetailTrackRow(
                     },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) },
                 )
-                if (isPlaylist) dragHandle()
-            }
         },
     )
+}
+
+/** "1 h 05 min" ou "42 min". */
+@Composable
+private fun totalDuration(totalMs: Long): String {
+    val (hours, minutes) = hoursAndMinutes(totalMs)
+    return if (hours > 0) {
+        stringResource(R.string.feature_library_total_hours, hours.toInt(), minutes.toInt())
+    } else {
+        stringResource(R.string.feature_library_total_minutes, minutes.toInt())
+    }
 }

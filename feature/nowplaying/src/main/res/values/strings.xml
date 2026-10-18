@@ -32,4 +32,15 @@
     <string name="feature_nowplaying_lyrics_from_file">Lyrics saved in the file</string>
     <string name="feature_nowplaying_add_to_playlist">Add to playlist</string>
     <string name="feature_nowplaying_recommend">Recommend to a friend</string>
+    <string name="feature_nowplaying_devices">Connected devices</string>
+    <string name="feature_nowplaying_devices_hint">Tap one to play the music there</string>
+    <string name="feature_nowplaying_devices_more">More devices</string>
+    <string name="feature_nowplaying_device_playing">Playing here</string>
+    <string name="feature_nowplaying_device_connected">Connected</string>
+    <string name="feature_nowplaying_device_phone">This phone</string>
+    <string name="feature_nowplaying_device_wired">Wired headphones</string>
+    <string name="feature_nowplaying_device_bluetooth">Bluetooth device</string>
+    <string name="feature_nowplaying_device_usb">USB audio</string>
+    <string name="feature_nowplaying_device_hdmi">HDMI</string>
+    <string name="feature_nowplaying_play_now">Play now</string>
 </resources>

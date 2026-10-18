@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.21.0] — 2026-10-18
+
+### ✨ New
+- **Connected devices.** A new button at the top of the player shows where the sound is coming out (this phone, Bluetooth, wired headphones…). Tap it to see every connected device and send the music to another one. "More devices" opens Android's own output picker.
+- **Fast scrolling.** Start scrolling a long list and a handle appears on the right. Drag it to jump through the list, with a bubble showing the letter you're at. It works on Home, the queue, albums, playlists, genres and the Library tab. In History, the bubble shows the day instead ("Today", "Yesterday"…).
+- **Total length** of albums, playlists and genres, next to the song count (for example "1 h 05 min").
+
+### 🎨 Visual tweaks
+- New player progress bar: a thicker wave that flows while the song plays, a round handle with a little gap on each side, and a dot marking the end.
+- Queue: the drag handle now sits next to the cover. Remove has moved into the ⋮ menu (along with "Play now"), so it's harder to tap by accident.
+- Playlists: the drag handle also sits next to the cover.
+
 ## [0.20.0] — 2026-10-17
 
 ### ✨ New

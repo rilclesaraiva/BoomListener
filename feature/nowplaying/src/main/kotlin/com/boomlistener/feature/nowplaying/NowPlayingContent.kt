@@ -149,6 +149,7 @@ internal fun NowPlayingContent(
                             )
                         }
                     }
+                    DevicesButton()
                     if (item != null) {
                         BoomMoreMenu(
                             actions = listOfNotNull(

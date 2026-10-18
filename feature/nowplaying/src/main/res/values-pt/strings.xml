@@ -32,4 +32,15 @@
     <string name="feature_nowplaying_lyrics_from_file">Letra salva no arquivo</string>
     <string name="feature_nowplaying_add_to_playlist">Adicionar à playlist</string>
     <string name="feature_nowplaying_recommend">Recomendar para alguém</string>
+    <string name="feature_nowplaying_devices">Dispositivos conectados</string>
+    <string name="feature_nowplaying_devices_hint">Toque em um para tocar a música nele</string>
+    <string name="feature_nowplaying_devices_more">Mais dispositivos</string>
+    <string name="feature_nowplaying_device_playing">Tocando aqui</string>
+    <string name="feature_nowplaying_device_connected">Conectado</string>
+    <string name="feature_nowplaying_device_phone">Este celular</string>
+    <string name="feature_nowplaying_device_wired">Fone com fio</string>
+    <string name="feature_nowplaying_device_bluetooth">Dispositivo Bluetooth</string>
+    <string name="feature_nowplaying_device_usb">Áudio USB</string>
+    <string name="feature_nowplaying_device_hdmi">HDMI</string>
+    <string name="feature_nowplaying_play_now">Tocar agora</string>
 </resources>

@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,8 +50,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomFastScroller
+import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
+import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.QueueEntry
 import kotlinx.coroutines.CancellationException
@@ -145,7 +152,8 @@ internal fun QueuePanel(
                 }
             }
 
-            LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
+            Box(Modifier.weight(1f)) {
+            LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 items(localQueue, key = { it.key }) { entry ->
                     ReorderableItem(reorderState, key = entry.key) { isDragging ->
                         val isCurrent = entry.index == state.queueIndex
@@ -155,41 +163,44 @@ internal fun QueuePanel(
                                 isCurrent = isCurrent,
                                 viewModel = viewModel,
                                 onClick = { viewModel.playQueueItem(entry.index) },
+                                // Puxador ao lado da capa: segurar e arrastar
+                                // move a música para qualquer ponto da fila.
+                                dragHandle = {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .longPressDraggableHandle(
+                                                onDragStarted = {
+                                                    dragging = true
+                                                    dragStartPosition = localQueue.indexOfFirst { it.key == entry.key }
+                                                },
+                                                onDragStopped = {
+                                                    dragging = false
+                                                    val end = localQueue.indexOfFirst { it.key == entry.key }
+                                                    if (dragStartPosition >= 0 && end >= 0) {
+                                                        // A fila na tela é a ordem real do player.
+                                                        viewModel.moveQueueItem(dragStartPosition, end)
+                                                    }
+                                                },
+                                            ),
+                                    ) {
+                                        Icon(BoomIcons.DragHandle, stringResource(R.string.feature_nowplaying_reorder))
+                                    }
+                                },
+                                // Remover fica no menu, longe do toque sem querer.
                                 trailing = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (!isCurrent) {
-                                            IconButton(onClick = { viewModel.removeQueueItem(entry.index) }) {
-                                                Icon(BoomIcons.Remove, stringResource(R.string.feature_nowplaying_remove))
-                                            }
-                                        }
-                                        run {
-                                            // Segurar aqui e arrastar move a música
-                                            // para qualquer ponto da fila.
-                                            Box(
-                                                contentAlignment = Alignment.Center,
-                                                modifier = Modifier
-                                                    .size(48.dp)
-                                                    .longPressDraggableHandle(
-                                                        onDragStarted = {
-                                                            dragging = true
-                                                            dragStartPosition = localQueue.indexOfFirst { it.key == entry.key }
-                                                        },
-                                                        onDragStopped = {
-                                                            dragging = false
-                                                            val end = localQueue.indexOfFirst { it.key == entry.key }
-                                                            if (dragStartPosition >= 0 && end >= 0) {
-                                                                // A fila na tela é a ordem real do player.
-                                                                viewModel.moveQueueItem(dragStartPosition, end)
-                                                            }
-                                                        },
-                                                    ),
-                                            ) {
-                                                Icon(
-                                                    BoomIcons.DragHandle,
-                                                    stringResource(R.string.feature_nowplaying_reorder),
-                                                )
-                                            }
-                                        }
+                                    if (!isCurrent) {
+                                        BoomMoreMenu(
+                                            actions = listOf(
+                                                BoomMenuAction(stringResource(R.string.feature_nowplaying_play_now)) {
+                                                    viewModel.playQueueItem(entry.index)
+                                                },
+                                                BoomMenuAction(stringResource(R.string.feature_nowplaying_remove)) {
+                                                    viewModel.removeQueueItem(entry.index)
+                                                },
+                                            ),
+                                        )
                                     }
                                 },
                             )
@@ -197,6 +208,15 @@ internal fun QueuePanel(
                     }
                 }
                 item { Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)) }
+            }
+            // Arrastar pela direita pula pela fila, mostrando a letra.
+            BoomFastScroller(
+                state = listState,
+                label = { index -> localQueue.getOrNull(index)?.let { boomIndexLabel(it.item.title) } },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
+            )
             }
         }
     }
@@ -208,6 +228,7 @@ private fun QueueRow(
     isCurrent: Boolean,
     viewModel: NowPlayingViewModel,
     onClick: () -> Unit,
+    dragHandle: @Composable () -> Unit,
     trailing: @Composable () -> Unit,
 ) {
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
@@ -221,7 +242,12 @@ private fun QueueRow(
             headlineColor = if (isCurrent) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
             supportingColor = if (isCurrent) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
         ),
-        leadingContent = { BoomArtwork(image = artwork, fallbackText = entry.item.title) },
+        leadingContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                dragHandle()
+                BoomArtwork(image = artwork, fallbackText = entry.item.title)
+            }
+        },
         trailingContent = trailing,
         headlineContent = { Text(entry.item.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {

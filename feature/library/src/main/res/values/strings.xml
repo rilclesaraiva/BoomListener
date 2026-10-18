@@ -50,4 +50,6 @@
     <string name="feature_library_reorder">Hold and drag to reorder</string>
     <string name="feature_library_save">Save</string>
     <string name="feature_library_recommend">Recommend to a friend</string>
+    <string name="feature_library_total_hours">%1$d h %2$02d min</string>
+    <string name="feature_library_total_minutes">%d min</string>
 </resources>

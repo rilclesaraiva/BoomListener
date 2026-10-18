@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -56,6 +57,8 @@ import com.boomlistener.core.common.openUrl
 import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.common.openAppSettings
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomFastScroller
+import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
@@ -203,7 +206,8 @@ private fun TrackList(
             modifier = Modifier.padding(contentPadding),
         )
 
-        else -> LazyColumn(state = listState, contentPadding = contentPadding) {
+        else -> Box(Modifier.fillMaxSize()) {
+          LazyColumn(state = listState, contentPadding = contentPadding) {
             item(key = "header") {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -235,6 +239,15 @@ private fun TrackList(
                     onRecommend = { onRecommend(track) },
                 )
             }
+          }
+            // Arrastar pela direita pula pela lista, mostrando a letra.
+            BoomFastScroller(
+                state = listState,
+                label = { index -> boomIndexLabel(state.tracks.getOrNull((index - 1).coerceAtLeast(0))?.title) },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding()),
+            )
         }
     }
 }
