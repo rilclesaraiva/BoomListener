@@ -15,12 +15,19 @@ import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.social.SocialData
+import com.boomlistener.data.releases.ReleasesData
+import com.boomlistener.data.wellbeing.HistoryData
+import com.boomlistener.data.wellbeing.StatsData
 
 /** Aba Amigos. */
 const val SOCIAL_ROUTE = "social"
 private const val ARG_ID = "id"
 private const val CHAT_ROUTE = "social/chat?$ARG_ID={$ARG_ID}"
 private const val PROFILE_ROUTE = "social/profile?$ARG_ID={$ARG_ID}"
+const val MY_PROFILE_ROUTE = "social/me"
+
+/** O seu perfil (estatísticas de escuta, mais ouvidas, histórico, quem segue). */
+fun NavController.navigateToMyProfile() = navigate(MY_PROFILE_ROUTE) { launchSingleTop = true }
 
 fun NavController.navigateToChat(conversationId: String) =
     navigate("social/chat?$ARG_ID=" + Uri.encode(conversationId)) { launchSingleTop = true }
@@ -42,6 +49,7 @@ fun NavGraphBuilder.socialScreen(
             viewModel = viewModel,
             onOpenChat = navController::navigateToChat,
             onOpenProfile = navController::navigateToFriend,
+            onOpenMyProfile = navController::navigateToMyProfile,
             onOpenHistory = onOpenHistory,
             onOpenSettings = onOpenSettings,
         )
@@ -70,5 +78,29 @@ fun NavGraphBuilder.socialScreen(
         val context = LocalContext.current.applicationContext
         val viewModel = viewModel(key = "friend:$id") { FriendProfileViewModel(id, SocialData.repository(context)) }
         FriendProfileScreen(viewModel = viewModel, onBack = back, onOpenChat = navController::navigateToChat)
+    }
+    composable(MY_PROFILE_ROUTE) {
+        val context = LocalContext.current.applicationContext
+        val viewModel = viewModel {
+            MyProfileViewModel(
+                social = SocialData.repository(context),
+                history = HistoryData.repository(context),
+                stats = StatsData.repository(context),
+                library = LibraryData.repository(context),
+                follows = ReleasesData.follows(context),
+                player = PlayerConnection.controller(context),
+            )
+        }
+        MyProfileScreen(
+            viewModel = viewModel,
+            onBack = back,
+            onOpenArtist = onOpenArtist,
+            onOpenHistory = onOpenHistory,
+            // Sem perfil ainda: vai para a aba Amigos, onde ele é criado.
+            onCreateProfile = {
+                navController.popBackStack()
+                navController.navigate(SOCIAL_ROUTE) { launchSingleTop = true }
+            },
+        )
     }
 }

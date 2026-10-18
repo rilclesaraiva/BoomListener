@@ -66,4 +66,45 @@
     <string name="feature_social_type">Message</string>
     <string name="feature_social_unblock">Unblock</string>
     <string name="feature_social_you">You</string>
+    <string name="feature_social_my_profile">Your profile</string>
+    <string name="feature_social_edit_name">Edit name</string>
+    <string name="feature_social_save">Save</string>
+    <string name="feature_social_most_played">Most played</string>
+    <string name="feature_social_most_played_sub">All time</string>
+    <string name="feature_social_listening_time">Listening time</string>
+    <string name="feature_social_last_7_days">Last 7 days</string>
+    <string name="feature_social_top_artists">Your artists</string>
+    <string name="feature_social_last_30_days">Last 30 days</string>
+    <string name="feature_social_history">History</string>
+    <string name="feature_social_see_all">See all</string>
+    <string name="feature_social_following_count">Following · %1$d</string>
+    <string name="feature_social_following_empty">Follow artists on their profile to keep up with their releases.</string>
+    <string name="feature_social_no_profile_yet">No Friends profile yet</string>
+    <string name="feature_social_this_month">This month</string>
+    <string name="feature_social_hours_minutes">%1$dh %2$02dm</string>
+    <string name="feature_social_minutes">%1$d min</string>
+    <string name="feature_social_listened">listening</string>
+    <string name="feature_social_daily">Daily</string>
+    <string name="feature_social_today_short">Today</string>
+    <string name="feature_social_hours_short">%1$dh%2$02d</string>
+    <string name="feature_social_peak_hours">Peak hours</string>
+    <string name="feature_social_morning">Morning</string>
+    <string name="feature_social_afternoon">Afternoon</string>
+    <string name="feature_social_night">Night</string>
+    <string name="feature_social_dawn">Late night</string>
+    <string name="feature_social_today">Today</string>
+    <string name="feature_social_yesterday">Yesterday</string>
+    <plurals name="feature_social_plays">
+        <item quantity="one">%1$d play</item>
+        <item quantity="other">%1$d plays</item>
+    </plurals>
+    <plurals name="feature_social_songs">
+        <item quantity="one">song</item>
+        <item quantity="other">songs</item>
+    </plurals>
+    <plurals name="feature_social_artists">
+        <item quantity="one">artist</item>
+        <item quantity="other">artists</item>
+    </plurals>
+    <string name="feature_social_see_profile">View profile</string>
 </resources>

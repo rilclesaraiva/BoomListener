@@ -138,6 +138,7 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 - Conversas ficam **só no aparelho** (`filesDir/social/chats`); o servidor apaga cada mensagem quando o app confirma que recebeu.
 - "Ouvindo agora" e recentes: **desligado por padrão**, só para quem conversa com a pessoa ou divide grupo. Desligar apaga do servidor.
 - Amigo é por @ (abrir o perfil e mandar mensagem). Código de convite só para grupos.
+- **Seu perfil** (`social/me`, atalho com a sua inicial no canto superior direito de toda aba via `LocalProfileShortcut`): números do mês, mais ouvidas, tempo por dia, horários de pico, seus artistas, histórico e quem você segue. Tudo calculado no aparelho (`ProfileStats.kt`, testado); funciona até sem perfil em Amigos.
 - Módulos: `data/social` (cliente e armazenamento) e `feature/social` (aba Amigos, chat, perfil). A folha `RecommendSheet` é usada pelo `:app` nos menus da biblioteca e do player.
 
 ## Proxy do Last.fm

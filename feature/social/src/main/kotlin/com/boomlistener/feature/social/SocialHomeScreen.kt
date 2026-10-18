@@ -81,6 +81,7 @@ internal fun SocialHomeScreen(
     viewModel: SocialHomeViewModel,
     onOpenChat: (conversationId: String) -> Unit,
     onOpenProfile: (userId: String) -> Unit,
+    onOpenMyProfile: () -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -113,15 +114,33 @@ internal fun SocialHomeScreen(
                     LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 96.dp)) {
                         account?.let { me ->
                             item(key = "me") {
-                                Text(
+                                // Tocar no seu @ abre o seu perfil.
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(onClick = onOpenMyProfile)
+                                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                                ) {
+                                    Avatar(me.name, size = 40.dp)
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(me.name, style = MaterialTheme.typography.titleMedium)
+                                        Text(
                                     text = stringResource(
                                         if (me.sharing) R.string.feature_social_me_sharing else R.string.feature_social_me_private,
                                         me.handle,
                                     ),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
                                 )
+                                    }
+                                    Text(
+                                        stringResource(R.string.feature_social_see_profile),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
                             }
                         }
                         if (offline) {

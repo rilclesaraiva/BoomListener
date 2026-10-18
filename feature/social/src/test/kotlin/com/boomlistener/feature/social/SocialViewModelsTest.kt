@@ -41,7 +41,7 @@ import org.junit.Test
 
 private val ana = SocialUser("a1", "ana", "Ana")
 
-private class FakeSocial : SocialRepository {
+internal class FakeSocial : SocialRepository {
     override val account = MutableStateFlow<SocialAccount?>(null)
     val sent = mutableListOf<Pair<String, MessageBody>>()
     var blocked = false
@@ -82,9 +82,9 @@ private class FakeSocial : SocialRepository {
     override suspend fun publishListened(track: TrackInfo) = Unit
 }
 
-private val acai = Track(1, "content://1", "Açaí", "Djavan", "Luz", 9, 200_000, 1, 1982, 0)
+internal val acai = Track(1, "content://1", "Açaí", "Djavan", "Luz", 9, 200_000, 1, 1982, 0)
 
-private class FakeLibrary : LibraryRepository {
+internal class FakeLibrary : LibraryRepository {
     override suspend fun getTracks() = listOf(acai)
     override suspend fun loadArtwork(trackUri: String, sizePx: Int): Bitmap? = null
 }
@@ -95,7 +95,7 @@ private object NoDeezer : DeezerRepository {
     override suspend fun image(url: String, sizePx: Int): Bitmap? = null
 }
 
-private class FakePlayer : PlaybackController {
+internal class FakePlayer : PlaybackController {
     var played: List<Track> = emptyList()
     override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState())
     override fun play(tracks: List<Track>, startIndex: Int) { played = tracks }

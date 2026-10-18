@@ -66,6 +66,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.boomlistener.data.social.SocialData
 import com.boomlistener.feature.social.RecommendSheet
 import com.boomlistener.feature.social.socialScreen
+import com.boomlistener.feature.social.navigateToMyProfile
+import com.boomlistener.core.designsystem.component.LocalProfileShortcut
+import com.boomlistener.core.designsystem.component.ProfileShortcut
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
 import com.boomlistener.feature.wellbeing.navigateToHistory
@@ -150,7 +153,14 @@ fun BoomListenerApp() {
         if (isTabSwitch()) fadeOut(fadeSpec) else slideOutHorizontally(slideSpec) { it }
     }
 
-    CompositionLocalProvider(LocalTabReselect provides reselect) {
+    // Seu perfil no canto superior direito de toda aba (inicial do nome, ou ícone sem perfil).
+    val profileShortcut = remember(socialAccount?.name) {
+        ProfileShortcut(
+            initial = socialAccount?.name?.trim()?.firstOrNull()?.uppercase(),
+            onClick = { navController.navigateToMyProfile() },
+        )
+    }
+    CompositionLocalProvider(LocalTabReselect provides reselect, LocalProfileShortcut provides profileShortcut) {
     Box(Modifier.fillMaxSize()) {
         Scaffold(
             bottomBar = {

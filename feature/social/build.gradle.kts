@@ -14,6 +14,9 @@ dependencies {
     implementation(project(":data:library"))
     implementation(project(":data:deezer"))
     implementation(project(":core:player"))
+    // Seu perfil: histórico, mais ouvidas e artistas seguidos.
+    implementation(project(":data:wellbeing"))
+    implementation(project(":data:releases"))
 
     testImplementation(libs.kotlinx.coroutines.test)
 }

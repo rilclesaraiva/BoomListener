@@ -66,4 +66,45 @@
     <string name="feature_social_type">Mensagem</string>
     <string name="feature_social_unblock">Desbloquear</string>
     <string name="feature_social_you">Você</string>
+    <string name="feature_social_my_profile">Seu perfil</string>
+    <string name="feature_social_edit_name">Editar nome</string>
+    <string name="feature_social_save">Salvar</string>
+    <string name="feature_social_most_played">Mais ouvidas</string>
+    <string name="feature_social_most_played_sub">Desde sempre</string>
+    <string name="feature_social_listening_time">Tempo de escuta</string>
+    <string name="feature_social_last_7_days">Últimos 7 dias</string>
+    <string name="feature_social_top_artists">Seus artistas</string>
+    <string name="feature_social_last_30_days">Últimos 30 dias</string>
+    <string name="feature_social_history">Histórico</string>
+    <string name="feature_social_see_all">Ver tudo</string>
+    <string name="feature_social_following_count">Seguindo · %1$d</string>
+    <string name="feature_social_following_empty">Siga artistas no perfil deles para acompanhar os lançamentos.</string>
+    <string name="feature_social_no_profile_yet">Ainda sem perfil em Amigos</string>
+    <string name="feature_social_this_month">Este mês</string>
+    <string name="feature_social_hours_minutes">%1$dh %2$02dm</string>
+    <string name="feature_social_minutes">%1$d min</string>
+    <string name="feature_social_listened">de escuta</string>
+    <string name="feature_social_daily">Por dia</string>
+    <string name="feature_social_today_short">Hoje</string>
+    <string name="feature_social_hours_short">%1$dh%2$02d</string>
+    <string name="feature_social_peak_hours">Horários de pico</string>
+    <string name="feature_social_morning">Manhã</string>
+    <string name="feature_social_afternoon">Tarde</string>
+    <string name="feature_social_night">Noite</string>
+    <string name="feature_social_dawn">Madrugada</string>
+    <string name="feature_social_today">Hoje</string>
+    <string name="feature_social_yesterday">Ontem</string>
+    <plurals name="feature_social_plays">
+        <item quantity="one">%1$d vez</item>
+        <item quantity="other">%1$d vezes</item>
+    </plurals>
+    <plurals name="feature_social_songs">
+        <item quantity="one">música</item>
+        <item quantity="other">músicas</item>
+    </plurals>
+    <plurals name="feature_social_artists">
+        <item quantity="one">artista</item>
+        <item quantity="other">artistas</item>
+    </plurals>
+    <string name="feature_social_see_profile">Ver perfil</string>
 </resources>

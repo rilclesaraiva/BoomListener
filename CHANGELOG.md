@@ -4,6 +4,16 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.19.0] — 2026-10-17
+
+### ✨ New
+- **Your profile.** Tap your initial in the top right corner of any tab (or your name in Friends):
+  - A header tinted with the cover of your most played song, with your name, @ and a quick switch for sharing what you listen to.
+  - **This month**: how many songs, how long and how many artists you listened to.
+  - **Most played** with their covers and ranking, **listening time** for the last 7 days, your **peak hours** (morning, afternoon, night, late night) and **your artists** of the last 30 days.
+  - Your recent **history** (Today, Yesterday…) and the artists you **follow**.
+  - Edit your name right there. Everything is calculated on your phone.
+
 ## [0.18.1] — 2026-10-17
 
 ### 🐛 Fixes
