@@ -16,6 +16,7 @@ internal const val ABOUT_ROUTE = "settings/about"
 internal const val PRIVACY_ROUTE = "settings/privacy"
 internal const val LICENSES_ROUTE = "settings/licenses"
 internal const val FRIENDS_ROUTE = "settings/friends"
+internal const val LIBRARY_SETTINGS_ROUTE = "settings/library"
 
 fun NavController.navigateToSettings() = navigate(SETTINGS_ROUTE) { launchSingleTop = true }
 
@@ -36,10 +37,12 @@ fun NavGraphBuilder.settingsScreen(
             onOpenPrivacy = { navController.navigate(PRIVACY_ROUTE) },
             onOpenLicenses = { navController.navigate(LICENSES_ROUTE) },
             onOpenFriends = { navController.navigate(FRIENDS_ROUTE) },
+            onOpenLibrary = { navController.navigate(LIBRARY_SETTINGS_ROUTE) },
             onBack = back,
         )
     }
     composable(APPEARANCE_ROUTE) { AppearanceScreen(onBack = back) }
+    composable(LIBRARY_SETTINGS_ROUTE) { LibrarySettingsScreen(onBack = back) }
     composable(ABOUT_ROUTE) { AboutScreen(onBack = back) }
     composable(PRIVACY_ROUTE) { PrivacyScreen(onBack = back) }
     composable(LICENSES_ROUTE) { LicensesScreen(onBack = back) }

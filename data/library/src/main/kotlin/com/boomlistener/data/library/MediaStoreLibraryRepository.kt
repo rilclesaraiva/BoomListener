@@ -5,12 +5,15 @@ package com.boomlistener.data.library
 
 import android.content.ContentUris
 import android.content.Context
+import android.database.ContentObserver
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
@@ -48,6 +51,55 @@ internal class MediaStoreLibraryRepository(
     private val changes = MutableStateFlow(0)
     override val version: StateFlow<Int> = changes.asStateFlow()
 
+    private val prefs = context.getSharedPreferences("library_filter", Context.MODE_PRIVATE)
+    private val currentFilter = MutableStateFlow(readFilter())
+    override val filter: StateFlow<LibraryFilter> = currentFilter.asStateFlow()
+
+    // Música nova baixada, apagada ou alterada por outro app: o MediaStore
+    // avisa, e a biblioteca recarrega sozinha (sem precisar fechar o app).
+    // Espera o sistema terminar de ler o lote antes de avisar as telas.
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val announceChange = Runnable { changes.update { it + 1 } }
+    private val mediaObserver = object : ContentObserver(mainHandler) {
+        override fun onChange(selfChange: Boolean) {
+            mainHandler.removeCallbacks(announceChange)
+            mainHandler.postDelayed(announceChange, CHANGE_DEBOUNCE_MS)
+        }
+    }
+
+    init {
+        runCatching {
+            context.contentResolver.registerContentObserver(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                true,
+                mediaObserver,
+            )
+        }
+    }
+
+    override fun setFilter(filter: LibraryFilter) {
+        val clean = filter.copy(
+            minDurationSeconds = filter.minDurationSeconds.coerceIn(0, LibraryFilter.MAX_MIN_DURATION_SECONDS),
+        )
+        prefs.edit()
+            .putInt(KEY_MIN_DURATION, clean.minDurationSeconds)
+            .putBoolean(KEY_ONLY_CHOSEN, clean.onlyChosenFolders)
+            .putStringSet(KEY_FOLDERS, clean.folders)
+            .apply()
+        currentFilter.value = clean
+        changes.update { it + 1 }
+    }
+
+    private fun readFilter() = LibraryFilter(
+        minDurationSeconds = prefs.getInt(KEY_MIN_DURATION, 0),
+        onlyChosenFolders = prefs.getBoolean(KEY_ONLY_CHOSEN, false),
+        // Cópia: o conjunto devolvido pelo SharedPreferences não pode ser alterado.
+        folders = prefs.getStringSet(KEY_FOLDERS, emptySet()).orEmpty().toSet(),
+    )
+
+    override suspend fun folders(): List<MusicFolder> =
+        groupFolders(queryAll().map { it.folder })
+
     override fun notifyChanged(trackUri: String) {
         artworkCache.snapshot().keys.filter { it.startsWith("$trackUri@") }.forEach { artworkCache.remove(it) }
         noArtwork.removeAll { it.startsWith("$trackUri@") }
@@ -55,6 +107,21 @@ internal class MediaStoreLibraryRepository(
     }
 
     override suspend fun getTracks(): List<Track> = withContext(Dispatchers.IO) {
+        val filter = currentFilter.value
+        val tracks = queryAll()
+            .filter { filter.accepts(it.track.durationMs, it.folder) }
+            .map { it.track }
+        // Até o Android 10 o gênero não vem junto: fica numa tabela à parte.
+        val withGenres = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) tracks else addLegacyGenres(tracks)
+        withGenres.sortedWith { a, b -> collator.compare(a.title, b.title) }
+    }
+
+    /** Uma música e a pasta onde ela está. */
+    private class Entry(val track: Track, val folder: String?)
+
+    /** Todas as músicas do MediaStore, sem o filtro da biblioteca. */
+    @Suppress("DEPRECATION") // DATA: só para saber a pasta; o arquivo é aberto pela URI.
+    private suspend fun queryAll(): List<Entry> = withContext(Dispatchers.IO) {
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
@@ -66,11 +133,18 @@ internal class MediaStoreLibraryRepository(
             MediaStore.Audio.Media.TRACK,
             MediaStore.Audio.Media.YEAR,
             MediaStore.Audio.Media.DATE_ADDED,
-        ) + if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) arrayOf(MediaStore.Audio.Media.GENRE) else emptyArray()
+            MediaStore.Audio.Media.DATA,
+        ) + if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            arrayOf(MediaStore.Audio.Media.GENRE, MediaStore.Audio.Media.RELATIVE_PATH)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            arrayOf(MediaStore.Audio.Media.RELATIVE_PATH)
+        } else {
+            emptyArray()
+        }
         // Só músicas: deixa de fora toques, notificações, alarmes e gravações.
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
 
-        val tracks = mutableListOf<Track>()
+        val entries = mutableListOf<Entry>()
         try {
             context.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -78,13 +152,20 @@ internal class MediaStoreLibraryRepository(
                 selection,
                 null,
                 null,
-            )?.use { cursor -> while (cursor.moveToNext()) tracks += cursor.toTrack() }
+            )?.use { cursor ->
+                val hasRelative = cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH) >= 0
+                while (cursor.moveToNext()) {
+                    val folder = parentFolder(
+                        dataPath = cursor.getStringOrNull(MediaStore.Audio.Media.DATA),
+                        relativePath = if (hasRelative) cursor.getStringOrNull(MediaStore.Audio.Media.RELATIVE_PATH) else null,
+                    )
+                    entries += Entry(cursor.toTrack(), folder)
+                }
+            }
         } catch (_: SecurityException) {
             // Sem permissão: a tela já trata esse caso antes de chegar aqui.
         }
-        // Até o Android 10 o gênero não vem junto: fica numa tabela à parte.
-        val withGenres = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) tracks else addLegacyGenres(tracks)
-        withGenres.sortedWith { a, b -> collator.compare(a.title, b.title) }
+        entries
     }
 
     override suspend fun loadArtwork(trackUri: String, sizePx: Int): Bitmap? {
@@ -193,6 +274,11 @@ internal class MediaStoreLibraryRepository(
 
     private fun String.cleanUnknown(): String? = cleanUnknownTag(this)
 }
+
+private const val CHANGE_DEBOUNCE_MS = 1_500L
+private const val KEY_MIN_DURATION = "min_duration_s"
+private const val KEY_ONLY_CHOSEN = "only_chosen_folders"
+private const val KEY_FOLDERS = "folders"
 
 /** O MediaStore guarda o disco junto com a faixa: 1005 = disco 1, faixa 5. */
 internal fun parseTrackNumber(raw: Int?): Int? = raw?.let { it % 1000 }?.takeIf { it > 0 }

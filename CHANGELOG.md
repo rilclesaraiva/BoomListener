@@ -4,6 +4,19 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.20.0] — 2026-10-17
+
+### ✨ New
+- **Your library updates by itself.** Downloaded a new song, or deleted one? It shows up (or disappears) in a moment, without closing the app.
+- **Settings → Library:**
+  - **Where your music comes from:** the whole phone, or only the folders you choose (subfolders included).
+  - **Minimum length:** a slider to hide audio shorter than a few seconds, like voice notes and ringtones.
+
+### 🎨 Visual tweaks
+- Song and album names under covers are no longer clipped at the rounded corners (profile, Releases, Library).
+- Your profile's listening time and peak hours are now stacked full width, so nothing is cut off at the edge.
+- Release filters wrap to a new line instead of disappearing past the edge of the screen.
+
 ## [0.19.0] — 2026-10-17
 
 ### ✨ New

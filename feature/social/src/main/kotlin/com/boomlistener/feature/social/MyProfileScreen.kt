@@ -68,6 +68,10 @@ import java.util.Locale
 
 private val CoverCard = 136.dp
 
+// Folga para o canto arredondado do toque não cortar as letras.
+private val TileBottom = 8.dp
+private val TileTextInset = 4.dp
+
 /**
  * O seu perfil, no estilo de um "cartão de ouvinte": cabeçalho no tom da sua
  * música mais ouvida, os números do mês, o que mais tocou, quando você ouve,
@@ -130,9 +134,10 @@ internal fun MyProfileScreen(
 
             item(key = "time") {
                 SectionTitle(stringResource(R.string.feature_social_listening_time), stringResource(R.string.feature_social_last_7_days))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                    item { WeekCard(current) }
-                    item { DayPartsCard(current) }
+                // Um embaixo do outro, na largura da tela: nada fica cortado na borda.
+                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    WeekCard(current)
+                    DayPartsCard(current)
                 }
             }
 
@@ -301,7 +306,7 @@ private fun MonthCard(state: MyProfileUiState) {
                 BigNumber(
                     if (hours > 0) stringResource(R.string.feature_social_hours_minutes, hours, minutes) else stringResource(R.string.feature_social_minutes, minutes),
                     stringResource(R.string.feature_social_listened),
-                    Modifier.weight(1f),
+                    Modifier.weight(1.4f),
                 )
                 BigNumber(state.stats.monthArtists.toString(), pluralStringResource(R.plurals.feature_social_artists, state.stats.monthArtists), Modifier.weight(1f))
             }
@@ -312,7 +317,7 @@ private fun MonthCard(state: MyProfileUiState) {
 @Composable
 private fun BigNumber(value: String, label: String, modifier: Modifier = Modifier) {
     Column(modifier) {
-        Text(value, style = MaterialTheme.typography.headlineMedium, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.headlineSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(label, style = MaterialTheme.typography.labelMedium)
     }
 }
@@ -341,7 +346,7 @@ private fun SectionTitle(title: String, subtitle: String?, onMore: (() -> Unit)?
 @Composable
 private fun TopSongCard(rank: Int, song: SongStat, viewModel: MyProfileViewModel, onClick: () -> Unit) {
     val cover = rememberLocalArtwork(viewModel, song.uri, CoverCard)
-    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.large).clickable(onClick = onClick)) {
+    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = TileBottom)) {
         Box {
             BoomArtwork(image = cover, fallbackText = song.title, size = CoverCard)
             // Posição no ranking, num selo no canto.
@@ -355,11 +360,13 @@ private fun TopSongCard(rank: Int, song: SongStat, viewModel: MyProfileViewModel
             }
         }
         Spacer(Modifier.height(6.dp))
-        Text(song.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(song.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = TileTextInset))
         Text(
             pluralStringResource(R.plurals.feature_social_plays, song.plays, song.plays),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = TileTextInset),
         )
     }
 }
@@ -369,8 +376,8 @@ private fun TopSongCard(rank: Int, song: SongStat, viewModel: MyProfileViewModel
 private fun WeekCard(state: MyProfileUiState) {
     val week = state.stats.week
     val max = (week.maxOfOrNull { it.minutes } ?: 0).coerceAtLeast(1)
-    Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.extraLarge) {
-        Column(Modifier.width(300.dp).padding(16.dp)) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.extraLarge, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp)) {
             Text(stringResource(R.string.feature_social_daily), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom, modifier = Modifier.height(140.dp)) {
@@ -417,8 +424,8 @@ private fun shortDuration(minutes: Int): String =
 /** Manhã, tarde, noite e madrugada: quando você mais ouve. */
 @Composable
 private fun DayPartsCard(state: MyProfileUiState) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.extraLarge) {
-        Column(Modifier.width(240.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.extraLarge, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.feature_social_peak_hours), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             listOf(
                 DayPart.Morning to R.string.feature_social_morning,
@@ -444,7 +451,7 @@ private fun DayPartsCard(state: MyProfileUiState) {
 private fun PersonChip(name: String, caption: String?, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(88.dp).clip(MaterialTheme.shapes.large).clickable(onClick = onClick).padding(vertical = 4.dp),
+        modifier = Modifier.width(88.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(top = 4.dp, bottom = TileBottom),
     ) {
         Avatar(name, size = 72.dp)
         Spacer(Modifier.height(6.dp))
@@ -464,7 +471,7 @@ private fun HistoryCard(entry: HistoryEntry, today: LocalDate, viewModel: MyProf
         today.minusDays(1) -> stringResource(R.string.feature_social_yesterday)
         else -> date.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
     }
-    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.large).clickable(onClick = onClick)) {
+    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = TileBottom)) {
         Box(contentAlignment = Alignment.BottomStart) {
             BoomArtwork(image = cover, fallbackText = entry.title, size = CoverCard)
             Surface(
@@ -477,13 +484,14 @@ private fun HistoryCard(entry: HistoryEntry, today: LocalDate, viewModel: MyProf
             }
         }
         Spacer(Modifier.height(6.dp))
-        Text(entry.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(entry.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = TileTextInset))
         Text(
             entry.artist.orEmpty(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = TileTextInset),
         )
     }
 }

@@ -34,6 +34,7 @@ internal fun SettingsScreen(
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
     onOpenFriends: () -> Unit,
+    onOpenLibrary: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -87,6 +88,13 @@ internal fun SettingsScreen(
                         title = stringResource(R.string.feature_settings_appearance),
                         subtitle = stringResource(R.string.feature_settings_appearance_summary),
                         onClick = onOpenAppearance,
+                    )
+                    BoomSettingsItem(
+                        icon = BoomIcons.Collection,
+                        accent = BoomAccent.Secondary,
+                        title = stringResource(R.string.feature_settings_library),
+                        subtitle = stringResource(R.string.feature_settings_library_summary),
+                        onClick = onOpenLibrary,
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.Wellbeing,

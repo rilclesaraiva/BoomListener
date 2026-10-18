@@ -131,7 +131,8 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 - **Aba Lançamentos** — ✅ na 0.16.0 (sem notificação ainda): lista os lançamentos dos artistas seguidos, do mais novo para o mais antigo ou por artista. Falta o WorkManager diário com notificação.
 - **Histórico de escuta** — ✅ na 0.15.0: `data/wellbeing/ListeningHistory` (até 1 ano / 5.000 reproduções) e tela em `feature/wellbeing`, agrupada em Hoje, Ontem, Esta semana, Semana passada e meses.
 - **Radar de lançamentos** na aba Lançamentos: para cada artista seguido (`data/releases`), checagem diária no Deezer (WorkManager), lista dos lançamentos recentes e notificação do que é novo.
-- **Ajustes ainda por vir** (seguindo o modelo das telas de referência): Gestão de música (pastas, ignorar áudios curtos), Reprodução (pular silêncio, crossfade), Equalizador, Notificações (radar de lançamentos), Integrações (Last.fm, Deezer), Cópia e restauração.
+- **Ajustes → Biblioteca** — ✅ na 0.20.0: pastas (todo o aparelho ou só as escolhidas, com subpastas) e duração mínima. O filtro mora em `data/library` (`LibraryFilter`, puro e testado; salvo em SharedPreferences) e vale para todo `getTracks()`. A biblioteca se atualiza sozinha: um `ContentObserver` no MediaStore de áudio sobe `version` (com espera de 1,5 s).
+- **Ajustes ainda por vir** (seguindo o modelo das telas de referência): Reprodução (pular silêncio, crossfade), Equalizador, Notificações (radar de lançamentos), Integrações (Last.fm, Deezer), Cópia e restauração.
 - Cor do player tirada da capa.
 - **Embaralhamento próprio do app** — ✅ feito na 0.9.0 (`core/player/ShuffleState`). Regras:
   - **Algoritmo sem repetição:** embaralhamento de Fisher-Yates sobre a fila inteira. Cada música toca **uma vez** por rodada; nenhuma se repete antes de todas terem tocado.

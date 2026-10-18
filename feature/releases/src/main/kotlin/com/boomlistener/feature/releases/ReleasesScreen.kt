@@ -6,6 +6,8 @@ package com.boomlistener.feature.releases
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -141,60 +142,59 @@ internal fun ReleasesScreen(
  * Pílulas: como ver (mais recentes / por artista), o que ver (álbuns, EPs,
  * singles) e até quando (último mês, 6 meses, 1 ano).
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Filters(state: ReleasesUiState.Ready, viewModel: ReleasesViewModel) {
-    Column {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+    // As pílulas quebram linha em vez de sumir na borda da tela.
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        items(ReleasesView.entries, key = { "v:" + it.name }) { option ->
-            Pill(
-                label = stringResource(
-                    when (option) {
-                        ReleasesView.Latest -> R.string.feature_releases_view_latest
-                        ReleasesView.ByArtist -> R.string.feature_releases_view_by_artist
-                    },
-                ),
-                selected = state.view == option,
-                onClick = { viewModel.setView(option) },
-            )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ReleasesView.entries.forEach { option ->
+                Pill(
+                    label = stringResource(
+                        when (option) {
+                            ReleasesView.Latest -> R.string.feature_releases_view_latest
+                            ReleasesView.ByArtist -> R.string.feature_releases_view_by_artist
+                        },
+                    ),
+                    selected = state.view == option,
+                    onClick = { viewModel.setView(option) },
+                )
+            }
         }
-        item(key = "divider") { VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp)) }
-        items(ReleaseFilter.entries, key = { "f:" + it.name }) { option ->
-            Pill(
-                label = stringResource(
-                    when (option) {
-                        ReleaseFilter.All -> R.string.feature_releases_filter_all
-                        ReleaseFilter.Albums -> R.string.feature_releases_filter_albums
-                        ReleaseFilter.EPs -> R.string.feature_releases_filter_eps
-                        ReleaseFilter.Singles -> R.string.feature_releases_filter_singles
-                    },
-                ),
-                selected = state.filter == option,
-                onClick = { viewModel.setFilter(option) },
-            )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ReleaseFilter.entries.forEach { option ->
+                Pill(
+                    label = stringResource(
+                        when (option) {
+                            ReleaseFilter.All -> R.string.feature_releases_filter_all
+                            ReleaseFilter.Albums -> R.string.feature_releases_filter_albums
+                            ReleaseFilter.EPs -> R.string.feature_releases_filter_eps
+                            ReleaseFilter.Singles -> R.string.feature_releases_filter_singles
+                        },
+                    ),
+                    selected = state.filter == option,
+                    onClick = { viewModel.setFilter(option) },
+                )
+            }
         }
-    }
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-    ) {
-        items(ReleasePeriod.entries, key = { "p:" + it.name }) { option ->
-            Pill(
-                label = stringResource(
-                    when (option) {
-                        ReleasePeriod.Month -> R.string.feature_releases_period_month
-                        ReleasePeriod.HalfYear -> R.string.feature_releases_period_half_year
-                        ReleasePeriod.Year -> R.string.feature_releases_period_year
-                    },
-                ),
-                selected = state.period == option,
-                onClick = { viewModel.setPeriod(option) },
-            )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ReleasePeriod.entries.forEach { option ->
+                Pill(
+                    label = stringResource(
+                        when (option) {
+                            ReleasePeriod.Month -> R.string.feature_releases_period_month
+                            ReleasePeriod.HalfYear -> R.string.feature_releases_period_half_year
+                            ReleasePeriod.Year -> R.string.feature_releases_period_year
+                        },
+                    ),
+                    selected = state.period == option,
+                    onClick = { viewModel.setPeriod(option) },
+                )
+            }
         }
-    }
     }
 }
 
@@ -294,13 +294,21 @@ private fun ReleaseTile(release: Release, today: LocalDate, viewModel: ReleasesV
     Column(
         Modifier
             .width(TileCover)
-            .clip(MaterialTheme.shapes.large)
-            .clickable(onClick = onClick),
+            // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(bottom = 8.dp),
     ) {
         BoomArtwork(image = cover, fallbackText = release.title, size = TileCover)
         Spacer(Modifier.height(6.dp))
-        Text(release.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            release.title,
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
             Text(
                 text = listOfNotNull(typeLabel(release.type), release.year).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,

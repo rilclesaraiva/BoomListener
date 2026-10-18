@@ -54,4 +54,25 @@
     <string name="feature_settings_friends_delete_confirm">Delete</string>
     <string name="feature_settings_friends_cancel">Cancel</string>
     <string name="feature_settings_friends_offline">Couldn’t reach the server. Check your internet and try again.</string>
+    <string name="feature_settings_library">Library</string>
+    <string name="feature_settings_library_summary">Music folders and minimum length</string>
+    <string name="feature_settings_library_duration">Minimum length</string>
+    <string name="feature_settings_library_duration_off">Show every audio file</string>
+    <plurals name="feature_settings_library_duration_on">
+        <item quantity="one">Hide audio shorter than %d second</item>
+        <item quantity="other">Hide audio shorter than %d seconds</item>
+    </plurals>
+    <string name="feature_settings_library_duration_summary">Keeps voice notes, ringtones and short clips out of your library</string>
+    <string name="feature_settings_library_folders">Where your music comes from</string>
+    <string name="feature_settings_library_all">Whole phone</string>
+    <string name="feature_settings_library_all_summary">Every song on the device, including new folders</string>
+    <string name="feature_settings_library_chosen">Chosen folders</string>
+    <string name="feature_settings_library_chosen_summary">Only the folders you tick below (and their subfolders)</string>
+    <string name="feature_settings_library_pick">Folders</string>
+    <string name="feature_settings_library_no_folders">No folders with music were found</string>
+    <string name="feature_settings_library_none_chosen">No folder ticked: your library will be empty</string>
+    <plurals name="feature_settings_library_songs">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
 </resources>

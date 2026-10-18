@@ -54,4 +54,27 @@
     <string name="feature_settings_friends_delete_confirm">Apagar</string>
     <string name="feature_settings_friends_cancel">Cancelar</string>
     <string name="feature_settings_friends_offline">Não deu para falar com o servidor. Confira a internet e tente de novo.</string>
+    <string name="feature_settings_library">Biblioteca</string>
+    <string name="feature_settings_library_summary">Pastas de música e duração mínima</string>
+    <string name="feature_settings_library_duration">Duração mínima</string>
+    <string name="feature_settings_library_duration_off">Mostrar todos os áudios</string>
+    <plurals name="feature_settings_library_duration_on">
+        <item quantity="one">Esconder áudios com menos de %d segundo</item>
+        <item quantity="many">Esconder áudios com menos de %d segundos</item>
+        <item quantity="other">Esconder áudios com menos de %d segundos</item>
+    </plurals>
+    <string name="feature_settings_library_duration_summary">Deixa áudios de mensagem, toques e trechos curtos fora da biblioteca</string>
+    <string name="feature_settings_library_folders">De onde vêm as músicas</string>
+    <string name="feature_settings_library_all">Todo o aparelho</string>
+    <string name="feature_settings_library_all_summary">Todas as músicas do celular, inclusive de pastas novas</string>
+    <string name="feature_settings_library_chosen">Pastas escolhidas</string>
+    <string name="feature_settings_library_chosen_summary">Só as pastas marcadas abaixo (e as subpastas delas)</string>
+    <string name="feature_settings_library_pick">Pastas</string>
+    <string name="feature_settings_library_no_folders">Nenhuma pasta com música foi encontrada</string>
+    <string name="feature_settings_library_none_chosen">Nenhuma pasta marcada: a biblioteca vai ficar vazia</string>
+    <plurals name="feature_settings_library_songs">
+        <item quantity="one">%d música</item>
+        <item quantity="many">%d músicas</item>
+        <item quantity="other">%d músicas</item>
+    </plurals>
 </resources>

@@ -271,7 +271,8 @@ private fun AlbumTile(
     val image by produceState<ImageBitmap?>(initialValue = null, cover?.uri) {
         value = cover?.let { viewModel.artwork(it.uri, px)?.asImageBitmap() }
     }
-    Column(modifier.clip(MaterialTheme.shapes.large).clickable(onClick = onClick).padding(bottom = 8.dp)) {
+    // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
+    Column(modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = 8.dp)) {
         BoomArtwork(
             image = image,
             fallbackText = name,
@@ -279,7 +280,13 @@ private fun AlbumTile(
             modifier = Modifier.fillMaxWidth().aspectRatio(1f),
         )
         Spacer(Modifier.height(8.dp))
-        Text(name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            name,
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
         if (artist.isNotEmpty()) {
             Text(
                 artist,
@@ -287,6 +294,7 @@ private fun AlbumTile(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 4.dp),
             )
         }
     }

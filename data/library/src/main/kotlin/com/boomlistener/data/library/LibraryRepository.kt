@@ -23,16 +23,27 @@ interface LibraryRepository {
     suspend fun loadArtwork(trackUri: String, sizePx: Int): Bitmap?
 
     /**
-     * Muda (soma 1) toda vez que alguma música do aparelho foi alterada pelo
-     * app (tags editadas). Quem mostra músicas ou capas recarrega ao mudar.
+     * Muda (soma 1) toda vez que as músicas do aparelho mudam: tags editadas,
+     * música nova baixada ou apagada, ou o filtro da biblioteca trocado.
+     * Quem mostra músicas ou capas recarrega ao mudar.
      */
     val version: StateFlow<Int> get() = NoChanges
 
     /** Avisa que [trackUri] mudou: esquece a capa guardada e sobe [version]. */
     fun notifyChanged(trackUri: String) {}
+
+    /** O que entra na biblioteca: duração mínima e pastas. */
+    val filter: StateFlow<LibraryFilter> get() = NoFilter
+
+    /** Salva o filtro e recarrega quem mostra músicas. */
+    fun setFilter(filter: LibraryFilter) {}
+
+    /** Todas as pastas com música no aparelho (sem aplicar o filtro). */
+    suspend fun folders(): List<MusicFolder> = emptyList()
 }
 
 private val NoChanges: StateFlow<Int> = MutableStateFlow(0).asStateFlow()
+private val NoFilter: StateFlow<LibraryFilter> = MutableStateFlow(LibraryFilter()).asStateFlow()
 
 /**
  * Ponto de acesso provisório enquanto o app não tem injeção de dependências
