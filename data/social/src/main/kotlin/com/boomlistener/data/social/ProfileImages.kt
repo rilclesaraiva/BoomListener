@@ -15,8 +15,8 @@ import java.io.ByteArrayOutputStream
 /** Tamanho máximo do JPEG enviado (o servidor aceita até 400 KB). */
 private const val MAX_BYTES = 380_000
 
-/** GIF animado vai como está, até este tamanho (o servidor aceita até 1,5 MB). */
-internal const val MAX_GIF_BYTES = 1_450_000
+/** GIF animado vai como está, até este tamanho (o servidor aceita até 6 MB, guardado em pedaços). */
+internal const val MAX_GIF_BYTES = 5_900_000
 
 /** O arquivo é um GIF? (pelos primeiros bytes) */
 internal fun isGif(bytes: ByteArray): Boolean =
@@ -31,9 +31,11 @@ internal fun prepareProfileImage(context: Context, uri: String, kind: ProfileIma
     val parsed = Uri.parse(uri)
     // GIF animado pequeno vai inteiro (a animação se perderia se fosse recortado).
     // Grande demais: vira uma imagem parada, como as outras.
-    if (context.contentResolver.getType(parsed) == "image/gif") {
+    // Reconhece pelo conteúdo (o tipo informado pelo seletor nem sempre é "image/gif").
+    val head = context.contentResolver.openInputStream(parsed)?.use { stream -> ByteArray(6).also { stream.read(it) } }
+    if (head != null && isGif(head)) {
         val bytes = context.contentResolver.openInputStream(parsed)?.use { it.readBytes() }
-        if (bytes != null && isGif(bytes) && bytes.size <= MAX_GIF_BYTES) return bytes
+        if (bytes != null && bytes.size <= MAX_GIF_BYTES) return bytes
     }
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     context.contentResolver.openInputStream(parsed)?.use { BitmapFactory.decodeStream(it, null, bounds) }

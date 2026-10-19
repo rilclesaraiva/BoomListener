@@ -23,7 +23,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -87,7 +87,7 @@ class MyProfileViewModelTest {
     }
 
     @Test
-    fun descricaoFotoECapa() = runTest(dispatcher) {
+    fun nadaMudaAteSalvar() = runTest(dispatcher) {
         val social = FakeSocial().apply { account.value = SocialAccount("me", "rilcle", "Rilcle", "t", sharing = false) }
         val vm = MyProfileViewModel(
             social, FakeHistory(emptyList()), FakeStats(emptyList()), FakeLibrary(), FakeFollows(), FakePlayer(),
@@ -95,23 +95,32 @@ class MyProfileViewModelTest {
         )
         backgroundScope.launch(dispatcher) { vm.state.collect {} }
 
-        // Descrição passa do limite: fica nos 160.
-        vm.setBio("x".repeat(200))
+        // Só "Salvar" manda tudo: descrição (cortada nos 160), capa nova e foto tirada.
+        var done = false
+        vm.saveProfile(
+            name = "Rilcle",
+            bio = "x".repeat(200),
+            banner = ImageChange.Set("content://media/picker/2"),
+            avatar = ImageChange.Remove,
+            onDone = { done = true },
+        )
+        assertTrue(done)
         assertEquals(MAX_BIO, social.account.value?.bio?.length)
+        assertEquals(99L, social.account.value?.bannerVersion)
+        assertEquals(listOf(ProfileImage.Banner to "content://media/picker/2", ProfileImage.Avatar to null), social.imageCalls)
+        assertFalse(vm.saving.value)
 
-        vm.setImage(ProfileImage.Avatar, "content://media/picker/1")
-        assertEquals(99L, social.account.value?.avatarVersion)
-        assertNull(vm.uploading.value)
+        // Nada mudou: não chama o servidor.
+        social.imageCalls.clear()
+        vm.saveProfile("Rilcle", social.account.value!!.bio, ImageChange.Keep, ImageChange.Keep, onDone = {})
+        assertTrue(social.imageCalls.isEmpty())
 
-        vm.setImage(ProfileImage.Banner, "content://media/picker/2")
-        vm.setImage(ProfileImage.Banner, null)
-        assertEquals(0L, social.account.value?.bannerVersion)
-        assertEquals(3, social.imageCalls.size)
-
-        // Sem internet: avisa que não salvou.
+        // Sem internet: avisa e não fecha.
         social.online = false
-        vm.setImage(ProfileImage.Avatar, "content://media/picker/3")
+        var closed = false
+        vm.saveProfile("Rilcle", "outra", ImageChange.Keep, ImageChange.Set("content://x"), onDone = { closed = true })
         assertTrue(vm.saveFailed.value)
+        assertFalse(closed)
     }
 
     @Test

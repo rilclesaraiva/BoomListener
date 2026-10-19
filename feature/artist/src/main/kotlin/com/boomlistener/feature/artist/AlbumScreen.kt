@@ -30,6 +30,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
@@ -55,6 +57,7 @@ import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
+import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.model.ReleaseType
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
@@ -176,8 +179,10 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
         }
         itemsIndexed(album.tracks, key = { _, track -> track.id }) { index, track ->
             val local = state.local.getOrNull(index)
+            val menuOpen = remember { mutableStateOf(false) }
             ListItem(
-                modifier = Modifier.clickable {
+                // Segurar abre o mesmo menu dos três pontinhos.
+                modifier = Modifier.clickableWithMenu(menuOpen) {
                     if (local != null) viewModel.playOwned(index) else track.link?.let(context::openUrl)
                 },
                 leadingContent = {
@@ -217,6 +222,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
                             onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.link, track.title, album.artistName), track.title) } },
                             onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, album.artistName)) },
                             onDeezer = track.link?.let { link -> { context.openUrl(link) } },
+                            openState = menuOpen,
                         )
                     }
                 },

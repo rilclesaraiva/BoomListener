@@ -96,12 +96,14 @@ internal fun MyProfileScreen(
     viewModel: MyProfileViewModel,
     onBack: () -> Unit,
     onOpenArtist: (String) -> Unit,
+    onOpenFriend: (userId: String) -> Unit,
     onOpenHistory: () -> Unit,
     onCreateProfile: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val saveFailed by viewModel.saveFailed.collectAsStateWithLifecycle()
+    val friends by viewModel.friends.collectAsStateWithLifecycle()
     var renaming by remember { mutableStateOf(false) }
 
     BoomScreenScaffold(
@@ -192,22 +194,21 @@ internal fun MyProfileScreen(
                 }
             }
 
-            item(key = "following") {
-                SectionTitle(
-                    stringResource(R.string.feature_social_following_count, current.following.size),
-                    null,
-                )
-                if (current.following.isEmpty()) {
+            // Amigos (pessoas com quem você conversa). Os artistas seguidos já
+            // aparecem na aba Lançamentos.
+            item(key = "friends") {
+                SectionTitle(stringResource(R.string.feature_social_friends_count, friends.size), null)
+                if (friends.isEmpty()) {
                     Text(
-                        stringResource(R.string.feature_social_following_empty),
+                        stringResource(R.string.feature_social_friends_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 20.dp),
                     )
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                        items(current.following, key = { it.deezerId }) { artist ->
-                            PersonChip(name = artist.name, caption = null, viewModel = viewModel, onClick = { onOpenArtist(artist.name) })
+                        items(friends, key = { it.userId }) { friend ->
+                            FriendChipView(friend, viewModel, onClick = { onOpenFriend(friend.userId) })
                         }
                     }
                 }
@@ -321,19 +322,40 @@ private fun Header(
 
 /**
  * Editar o perfil: capa, foto (do seletor de fotos do Android, sem pedir
- * permissão), nome e descrição.
+ * permissão), nome e descrição. Tudo fica só aqui na folha (com prévia) até
+ * tocar em Salvar; aí vai para o servidor.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewModel, onDismiss: () -> Unit) {
-    val uploading by viewModel.uploading.collectAsStateWithLifecycle()
+    val saving by viewModel.saving.collectAsStateWithLifecycle()
     var name by remember { mutableStateOf(account.name) }
     var bio by remember { mutableStateOf(account.bio) }
-    val banner = rememberProfileImage(account.id, ProfileImage.Banner, account.bannerVersion)
-    val photo = rememberProfileImage(account.id, ProfileImage.Avatar, account.avatarVersion)
+    var bannerChange by remember { mutableStateOf<ImageChange>(ImageChange.Keep) }
+    var avatarChange by remember { mutableStateOf<ImageChange>(ImageChange.Keep) }
+    val savedBanner = rememberProfileImage(account.id, ProfileImage.Banner, account.bannerVersion)
+    val savedPhoto = rememberProfileImage(account.id, ProfileImage.Avatar, account.avatarVersion)
+    val pickedBanner = rememberPickedImage((bannerChange as? ImageChange.Set)?.uri)
+    val pickedPhoto = rememberPickedImage((avatarChange as? ImageChange.Set)?.uri)
+    // Prévia: a escolhida agora, ou nenhuma (se pediu para tirar), ou a que já estava.
+    val banner = when (bannerChange) {
+        is ImageChange.Set -> pickedBanner
+        ImageChange.Remove -> null
+        ImageChange.Keep -> savedBanner
+    }
+    val photo = when (avatarChange) {
+        is ImageChange.Set -> pickedPhoto
+        ImageChange.Remove -> null
+        ImageChange.Keep -> savedPhoto
+    }
     var picking by remember { mutableStateOf(ProfileImage.Avatar) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) viewModel.setImage(picking, uri.toString())
+        if (uri != null) {
+            when (picking) {
+                ProfileImage.Banner -> bannerChange = ImageChange.Set(uri.toString())
+                ProfileImage.Avatar -> avatarChange = ImageChange.Set(uri.toString())
+            }
+        }
     }
     fun pick(kind: ProfileImage) {
         picking = kind
@@ -341,7 +363,7 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!saving) onDismiss() },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
@@ -354,42 +376,39 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
         ) {
             Text(stringResource(R.string.feature_social_edit_profile), style = MaterialTheme.typography.headlineSmall)
 
-            // Capa: tocar troca; o "x" tira.
+            // Capa: tocar troca; "Tirar capa" tira.
             Box(contentAlignment = Alignment.Center) {
                 ProfileBanner(
                     banner,
-                    Modifier.clip(MaterialTheme.shapes.extraLarge).clickable(enabled = uploading == null) { pick(ProfileImage.Banner) },
+                    Modifier.clip(MaterialTheme.shapes.extraLarge).clickable(enabled = !saving) { pick(ProfileImage.Banner) },
                 )
-                ImageEditBadge(uploading == ProfileImage.Banner, stringResource(R.string.feature_social_banner_change))
+                ImageEditBadge(busy = false, label = stringResource(R.string.feature_social_banner_change))
             }
             Text(
                 stringResource(R.string.feature_social_gif_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (account.bannerVersion > 0) {
-                TextButton(onClick = { viewModel.setImage(ProfileImage.Banner, null) }, enabled = uploading == null) {
+            if (banner != null) {
+                TextButton(onClick = { bannerChange = ImageChange.Remove }, enabled = !saving) {
                     Text(stringResource(R.string.feature_social_banner_remove))
                 }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(contentAlignment = Alignment.Center) {
-                    Avatar(
-                        account.name,
-                        size = 88.dp,
-                        picture = photo,
-                        modifier = Modifier.clip(CircleShape).clickable(enabled = uploading == null) { pick(ProfileImage.Avatar) },
-                    )
-                    if (uploading == ProfileImage.Avatar) CircularProgressIndicator()
-                }
+                Avatar(
+                    account.name,
+                    size = 88.dp,
+                    picture = photo,
+                    modifier = Modifier.clip(CircleShape).clickable(enabled = !saving) { pick(ProfileImage.Avatar) },
+                )
                 Spacer(Modifier.width(16.dp))
                 Column {
-                    TextButton(onClick = { pick(ProfileImage.Avatar) }, enabled = uploading == null) {
+                    TextButton(onClick = { pick(ProfileImage.Avatar) }, enabled = !saving) {
                         Text(stringResource(R.string.feature_social_photo_change))
                     }
-                    if (account.avatarVersion > 0) {
-                        TextButton(onClick = { viewModel.setImage(ProfileImage.Avatar, null) }, enabled = uploading == null) {
+                    if (photo != null) {
+                        TextButton(onClick = { avatarChange = ImageChange.Remove }, enabled = !saving) {
                             Text(stringResource(R.string.feature_social_photo_remove))
                         }
                     }
@@ -400,6 +419,7 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
                 value = name,
                 onValueChange = { name = it.take(40) },
                 singleLine = true,
+                enabled = !saving,
                 label = { Text(stringResource(R.string.feature_social_name)) },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -408,20 +428,25 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
                 onValueChange = { bio = it.take(MAX_BIO) },
                 minLines = 3,
                 maxLines = 5,
+                enabled = !saving,
                 label = { Text(stringResource(R.string.feature_social_bio)) },
                 placeholder = { Text(stringResource(R.string.feature_social_bio_hint)) },
                 supportingText = { Text("${bio.length}/$MAX_BIO") },
                 modifier = Modifier.fillMaxWidth(),
             )
             Button(
-                enabled = name.isNotBlank(),
-                onClick = {
-                    if (name.trim() != account.name) viewModel.rename(name)
-                    if (bio.trim() != account.bio) viewModel.setBio(bio)
-                    onDismiss()
-                },
+                enabled = name.isNotBlank() && !saving,
+                onClick = { viewModel.saveProfile(name, bio, bannerChange, avatarChange, onDone = onDismiss) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) { Text(stringResource(R.string.feature_social_save)) }
+            ) {
+                if (saving) {
+                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(R.string.feature_social_saving))
+                } else {
+                    Text(stringResource(R.string.feature_social_save))
+                }
+            }
         }
     }
 }
@@ -610,6 +635,21 @@ private fun DayPartsCard(state: MyProfileUiState) {
                 }
             }
         }
+    }
+}
+
+/** Um amigo: foto (ou inicial) e nome. */
+@Composable
+private fun FriendChipView(friend: FriendChip, viewModel: MyProfileViewModel, onClick: () -> Unit) {
+    val version by produceState(initialValue = 0L, friend.userId) { value = viewModel.friendAvatarVersion(friend.userId) }
+    val photo = rememberProfileImage(friend.userId, ProfileImage.Avatar, version)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(88.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(top = 4.dp, bottom = TileBottom),
+    ) {
+        Avatar(friend.name, size = 72.dp, picture = photo)
+        Spacer(Modifier.height(6.dp))
+        Text(friend.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
     }
 }
 

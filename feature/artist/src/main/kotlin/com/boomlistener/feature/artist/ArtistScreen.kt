@@ -83,6 +83,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
+import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
@@ -533,8 +534,10 @@ private fun PopularRow(
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val cover = rememberRemoteImage(viewModel, track.coverUrl, px)
     val scope = rememberCoroutineScope()
+    val menuOpen = remember { mutableStateOf(false) }
     ListItem(
-        modifier = Modifier.clickable { track.link?.let(context::openUrl) },
+        // Segurar abre o mesmo menu dos três pontinhos.
+        modifier = Modifier.clickableWithMenu(menuOpen) { track.link?.let(context::openUrl) },
         leadingContent = { BoomArtwork(image = cover, fallbackText = track.title) },
         headlineContent = { Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {
@@ -550,6 +553,7 @@ private fun PopularRow(
                     onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.link, track.title, artistName), track.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, artistName)) },
                     onDeezer = track.link?.let { link -> { context.openUrl(link) } },
+                    openState = menuOpen,
                 )
             }
         },
@@ -576,9 +580,10 @@ private fun ReleaseRow(
             ReleaseType.Compilation -> R.string.feature_artist_type_compilation
         },
     )
-    // Tocar abre o álbum aqui no app (com o que você tem e o que falta).
+    // Tocar abre o álbum aqui no app (com o que você tem e o que falta); segurar abre o menu.
+    val menuOpen = remember { mutableStateOf(false) }
     ListItem(
-        modifier = Modifier.clickable(onClick = onOpen),
+        modifier = Modifier.clickableWithMenu(menuOpen, onOpen),
         leadingContent = { BoomArtwork(image = cover, fallbackText = release.title, size = 64.dp) },
         headlineContent = { Text(release.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
         supportingContent = { Text(listOfNotNull(release.year, typeName).joinToString(" • ")) },
@@ -591,6 +596,7 @@ private fun ReleaseRow(
                     onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.link, release.title, artistName), release.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, artistName)) },
                     onDeezer = release.link?.let { link -> { context.openUrl(link) } },
+                    openState = menuOpen,
                 )
             }
         },

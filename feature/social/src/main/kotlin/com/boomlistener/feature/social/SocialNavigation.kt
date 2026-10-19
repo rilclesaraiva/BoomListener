@@ -95,6 +95,7 @@ fun NavGraphBuilder.socialScreen(
         MyProfileScreen(
             viewModel = viewModel,
             onBack = back,
+            onOpenFriend = { navController.navigateToFriend(it) },
             onOpenArtist = onOpenArtist,
             onOpenHistory = onOpenHistory,
             // Sem perfil ainda: vai para a aba Amigos, onde ele é criado.

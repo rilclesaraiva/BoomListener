@@ -52,6 +52,7 @@ import com.boomlistener.feature.nowplaying.rememberPlayerSheetState
 import com.boomlistener.feature.releases.releasesScreen
 import com.boomlistener.feature.settings.SETTINGS_ROUTE
 import com.boomlistener.feature.settings.UpdatePromptHost
+import com.boomlistener.feature.wellbeing.HistorySongMenu
 import com.boomlistener.feature.settings.settingsScreen
 import com.boomlistener.feature.wellbeing.WELLBEING_ROUTE
 import com.boomlistener.core.designsystem.component.LocalTabReselect
@@ -282,7 +283,15 @@ fun BoomListenerApp() {
                     navController = navController,
                     onOpenWellbeing = navController::navigateToWellbeing,
                 )
-                wellbeingScreen(onBack = back)
+                wellbeingScreen(
+                    onBack = back,
+                    songMenu = HistorySongMenu(
+                        onOpenArtist = navController::navigateToArtist,
+                        onEditTags = { uri -> navController.navigateToTagEditor(uri) },
+                        onAddToPlaylist = { uri -> addToPlaylistUri = uri },
+                        onRecommend = { uri -> recommendUri = uri },
+                    ),
+                )
             }
         }
 

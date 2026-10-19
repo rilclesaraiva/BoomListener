@@ -3,6 +3,10 @@
 
 package com.boomlistener.feature.wellbeing
 
+import com.boomlistener.core.designsystem.component.clickableWithMenu
+import com.boomlistener.core.common.ExternalLinks
+import com.boomlistener.core.common.openUrl
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -56,6 +60,7 @@ import java.util.Locale
 internal fun HistoryScreen(
     viewModel: HistoryViewModel,
     onBack: () -> Unit,
+    songMenu: HistorySongMenu,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -102,6 +107,7 @@ internal fun HistoryScreen(
                                     section.period == HistoryPeriod.LastWeek ||
                                     section.period == HistoryPeriod.Earlier,
                                 viewModel = viewModel,
+                                songMenu = songMenu,
                                 onClick = { viewModel.play(entry, section) },
                                 modifier = Modifier.animateItem(),
                             )
@@ -169,9 +175,12 @@ private fun HistoryRow(
     entry: HistoryEntry,
     showDate: Boolean,
     viewModel: HistoryViewModel,
+    songMenu: HistorySongMenu,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val menuOpen = remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val artwork by produceState<ImageBitmap?>(initialValue = null, entry.uri) {
         value = viewModel.artwork(entry.uri, px)?.asImageBitmap()
@@ -186,7 +195,8 @@ private fun HistoryRow(
         }
     }
     ListItem(
-        modifier = modifier.clickable(onClick = onClick),
+        // Segurar abre o mesmo menu dos três pontinhos.
+        modifier = modifier.clickableWithMenu(menuOpen, onClick),
         leadingContent = { BoomArtwork(image = artwork, fallbackText = entry.title) },
         headlineContent = { Text(entry.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {
@@ -194,6 +204,20 @@ private fun HistoryRow(
                 text = listOfNotNull(entry.artist, time).joinToString(" • "),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        },
+        trailingContent = {
+            BoomMoreMenu(
+                actions = listOfNotNull(
+                    BoomMenuAction(stringResource(R.string.feature_wellbeing_add_to_playlist)) { songMenu.onAddToPlaylist(entry.uri) },
+                    BoomMenuAction(stringResource(R.string.feature_wellbeing_recommend)) { songMenu.onRecommend(entry.uri) },
+                    entry.artist?.let { name ->
+                        BoomMenuAction(stringResource(R.string.feature_wellbeing_go_to_artist)) { songMenu.onOpenArtist(name) }
+                    },
+                    BoomMenuAction(stringResource(R.string.feature_wellbeing_edit_tags)) { songMenu.onEditTags(entry.uri) },
+                ),
+                onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(entry.title, entry.artist)) },
+                openState = menuOpen,
             )
         },
     )

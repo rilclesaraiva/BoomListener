@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -37,6 +38,17 @@ private val FEAT = Regex("""\s+(feat\.?|ft\.?|featuring)\s+.*$""", RegexOption.I
 
 /** Artista principal: "Djavan feat. Caetano" → "Djavan". */
 internal fun artistOf(raw: String): String = raw.replace(FEAT, "").trim()
+
+/** Um amigo na lista do perfil. */
+internal data class FriendChip(val userId: String, val name: String)
+
+/** O que fazer com a foto ou a capa ao salvar o perfil. */
+internal sealed interface ImageChange {
+    data object Keep : ImageChange
+    data object Remove : ImageChange
+    /** A imagem escolhida no seletor ([uri] content://). */
+    data class Set(val uri: String) : ImageChange
+}
 
 /** Tamanho máximo da descrição (o mesmo do servidor). */
 internal const val MAX_BIO = 160
@@ -84,6 +96,19 @@ internal class MyProfileViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** Seus amigos: as pessoas com quem você conversa em particular. */
+    val friends: StateFlow<List<FriendChip>> = social.conversations
+        .map { list ->
+            list.mapNotNull { conversation ->
+                conversation.otherUserId?.let { FriendChip(it, conversation.title) }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Versão da foto de um amigo (perfil no servidor; null sem internet). */
+    suspend fun friendAvatarVersion(userId: String): Long =
+        (social.profile(userId) as? SocialResult.Ok)?.value?.avatarVersion ?: 0
+
     private val _saveFailed = MutableStateFlow(false)
     val saveFailed: StateFlow<Boolean> = _saveFailed.asStateFlow()
 
@@ -97,23 +122,43 @@ internal class MyProfileViewModel(
         viewModelScope.launch { _saveFailed.value = social.updateProfile(name = clean) !is SocialResult.Ok }
     }
 
-    /** Descrição do perfil (até 160 letras). */
-    fun setBio(bio: String) {
-        viewModelScope.launch { _saveFailed.value = social.updateBio(bio.take(MAX_BIO)) !is SocialResult.Ok }
-    }
+    private val _saving = MutableStateFlow(false)
 
-    private val _uploading = MutableStateFlow<ProfileImage?>(null)
+    /** "Salvar" do editar perfil em andamento (envia as imagens, que demoram). */
+    val saving: StateFlow<Boolean> = _saving.asStateFlow()
 
-    /** A imagem que está sendo enviada agora (para mostrar o carregando). */
-    val uploading: StateFlow<ProfileImage?> = _uploading.asStateFlow()
-
-    /** Troca a foto ou a capa pela imagem [uri] do seletor; null tira a imagem. */
-    fun setImage(kind: ProfileImage, uri: String?) {
-        if (_uploading.value != null) return
-        _uploading.value = kind
+    /**
+     * Salva o que mudou no "Editar perfil": nome, descrição, capa e foto. Nada
+     * muda no perfil antes disso. [onDone] só é chamado se tudo deu certo.
+     */
+    fun saveProfile(
+        name: String,
+        bio: String,
+        banner: ImageChange,
+        avatar: ImageChange,
+        onDone: () -> Unit,
+    ) {
+        val account = social.account.value ?: return
+        if (_saving.value) return
+        _saving.value = true
         viewModelScope.launch {
-            _saveFailed.value = social.setProfileImage(kind, uri) !is SocialResult.Ok
-            _uploading.value = null
+            var ok = true
+            val cleanName = name.trim()
+            if (cleanName.isNotEmpty() && cleanName != account.name) {
+                ok = social.updateProfile(name = cleanName) is SocialResult.Ok && ok
+            }
+            val cleanBio = bio.trim().take(MAX_BIO)
+            if (cleanBio != account.bio) ok = social.updateBio(cleanBio) is SocialResult.Ok && ok
+            for ((kind, change) in listOf(ProfileImage.Banner to banner, ProfileImage.Avatar to avatar)) {
+                when (change) {
+                    ImageChange.Keep -> Unit
+                    ImageChange.Remove -> ok = social.setProfileImage(kind, null) is SocialResult.Ok && ok
+                    is ImageChange.Set -> ok = social.setProfileImage(kind, change.uri) is SocialResult.Ok && ok
+                }
+            }
+            _saveFailed.value = !ok
+            _saving.value = false
+            if (ok) onDone()
         }
     }
 

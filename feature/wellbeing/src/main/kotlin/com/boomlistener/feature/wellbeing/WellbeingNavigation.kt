@@ -21,7 +21,11 @@ fun NavController.navigateToWellbeing() = navigate(WELLBEING_ROUTE)
 
 fun NavController.navigateToHistory() = navigate(HISTORY_ROUTE) { launchSingleTop = true }
 
-fun NavGraphBuilder.wellbeingScreen(onBack: () -> Unit) {
+/**
+ * [songMenu] liga o menu das músicas do histórico ao resto do app (o :app
+ * fornece; uma feature não conhece a outra).
+ */
+fun NavGraphBuilder.wellbeingScreen(onBack: () -> Unit, songMenu: HistorySongMenu = HistorySongMenu()) {
     composable(WELLBEING_ROUTE) { WellbeingScreen(onBack = onBack) }
     composable(HISTORY_ROUTE) {
         val context = LocalContext.current.applicationContext
@@ -34,6 +38,14 @@ fun NavGraphBuilder.wellbeingScreen(onBack: () -> Unit) {
                 firstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek,
             )
         }
-        HistoryScreen(viewModel = viewModel, onBack = onBack)
+        HistoryScreen(viewModel = viewModel, onBack = onBack, songMenu = songMenu)
     }
 }
+
+/** O que o menu de uma música do histórico faz (pelo endereço da música). */
+class HistorySongMenu(
+    val onOpenArtist: (String) -> Unit = {},
+    val onEditTags: (uri: String) -> Unit = {},
+    val onAddToPlaylist: (uri: String) -> Unit = {},
+    val onRecommend: (uri: String) -> Unit = {},
+)

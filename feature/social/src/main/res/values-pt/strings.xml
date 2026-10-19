@@ -115,5 +115,8 @@
     <string name="feature_social_banner_remove">Tirar capa</string>
     <string name="feature_social_photo_change">Trocar foto</string>
     <string name="feature_social_photo_remove">Tirar foto</string>
-    <string name="feature_social_gif_hint">GIF também vale e fica animado (até 1,4 MB; maior que isso vira imagem parada).</string>
+    <string name="feature_social_gif_hint">GIF também vale e fica rodando (até 5 MB; maior que isso vira imagem parada).</string>
+    <string name="feature_social_saving">Salvando…</string>
+    <string name="feature_social_friends_count">Amigos · %1$d</string>
+    <string name="feature_social_friends_empty">Comece uma conversa na aba Amigos e a pessoa aparece aqui.</string>
 </resources>

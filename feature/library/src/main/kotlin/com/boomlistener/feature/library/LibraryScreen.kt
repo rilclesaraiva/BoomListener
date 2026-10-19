@@ -44,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -73,6 +74,8 @@ import com.boomlistener.core.common.openUrl
 import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.common.openAppSettings
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomBouncingText
+import com.boomlistener.core.designsystem.component.BoomMenuDropdown
 import com.boomlistener.core.designsystem.component.BoomFastScroller
 import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
@@ -204,6 +207,9 @@ private fun TrackList(
 ) {
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
+    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onRecommend, onDelete) {
+        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onRecommend, onDelete)
+    }
     when {
         state.totalCount == 0 -> BoomPlaceholder(
             title = stringResource(R.string.feature_library_empty_title),
@@ -250,7 +256,7 @@ private fun TrackList(
             if (home != null) {
                 item(key = "recent") {
                     HomeSectionTitle(stringResource(R.string.feature_library_recently_added))
-                    RecentGrid(home.recent, state.version, loadArtwork, onPlayRecent)
+                    RecentGrid(home.recent, state.version, loadArtwork, menu, onPlayRecent)
                 }
                 item(key = "albums") {
                     if (home.albums.isNotEmpty()) {
@@ -304,13 +310,8 @@ private fun TrackList(
                     track = track,
                     version = state.version,
                     loadArtwork = loadArtwork,
-                    shareUrl = shareUrl,
+                    menu = menu,
                     onClick = { onOpenTrack(track) },
-                    onOpenArtist = track.artist?.let { name -> { onOpenArtist(name) } },
-                    onEditTags = { onEditTags(track) },
-                    onAddToPlaylist = { onAddToPlaylist(track) },
-                    onRecommend = { onRecommend(track) },
-                    onDelete = { onDelete(track) },
                 )
             }
           }
@@ -386,6 +387,7 @@ private fun RecentGrid(
     recent: List<Track>,
     version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    menu: SongMenu,
     onPlay: (Int) -> Unit,
 ) {
     val rows = minOf(3, recent.size).coerceAtLeast(1)
@@ -398,22 +400,24 @@ private fun RecentGrid(
     ) {
         itemsIndexed(recent, key = { _, track -> track.id }) { index, track ->
             val cover = rememberHomeCover(track, version, RecentCover, loadArtwork)
+            val menuOpen = remember { mutableStateOf(false) }
+            Box {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .width(RecentItemWidth)
                     .height(RecentRowHeight)
                     .clip(MaterialTheme.shapes.medium)
-                    .clickable { onPlay(index) },
+                    // Segurar abre o menu da música, como na lista.
+                    .clickableWithMenu(menuOpen) { onPlay(index) },
             ) {
                 BoomArtwork(image = cover, fallbackText = track.title, size = RecentCover)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(
+                    // Título comprido vai e volta devagar, em vez de ficar cortado.
+                    BoomBouncingText(
                         "${index + 1}. ${track.title}",
                         style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         listOfNotNull(formatDuration(track.durationMs), track.artist).joinToString(" · "),
@@ -423,6 +427,8 @@ private fun RecentGrid(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+            }
+                SongMenuView(track, menu, menuOpen, withButton = false)
             }
         }
     }
@@ -490,18 +496,51 @@ private val RecentRowHeight = 64.dp
 private val RecentItemWidth = 280.dp
 private val HomeTile = 132.dp
 
+/** O que o menu de uma música faz no Início (lista e adicionadas recentemente). */
+internal class SongMenu(
+    val shareUrl: suspend (Track) -> String,
+    val onOpenArtist: (String) -> Unit,
+    val onEditTags: (Track) -> Unit,
+    val onAddToPlaylist: (Track) -> Unit,
+    val onRecommend: (Track) -> Unit,
+    val onDelete: (Track) -> Unit,
+)
+
+/** O menu de uma música, igual em todo lugar: com o botão ⋮ ([withButton]) ou só ao segurar. */
+@Composable
+private fun SongMenuView(track: Track, menu: SongMenu, openState: MutableState<Boolean>, withButton: Boolean) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val actions = listOfNotNull(
+        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist)) { menu.onAddToPlaylist(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_recommend)) { menu.onRecommend(track) },
+        track.artist?.let { name -> BoomMenuAction(stringResource(R.string.feature_library_go_to_artist)) { menu.onOpenArtist(name) } },
+        BoomMenuAction(stringResource(R.string.feature_library_edit_tags)) { menu.onEditTags(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_delete_song)) { menu.onDelete(track) },
+    )
+    val onShare: () -> Unit = {
+        scope.launch {
+            context.shareLink(
+                url = menu.shareUrl(track),
+                title = listOfNotNull(track.title, track.artist).joinToString(" — "),
+            )
+        }
+    }
+    val onYoutubeMusic: () -> Unit = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) }
+    if (withButton) {
+        BoomMoreMenu(actions = actions, onShare = onShare, onYoutubeMusic = onYoutubeMusic, openState = openState)
+    } else {
+        BoomMenuDropdown(openState, actions, onShare = onShare, onYoutubeMusic = onYoutubeMusic)
+    }
+}
+
 @Composable
 private fun TrackItem(
     track: Track,
     version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
-    shareUrl: suspend (Track) -> String,
+    menu: SongMenu,
     onClick: () -> Unit,
-    onOpenArtist: (() -> Unit)?,
-    onEditTags: () -> Unit,
-    onAddToPlaylist: () -> Unit,
-    onRecommend: () -> Unit,
-    onDelete: () -> Unit,
 ) {
     val menuOpen = remember { mutableStateOf(false) }
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
@@ -509,8 +548,6 @@ private fun TrackItem(
     val artwork by produceState<ImageBitmap?>(initialValue = null, track.uri, version) {
         value = loadArtwork(track, sizePx)?.asImageBitmap()
     }
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val unknownArtist = stringResource(R.string.feature_library_unknown_artist)
 
     ListItem(
@@ -525,32 +562,7 @@ private fun TrackItem(
                 overflow = TextOverflow.Ellipsis,
             )
         },
-        trailingContent = {
-            BoomMoreMenu(
-                actions = listOfNotNull(
-                    BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), onClick = onAddToPlaylist),
-                    BoomMenuAction(stringResource(R.string.feature_library_recommend), onClick = onRecommend),
-                    onOpenArtist?.let { BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), onClick = it) },
-                    BoomMenuAction(stringResource(R.string.feature_library_edit_tags), onClick = onEditTags),
-                    BoomMenuAction(stringResource(R.string.feature_library_delete_song), onClick = onDelete),
-                    BoomMenuAction(
-                        label = stringResource(R.string.feature_library_duration, formatDuration(track.durationMs)),
-                        enabled = false,
-                        onClick = {},
-                    ),
-                ),
-                onShare = {
-                    scope.launch {
-                        context.shareLink(
-                            url = shareUrl(track),
-                            title = listOfNotNull(track.title, track.artist).joinToString(" — "),
-                        )
-                    }
-                },
-                onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) },
-                openState = menuOpen,
-            )
-        },
+        trailingContent = { SongMenuView(track, menu, menuOpen, withButton = true) },
     )
 }
 

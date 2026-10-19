@@ -4,6 +4,7 @@
 package com.boomlistener.feature.social
 
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.os.Build
@@ -109,6 +110,31 @@ internal fun rememberProfileImage(userId: String?, kind: ProfileImage, version: 
     return picture
 }
 
+/** Prévia da imagem escolhida no seletor (antes de salvar). */
+@Composable
+internal fun rememberPickedImage(uri: String?): ProfilePicture? {
+    val context = LocalContext.current.applicationContext
+    val picture by produceState<ProfilePicture?>(initialValue = null, uri) {
+        value = uri?.let {
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    val bytes = context.contentResolver.openInputStream(Uri.parse(it))?.use { stream -> stream.readBytes() }
+                        ?: return@runCatching null
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                    // Prévia leve: reduz fotos grandes da câmera.
+                    var sample = 1
+                    while (bounds.outWidth / (sample * 2) >= 1200 && bounds.outHeight / (sample * 2) >= 450) sample *= 2
+                    val still = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+                        ?.asImageBitmap() ?: return@runCatching null
+                    ProfilePicture(still, bytes.takeIf(::looksLikeGif))
+                }.getOrNull()
+            }
+        }
+    }
+    return picture
+}
+
 private fun looksLikeGif(bytes: ByteArray) =
     bytes.size >= 6 && String(bytes, 0, 6, Charsets.US_ASCII).let { it == "GIF87a" || it == "GIF89a" }
 
@@ -127,8 +153,12 @@ internal fun ProfilePictureView(picture: ProfilePicture, modifier: Modifier = Mo
             AndroidView(
                 factory = { context -> ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP } },
                 update = { view ->
-                    view.setImageDrawable(drawable)
-                    (drawable as? AnimatedImageDrawable)?.start()
+                    if (view.drawable !== drawable) view.setImageDrawable(drawable)
+                    (drawable as? AnimatedImageDrawable)?.let { animated ->
+                        // Repete para sempre, mesmo que o GIF diga para tocar só uma vez.
+                        animated.repeatCount = AnimatedImageDrawable.REPETITION_INFINITE
+                        if (!animated.isRunning) animated.start()
+                    }
                 },
                 modifier = modifier,
             )

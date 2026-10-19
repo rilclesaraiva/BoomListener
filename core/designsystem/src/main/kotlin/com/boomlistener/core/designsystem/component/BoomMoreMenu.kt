@@ -45,6 +45,27 @@ fun BoomMoreMenu(
     // Quem quiser abrir o menu de outro jeito (segurar a linha) passa o estado aqui.
     openState: MutableState<Boolean> = remember { mutableStateOf(false) },
 ) {
+    Box {
+        IconButton(onClick = { openState.value = true }) {
+            Icon(BoomIcons.More, contentDescription = stringResource(R.string.core_designsystem_more))
+        }
+        BoomMenuDropdown(openState, actions, onShare, onYoutubeMusic, onDeezer)
+    }
+}
+
+/**
+ * Só a lista do menu (sem o botão ⋮), para itens que abrem o menu ao
+ * segurar e não têm o botão (ex.: as adicionadas recentemente do Início).
+ * Fica presa ao componente onde for colocada.
+ */
+@Composable
+fun BoomMenuDropdown(
+    openState: MutableState<Boolean>,
+    actions: List<BoomMenuAction>,
+    onShare: (() -> Unit)? = null,
+    onYoutubeMusic: (() -> Unit)? = null,
+    onDeezer: (() -> Unit)? = null,
+) {
     var open by openState
     val all = buildList {
         addAll(actions)
@@ -52,27 +73,22 @@ fun BoomMoreMenu(
         onYoutubeMusic?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_youtube_music), onClick = it)) }
         onDeezer?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_open_deezer), onClick = it)) }
     }
-    Box {
-        IconButton(onClick = { open = true }) {
-            Icon(BoomIcons.More, contentDescription = stringResource(R.string.core_designsystem_more))
-        }
-        // Cantos bem arredondados, no mesmo estilo dos cartões do app.
-        DropdownMenu(
-            expanded = open,
-            onDismissRequest = { open = false },
-            shape = MaterialTheme.shapes.large,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ) {
-            all.forEach { action ->
-                DropdownMenuItem(
-                    text = { Text(action.label) },
-                    enabled = action.enabled,
-                    onClick = {
-                        open = false
-                        action.onClick()
-                    },
-                )
-            }
+    // Cantos bem arredondados, no mesmo estilo dos cartões do app.
+    DropdownMenu(
+        expanded = open,
+        onDismissRequest = { open = false },
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        all.forEach { action ->
+            DropdownMenuItem(
+                text = { Text(action.label) },
+                enabled = action.enabled,
+                onClick = {
+                    open = false
+                    action.onClick()
+                },
+            )
         }
     }
 }

@@ -28,6 +28,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -113,9 +116,21 @@ fun BoomScreenScaffold(
               }
             }
         },
-        content = content,
+        content = { padding ->
+            // As listas da tela enxergam o estado da barra (para zerar a cor de
+            // "rolado" quando sobem até o topo por código).
+            CompositionLocalProvider(LocalTopBarState provides topBarState) { content(padding) }
+        },
     )
 }
+
+/**
+ * Estado da barra superior da tela atual. Rolar a lista por código (tocar de
+ * novo na aba) não passa pela barra, que ficaria com a cor de "rolado";
+ * [ScrollToTopOnReselect] usa isto para devolver a cor normal.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+val LocalTopBarState = staticCompositionLocalOf<TopAppBarState?> { null }
 
 /**
  * Barra superior em modo de busca: campo de texto no lugar do título, que já

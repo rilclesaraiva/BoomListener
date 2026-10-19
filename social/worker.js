@@ -34,7 +34,9 @@ const RECENT_KEEP = 20;
 const MESSAGES_PER_MINUTE = 40;
 const MAX_BIO = 160;
 const MAX_IMAGE_BYTES = 400_000;
-const MAX_GIF_BYTES = 1_500_000;
+const MAX_GIF_BYTES = 6_000_000;
+// O SQLite do Durable Object guarda até 2 MB por valor: imagens maiores vão em pedaços.
+const IMAGE_PART_BYTES = 1_000_000;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -75,7 +77,7 @@ function cleanBio(value) {
   return value.replace(/\s*\n\s*\n+/g, "\n").trim().slice(0, MAX_BIO);
 }
 
-/** Foto ou capa: JPEG até 400 KB, ou GIF (animado) até 1,5 MB. Devolve o tipo, ou null. */
+/** Foto ou capa: JPEG até 400 KB, ou GIF (animado) até 6 MB. Devolve o tipo, ou null. */
 function imageType(bytes) {
   if (bytes.length >= 3 && bytes.length <= MAX_IMAGE_BYTES && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     return "image/jpeg";
@@ -145,6 +147,10 @@ export class Hub extends DurableObject {
         body TEXT NOT NULL, sent INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS inbox_user ON inbox(to_user, sent);
+      CREATE TABLE IF NOT EXISTS image_parts (
+        user_id TEXT NOT NULL, kind TEXT NOT NULL, part INTEGER NOT NULL, data BLOB NOT NULL,
+        PRIMARY KEY (user_id, kind, part)
+      );
       CREATE TABLE IF NOT EXISTS images (
         user_id TEXT NOT NULL, kind TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (user_id, kind)
       );
@@ -235,6 +241,46 @@ export class Hub extends DurableObject {
     return true;
   }
 
+  /** Guarda a imagem em pedaços de até 1 MB (troca a anterior inteira). */
+  saveImage(userId, kind, bytes) {
+    this.deleteImage(userId, kind);
+    for (let part = 0, offset = 0; offset < bytes.length; part++, offset += IMAGE_PART_BYTES) {
+      this.sql.exec(
+        "INSERT INTO image_parts (user_id, kind, part, data) VALUES (?, ?, ?, ?)",
+        userId,
+        kind,
+        part,
+        bytes.slice(offset, offset + IMAGE_PART_BYTES),
+      );
+    }
+  }
+
+  deleteImage(userId, kind) {
+    this.sql.exec("DELETE FROM image_parts WHERE user_id = ? AND kind = ?", userId, kind);
+    this.sql.exec("DELETE FROM images WHERE user_id = ? AND kind = ?", userId, kind);
+  }
+
+  /** Junta os pedaços (ou lê do formato antigo, de uma linha só). */
+  loadImage(userId, kind) {
+    const parts = this.all(
+      "SELECT data FROM image_parts WHERE user_id = ? AND kind = ? ORDER BY part",
+      userId,
+      kind,
+    ).map((row) => new Uint8Array(row.data));
+    if (parts.length === 0) {
+      const old = this.first("SELECT data FROM images WHERE user_id = ? AND kind = ?", userId, kind);
+      return old ? new Uint8Array(old.data) : null;
+    }
+    const total = parts.reduce((sum, part) => sum + part.length, 0);
+    const joined = new Uint8Array(total);
+    let offset = 0;
+    for (const part of parts) {
+      joined.set(part, offset);
+      offset += part.length;
+    }
+    return joined;
+  }
+
   groupInfo(group) {
     const members = this.all(
       "SELECT u.id, u.handle, u.name FROM members m JOIN users u ON u.id = m.user_id WHERE m.group_id = ? ORDER BY u.name",
@@ -296,7 +342,7 @@ export class Hub extends DurableObject {
       return json({ ...this.publicUser({ ...me, name, bio }), sharing: sharing === 1 });
     }
     if (path === "/me" && method === "DELETE") {
-      for (const table of ["status", "recent", "images"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
+      for (const table of ["status", "recent", "images", "image_parts"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
       this.sql.exec("DELETE FROM members WHERE user_id = ?", me.id);
       this.sql.exec("DELETE FROM contacts WHERE a = ? OR b = ?", me.id, me.id);
       this.sql.exec("DELETE FROM blocks WHERE user_id = ? OR blocked = ?", me.id, me.id);
@@ -311,27 +357,21 @@ export class Hub extends DurableObject {
       if (!imageType(bytes)) return json({ error: "invalid" }, 400);
       const kind = imagePath[1];
       const version = Date.now();
-      this.sql.exec(
-        "INSERT INTO images (user_id, kind, data) VALUES (?, ?, ?) ON CONFLICT(user_id, kind) DO UPDATE SET data = excluded.data",
-        me.id,
-        kind,
-        bytes,
-      );
+      this.saveImage(me.id, kind, bytes);
       this.sql.exec(`UPDATE users SET ${kind}_v = ? WHERE id = ?`, version, me.id);
       return json({ ...this.publicUser({ ...me, [`${kind}_v`]: version }), sharing: me.sharing === 1 });
     }
     if (imagePath && method === "DELETE") {
       const kind = imagePath[1];
-      this.sql.exec("DELETE FROM images WHERE user_id = ? AND kind = ?", me.id, kind);
+      this.deleteImage(me.id, kind);
       this.sql.exec(`UPDATE users SET ${kind}_v = 0 WHERE id = ?`, me.id);
       return json({ ...this.publicUser({ ...me, [`${kind}_v`]: 0 }), sharing: me.sharing === 1 });
     }
     const userImage = method === "GET" && path.match(/^\/users\/([0-9a-f]{32})\/image\/(avatar|banner)$/);
     if (userImage) {
       if (this.blocked(userImage[1], me.id)) return json({ error: "not_found" }, 404);
-      const row = this.first("SELECT data FROM images WHERE user_id = ? AND kind = ?", userImage[1], userImage[2]);
-      if (!row) return json({ error: "not_found" }, 404);
-      const data = new Uint8Array(row.data);
+      const data = this.loadImage(userImage[1], userImage[2]);
+      if (!data) return json({ error: "not_found" }, 404);
       return new Response(data, {
         headers: { "content-type": imageType(data) ?? "image/jpeg", "cache-control": "private, max-age=31536000" },
       });

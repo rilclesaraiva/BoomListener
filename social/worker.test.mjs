@@ -174,7 +174,16 @@ test("descrição, foto e capa do perfil", async () => {
   const gif = new Uint8Array([...new TextEncoder().encode("GIF89a"), 1, 0, 1, 0]);
   const withGif = await (await send("PUT", "/me/image/banner", ana, { body: gif })).json();
   assert.ok(withGif.banner > 0);
-  assert.equal((await send("PUT", "/me/image/banner", ana, { body: new Uint8Array(1_600_000).fill(0x47) })).status, 400);
+  // GIF grande (3 MB) vai em pedaços e volta inteiro.
+  const big = new Uint8Array(3_000_000);
+  big.set(new TextEncoder().encode("GIF89a"));
+  for (let i = 6; i < big.length; i++) big[i] = i % 251;
+  assert.equal((await send("PUT", "/me/image/avatar", ana, { body: big })).status, 200);
+  await send("DELETE", "/blocks/" + beto.id, ana);
+  const back = new Uint8Array(await (await send("GET", `/users/${ana.id}/image/avatar`, beto)).arrayBuffer());
+  assert.equal(back.length, big.length);
+  assert.deepEqual(back.slice(2_500_000, 2_500_010), big.slice(2_500_000, 2_500_010));
+  assert.equal((await send("PUT", "/me/image/banner", ana, { body: new Uint8Array(6_100_000).fill(0x47) })).status, 400);
 
   // Tirar a foto.
   const removed = await (await send("DELETE", "/me/image/avatar", ana)).json();

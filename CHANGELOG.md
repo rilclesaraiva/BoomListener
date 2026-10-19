@@ -4,6 +4,21 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.25.0] — 2026-10-19
+
+### ✨ New
+- **Friends on your profile.** The bottom section now shows the people you talk to, with their photos, instead of the artists you follow (those are already in Releases).
+- **Hold a song anywhere** to open its menu. It now also works in Recently added, History, artist pages and Deezer albums.
+- Long titles in **Recently added** now glide to the end, pause for a moment and glide back, instead of being cut off.
+
+### 🐛 Fixes
+- **Animated GIFs now keep playing** as your profile photo or cover. Bigger GIFs are accepted too (up to 5 MB).
+- **Edit profile** only changes your profile when you tap **Save**. Until then, the new photo or cover is just a preview.
+- After jumping back to the top of a list (by tapping the tab again), the top bar no longer stays in its grey "scrolled" color.
+
+### 🎨 Visual tweaks
+- The song menu no longer shows the song length.
+
 ## [0.24.0] — 2026-10-19
 
 ### ✨ New
