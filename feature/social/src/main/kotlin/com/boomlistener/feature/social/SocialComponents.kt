@@ -156,7 +156,7 @@ internal fun ProfilePictureView(picture: ProfilePicture, modifier: Modifier = Mo
                     if (view.drawable !== drawable) view.setImageDrawable(drawable)
                     (drawable as? AnimatedImageDrawable)?.let { animated ->
                         // Repete para sempre, mesmo que o GIF diga para tocar só uma vez.
-                        animated.repeatCount = AnimatedImageDrawable.REPETITION_INFINITE
+                        animated.repeatCount = REPEAT_FOREVER
                         if (!animated.isRunning) animated.start()
                     }
                 },
@@ -212,3 +212,6 @@ internal fun PollWhileVisible(intervalMs: Long, block: suspend () -> Unit) {
         }
     }
 }
+
+/** "Repetir para sempre" do AnimatedImageDrawable (REPETITION_INFINITE = -1). */
+private const val REPEAT_FOREVER = -1
