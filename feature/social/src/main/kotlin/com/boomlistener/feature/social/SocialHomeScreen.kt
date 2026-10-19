@@ -126,7 +126,7 @@ internal fun SocialHomeScreen(
                                     Avatar(
                                         me.name,
                                         size = 40.dp,
-                                        image = rememberProfileImage(me.id, ProfileImage.Avatar, me.avatarVersion),
+                                        picture = rememberProfileImage(me.id, ProfileImage.Avatar, me.avatarVersion),
                                     )
                                     Spacer(Modifier.width(12.dp))
                                     Column(Modifier.weight(1f)) {
@@ -235,7 +235,7 @@ private fun ActivityCard(friend: FriendProfile, onClick: () -> Unit) {
                 Avatar(
                     friend.user.name,
                     size = 32.dp,
-                    image = rememberProfileImage(friend.user.id, ProfileImage.Avatar, friend.avatarVersion),
+                    picture = rememberProfileImage(friend.user.id, ProfileImage.Avatar, friend.avatarVersion),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(friend.user.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -509,7 +509,7 @@ private fun NewConversationSheet(
                             leadingContent = {
                                 Avatar(
                                     profile.user.name,
-                                    image = rememberProfileImage(profile.user.id, ProfileImage.Avatar, profile.avatarVersion),
+                                    picture = rememberProfileImage(profile.user.id, ProfileImage.Avatar, profile.avatarVersion),
                                 )
                             },
                             headlineContent = { Text(profile.user.name) },

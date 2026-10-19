@@ -116,7 +116,7 @@ private fun Header(profile: FriendProfile, onMessage: () -> Unit, onToggleBlock:
             Avatar(
                 profile.user.name,
                 size = 104.dp,
-                image = photo,
+                picture = photo,
                 modifier = Modifier.border(4.dp, MaterialTheme.colorScheme.surface, CircleShape),
             )
         }

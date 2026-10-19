@@ -169,6 +169,7 @@ internal fun MyProfileScreen(
                             PersonChip(
                                 name = artist.name,
                                 caption = pluralStringResource(R.plurals.feature_social_plays, artist.plays, artist.plays),
+                                viewModel = viewModel,
                                 onClick = { onOpenArtist(artist.name) },
                             )
                         }
@@ -206,7 +207,7 @@ internal fun MyProfileScreen(
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
                         items(current.following, key = { it.deezerId }) { artist ->
-                            PersonChip(name = artist.name, caption = null, onClick = { onOpenArtist(artist.name) })
+                            PersonChip(name = artist.name, caption = null, viewModel = viewModel, onClick = { onOpenArtist(artist.name) })
                         }
                     }
                 }
@@ -256,7 +257,7 @@ private fun Header(
             Avatar(
                 account?.name ?: "?",
                 size = 96.dp,
-                image = photo,
+                picture = photo,
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape)
@@ -361,6 +362,11 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
                 )
                 ImageEditBadge(uploading == ProfileImage.Banner, stringResource(R.string.feature_social_banner_change))
             }
+            Text(
+                stringResource(R.string.feature_social_gif_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             if (account.bannerVersion > 0) {
                 TextButton(onClick = { viewModel.setImage(ProfileImage.Banner, null) }, enabled = uploading == null) {
                     Text(stringResource(R.string.feature_social_banner_remove))
@@ -372,7 +378,7 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
                     Avatar(
                         account.name,
                         size = 88.dp,
-                        image = photo,
+                        picture = photo,
                         modifier = Modifier.clip(CircleShape).clickable(enabled = uploading == null) { pick(ProfileImage.Avatar) },
                     )
                     if (uploading == ProfileImage.Avatar) CircularProgressIndicator()
@@ -609,12 +615,16 @@ private fun DayPartsCard(state: MyProfileUiState) {
 
 /** Bolinha com nome embaixo (artista). */
 @Composable
-private fun PersonChip(name: String, caption: String?, onClick: () -> Unit) {
+private fun PersonChip(name: String, caption: String?, viewModel: MyProfileViewModel, onClick: () -> Unit) {
+    val px = with(LocalDensity.current) { 72.dp.roundToPx() }
+    val photo by produceState<ImageBitmap?>(initialValue = null, name) {
+        value = viewModel.artistImage(name, px)?.asImageBitmap()
+    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width(88.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(top = 4.dp, bottom = TileBottom),
     ) {
-        Avatar(name, size = 72.dp)
+        Avatar(name, size = 72.dp, image = photo)
         Spacer(Modifier.height(6.dp))
         Text(name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         caption?.let {

@@ -16,6 +16,14 @@ class PlaylistOpsTest {
     }
 
     @Test
+    fun tirarMusicasDaPlaylist() {
+        val (list, removed) = removeAll(listOf("a", "b", "c", "b"), listOf("b", "z"))
+        assertEquals(listOf("a", "c"), list)
+        assertEquals(2, removed)
+        assertEquals(listOf("a") to 0, removeAll(listOf("a"), emptyList()))
+    }
+
+    @Test
     fun moverParaCimaEParaBaixo() {
         assertEquals(listOf("c", "a", "b"), moveItem(listOf("a", "b", "c"), 2, 0))
         assertEquals(listOf("b", "c", "a"), moveItem(listOf("a", "b", "c"), 0, 2))

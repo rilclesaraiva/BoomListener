@@ -3,6 +3,7 @@
 
 package com.boomlistener.data.library
 
+import android.app.RecoverableSecurityException
 import android.content.ContentUris
 import android.content.Context
 import android.database.ContentObserver
@@ -96,6 +97,31 @@ internal class MediaStoreLibraryRepository(
         // Cópia: o conjunto devolvido pelo SharedPreferences não pode ser alterado.
         folders = prefs.getStringSet(KEY_FOLDERS, emptySet()).orEmpty().toSet(),
     )
+
+    override suspend fun delete(uris: List<String>): DeleteResult = withContext(Dispatchers.IO) {
+        if (uris.isEmpty()) return@withContext DeleteResult.Done
+        val resolver = context.contentResolver
+        val parsed = uris.map(Uri::parse)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Android 11+: o sistema mostra o "Apagar?" dele e apaga sozinho se a pessoa aceitar.
+            return@withContext runCatching {
+                DeleteResult.NeedsConfirmation(MediaStore.createDeleteRequest(resolver, parsed).intentSender, retryAfter = false)
+            }.getOrDefault(DeleteResult.Failed)
+        }
+        try {
+            parsed.forEach { resolver.delete(it, null, null) }
+            uris.forEach(::notifyChanged)
+            DeleteResult.Done
+        } catch (denied: SecurityException) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && denied is RecoverableSecurityException) {
+                DeleteResult.NeedsConfirmation(denied.userAction.actionIntent.intentSender, retryAfter = true)
+            } else {
+                DeleteResult.NeedsPermission
+            }
+        } catch (_: Exception) {
+            DeleteResult.Failed
+        }
+    }
 
     override suspend fun folders(): List<MusicFolder> =
         groupFolders(queryAll().map { it.folder })

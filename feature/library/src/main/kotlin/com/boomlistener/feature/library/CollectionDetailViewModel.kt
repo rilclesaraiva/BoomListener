@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -97,10 +98,26 @@ internal class CollectionDetailViewModel(
 
     fun remove(track: Track) {
         val id = (ref as? CollectionRef.Playlist)?.id ?: return
+        viewModelScope.launch { playlists.removeTracks(id, listOf(track.uri)) }
+    }
+
+    /** Todas as músicas do aparelho (para "Adicionar músicas"). */
+    val libraryTracks: StateFlow<List<Track>> = tracks
+        .map { it.orEmpty() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** As músicas que já estão nesta playlist. */
+    val playlistUris: StateFlow<Set<String>> =
+        (if (ref is CollectionRef.Playlist) playlists.playlists else flowOf(emptyList()))
+            .map { lists -> lists.firstOrNull { it.id == (ref as? CollectionRef.Playlist)?.id }?.trackUris.orEmpty().toSet() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** Marca/desmarca a música na playlist ("Adicionar músicas"). */
+    fun toggleInPlaylist(uri: String) {
+        val id = (ref as? CollectionRef.Playlist)?.id ?: return
         viewModelScope.launch {
-            val playlist = currentPlaylist() ?: return@launch
-            val index = playlist.trackUris.indexOf(track.uri)
-            if (index >= 0) playlists.removeAt(id, index)
+            val inside = currentPlaylist()?.trackUris?.contains(uri) == true
+            if (inside) playlists.removeTracks(id, listOf(uri)) else playlists.addTracks(id, listOf(uri))
         }
     }
 

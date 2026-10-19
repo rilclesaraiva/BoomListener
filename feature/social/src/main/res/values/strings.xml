@@ -115,4 +115,5 @@
     <string name="feature_social_banner_remove">Remove cover</string>
     <string name="feature_social_photo_change">Change photo</string>
     <string name="feature_social_photo_remove">Remove photo</string>
+    <string name="feature_social_gif_hint">GIFs work too and stay animated (up to 1.4 MB; bigger ones become a still image).</string>
 </resources>

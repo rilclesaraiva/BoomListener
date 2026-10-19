@@ -31,6 +31,9 @@ interface PlaylistRepository {
     /** Acrescenta no fim, pulando as que já estão. Devolve quantas entraram. */
     suspend fun addTracks(id: Long, uris: List<String>): Int
     suspend fun removeAt(id: Long, index: Int)
+
+    /** Tira [uris] da playlist (todas as vezes que aparecem). Devolve quantas saíram. */
+    suspend fun removeTracks(id: Long, uris: List<String>): Int = 0
     suspend fun move(id: Long, from: Int, to: Int)
 }
 
@@ -93,6 +96,16 @@ internal class FilePlaylistRepository(context: Context) : PlaylistRepository {
         } to Unit
     }
 
+    override suspend fun removeTracks(id: Long, uris: List<String>): Int = update { list ->
+        var removed = 0
+        val updated = list.edit(id) { playlist ->
+            val (result, count) = removeAll(playlist.trackUris, uris)
+            removed = count
+            playlist.copy(trackUris = result)
+        }
+        updated to removed
+    }
+
     override suspend fun move(id: Long, from: Int, to: Int) = update { list ->
         list.edit(id) { playlist -> playlist.copy(trackUris = moveItem(playlist.trackUris, from, to)) } to Unit
     }
@@ -118,6 +131,13 @@ internal fun addUnique(current: List<String>, new: List<String>): Pair<List<Stri
     val present = current.toMutableSet()
     val toAdd = new.filter { present.add(it) }
     return (current + toAdd) to toAdd.size
+}
+
+/** Tira de [current] tudo o que está em [gone]. Devolve a lista e quantas saíram. */
+internal fun removeAll(current: List<String>, gone: List<String>): Pair<List<String>, Int> {
+    val remove = gone.toSet()
+    val kept = current.filterNot { it in remove }
+    return kept to (current.size - kept.size)
 }
 
 internal fun <T> moveItem(list: List<T>, from: Int, to: Int): List<T> {

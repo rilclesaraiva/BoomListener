@@ -115,4 +115,5 @@
     <string name="feature_social_banner_remove">Tirar capa</string>
     <string name="feature_social_photo_change">Trocar foto</string>
     <string name="feature_social_photo_remove">Tirar foto</string>
+    <string name="feature_social_gif_hint">GIF também vale e fica animado (até 1,4 MB; maior que isso vira imagem parada).</string>
 </resources>

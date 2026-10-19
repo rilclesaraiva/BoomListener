@@ -31,4 +31,12 @@ class ProfileImagesTest {
         assertEquals(1, sampleSize(300, 300, 320, 320))
         assertEquals(2, sampleSize(2400, 1800, 1200, 450))
     }
+
+    @Test
+    fun reconheceGif() {
+        assertEquals(true, isGif("GIF89a....".toByteArray()))
+        assertEquals(true, isGif("GIF87a".toByteArray()))
+        assertEquals(false, isGif(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0, 0, 0)))
+        assertEquals(false, isGif("GIF".toByteArray()))
+    }
 }

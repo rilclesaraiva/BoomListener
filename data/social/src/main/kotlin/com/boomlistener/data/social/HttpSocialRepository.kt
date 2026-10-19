@@ -545,7 +545,7 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 connection.setRequestProperty("Authorization", "Bearer ${account.id}.${account.token}")
                 if (payload != null) {
                     connection.doOutput = true
-                    connection.setRequestProperty("Content-Type", "image/jpeg")
+                    connection.setRequestProperty("Content-Type", if (isGif(payload)) "image/gif" else "image/jpeg")
                     connection.setFixedLengthStreamingMode(payload.size)
                     connection.outputStream.use { it.write(payload) }
                 }

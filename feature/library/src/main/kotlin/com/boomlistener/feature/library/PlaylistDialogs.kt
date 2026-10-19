@@ -3,6 +3,11 @@
 
 package com.boomlistener.feature.library
 
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.text.style.TextOverflow
+import com.boomlistener.core.designsystem.component.BoomSearchField
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -47,8 +52,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Folha "Adicionar à playlist": escolhe uma playlist (ou cria uma nova) e
- * acrescenta [trackUris]. Mostra um ✓ na escolhida e fecha sozinha.
+ * Folha "Adicionar à playlist": cada playlist mostra se já tem a música;
+ * tocar adiciona ou tira (dá para desfazer na hora). Também cria uma nova.
  * Pública porque o :app também usa (menu do player).
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,17 +65,7 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var creating by remember { mutableStateOf(false) }
-    var addedTo by remember { mutableStateOf<Long?>(null) }
     val effects = boomEffectsSpec<Float>()
-
-    // Depois de adicionar, deixa o ✓ aparecer e fecha com a animação da folha.
-    LaunchedEffect(addedTo) {
-        if (addedTo != null) {
-            delay(700)
-            sheetState.hide()
-            onDismiss()
-        }
-    }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Text(
@@ -78,7 +73,7 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
         )
-        LazyColumn(Modifier.padding(bottom = 24.dp)) {
+        LazyColumn(Modifier.weight(1f, fill = false)) {
             item(key = "new") {
                 ListItem(
                     modifier = Modifier.clickable { creating = true },
@@ -88,19 +83,20 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
                 )
             }
             items(playlists, key = { it.id }) { playlist ->
+                val inside = trackUris.isNotEmpty() && playlist.trackUris.containsAll(trackUris)
                 ListItem(
-                    modifier = Modifier.clickable(enabled = addedTo == null) {
+                    modifier = Modifier.clickable {
                         scope.launch {
-                            repository.addTracks(playlist.id, trackUris)
-                            addedTo = playlist.id
+                            if (inside) repository.removeTracks(playlist.id, trackUris)
+                            else repository.addTracks(playlist.id, trackUris)
                         }
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     leadingContent = {
                         AnimatedContent(
-                            targetState = addedTo == playlist.id,
+                            targetState = inside,
                             transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
-                            label = "added",
+                            label = "inside",
                         ) { added ->
                             Icon(
                                 if (added) BoomIcons.Check else BoomIcons.Playlist,
@@ -119,9 +115,19 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
                             ),
                         )
                     },
+                    trailingContent = { Checkbox(checked = inside, onCheckedChange = null) },
                 )
             }
         }
+        Button(
+            onClick = {
+                scope.launch {
+                    sheetState.hide()
+                    onDismiss()
+                }
+            },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+        ) { Text(stringResource(R.string.feature_library_done)) }
     }
 
     if (creating) {
@@ -131,13 +137,66 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
             confirmLabel = stringResource(R.string.feature_library_create),
             onConfirm = { name ->
                 creating = false
-                scope.launch {
-                    val id = repository.create(name, trackUris)
-                    addedTo = id
-                }
+                scope.launch { repository.create(name, trackUris) }
             },
             onDismiss = { creating = false },
         )
+    }
+}
+
+/**
+ * "Adicionar músicas" dentro de uma playlist: todas as músicas do aparelho,
+ * com busca; marcar adiciona, desmarcar tira.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun AddSongsSheet(viewModel: CollectionDetailViewModel, onDismiss: () -> Unit) {
+    val all by viewModel.libraryTracks.collectAsStateWithLifecycle()
+    val inside by viewModel.playlistUris.collectAsStateWithLifecycle()
+    var query by remember { mutableStateOf("") }
+    val shown = remember(all, query) { filterTracks(all, query) }
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Text(
+            text = stringResource(R.string.feature_library_add_songs),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+        )
+        BoomSearchField(
+            query = query,
+            onQueryChange = { query = it },
+            placeholder = stringResource(R.string.feature_library_add_songs_search),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+        LazyColumn(Modifier.weight(1f, fill = false)) {
+            items(shown, key = { it.uri }) { track ->
+                val checked = track.uri in inside
+                ListItem(
+                    modifier = Modifier.clickable { viewModel.toggleInPlaylist(track.uri) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    headlineContent = { Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    supportingContent = {
+                        Text(
+                            track.artist ?: stringResource(R.string.feature_library_unknown_artist),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    trailingContent = { Checkbox(checked = checked, onCheckedChange = null) },
+                )
+            }
+        }
+        Button(
+            onClick = {
+                scope.launch {
+                    sheetState.hide()
+                    onDismiss()
+                }
+            },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+        ) { Text(stringResource(R.string.feature_library_done)) }
     }
 }
 

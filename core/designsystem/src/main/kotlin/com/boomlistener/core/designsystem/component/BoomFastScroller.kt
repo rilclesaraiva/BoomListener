@@ -217,8 +217,9 @@ private fun FastScrollerImpl(
                     .align(Alignment.TopCenter)
                     .offset { IntOffset(0, thumbY) }
                     .size(width = thumbWidth, height = ThumbHeight)
+                    // Na cor do tema (o cinza destoava no AMOLED).
                     .background(
-                        if (dragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        if (dragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
                         CircleShape,
                     ),
             )

@@ -4,6 +4,7 @@
 package com.boomlistener.data.library
 
 import android.content.Context
+import android.content.IntentSender
 import android.graphics.Bitmap
 import com.boomlistener.core.model.Track
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +41,23 @@ interface LibraryRepository {
 
     /** Todas as pastas com música no aparelho (sem aplicar o filtro). */
     suspend fun folders(): List<MusicFolder> = emptyList()
+
+    /**
+     * Apaga [uris] do aparelho. No Android 10+ o próprio sistema pede
+     * confirmação ([DeleteResult.NeedsConfirmation]: abrir o [IntentSender] e,
+     * se a pessoa aceitar, chamar [delete] de novo no Android 10). Sem permissão
+     * nenhuma no manifesto, como na gravação de tags.
+     */
+    suspend fun delete(uris: List<String>): DeleteResult = DeleteResult.Failed
+}
+
+sealed interface DeleteResult {
+    data object Done : DeleteResult
+    /** O sistema precisa perguntar à pessoa (Android 10+). */
+    data class NeedsConfirmation(val intentSender: IntentSender, val retryAfter: Boolean) : DeleteResult
+    /** Android 8 e 9 sem a permissão de gravar no armazenamento. */
+    data object NeedsPermission : DeleteResult
+    data object Failed : DeleteResult
 }
 
 private val NoChanges: StateFlow<Int> = MutableStateFlow(0).asStateFlow()

@@ -100,6 +100,7 @@ internal fun NowPlayingContent(
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     val spatial = boomSpatialSpec<Float>()
     val effects = boomEffectsSpec<Float>()
+    val deleteSong = rememberSongDeleter()
 
     // Com a letra aberta, o "voltar" fecha só a letra (a capa volta com a
     // mesma animação), não o player inteiro. A fila, quando aberta, tem prioridade.
@@ -131,24 +132,8 @@ internal fun NowPlayingContent(
                     IconButton(onClick = onCollapse) {
                         Icon(BoomIcons.Collapse, stringResource(R.string.feature_nowplaying_collapse))
                     }
-                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = stringResource(R.string.feature_nowplaying_title),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        if (state.queueSize > 0) {
-                            Text(
-                                text = stringResource(
-                                    R.string.feature_nowplaying_queue_position,
-                                    state.queueIndex + 1,
-                                    state.queueSize,
-                                ),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
+                    // O "x de y" agora fica na fila; o topo só tem os botões.
+                    Spacer(Modifier.weight(1f))
                     DevicesButton()
                     if (item != null) {
                         BoomMoreMenu(
@@ -166,6 +151,7 @@ internal fun NowPlayingContent(
                                     BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
                                 },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags)) { onEditTags(item.uri) },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song)) { deleteSong(item.uri, item.title) },
                             ),
                             onShare = {
                                 scope.launch {
@@ -277,7 +263,16 @@ internal fun NowPlayingContent(
           }
         }
 
-        QueuePanel(state = state, queueState = queueState, viewModel = viewModel)
+        QueuePanel(
+            state = state,
+            queueState = queueState,
+            viewModel = viewModel,
+            onOpenArtist = onOpenArtist,
+            onEditTags = onEditTags,
+            onAddToPlaylist = onAddToPlaylist,
+            onRecommend = onRecommend,
+            onDelete = deleteSong,
+        )
     }
 }
 

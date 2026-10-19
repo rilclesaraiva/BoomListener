@@ -4,6 +4,13 @@
 package com.boomlistener.feature.social
 
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.graphics.drawable.AnimatedImageDrawable
+import android.os.Build
+import android.widget.ImageView
+import androidx.compose.runtime.remember
+import androidx.compose.ui.viewinterop.AndroidView
+import java.nio.ByteBuffer
 import android.text.format.DateUtils
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -49,6 +56,7 @@ internal fun Avatar(
     size: Dp = 48.dp,
     modifier: Modifier = Modifier,
     image: ImageBitmap? = null,
+    picture: ProfilePicture? = null,
 ) {
     Surface(
         color = if (isGroup) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer,
@@ -58,6 +66,7 @@ internal fun Avatar(
     ) {
         Box(contentAlignment = Alignment.Center) {
             when {
+                picture != null -> ProfilePictureView(picture, Modifier.fillMaxSize().clip(CircleShape))
                 image != null -> Image(
                     bitmap = image,
                     contentDescription = null,
@@ -74,22 +83,59 @@ internal fun Avatar(
     }
 }
 
+/**
+ * Foto ou capa de alguém, como veio do servidor: [still] é a imagem parada
+ * (sempre existe) e [gif] os bytes, quando é um GIF animado.
+ */
+internal class ProfilePicture(val still: ImageBitmap, val gif: ByteArray?)
+
 /** Foto ou capa de alguém (baixada uma vez e guardada no aparelho); null se não tiver. */
 @Composable
-internal fun rememberProfileImage(userId: String?, kind: ProfileImage, version: Long): ImageBitmap? {
+internal fun rememberProfileImage(userId: String?, kind: ProfileImage, version: Long): ProfilePicture? {
     val context = LocalContext.current.applicationContext
-    val image by produceState<ImageBitmap?>(initialValue = null, userId, kind, version) {
+    val picture by produceState<ProfilePicture?>(initialValue = null, userId, kind, version) {
         value = if (userId == null || version <= 0) {
             null
         } else {
             SocialData.repository(context).profileImage(userId, kind, version)?.let { bytes ->
                 withContext(Dispatchers.Default) {
-                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()?.let { still ->
+                        ProfilePicture(still, bytes.takeIf(::looksLikeGif))
+                    }
                 }
             }
         }
     }
-    return image
+    return picture
+}
+
+private fun looksLikeGif(bytes: ByteArray) =
+    bytes.size >= 6 && String(bytes, 0, 6, Charsets.US_ASCII).let { it == "GIF87a" || it == "GIF89a" }
+
+/**
+ * Mostra a foto/capa: GIF animado roda (Android 9+, pelo ImageDecoder do
+ * sistema); nos anteriores, fica o primeiro quadro.
+ */
+@Composable
+internal fun ProfilePictureView(picture: ProfilePicture, modifier: Modifier = Modifier) {
+    val gif = picture.gif
+    if (gif != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        val drawable = remember(gif) {
+            runCatching { ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(gif))) }.getOrNull()
+        }
+        if (drawable != null) {
+            AndroidView(
+                factory = { context -> ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP } },
+                update = { view ->
+                    view.setImageDrawable(drawable)
+                    (drawable as? AnimatedImageDrawable)?.start()
+                },
+                modifier = modifier,
+            )
+            return
+        }
+    }
+    Image(bitmap = picture.still, contentDescription = null, contentScale = ContentScale.Crop, modifier = modifier)
 }
 
 /** Proporção da capa (a mesma do recorte enviado ao servidor). */
@@ -100,7 +146,7 @@ internal const val BANNER_RATIO = 1200f / 450f
  * quando a pessoa ainda não pôs uma.
  */
 @Composable
-internal fun ProfileBanner(image: ImageBitmap?, modifier: Modifier = Modifier) {
+internal fun ProfileBanner(image: ProfilePicture?, modifier: Modifier = Modifier) {
     Box(
         modifier
             .fillMaxWidth()
@@ -111,14 +157,7 @@ internal fun ProfileBanner(image: ImageBitmap?, modifier: Modifier = Modifier) {
                 ),
             ),
     ) {
-        if (image != null) {
-            Image(
-                bitmap = image,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        if (image != null) ProfilePictureView(image, Modifier.fillMaxSize())
     }
 }
 

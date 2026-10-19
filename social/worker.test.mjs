@@ -170,6 +170,12 @@ test("descrição, foto e capa do perfil", async () => {
   });
   assert.equal((await send("GET", `/users/${ana.id}/image/avatar`, beto)).status, 404);
 
+  // GIF animado na capa também vale.
+  const gif = new Uint8Array([...new TextEncoder().encode("GIF89a"), 1, 0, 1, 0]);
+  const withGif = await (await send("PUT", "/me/image/banner", ana, { body: gif })).json();
+  assert.ok(withGif.banner > 0);
+  assert.equal((await send("PUT", "/me/image/banner", ana, { body: new Uint8Array(1_600_000).fill(0x47) })).status, 400);
+
   // Tirar a foto.
   const removed = await (await send("DELETE", "/me/image/avatar", ana)).json();
   assert.equal(removed.avatar, 0);

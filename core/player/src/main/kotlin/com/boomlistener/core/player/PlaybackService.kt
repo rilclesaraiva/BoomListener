@@ -18,6 +18,8 @@ import androidx.media3.exoplayer.source.ShuffleOrder
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -117,8 +119,14 @@ class PlaybackService : MediaSessionService() {
 
         // Saída de som escolhida na tela "Dispositivos" (null = o sistema decide).
         val outputs = AudioOutputsData.internalGet(this)
+        // collectLatest + espera curta: trocar várias vezes seguidas aplica só a
+        // última escolha, e sempre com o aparelho lido na hora (o objeto antigo
+        // pode não valer mais depois que o Android refaz as rotas).
         scope.launch {
-            outputs.preferred.collect { id -> player.setPreferredAudioDevice(id?.let(outputs::deviceInfo)) }
+            outputs.preferred.collectLatest { id ->
+                delay(OUTPUT_SWITCH_DELAY_MS)
+                player.setPreferredAudioDevice(id?.let(outputs::deviceInfo))
+            }
         }
     }
 
@@ -238,3 +246,6 @@ class PlaybackService : MediaSessionService() {
         )
     }
 }
+
+/** Espera antes de aplicar a saída escolhida (junta toques seguidos). */
+private const val OUTPUT_SWITCH_DELAY_MS = 250L

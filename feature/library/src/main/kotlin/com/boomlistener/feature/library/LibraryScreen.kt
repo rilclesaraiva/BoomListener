@@ -82,7 +82,8 @@ import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
-import com.boomlistener.core.designsystem.component.BoomSearchTopBar
+import com.boomlistener.core.designsystem.component.BoomSearchField
+import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.BoomTopActions
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -118,7 +119,6 @@ internal fun LibraryScreen(
     // Depois de duas recusas o Android não mostra mais o pedido; aí só dá
     // para liberar pelas configurações do sistema.
     var denials by rememberSaveable { mutableIntStateOf(0) }
-    var searching by rememberSaveable { mutableStateOf(false) }
 
     // Confere de novo ao voltar das configurações do sistema e relê a
     // biblioteca (músicas novas podem ter chegado enquanto o app estava fechado).
@@ -134,34 +134,15 @@ internal fun LibraryScreen(
         if (!granted) denials++
     }
 
-    val closeSearch = {
-        searching = false
-        viewModel.onQueryChange("")
-    }
-    BackHandler(enabled = searching) { closeSearch() }
-
-    val searchHint = stringResource(R.string.feature_library_search_hint)
-    val searchBar: @Composable () -> Unit = {
-        BoomSearchTopBar(
-            query = (uiState as? LibraryUiState.Success)?.query.orEmpty(),
-            onQueryChange = viewModel::onQueryChange,
-            onClose = closeSearch,
-            placeholder = searchHint,
-        )
-    }
+    // Com busca digitada, o "voltar" limpa a busca antes de sair.
+    val query = (uiState as? LibraryUiState.Success)?.query.orEmpty()
+    BackHandler(enabled = query.isNotEmpty()) { viewModel.onQueryChange("") }
+    val deleteSong = rememberSongDeleter()
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_title),
         modifier = modifier,
-        actions = {
-            if (hasPermission) {
-                IconButton(onClick = { searching = true }) {
-                    Icon(BoomIcons.Search, contentDescription = stringResource(R.string.feature_library_search))
-                }
-            }
-            BoomTopActions(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings)
-        },
-        topBar = if (searching) searchBar else null,
+        actions = { BoomTopActions(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings) },
     ) { padding ->
         val contentModifier = Modifier.padding(padding)
         when {
@@ -180,7 +161,8 @@ internal fun LibraryScreen(
                     onShuffleAll = viewModel::shuffleAll,
                     onPlayAll = viewModel::playAll,
                     onPlayRecent = viewModel::playRecent,
-                    onShuffleRecent = viewModel::shuffleRecent,
+                    onQueryChange = viewModel::onQueryChange,
+                    onDelete = deleteSong,
                     onOpenAlbum = onOpenAlbum,
                     onSeeAll = onSeeAll,
                     loadArtwork = viewModel::artwork,
@@ -207,7 +189,8 @@ private fun TrackList(
     onShuffleAll: () -> Unit,
     onPlayAll: () -> Unit,
     onPlayRecent: (Int) -> Unit,
-    onShuffleRecent: () -> Unit,
+    onQueryChange: (String) -> Unit,
+    onDelete: (Track) -> Unit,
     onOpenAlbum: (String) -> Unit,
     onSeeAll: (CollectionKind) -> Unit,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
@@ -228,16 +211,10 @@ private fun TrackList(
             modifier = Modifier.padding(contentPadding),
         )
 
-        state.tracks.isEmpty() -> BoomPlaceholder(
-            title = stringResource(R.string.feature_library_no_results_title),
-            message = stringResource(R.string.feature_library_no_results_message, state.query),
-            modifier = Modifier.padding(contentPadding),
-        )
-
         else -> Box(Modifier.fillMaxSize()) {
             val home = state.home
             // Itens antes da primeira música (para a letra da barra de rolagem).
-            val headerItems = 1 + (if (home != null) 4 else 0)
+            val headerItems = 2 + (if (home != null) 3 else 0)
           LazyColumn(state = listState, contentPadding = contentPadding) {
             item(key = "header") {
                 // Aleatório e Tocar, com a contagem do outro lado.
@@ -272,14 +249,7 @@ private fun TrackList(
             }
             if (home != null) {
                 item(key = "recent") {
-                    HomeSectionTitle(
-                        title = stringResource(R.string.feature_library_recently_added),
-                        action = {
-                            FilledTonalIconButton(onClick = onShuffleRecent) {
-                                Icon(BoomIcons.Shuffle, contentDescription = stringResource(R.string.feature_library_shuffle_recent))
-                            }
-                        },
-                    )
+                    HomeSectionTitle(stringResource(R.string.feature_library_recently_added))
                     RecentGrid(home.recent, state.version, loadArtwork, onPlayRecent)
                 }
                 item(key = "albums") {
@@ -314,7 +284,20 @@ private fun TrackList(
                         }
                     }
                 }
-                item(key = "songsTitle") { HomeSectionTitle(stringResource(R.string.feature_library_songs)) }
+            }
+            // "Músicas" com a busca ao lado: fica sempre, mesmo buscando.
+            item(key = "songsTitle") {
+                SongsHeader(query = state.query, onQueryChange = onQueryChange)
+            }
+            if (state.tracks.isEmpty()) {
+                item(key = "noResults") {
+                    Text(
+                        stringResource(R.string.feature_library_no_results_message, state.query),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                    )
+                }
             }
             items(state.tracks, key = { it.id }) { track ->
                 TrackItem(
@@ -327,6 +310,7 @@ private fun TrackList(
                     onEditTags = { onEditTags(track) },
                     onAddToPlaylist = { onAddToPlaylist(track) },
                     onRecommend = { onRecommend(track) },
+                    onDelete = { onDelete(track) },
                 )
             }
           }
@@ -339,6 +323,24 @@ private fun TrackList(
                     .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding()),
             )
         }
+    }
+}
+
+/** Título "Músicas" com a barra de busca ao lado. */
+@Composable
+private fun SongsHeader(query: String, onQueryChange: (String) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 40.dp, top = 20.dp, bottom = 8.dp),
+    ) {
+        Text(stringResource(R.string.feature_library_songs), style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.width(16.dp))
+        BoomSearchField(
+            query = query,
+            onQueryChange = onQueryChange,
+            placeholder = stringResource(R.string.feature_library_search_songs),
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -499,7 +501,9 @@ private fun TrackItem(
     onEditTags: () -> Unit,
     onAddToPlaylist: () -> Unit,
     onRecommend: () -> Unit,
+    onDelete: () -> Unit,
 ) {
+    val menuOpen = remember { mutableStateOf(false) }
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     // [version] muda quando alguma tag foi editada: a capa é lida de novo.
     val artwork by produceState<ImageBitmap?>(initialValue = null, track.uri, version) {
@@ -510,7 +514,8 @@ private fun TrackItem(
     val unknownArtist = stringResource(R.string.feature_library_unknown_artist)
 
     ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
+        // Segurar a música abre o mesmo menu dos três pontinhos.
+        modifier = Modifier.clickableWithMenu(menuOpen, onClick),
         leadingContent = { BoomArtwork(image = artwork, fallbackText = track.title) },
         headlineContent = { Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {
@@ -527,6 +532,7 @@ private fun TrackItem(
                     BoomMenuAction(stringResource(R.string.feature_library_recommend), onClick = onRecommend),
                     onOpenArtist?.let { BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), onClick = it) },
                     BoomMenuAction(stringResource(R.string.feature_library_edit_tags), onClick = onEditTags),
+                    BoomMenuAction(stringResource(R.string.feature_library_delete_song), onClick = onDelete),
                     BoomMenuAction(
                         label = stringResource(R.string.feature_library_duration, formatDuration(track.durationMs)),
                         enabled = false,
@@ -542,6 +548,7 @@ private fun TrackItem(
                     }
                 },
                 onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) },
+                openState = menuOpen,
             )
         },
     )

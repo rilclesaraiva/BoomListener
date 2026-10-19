@@ -113,4 +113,12 @@ class MyProfileViewModelTest {
         vm.setImage(ProfileImage.Avatar, "content://media/picker/3")
         assertTrue(vm.saveFailed.value)
     }
+
+    @Test
+    fun artistaPrincipalEFotoDoDeezer() {
+        assertEquals("Djavan", artistOf("Djavan feat. Caetano Veloso"))
+        assertEquals("Chikoi The Maid", artistOf("Chikoi The Maid ft. Alguém"))
+        assertEquals("Featherstone", artistOf("Featherstone"))
+        assertEquals("https://api.deezer.com/artist/27/image?size=medium", deezerArtistImageUrl(27))
+    }
 }

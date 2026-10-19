@@ -56,6 +56,7 @@ import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
+import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.QueueEntry
 import kotlinx.coroutines.CancellationException
@@ -72,6 +73,11 @@ internal fun QueuePanel(
     state: PlaybackState,
     queueState: PlayerSheetState,
     viewModel: NowPlayingViewModel,
+    onOpenArtist: (String) -> Unit,
+    onEditTags: (String) -> Unit,
+    onAddToPlaylist: (String) -> Unit,
+    onRecommend: (String) -> Unit,
+    onDelete: (uri: String, title: String) -> Unit,
 ) {
     PredictiveBackHandler(enabled = queueState.isExpanded) { backEvents ->
         try {
@@ -140,8 +146,13 @@ internal fun QueuePanel(
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
+                        // Posição na fila ("9 de 72"), que antes ficava no topo do player.
                         Text(
-                            text = stringResource(R.string.feature_nowplaying_reorder),
+                            text = if (state.queueSize > 0) {
+                                stringResource(R.string.feature_nowplaying_queue_position, state.queueIndex + 1, state.queueSize)
+                            } else {
+                                stringResource(R.string.feature_nowplaying_reorder)
+                            },
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -188,21 +199,33 @@ internal fun QueuePanel(
                                         Icon(BoomIcons.DragHandle, stringResource(R.string.feature_nowplaying_reorder))
                                     }
                                 },
-                                // Remover fica no menu, longe do toque sem querer.
-                                trailing = {
+                                // Toda música tem o menu (a que toca também); remover fica
+                                // nele, longe do toque sem querer.
+                                menuActions = listOfNotNull(
                                     if (!isCurrent) {
-                                        BoomMoreMenu(
-                                            actions = listOf(
-                                                BoomMenuAction(stringResource(R.string.feature_nowplaying_play_now)) {
-                                                    viewModel.playQueueItem(entry.index)
-                                                },
-                                                BoomMenuAction(stringResource(R.string.feature_nowplaying_remove)) {
-                                                    viewModel.removeQueueItem(entry.index)
-                                                },
-                                            ),
-                                        )
-                                    }
-                                },
+                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_play_now)) {
+                                            viewModel.playQueueItem(entry.index)
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                    if (!isCurrent) {
+                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_remove)) {
+                                            viewModel.removeQueueItem(entry.index)
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist)) { onAddToPlaylist(entry.item.uri) },
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_recommend)) { onRecommend(entry.item.uri) },
+                                    entry.item.artist?.let { name ->
+                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
+                                    },
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags)) { onEditTags(entry.item.uri) },
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song)) {
+                                        onDelete(entry.item.uri, entry.item.title)
+                                    },
+                                ),
                             )
                         }
                     }
@@ -229,14 +252,16 @@ private fun QueueRow(
     viewModel: NowPlayingViewModel,
     onClick: () -> Unit,
     dragHandle: @Composable () -> Unit,
-    trailing: @Composable () -> Unit,
+    menuActions: List<BoomMenuAction>,
 ) {
+    val menuOpen = remember { mutableStateOf(false) }
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val artwork = rememberArtwork(viewModel, entry.item.uri, sizePx)
     val unknownArtist = stringResource(R.string.feature_nowplaying_unknown_artist)
 
     ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
+        // Segurar abre o mesmo menu dos três pontinhos.
+        modifier = Modifier.clickableWithMenu(menuOpen, onClick),
         colors = ListItemDefaults.colors(
             containerColor = if (isCurrent) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
             headlineColor = if (isCurrent) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
@@ -248,7 +273,7 @@ private fun QueueRow(
                 BoomArtwork(image = artwork, fallbackText = entry.item.title)
             }
         },
-        trailingContent = trailing,
+        trailingContent = { BoomMoreMenu(actions = menuActions, openState = menuOpen) },
         headlineContent = { Text(entry.item.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {
             Text(

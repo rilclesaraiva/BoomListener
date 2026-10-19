@@ -11,6 +11,7 @@ import com.boomlistener.core.player.PlaybackController
 import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
+import com.boomlistener.core.common.normalizedForSearch
 import com.boomlistener.data.social.ProfileImage
 import com.boomlistener.data.social.SocialAccount
 import com.boomlistener.data.social.SocialRepository
@@ -28,6 +29,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
+
+/** Foto de um artista no Deezer pelo id (o Deezer redireciona para a imagem). */
+internal fun deezerArtistImageUrl(deezerId: Long) = "https://api.deezer.com/artist/$deezerId/image?size=medium"
+
+private val FEAT = Regex("""\s+(feat\.?|ft\.?|featuring)\s+.*$""", RegexOption.IGNORE_CASE)
+
+/** Artista principal: "Djavan feat. Caetano" → "Djavan". */
+internal fun artistOf(raw: String): String = raw.replace(FEAT, "").trim()
 
 /** Tamanho máximo da descrição (o mesmo do servidor). */
 internal const val MAX_BIO = 160
@@ -49,6 +58,8 @@ internal class MyProfileViewModel(
     private val library: LibraryRepository,
     follows: FollowRepository,
     private val player: PlaybackController,
+    /** Foto do artista no Deezer (pela URL); null nos testes. */
+    private val remoteImage: suspend (url: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val today: () -> LocalDate = { LocalDate.now(zone) },
 ) : ViewModel() {
@@ -133,6 +144,22 @@ internal class MyProfileViewModel(
     }
 
     suspend fun artwork(uri: String, sizePx: Int): Bitmap? = library.loadArtwork(uri, sizePx)
+
+    /**
+     * Foto de um artista: a do Deezer, se você o segue; senão a capa de uma
+     * música dele que está no aparelho.
+     */
+    suspend fun artistImage(name: String, sizePx: Int): Bitmap? {
+        val key = name.normalizedForSearch()
+        val followed = state.value?.following?.firstOrNull { it.name.normalizedForSearch() == key }
+        if (followed != null) {
+            remoteImage(deezerArtistImageUrl(followed.deezerId), sizePx)?.let { return it }
+        }
+        val track = tracks.value.firstOrNull { track ->
+            track.artist?.let { artistOf(it).normalizedForSearch() == key } == true
+        } ?: return null
+        return library.loadArtwork(track.uri, sizePx)
+    }
 
     private companion object {
         const val TOP_SONGS = 12

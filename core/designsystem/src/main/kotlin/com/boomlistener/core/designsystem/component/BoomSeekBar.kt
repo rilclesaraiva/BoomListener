@@ -127,7 +127,10 @@ fun BoomSeekBar(
         if (restStart < endX) {
             drawLine(inactive, Offset(restStart, cy), Offset(endX, cy), TrackStroke.toPx(), StrokeCap.Round)
         }
-        drawCircle(active, StopDotRadius.toPx(), Offset(endX, cy))
+        // O pontinho do fim some aos poucos quando a bolinha chega perto
+        // (senão parece que a música acabou antes da hora).
+        val dotFade = ((endX - restStart) / (thumbRadius * 2)).coerceIn(0f, 1f)
+        if (dotFade > 0f) drawCircle(active.copy(alpha = active.alpha * dotFade), StopDotRadius.toPx(), Offset(endX, cy))
 
         // Parte tocada: a onda vai até o centro da bolinha (grudada nela, sem folga).
         val waveEnd = thumbX

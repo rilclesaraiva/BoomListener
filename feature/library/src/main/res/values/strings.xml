@@ -56,4 +56,12 @@
     <string name="feature_library_shuffle_recent">Shuffle recently added</string>
     <string name="feature_library_songs">Songs</string>
     <string name="feature_library_see_all">See all</string>
+    <string name="feature_library_delete_song">Delete from device</string>
+    <string name="feature_library_delete_song_title">Delete this song?</string>
+    <string name="feature_library_delete_song_message">“%1$s” will be deleted from your phone. This can’t be undone.</string>
+    <string name="feature_library_delete_failed">Couldn’t delete the song</string>
+    <string name="feature_library_add_songs">Add songs</string>
+    <string name="feature_library_add_songs_search">Search your songs</string>
+    <string name="feature_library_done">Done</string>
+    <string name="feature_library_search_songs">Search songs</string>
 </resources>

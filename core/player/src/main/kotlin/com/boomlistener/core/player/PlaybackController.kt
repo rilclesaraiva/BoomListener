@@ -46,6 +46,21 @@ interface PlaybackController {
      * fila (e na notificação) sem interromper a música.
      */
     fun updateTrackInfo(uri: String, title: String, artist: String?, album: String?) {}
+
+    /**
+     * A música [uri] foi apagada do aparelho: sai da fila (se era a que
+     * tocava, passa para a próxima; se era a única, para tudo).
+     */
+    fun removeUri(uri: String) {
+        val queue = state.value.queue
+        val gone = queue.filter { it.item.uri == uri }
+        if (gone.isEmpty()) return
+        if (gone.size == queue.size) {
+            stop()
+            return
+        }
+        gone.map { it.index }.sortedDescending().forEach(::removeQueueItem)
+    }
 }
 
 /**

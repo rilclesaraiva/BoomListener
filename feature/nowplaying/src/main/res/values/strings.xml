@@ -43,4 +43,10 @@
     <string name="feature_nowplaying_device_usb">USB audio</string>
     <string name="feature_nowplaying_device_hdmi">HDMI</string>
     <string name="feature_nowplaying_play_now">Play now</string>
+    <string name="feature_nowplaying_delete_song">Delete from device</string>
+    <string name="feature_nowplaying_delete_song_title">Delete this song?</string>
+    <string name="feature_nowplaying_delete_song_message">“%1$s” will be deleted from your phone. This can’t be undone.</string>
+    <string name="feature_nowplaying_delete_failed">Couldn’t delete the song</string>
+    <string name="feature_nowplaying_delete">Delete</string>
+    <string name="feature_nowplaying_cancel">Cancel</string>
 </resources>

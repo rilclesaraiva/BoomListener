@@ -34,6 +34,7 @@ const RECENT_KEEP = 20;
 const MESSAGES_PER_MINUTE = 40;
 const MAX_BIO = 160;
 const MAX_IMAGE_BYTES = 400_000;
+const MAX_GIF_BYTES = 1_500_000;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -74,9 +75,14 @@ function cleanBio(value) {
   return value.replace(/\s*\n\s*\n+/g, "\n").trim().slice(0, MAX_BIO);
 }
 
-/** Foto ou capa: só JPEG, até 400 KB (o app já manda reduzida). */
-function isJpeg(bytes) {
-  return bytes.length >= 3 && bytes.length <= MAX_IMAGE_BYTES && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+/** Foto ou capa: JPEG até 400 KB, ou GIF (animado) até 1,5 MB. Devolve o tipo, ou null. */
+function imageType(bytes) {
+  if (bytes.length >= 3 && bytes.length <= MAX_IMAGE_BYTES && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return "image/jpeg";
+  }
+  const gif = bytes.length >= 6 && String.fromCharCode(...bytes.slice(0, 6));
+  if ((gif === "GIF87a" || gif === "GIF89a") && bytes.length <= MAX_GIF_BYTES) return "image/gif";
+  return null;
 }
 
 function cleanTrack(value) {
@@ -302,7 +308,7 @@ export class Hub extends DurableObject {
     // Foto de perfil e capa (banner): o app manda o JPEG já reduzido.
     if (imagePath && method === "PUT") {
       const bytes = new Uint8Array(await request.arrayBuffer());
-      if (!isJpeg(bytes)) return json({ error: "invalid" }, 400);
+      if (!imageType(bytes)) return json({ error: "invalid" }, 400);
       const kind = imagePath[1];
       const version = Date.now();
       this.sql.exec(
@@ -325,8 +331,9 @@ export class Hub extends DurableObject {
       if (this.blocked(userImage[1], me.id)) return json({ error: "not_found" }, 404);
       const row = this.first("SELECT data FROM images WHERE user_id = ? AND kind = ?", userImage[1], userImage[2]);
       if (!row) return json({ error: "not_found" }, 404);
-      return new Response(row.data, {
-        headers: { "content-type": "image/jpeg", "cache-control": "private, max-age=31536000" },
+      const data = new Uint8Array(row.data);
+      return new Response(data, {
+        headers: { "content-type": imageType(data) ?? "image/jpeg", "cache-control": "private, max-age=31536000" },
       });
     }
 

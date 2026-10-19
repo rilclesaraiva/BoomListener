@@ -10,11 +10,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.boomlistener.core.designsystem.R
 
@@ -36,8 +42,10 @@ fun BoomMoreMenu(
     onShare: (() -> Unit)? = null,
     onYoutubeMusic: (() -> Unit)? = null,
     onDeezer: (() -> Unit)? = null,
+    // Quem quiser abrir o menu de outro jeito (segurar a linha) passa o estado aqui.
+    openState: MutableState<Boolean> = remember { mutableStateOf(false) },
 ) {
-    var open by remember { mutableStateOf(false) }
+    var open by openState
     val all = buildList {
         addAll(actions)
         onShare?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_share), onClick = it)) }
@@ -67,4 +75,21 @@ fun BoomMoreMenu(
             }
         }
     }
+}
+
+/**
+ * Toque normal faz [onClick]; segurar abre o menu de três pontinhos da linha
+ * ([menuOpen], o mesmo estado passado ao [BoomMoreMenu]), com uma vibração curta.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun Modifier.clickableWithMenu(menuOpen: MutableState<Boolean>, onClick: () -> Unit): Modifier {
+    val haptics = LocalHapticFeedback.current
+    return combinedClickable(
+        onClick = onClick,
+        onLongClick = {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            menuOpen.value = true
+        },
+    )
 }

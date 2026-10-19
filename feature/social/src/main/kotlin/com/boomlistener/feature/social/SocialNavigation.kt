@@ -89,6 +89,7 @@ fun NavGraphBuilder.socialScreen(
                 library = LibraryData.repository(context),
                 follows = ReleasesData.follows(context),
                 player = PlayerConnection.controller(context),
+                remoteImage = DeezerData.repository(context)::image,
             )
         }
         MyProfileScreen(

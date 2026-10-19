@@ -63,4 +63,23 @@ class CollectionDetailViewModelTest {
         backgroundScope.launch(dispatcher) { vm.state.collect {} }
         assertEquals(CollectionDetailUiState.Missing, vm.state.value)
     }
+
+    @Test
+    fun adicionarETirarMusicasDaPlaylist() = runTest(dispatcher) {
+        val playlists = FakePlaylists(listOf(Playlist(7, "Viagem", listOf("content://1"), 0, 0)))
+        val vm = CollectionDetailViewModel(CollectionRef.Playlist(7), FakeLibraryRepository(sampleTracks), playlists, FakePlaybackController())
+        backgroundScope.launch(dispatcher) { vm.state.collect {} }
+        backgroundScope.launch(dispatcher) { vm.playlistUris.collect {} }
+        backgroundScope.launch(dispatcher) { vm.libraryTracks.collect {} }
+
+        assertEquals(3, vm.libraryTracks.value.size)
+        assertEquals(setOf("content://1"), vm.playlistUris.value)
+
+        // Marcar adiciona no fim; marcar de novo tira (era o que não dava para fazer).
+        vm.toggleInPlaylist("content://3")
+        assertEquals(listOf("content://1", "content://3"), playlists.state.value.single().trackUris)
+        vm.toggleInPlaylist("content://1")
+        assertEquals(listOf("content://3"), playlists.state.value.single().trackUris)
+        assertEquals(setOf("content://3"), vm.playlistUris.value)
+    }
 }

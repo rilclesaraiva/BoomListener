@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,6 +59,7 @@ import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.model.Track
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
@@ -83,6 +85,8 @@ internal fun CollectionDetailScreen(
     var renaming by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var addToPlaylist by remember { mutableStateOf<Track?>(null) }
+    var addingSongs by remember { mutableStateOf(false) }
+    val deleteSong = rememberSongDeleter()
 
     BoomScreenScaffold(
         title = ready?.name.orEmpty(),
@@ -92,6 +96,7 @@ internal fun CollectionDetailScreen(
             if (ready?.isPlaylist == true) {
                 BoomMoreMenu(
                     actions = listOf(
+                        BoomMenuAction(stringResource(R.string.feature_library_add_songs)) { addingSongs = true },
                         BoomMenuAction(stringResource(R.string.feature_library_rename_playlist)) { renaming = true },
                         BoomMenuAction(stringResource(R.string.feature_library_delete_playlist)) { confirmDelete = true },
                     ),
@@ -114,8 +119,14 @@ internal fun CollectionDetailScreen(
                 onEditTags = onEditTags,
                 onRecommend = onRecommend,
                 onAddToPlaylist = { addToPlaylist = it },
+                onDelete = deleteSong,
+                onAddSongs = { addingSongs = true },
             )
         }
+    }
+
+    if (addingSongs && ready?.isPlaylist == true) {
+        AddSongsSheet(viewModel = viewModel, onDismiss = { addingSongs = false })
     }
 
     addToPlaylist?.let { track ->
@@ -161,6 +172,8 @@ private fun TrackListWithHeader(
     onEditTags: (Track) -> Unit,
     onRecommend: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
+    onDelete: (Track) -> Unit,
+    onAddSongs: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     // Reordenar mexe na lista da tela na hora; a playlist só é gravada ao soltar.
@@ -178,7 +191,7 @@ private fun TrackListWithHeader(
 
     Box(Modifier.fillMaxSize()) {
     LazyColumn(state = listState, contentPadding = padding) {
-        item(key = "header") { Header(state, viewModel) }
+        item(key = "header") { Header(state, viewModel, onAddSongs) }
         if (state.tracks.isEmpty()) {
             item(key = "empty") {
                 Text(
@@ -201,6 +214,7 @@ private fun TrackListWithHeader(
                         onEditTags = onEditTags,
                         onRecommend = onRecommend,
                         onAddToPlaylist = onAddToPlaylist,
+                        onDelete = { onDelete(track) },
                         dragHandle = {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -241,7 +255,7 @@ private fun TrackListWithHeader(
 }
 
 @Composable
-private fun Header(state: CollectionDetailUiState.Ready, viewModel: CollectionDetailViewModel) {
+private fun Header(state: CollectionDetailUiState.Ready, viewModel: CollectionDetailViewModel, onAddSongs: () -> Unit) {
     val px = with(LocalDensity.current) { HeaderCover.roundToPx() }
     val coverUri = state.tracks.firstOrNull()?.uri
     val cover by produceState<ImageBitmap?>(initialValue = null, coverUri) {
@@ -278,6 +292,14 @@ private fun Header(state: CollectionDetailUiState.Ready, viewModel: CollectionDe
                 Text(stringResource(R.string.feature_library_shuffle_all))
             }
         }
+        if (state.isPlaylist) {
+            Spacer(Modifier.size(8.dp))
+            OutlinedButton(onClick = onAddSongs) {
+                Icon(BoomIcons.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.feature_library_add_songs))
+            }
+        }
     }
 }
 
@@ -291,8 +313,10 @@ private fun DetailTrackRow(
     onEditTags: (Track) -> Unit,
     onRecommend: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
+    onDelete: () -> Unit,
     dragHandle: @Composable () -> Unit,
 ) {
+    val menuOpen = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
@@ -300,7 +324,8 @@ private fun DetailTrackRow(
         value = viewModel.artwork(track.uri, px)?.asImageBitmap()
     }
     ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
+        // Segurar a música abre o mesmo menu dos três pontinhos.
+        modifier = Modifier.clickableWithMenu(menuOpen, onClick),
         leadingContent = {
             // Na playlist, o puxador de reordenar fica ao lado da capa.
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -331,6 +356,7 @@ private fun DetailTrackRow(
                             BoomMenuAction(stringResource(R.string.feature_library_go_to_artist)) { onOpenArtist(name) }
                         },
                         BoomMenuAction(stringResource(R.string.feature_library_edit_tags)) { onEditTags(track) },
+                        BoomMenuAction(stringResource(R.string.feature_library_delete_song), onClick = onDelete),
                     ),
                     onShare = {
                         scope.launch {
@@ -341,6 +367,7 @@ private fun DetailTrackRow(
                         }
                     },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) },
+                    openState = menuOpen,
                 )
         },
     )

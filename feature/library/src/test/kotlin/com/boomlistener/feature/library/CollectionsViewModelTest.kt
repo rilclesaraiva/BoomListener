@@ -34,7 +34,26 @@ internal class FakePlaylists(initial: List<Playlist> = emptyList()) : PlaylistRe
     override suspend fun delete(id: Long) {
         state.value = state.value.filterNot { it.id == id }
     }
-    override suspend fun addTracks(id: Long, uris: List<String>): Int = 0
+    override suspend fun addTracks(id: Long, uris: List<String>): Int {
+        var added = 0
+        state.value = state.value.map { p ->
+            if (p.id != id) return@map p
+            val new = uris.filterNot { it in p.trackUris }
+            added = new.size
+            p.copy(trackUris = p.trackUris + new)
+        }
+        return added
+    }
+    override suspend fun removeTracks(id: Long, uris: List<String>): Int {
+        var removed = 0
+        state.value = state.value.map { p ->
+            if (p.id != id) return@map p
+            val kept = p.trackUris.filterNot { it in uris }
+            removed = p.trackUris.size - kept.size
+            p.copy(trackUris = kept)
+        }
+        return removed
+    }
     override suspend fun removeAt(id: Long, index: Int) {
         state.value = state.value.map { p -> if (p.id == id) p.copy(trackUris = p.trackUris.filterIndexed { i, _ -> i != index }) else p }
     }

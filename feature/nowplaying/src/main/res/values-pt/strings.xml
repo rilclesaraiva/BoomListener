@@ -43,4 +43,10 @@
     <string name="feature_nowplaying_device_usb">Áudio USB</string>
     <string name="feature_nowplaying_device_hdmi">HDMI</string>
     <string name="feature_nowplaying_play_now">Tocar agora</string>
+    <string name="feature_nowplaying_delete_song">Apagar do aparelho</string>
+    <string name="feature_nowplaying_delete_song_title">Apagar esta música?</string>
+    <string name="feature_nowplaying_delete_song_message">“%1$s” vai ser apagada do celular. Não dá para desfazer.</string>
+    <string name="feature_nowplaying_delete_failed">Não deu para apagar a música</string>
+    <string name="feature_nowplaying_delete">Apagar</string>
+    <string name="feature_nowplaying_cancel">Cancelar</string>
 </resources>

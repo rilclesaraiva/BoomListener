@@ -104,7 +104,10 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
     }
 
     override fun choose(id: Int?) {
-        preferred.value = id
+        // Escolher a saída que o sistema já usaria sozinho (o fone, com fone
+        // ligado) volta ao automático: assim o Android segue cuidando da troca.
+        val natural = list.value.minByOrNull { priorityOf(it.kind) }?.id
+        preferred.value = if (id == natural) null else id
         refresh()
     }
 
@@ -174,6 +177,8 @@ internal fun buildOutputs(devices: List<Candidate>, preferredId: Int?, systemRou
         .sortedBy { priority(it.kind) }
         .map { AudioOutput(it.id, it.name, it.kind, active = it.id == activeId) }
 }
+
+internal fun priorityOf(kind: AudioOutputKind) = priority(kind)
 
 private fun priority(kind: AudioOutputKind) = when (kind) {
     AudioOutputKind.Bluetooth -> 0

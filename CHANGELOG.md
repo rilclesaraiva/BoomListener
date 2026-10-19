@@ -4,6 +4,26 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.24.0] — 2026-10-19
+
+### ✨ New
+- **Search right on Home.** The search bar now sits next to the "Songs" title instead of in the top bar. Type and the list filters as you go.
+- **Hold a song** to open its ⋮ menu. This works on Home, in albums and playlists, and in the queue.
+- **Delete from device**, in every song's ⋮ menu. Android asks you to confirm, and the song also leaves the queue.
+- **Playlists:** add or remove songs as many times as you like. "Add to playlist" now shows a ✓ on the playlists that already have the song, and tapping again removes it. Inside a playlist, **Add songs** (a button and in the ⋮ menu) lists all your songs with search and checkboxes.
+- **Animated GIFs** as your profile photo or cover (up to 1.4 MB).
+- Artists on your profile now show their pictures: the Deezer photo for artists you follow, or a cover from your songs.
+
+### 🐛 Fixes
+- Switching quickly between output devices no longer leaves the sound stuck on the wrong one.
+- The song that's playing keeps its ⋮ menu in the queue.
+
+### 🎨 Visual tweaks
+- The player top bar is cleaner: "9 of 72" moved into the queue header.
+- The shuffle button for recently added songs is gone.
+- The dot at the end of the progress bar fades out as the song reaches the end.
+- The fast-scroll handle uses the theme color (no more grey bar in AMOLED).
+
 ## [0.23.0] — 2026-10-18
 
 ### ✨ New
