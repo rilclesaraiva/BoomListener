@@ -208,6 +208,8 @@ private val attributions = listOf(
     Attribution("TagLib for Android", "Kyant · Apache License 2.0"),
     Attribution("Deezer API", "Deezer · artist information"),
     Attribution("Last.fm API", "Last.fm · biographies (CC BY-SA)"),
+    Attribution("MusicBrainz", "MetaBrainz Foundation · song and artist data (CC0)"),
+    Attribution("Cover Art Archive", "MetaBrainz Foundation & Internet Archive · album covers"),
 )
 
 @Composable

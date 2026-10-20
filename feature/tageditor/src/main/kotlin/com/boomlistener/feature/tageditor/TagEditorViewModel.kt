@@ -17,6 +17,12 @@ import com.boomlistener.data.deezer.TrackSearchResult
 import com.boomlistener.data.deezer.TrackTagsResult
 import com.boomlistener.data.lastfm.LastfmRepository
 import com.boomlistener.data.lastfm.pickGenre
+import com.boomlistener.data.deezer.rankCandidates
+import com.boomlistener.data.musicbrainz.MbRecording
+import com.boomlistener.data.musicbrainz.MbSearchResult
+import com.boomlistener.data.musicbrainz.MusicBrainzRepository
+import com.boomlistener.data.musicbrainz.musicBrainzKey
+import com.boomlistener.data.musicbrainz.toTagSuggestion
 import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.tags.CoverEdit
 import com.boomlistener.data.tags.TagsReadResult
@@ -85,7 +91,8 @@ internal sealed interface TagEditorEvent {
 
 /**
  * Editor de tags de uma música: carrega do arquivo, deixa editar, preenche
- * sozinho com dados oficiais (Deezer + gênero do Last.fm) e grava. Nada é
+ * sozinho com dados oficiais (Deezer, ou MusicBrainz quando o Deezer não
+ * acha; gênero do Last.fm) e grava. Nada é
  * gravado sem o usuário tocar em "Salvar".
  */
 internal class TagEditorViewModel(
@@ -95,7 +102,12 @@ internal class TagEditorViewModel(
     private val deezer: DeezerRepository,
     private val lastfm: LastfmRepository,
     private val player: PlaybackController,
+    /** Reserva quando o Deezer não acha a música (ou está fora do ar). */
+    private val musicBrainz: MusicBrainzRepository? = null,
 ) : ViewModel() {
+
+    // Opções que vieram do MusicBrainz (pelo trackId da opção).
+    private val fromMusicBrainz = mutableMapOf<Long, MbRecording>()
 
     private val _state = MutableStateFlow(TagEditorUiState())
     val state: StateFlow<TagEditorUiState> = _state.asStateFlow()
@@ -170,20 +182,51 @@ internal class TagEditorViewModel(
         _state.update { it.copy(autoTag = AutoTagState.Searching) }
         autoJob = viewModelScope.launch {
             when (val result = deezer.searchTrack(local)) {
-                is TrackSearchResult.Found -> {
-                    val best = result.candidates.first()
-                    val runnerUp = result.candidates.getOrNull(1)
-                    val clearWinner = best.confidence >= AUTO_PICK_CONFIDENCE &&
-                        (runnerUp == null || best.confidence - runnerUp.confidence >= 0.1f)
-                    if (clearWinner) {
-                        applyCandidate(best, result.candidates)
-                    } else {
-                        _state.update { it.copy(autoTag = AutoTagState.Choosing(result.candidates)) }
-                    }
-                }
-                TrackSearchResult.NotFound -> _state.update { it.copy(autoTag = AutoTagState.NotFound) }
-                TrackSearchResult.Failed -> _state.update { it.copy(autoTag = AutoTagState.Failed) }
+                is TrackSearchResult.Found -> offer(result.candidates)
+                TrackSearchResult.NotFound -> searchMusicBrainz(local, deezerFailed = false)
+                TrackSearchResult.Failed -> searchMusicBrainz(local, deezerFailed = true)
             }
+        }
+    }
+
+    /** Resultado claro preenche sozinho; com dúvida, mostra as opções. */
+    private suspend fun offer(candidates: List<TrackCandidate>) {
+        val best = candidates.first()
+        val runnerUp = candidates.getOrNull(1)
+        val clearWinner = best.confidence >= AUTO_PICK_CONFIDENCE &&
+            (runnerUp == null || best.confidence - runnerUp.confidence >= 0.1f)
+        if (clearWinner) {
+            applyCandidate(best, candidates)
+        } else {
+            _state.update { it.copy(autoTag = AutoTagState.Choosing(candidates)) }
+        }
+    }
+
+    /**
+     * O Deezer não achou: tenta no MusicBrainz, com as mesmas regras de
+     * comparação. Só é "sem conexão" se nenhum dos dois respondeu.
+     */
+    private suspend fun searchMusicBrainz(local: LocalTrackInfo, deezerFailed: Boolean) {
+        val result = musicBrainz?.searchRecordings(local.title, local.artist)
+        val candidates = (result as? MbSearchResult.Found)?.recordings.orEmpty().map { recording ->
+            val candidate = TrackCandidate(
+                trackId = musicBrainzKey(recording.recordingId),
+                albumId = musicBrainzKey(recording.releaseGroupId ?: recording.releaseId ?: recording.recordingId),
+                title = recording.title,
+                artist = recording.artist,
+                album = recording.album,
+                coverUrl = recording.thumbnailUrl,
+                durationMs = recording.durationMs,
+                link = recording.link,
+            )
+            fromMusicBrainz[candidate.trackId] = recording
+            candidate
+        }.let { rankCandidates(local, it) }
+        when {
+            candidates.isNotEmpty() -> offer(candidates)
+            deezerFailed && (result == null || result == MbSearchResult.Failed) ->
+                _state.update { it.copy(autoTag = AutoTagState.Failed) }
+            else -> _state.update { it.copy(autoTag = AutoTagState.NotFound) }
         }
     }
 
@@ -215,17 +258,27 @@ internal class TagEditorViewModel(
     }
 
     private suspend fun applyCandidate(candidate: TrackCandidate, all: List<TrackCandidate>) {
-        val suggestion = when (val result = deezer.trackTags(candidate)) {
-            is TrackTagsResult.Found -> result.suggestion
-            TrackTagsResult.Failed -> {
-                _state.update { it.copy(autoTag = AutoTagState.Failed) }
-                return
+        val fromMb = fromMusicBrainz[candidate.trackId]
+        val suggestion = if (fromMb != null) {
+            fromMb.toTagSuggestion(candidate.confidence)
+        } else {
+            when (val result = deezer.trackTags(candidate)) {
+                is TrackTagsResult.Found -> result.suggestion
+                TrackTagsResult.Failed -> {
+                    _state.update { it.copy(autoTag = AutoTagState.Failed) }
+                    return
+                }
             }
         }
         // Gênero: o do Last.fm é mais preciso ("Math Rock" em vez de "Rock").
         val official = suggestion.tags
         val lastfmGenre = pickGenre(lastfm.trackTags(official.artist, official.title), official.artist)
-        val coverBytes = suggestion.coverUrl?.let { deezer.imageBytes(it) }
+        // Capa: a do Cover Art Archive (lançamento, ou o álbum em qualquer edição) ou a do Deezer.
+        val coverBytes = if (fromMb != null) {
+            musicBrainz?.coverBytes(fromMb)
+        } else {
+            suggestion.coverUrl?.let { deezer.imageBytes(it) }
+        }
 
         val current = _state.value
         if (beforeAuto == null) beforeAuto = current.tags to current.cover

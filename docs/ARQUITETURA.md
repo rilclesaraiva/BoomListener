@@ -32,6 +32,7 @@ data/
   tags/           ← lê e grava tags nos arquivos (TagLib nativo) + pedido de permissão de escrita
   deezer/         ← API do Deezer: foto do artista, discografia, lançamentos, faixas
   lastfm/         ← API do Last.fm (via proxy): biografia, tags de gênero, similares, scrobble
+  musicbrainz/    ← reserva quando o Deezer não acha: MusicBrainz (tags, discografia) + capas do Cover Art Archive
   releases/       ← artistas seguidos, comparação de discografia, WorkManager diário, notificações
   wellbeing/      ← estatísticas de escuta (mais ouvidas) e, depois, tempo de escuta e avisos de tela
   social/         ← Amigos: perfil (@), conversas e grupos, cartões de música, "ouvindo agora" (servidor em social/)
@@ -93,7 +94,7 @@ Tudo que vem de fora é salvo no Room com data de atualização, para o app func
 
 - **Biblioteca:** `data/library` escuta mudanças do MediaStore → atualiza o Room → as telas observam via `Flow`.
 - **Edição de tags:** `feature/tageditor` → `data/tags` pede permissão de escrita (Android 11+ usa `MediaStore.createWriteRequest`) → grava → pede reescaneamento do arquivo → `LibraryRepository.notifyChanged` (lista e capas recarregam) e `PlaybackController.updateTrackInfo` (fila e notificação sem parar a música).
-- **Tags automáticas:** o ViewModel do editor junta `data/deezer` (`searchTrack` + `rankCandidates`, testado com acentos, "feat." e homônimos; depois `trackTags` com faixa, disco, ano, capa) e `data/lastfm` (`trackTags` + `pickGenre`, gênero mais preciso). Resultado claro (≥ 0,8 e 0,1 à frente do segundo) preenche sozinho; senão o usuário escolhe. Nada é gravado sem tocar em Salvar.
+- **Tags automáticas:** o ViewModel do editor junta `data/deezer` (`searchTrack` + `rankCandidates`, testado com acentos, "feat." e homônimos; depois `trackTags` com faixa, disco, ano, capa) e `data/lastfm` (`trackTags` + `pickGenre`, gênero mais preciso). Resultado claro (≥ 0,8 e 0,1 à frente do segundo) preenche sozinho; senão o usuário escolhe. Nada é gravado sem tocar em Salvar. Se o Deezer não achar (ou estiver fora do ar), a busca vai ao `data/musicbrainz` com as mesmas regras de comparação (`rankCandidates`), e a capa vem do Cover Art Archive.
 - **Página do artista:** primeiro mostra o cache do Room, depois atualiza em segundo plano com Deezer e Last.fm.
 - **Radar de lançamentos:** `data/releases` associa os artistas locais a IDs do Deezer; um WorkManager diário compara a discografia com a última checagem e notifica o que é novo.
 - **Avisos de tela:** `data/wellbeing` soma o tempo de reprodução vindo do `core/player`; ao passar do limite configurado, mostra um aviso leve (nunca bloqueia).

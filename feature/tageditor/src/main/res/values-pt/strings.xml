@@ -26,14 +26,14 @@
     <string name="feature_tageditor_changed">Alterado</string>
     <string name="feature_tageditor_reset">Desfazer todas as alterações</string>
     <string name="feature_tageditor_auto_title">Corrigir tags automaticamente</string>
-    <string name="feature_tageditor_auto_message">Busca no Deezer e no Last.fm o título, artista, álbum, ano, gênero, número da faixa e capa oficiais. Você revisa tudo antes de salvar.</string>
+    <string name="feature_tageditor_auto_message">Busca no Deezer, no MusicBrainz e no Last.fm o título, artista, álbum, ano, gênero, número da faixa e capa oficiais. Você revisa tudo antes de salvar.</string>
     <string name="feature_tageditor_auto_search">Buscar</string>
-    <string name="feature_tageditor_auto_searching">Buscando no Deezer e no Last.fm…</string>
+    <string name="feature_tageditor_auto_searching">Buscando no Deezer, no MusicBrainz e no Last.fm…</string>
     <string name="feature_tageditor_auto_applied">Preenchido com %1$s. Confira os campos e toque em Salvar.</string>
     <string name="feature_tageditor_auto_other">Outras opções</string>
     <string name="feature_tageditor_auto_undo">Desfazer</string>
     <string name="feature_tageditor_auto_not_found">Nada encontrado. Confira o título e o artista e busque de novo.</string>
-    <string name="feature_tageditor_auto_failed">Não deu para falar com o Deezer. Você está conectado?</string>
+    <string name="feature_tageditor_auto_failed">Não deu para falar com o Deezer nem com o MusicBrainz. Você está conectado?</string>
     <string name="feature_tageditor_auto_choose_title">Qual delas é?</string>
     <string name="feature_tageditor_auto_match">%1$d%% de chance</string>
     <string name="feature_tageditor_discard_title">Descartar alterações?</string>

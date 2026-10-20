@@ -14,6 +14,7 @@ import androidx.navigation.navArgument
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
 import com.boomlistener.data.lastfm.LastfmData
+import com.boomlistener.data.musicbrainz.MusicBrainzData
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.tags.TagsData
 
@@ -46,6 +47,7 @@ fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit) {
                 deezer = DeezerData.repository(context),
                 lastfm = LastfmData.repository(context),
                 player = PlayerConnection.controller(context),
+                musicBrainz = MusicBrainzData.repository(context),
             )
         }
         TagEditorScreen(viewModel = viewModel, onBack = onBack)

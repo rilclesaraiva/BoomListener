@@ -19,6 +19,10 @@ import com.boomlistener.data.deezer.TrackTagsResult
 import com.boomlistener.data.lastfm.BioResult
 import com.boomlistener.data.lastfm.LastfmRepository
 import com.boomlistener.data.library.LibraryRepository
+import com.boomlistener.data.musicbrainz.MbArtistResult
+import com.boomlistener.data.musicbrainz.MbRecording
+import com.boomlistener.data.musicbrainz.MbSearchResult
+import com.boomlistener.data.musicbrainz.MusicBrainzRepository
 import com.boomlistener.data.tags.CoverEdit
 import com.boomlistener.data.tags.TagsReadResult
 import com.boomlistener.data.tags.TagsRepository
@@ -86,6 +90,22 @@ private class FakeDeezer(private val candidates: List<TrackCandidate>) : DeezerR
     override suspend fun imageBytes(url: String): ByteArray = byteArrayOf(1, 2, 3)
 }
 
+private val mbRecording = MbRecording(
+    recordingId = "f27ec8db-af05-4f36-916e-3d57f91ecf5e", releaseId = "a74b1b7f-71a5-4011-9441-d0b5e4122711",
+    releaseGroupId = null, title = "Catharsis", artist = "Chikoi The Maid", album = "Insertion (MB)",
+    durationMs = 180_500, date = "2023-09-01", trackNumber = "5", trackTotal = "9", discNumber = "", discTotal = "",
+)
+
+private class FakeMusicBrainz(private val result: MbSearchResult) : MusicBrainzRepository {
+    override suspend fun searchRecordings(title: String, artist: String?) = result
+    override suspend fun coverBytes(recording: MbRecording): ByteArray = byteArrayOf(9)
+    override suspend fun artistProfile(artistName: String, localAlbums: List<String>) = MbArtistResult.NotFound
+}
+
+private class FailingDeezer : DeezerRepository by FakeDeezer(emptyList()) {
+    override suspend fun searchTrack(local: LocalTrackInfo) = TrackSearchResult.Failed
+}
+
 private class FakeLastfm(private val tags: List<String>) : LastfmRepository {
     override suspend fun artistBio(artistName: String, language: String) = BioResult.NotFound
     override suspend fun trackTags(artistName: String, title: String) = tags
@@ -125,7 +145,44 @@ class TagEditorViewModelTest {
         tags: FakeTags = FakeTags(),
         library: FakeLibrary = FakeLibrary(),
         player: FakePlayer = FakePlayer(),
-    ) = TagEditorViewModel(URI, tags, library, FakeDeezer(candidates), FakeLastfm(lastfmTags), player)
+        deezer: DeezerRepository = FakeDeezer(candidates),
+        musicBrainz: MusicBrainzRepository? = null,
+    ) = TagEditorViewModel(URI, tags, library, deezer, FakeLastfm(lastfmTags), player, musicBrainz)
+
+    @Test
+    fun deezerNaoAchaUsaMusicBrainz() {
+        val vm = viewModel(candidates = emptyList(), musicBrainz = FakeMusicBrainz(MbSearchResult.Found(listOf(mbRecording))))
+        vm.autoTag()
+        val state = vm.state.value
+        assertTrue(state.autoTag is AutoTagState.Applied)
+        assertEquals("Insertion (MB)", state.tags.album)
+        assertEquals("2023", state.tags.year)
+        assertEquals("5", state.tags.trackNumber)
+        assertEquals("Math Rock", state.tags.genre) // gênero continua vindo do Last.fm
+        assertArrayEquals(byteArrayOf(9), state.shownCover) // capa do Cover Art Archive
+    }
+
+    @Test
+    fun deezerForaDoArMasMusicBrainzResponde() {
+        val vm = viewModel(deezer = FailingDeezer(), musicBrainz = FakeMusicBrainz(MbSearchResult.Found(listOf(mbRecording))))
+        vm.autoTag()
+        assertTrue(vm.state.value.autoTag is AutoTagState.Applied)
+    }
+
+    @Test
+    fun nenhumRespondeEhFalha() {
+        val vm = viewModel(deezer = FailingDeezer(), musicBrainz = FakeMusicBrainz(MbSearchResult.Failed))
+        vm.autoTag()
+        assertEquals(AutoTagState.Failed, vm.state.value.autoTag)
+    }
+
+    @Test
+    fun musicBrainzComOutroArtistaNaoServe() {
+        val other = mbRecording.copy(artist = "Outra Banda")
+        val vm = viewModel(candidates = emptyList(), musicBrainz = FakeMusicBrainz(MbSearchResult.Found(listOf(other))))
+        vm.autoTag()
+        assertEquals(AutoTagState.NotFound, vm.state.value.autoTag)
+    }
 
     @Test
     fun carregaSemAlteracoes() {

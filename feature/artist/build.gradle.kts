@@ -14,6 +14,8 @@ dependencies {
     implementation(project(":data:deezer"))
     implementation(project(":data:releases"))
     implementation(project(":data:lastfm"))
+    // Reserva quando o Deezer não acha (MusicBrainz + Cover Art Archive).
+    implementation(project(":data:musicbrainz"))
     implementation(project(":core:player"))
 
     testImplementation(libs.kotlinx.coroutines.test)

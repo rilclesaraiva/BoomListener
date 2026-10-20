@@ -39,6 +39,7 @@ include(":data:wellbeing")
 include(":data:updates")
 include(":data:lyrics")
 include(":data:social")
+include(":data:musicbrainz")
 
 include(":feature:library")
 include(":feature:nowplaying")

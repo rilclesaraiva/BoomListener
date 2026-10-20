@@ -4,6 +4,13 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.27.0] — 2026-10-20
+
+### ✨ New
+- **MusicBrainz as a backup source.** When Deezer doesn't know a song or an artist, the app now asks MusicBrainz, an open music database:
+  - **Fix tags automatically** finds the title, artist, album, year and track number there, with the cover from the Cover Art Archive.
+  - **Artist pages** show the discography (albums, EPs, singles and compilations, with covers) even for artists Deezer doesn't have. If there are several artists with the same name, the app picks the one whose albums you have.
+
 ## [0.26.0] — 2026-10-20
 
 ### ✨ New

@@ -97,6 +97,7 @@ import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
 import com.boomlistener.data.lastfm.LastfmData
+import com.boomlistener.data.musicbrainz.MusicBrainzData
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.releases.ReleasesData
 import java.text.NumberFormat
@@ -125,6 +126,7 @@ internal fun ArtistScreen(
             follows = ReleasesData.follows(context),
             player = PlayerConnection.controller(context),
             lastfm = LastfmData.repository(context),
+            musicBrainz = MusicBrainzData.repository(context),
             // Biografia no idioma do aparelho (o Last.fm cai para inglês se não houver).
             language = java.util.Locale.getDefault().language,
         )
@@ -133,15 +135,16 @@ internal fun ArtistScreen(
     val listState = rememberLazyListState()
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val ready = (state.profile as? ProfileState.Ready)?.profile
+    val fromMusicBrainz = (state.profile as? ProfileState.Ready)?.fromMusicBrainz == true
     val showTopBar by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
 
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
         LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 24.dp)) {
             item(key = "header") { Header(state, ready, viewModel) }
-            item(key = "stats") { Stats(state, ready) }
+            item(key = "stats") { Stats(state, ready?.takeUnless { fromMusicBrainz }) }
             item(key = "actions") {
                 Actions(
-                    canFollow = ready != null,
+                    canFollow = ready != null && !fromMusicBrainz,
                     following = state.following,
                     hasLocal = state.localTracks.isNotEmpty(),
                     onFollow = viewModel::toggleFollow,
@@ -163,8 +166,11 @@ internal fun ArtistScreen(
             }
             when (tab) {
                 0 -> songsTab(state, ready, viewModel, context)
-                1 -> discographyTab(state, ready, viewModel, context, onOpenAlbum)
-                else -> aboutTab(state, ready, viewModel, onOpenArtist)
+                1 -> discographyTab(state, ready, viewModel, context) { release ->
+                    // Do MusicBrainz não dá para abrir aqui: abre a página dele.
+                    if (fromMusicBrainz) release.link?.let(context::openUrl) else onOpenAlbum(release.id)
+                }
+                else -> aboutTab(state, ready, viewModel, onOpenArtist, fromMusicBrainz)
             }
         }
 
@@ -352,7 +358,7 @@ private fun LazyListScope.discographyTab(
     profile: ArtistProfile?,
     viewModel: ArtistViewModel,
     context: Context,
-    onOpenAlbum: (Long) -> Unit,
+    onOpenRelease: (Release) -> Unit,
 ) {
     if (profile == null) {
         profileStatus(state, viewModel)
@@ -369,7 +375,7 @@ private fun LazyListScope.discographyTab(
         if (releases.isNotEmpty()) {
             item { SectionTitle(stringResource(titleRes)) }
             items(releases, key = { "release-${it.id}" }) { release ->
-                ReleaseRow(release, state.name, owned = release.id in state.ownedReleases, viewModel, context, onOpen = { onOpenAlbum(release.id) })
+                ReleaseRow(release, state.name, owned = release.id in state.ownedReleases, viewModel, context, onOpen = { onOpenRelease(release) })
             }
         }
     }
@@ -380,6 +386,7 @@ private fun LazyListScope.aboutTab(
     profile: ArtistProfile?,
     viewModel: ArtistViewModel,
     onOpenArtist: (String) -> Unit,
+    fromMusicBrainz: Boolean,
 ) {
     item { Biography(state.bio, onRetry = viewModel::loadBio) }
     if (profile == null) {
@@ -401,7 +408,7 @@ private fun LazyListScope.aboutTab(
     }
     item {
         Text(
-            text = stringResource(R.string.feature_artist_source),
+            text = stringResource(if (fromMusicBrainz) R.string.feature_artist_source_musicbrainz else R.string.feature_artist_source),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
@@ -595,7 +602,7 @@ private fun ReleaseRow(
                 BoomMoreMenu(
                     onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.link, release.title, artistName), release.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, artistName)) },
-                    onDeezer = release.link?.let { link -> { context.openUrl(link) } },
+                    onDeezer = release.link?.takeIf { "deezer.com" in it }?.let { link -> { context.openUrl(link) } },
                     openState = menuOpen,
                 )
             }

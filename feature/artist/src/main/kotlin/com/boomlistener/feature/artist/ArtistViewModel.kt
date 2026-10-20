@@ -17,6 +17,8 @@ import com.boomlistener.data.lastfm.ArtistBio
 import com.boomlistener.data.lastfm.BioResult
 import com.boomlistener.data.lastfm.LastfmRepository
 import com.boomlistener.data.library.LibraryRepository
+import com.boomlistener.data.musicbrainz.MbArtistResult
+import com.boomlistener.data.musicbrainz.MusicBrainzRepository
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +30,8 @@ import kotlinx.coroutines.launch
 
 internal sealed interface ProfileState {
     data object Loading : ProfileState
-    data class Ready(val profile: ArtistProfile) : ProfileState
+    /** [fromMusicBrainz]: o Deezer não achou; sem seguir, sem populares, álbuns abrem no site. */
+    data class Ready(val profile: ArtistProfile, val fromMusicBrainz: Boolean = false) : ProfileState
     data object NotFound : ProfileState
     data object Failed : ProfileState
 }
@@ -59,6 +62,8 @@ internal class ArtistViewModel(
     private val player: PlaybackController,
     private val lastfm: LastfmRepository,
     private val language: String,
+    /** Reserva quando o Deezer não acha o artista. */
+    private val musicBrainz: MusicBrainzRepository? = null,
 ) : ViewModel() {
 
     private val localTracks = MutableStateFlow<List<Track>>(emptyList())
@@ -73,7 +78,7 @@ internal class ArtistViewModel(
                 localTracks = tracks,
                 localAlbums = localAlbumCount(tracks),
                 profile = profileState,
-                following = ready != null && followed.any { it.deezerId == ready.artist.id },
+                following = ready != null && (profileState as? ProfileState.Ready)?.fromMusicBrainz != true && followed.any { it.deezerId == ready.artist.id },
                 ownedReleases = ready?.let { ownedReleaseIds(it.releases, tracks) }.orEmpty(),
                 ownedPopular = ready?.let { ownedPopularIds(it.topTracks, tracks) }.orEmpty(),
                 bio = bioState,
@@ -102,14 +107,31 @@ internal class ArtistViewModel(
         viewModelScope.launch {
             profile.value = when (val result = deezer.artistProfile(artistName)) {
                 is ProfileResult.Found -> ProfileState.Ready(result.profile)
-                ProfileResult.NotFound -> ProfileState.NotFound
-                ProfileResult.Failed -> ProfileState.Failed
+                ProfileResult.NotFound -> fromMusicBrainz(deezerFailed = false)
+                ProfileResult.Failed -> fromMusicBrainz(deezerFailed = true)
             }
         }
     }
 
+    /**
+     * O Deezer não achou (ou não respondeu): discografia do MusicBrainz, com
+     * as capas do Cover Art Archive. Os álbuns do aparelho ajudam a escolher
+     * entre artistas com o mesmo nome.
+     */
+    private suspend fun fromMusicBrainz(deezerFailed: Boolean): ProfileState {
+        val fallback = musicBrainz ?: return if (deezerFailed) ProfileState.Failed else ProfileState.NotFound
+        val albums = tracksOfArtist(library.getTracks(), artistName).mapNotNull { it.album }.distinct()
+        return when (val result = fallback.artistProfile(artistName, albums)) {
+            is MbArtistResult.Found -> ProfileState.Ready(result.profile, fromMusicBrainz = true)
+            MbArtistResult.NotFound -> ProfileState.NotFound
+            MbArtistResult.Failed -> if (deezerFailed) ProfileState.Failed else ProfileState.NotFound
+        }
+    }
+
     fun toggleFollow() {
-        val ready = (profile.value as? ProfileState.Ready)?.profile ?: return
+        val current = profile.value as? ProfileState.Ready ?: return
+        if (current.fromMusicBrainz) return // seguir usa o Deezer (radar de lançamentos)
+        val ready = current.profile
         viewModelScope.launch {
             if (uiState.value.following) {
                 follows.unfollow(ready.artist.id)

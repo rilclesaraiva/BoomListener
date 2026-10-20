@@ -11,7 +11,7 @@
     <string name="feature_artist_following">Following</string>
     <string name="feature_artist_shuffle">Shuffle</string>
     <string name="feature_artist_play">Play</string>
-    <string name="feature_artist_not_found">We couldn’t find this artist on Deezer.</string>
+    <string name="feature_artist_not_found">We couldn’t find this artist on Deezer or MusicBrainz.</string>
     <string name="feature_artist_failed">Couldn’t load the artist. Are you online?</string>
     <string name="feature_artist_retry">Try again</string>
     <string name="feature_artist_on_device">On your device</string>
@@ -47,4 +47,5 @@
     <string name="feature_artist_read_less">Read less</string>
     <string name="feature_artist_biography_source">Biography from Last.fm</string>
     <string name="feature_artist_listeners">%1$s listeners on Last.fm</string>
+    <string name="feature_artist_source_musicbrainz">Artist info from MusicBrainz · covers from the Cover Art Archive</string>
 </resources>

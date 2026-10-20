@@ -26,14 +26,14 @@
     <string name="feature_tageditor_changed">Changed</string>
     <string name="feature_tageditor_reset">Undo all changes</string>
     <string name="feature_tageditor_auto_title">Fix tags automatically</string>
-    <string name="feature_tageditor_auto_message">Looks up the official title, artist, album, year, genre, track number and cover on Deezer and Last.fm. You review everything before saving.</string>
+    <string name="feature_tageditor_auto_message">Looks up the official title, artist, album, year, genre, track number and cover on Deezer, MusicBrainz and Last.fm. You review everything before saving.</string>
     <string name="feature_tageditor_auto_search">Search</string>
-    <string name="feature_tageditor_auto_searching">Searching Deezer and Last.fm…</string>
+    <string name="feature_tageditor_auto_searching">Searching Deezer, MusicBrainz and Last.fm…</string>
     <string name="feature_tageditor_auto_applied">Filled in from %1$s. Check the fields and tap Save.</string>
     <string name="feature_tageditor_auto_other">Other matches</string>
     <string name="feature_tageditor_auto_undo">Undo</string>
     <string name="feature_tageditor_auto_not_found">No match found. Check the title and artist, then search again.</string>
-    <string name="feature_tageditor_auto_failed">Couldn’t reach Deezer. Are you online?</string>
+    <string name="feature_tageditor_auto_failed">Couldn’t reach Deezer or MusicBrainz. Are you online?</string>
     <string name="feature_tageditor_auto_choose_title">Which one is it?</string>
     <string name="feature_tageditor_auto_match">%1$d%% match</string>
     <string name="feature_tageditor_discard_title">Discard changes?</string>

@@ -14,6 +14,8 @@ dependencies {
     implementation(project(":data:library"))
     implementation(project(":data:deezer"))
     implementation(project(":data:lastfm"))
+    // Reserva quando o Deezer não acha (MusicBrainz + Cover Art Archive).
+    implementation(project(":data:musicbrainz"))
     implementation(project(":core:player"))
     // Photo Picker (capa sem permissão de fotos) e pedido de gravação do Android.
     implementation(libs.androidx.activity.compose)
