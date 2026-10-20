@@ -57,8 +57,8 @@ class GifEncoderTest {
 
     @Test
     fun quadrosPorSegundoCabemNoLimite() {
-        // Capa (480×180) com 30 s: poucos quadros por segundo.
-        assertEquals(5, framesPerSecondFor(30_000, 480 * 180, MAX_GIF_BYTES))
+        // Capa (480×180) com 15 s (o máximo): poucos quadros por segundo.
+        assertEquals(5, framesPerSecondFor(15_000, 480 * 180, MAX_GIF_BYTES))
         // Foto curta: até 10.
         assertEquals(10, framesPerSecondFor(5_000, 240 * 240, MAX_GIF_BYTES))
         // Nunca menos de 4.

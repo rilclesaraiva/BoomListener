@@ -4,4 +4,6 @@
     <string name="nav_home">Início</string>
     <string name="nav_collections">Biblioteca</string>
     <string name="nav_social">Amigos</string>
+    <string name="notification_channel_messages">Mensagens</string>
+    <string name="notification_music_card">🎵 %1$s</string>
 </resources>

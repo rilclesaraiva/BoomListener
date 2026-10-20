@@ -5,6 +5,7 @@ package com.boomlistener.data.social
 
 import android.content.Context
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -46,6 +47,13 @@ interface SocialRepository {
     suspend fun findByHandle(handle: String): SocialResult<FriendProfile>
     suspend fun profile(userId: String): SocialResult<FriendProfile>
 
+    /**
+     * Nome, foto, capa, cor e descrição de alguém, guardados no aparelho: só
+     * baixa de novo quando a versão do perfil muda (para listas de amigos).
+     * null sem internet e sem nada guardado.
+     */
+    suspend fun profileCard(userId: String): FriendProfile? = (profile(userId) as? SocialResult.Ok)?.value
+
     /** Quem conversa com você (ou divide grupo) e compartilha o que ouve. */
     suspend fun activity(): SocialResult<List<FriendProfile>>
 
@@ -83,6 +91,23 @@ interface SocialRepository {
      */
     fun keepConnected(reason: String, wanted: Boolean) {}
 
+    /** Mensagens novas que acabaram de chegar (para a notificação, com o app fechado). */
+    val incoming: SharedFlow<ChatMessage> get() = NO_INCOMING
+
+    /**
+     * Mensagens com o app fechado, pelo UnifiedPush (um app distribuidor como o
+     * ntfy, gratuito e sem Google). O aviso só diz "acorde"; o conteúdo vem
+     * pela conexão.
+     */
+    val pushEnabled: StateFlow<Boolean> get() = NO_PUSH
+
+    /** Os apps distribuidores instalados (nomes de pacote). Vazio = precisa instalar um (ntfy). */
+    fun pushDistributors(): List<String> = emptyList()
+
+    fun enablePush(distributor: String) {}
+
+    fun disablePush() {}
+
     /** "Ouvindo agora" (só vai se o compartilhamento estiver ligado). */
     suspend fun publishNowPlaying(track: TrackInfo?)
 
@@ -91,6 +116,8 @@ interface SocialRepository {
 }
 
 private val NO_LIVE: StateFlow<SocialLive> = kotlinx.coroutines.flow.MutableStateFlow(SocialLive())
+private val NO_INCOMING: SharedFlow<ChatMessage> = kotlinx.coroutines.flow.MutableSharedFlow()
+private val NO_PUSH: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */
 object SocialData {

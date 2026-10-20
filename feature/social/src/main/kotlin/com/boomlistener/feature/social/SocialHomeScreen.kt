@@ -95,6 +95,7 @@ internal fun SocialHomeScreen(
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(SOCIAL_ROUTE, listState)
     val restingUntil by viewModel.restingUntil.collectAsStateWithLifecycle()
+    val pushEnabled by viewModel.pushEnabled.collectAsStateWithLifecycle()
     // Com a conexão ao vivo, nada de ficar perguntando: refresh() só consulta sem ela.
     if (account != null) PollWhileVisible(60_000) { viewModel.refresh() }
 
@@ -148,6 +149,16 @@ internal fun SocialHomeScreen(
                                         color = MaterialTheme.colorScheme.primary,
                                     )
                                 }
+                            }
+                        }
+                        if (account != null) {
+                            item(key = "push") {
+                                PushRow(
+                                    enabled = pushEnabled,
+                                    distributors = viewModel::pushDistributors,
+                                    onEnable = viewModel::enablePush,
+                                    onDisable = viewModel::disablePush,
+                                )
                             }
                         }
                         restingUntil?.let { until ->

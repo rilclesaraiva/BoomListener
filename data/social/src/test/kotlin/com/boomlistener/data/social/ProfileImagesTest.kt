@@ -39,4 +39,29 @@ class ProfileImagesTest {
         assertEquals(false, isGif(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0, 0, 0)))
         assertEquals(false, isGif("GIF".toByteArray()))
     }
+
+    @Test
+    fun reconheceWebp() {
+        assertEquals(true, isWebp("RIFF\u0000\u0000\u0000\u0000WEBPVP8 ".toByteArray()))
+        assertEquals(false, isWebp("RIFF\u0000\u0000\u0000\u0000WAVEfmt ".toByteArray()))
+        assertEquals(false, isWebp("GIF89a".toByteArray()))
+    }
+
+    @Test
+    fun tamanhoDoGifPeloCabecalho() {
+        // 0x01E0 = 480, 0x0168 = 360 (little endian).
+        val header = "GIF89a".toByteArray() + byteArrayOf(0xE0.toByte(), 0x01, 0x68, 0x01)
+        assertEquals(480 to 360, gifSize(header))
+        assertEquals(null, gifSize("RIFF".toByteArray()))
+    }
+
+    @Test
+    fun gifSoVaiComoEstaSePequenoECurto() {
+        val avatar = ProfileImage.Avatar
+        assertEquals(true, gifFitsAsIs(1_000_000, 480, 480, 4_000, avatar))
+        assertEquals(false, gifFitsAsIs(3_500_000, 480, 480, 4_000, avatar)) // grande demais
+        assertEquals(false, gifFitsAsIs(1_000_000, 1920, 1080, 4_000, avatar)) // resolução maior que o necessário
+        assertEquals(false, gifFitsAsIs(1_000_000, 480, 480, 40_000, avatar)) // longo demais
+        assertEquals(true, gifFitsAsIs(2_000_000, 1080, 405, 10_000, ProfileImage.Banner))
+    }
 }

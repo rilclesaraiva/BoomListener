@@ -46,6 +46,9 @@ class BoomApplication : Application() {
                 appScope.launch { social.publishNowPlaying(track) }
             }
         }
+        // Amigos: mensagem nova com o app fora da tela vira notificação.
+        val notifier = MessageNotifier(this)
+        appScope.launch { social.incoming.collect { message -> notifier.show(message) } }
         PlaybackHooks.onPlayCounted = { play ->
             appScope.launch {
                 stats.recordPlay(play.uri, play.title, play.artist, play.album, play.timestampMs)

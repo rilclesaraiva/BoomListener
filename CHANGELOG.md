@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.29.0] — 2026-10-20
+
+### ✨ New
+- **Messages with the app closed**, with no Google involved. Turn it on in Friends: the free **ntfy** app delivers a tiny "wake up" signal (never your messages), and you get a notification when someone writes to you. If you don't have ntfy, the app offers to install it.
+- **Message status:** your messages now show **Waiting** (it stays on your phone until the other person comes online), **Delivered**, or **In their mailbox** (kept on the server for up to 7 days).
+- Your conversations are no longer copied to Android's cloud backup. They live only on your phone.
+
+### 🎨 Visual tweaks
+- Profile photos and covers are sharper (512 px and 1080 px) and smaller to download (WebP).
+- Animated GIFs that are too big, too large or longer than 15 seconds are shrunk automatically. Short videos can be up to 15 seconds.
+- Friends' profiles load faster: the app only downloads a profile again when it has changed.
+
 ## [0.28.0] — 2026-10-20
 
 ### ✨ New

@@ -126,3 +126,23 @@ internal fun withPerson(people: List<FriendProfile>, profile: FriendProfile): Li
     val index = people.indexOfFirst { it.user.id == profile.user.id }
     return if (index < 0) people + profile else people.toMutableList().also { it[index] = profile }
 }
+
+/**
+ * O que a resposta do servidor ao envio quer dizer para a mensagem. null =
+ * foi ao vivo para o celular da pessoa: ainda falta o recibo de entrega.
+ */
+internal fun deliveryAfterSend(how: String): Delivery? = when (how) {
+    "live" -> null
+    "waiting" -> Delivery.Waiting
+    "mailbox" -> Delivery.Mailbox
+    else -> Delivery.Sent // grupo, ou servidor antigo
+}
+
+/** O estado só anda para a frente (um recibo atrasado não faz "entregue" voltar a "aguardando"). */
+internal fun advances(from: Delivery, to: Delivery): Boolean = rank(to) > rank(from)
+
+private fun rank(delivery: Delivery) = when (delivery) {
+    Delivery.Waiting -> 0
+    Delivery.Sent, Delivery.Mailbox -> 1
+    Delivery.Delivered -> 2
+}

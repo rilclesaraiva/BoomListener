@@ -13,6 +13,9 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <!-- Notificação de mensagem nova em Amigos (Android 13+ pergunta; só quando a pessoa ativa). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Ver os apps que recebem links (para escolher o "app favorito para compartilhar"). -->
     <queries>
         <intent>
@@ -24,6 +27,8 @@
     <application
         android:name=".BoomApplication"
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"

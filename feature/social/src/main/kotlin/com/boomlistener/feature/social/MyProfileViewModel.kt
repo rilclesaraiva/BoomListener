@@ -105,9 +105,8 @@ internal class MyProfileViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Versão da foto de um amigo (perfil no servidor; null sem internet). */
-    suspend fun friendAvatarVersion(userId: String): Long =
-        (social.profile(userId) as? SocialResult.Ok)?.value?.avatarVersion ?: 0
+    /** Versão da foto de um amigo (perfil guardado no aparelho; só baixa de novo quando muda). */
+    suspend fun friendAvatarVersion(userId: String): Long = social.profileCard(userId)?.avatarVersion ?: 0
 
     private val _saveFailed = MutableStateFlow(false)
     val saveFailed: StateFlow<Boolean> = _saveFailed.asStateFlow()

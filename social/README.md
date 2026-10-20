@@ -5,8 +5,10 @@ Guarda os perfis (@nome), entrega as mensagens das conversas e grupos e o
 ficam aqui só até o app de quem recebe confirmar; o histórico mora no celular.
 
 Com o app aberto, o celular fica ligado por WebSocket com hibernação
-(`/v1/ws`): o Hub dorme entre as mensagens e não gasta duração. O plano para
-caber no gratuito está em `docs/PLANO-SOCIAL.md`.
+(`/v1/ws`): o Hub dorme entre as mensagens e não gasta duração. Mensagens
+particulares ficam no celular de quem enviou até o destinatário aparecer; o
+servidor guarda só um lembrete e acorda os celulares pelo UnifiedPush (ex.:
+ntfy). O plano para caber no gratuito está em `docs/PLANO-SOCIAL.md`.
 
 ## Alerta de uso (recomendado)
 

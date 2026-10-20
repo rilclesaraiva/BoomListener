@@ -5,6 +5,13 @@ package com.boomlistener.data.social
 
 import android.content.Context
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
+import org.unifiedpush.android.connector.UnifiedPush
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,10 +41,22 @@ import java.util.UUID
  * perfil é criado aqui e o segredo fica guardado no aparelho.
  */
 private const val SERVER = "https://boomlistener-social.saraivarilcle.workers.dev/v1"
-private const val SOCKET = "wss://boomlistener-social.saraivarilcle.workers.dev/v1/ws"
+private const val SOCKET = "wss://boomlistener-social.saraivarilcle.workers.dev/v1/ws?v=2"
 
 /** Músicas ouvidas sem conexão, guardadas para mandar quando conectar. */
 private const val MAX_QUEUED_LISTENS = 20
+
+/** Sem recibo depois de ir "ao vivo": manda de novo (o outro lado ignora repetidas). */
+private const val RECEIPT_TIMEOUT_MS = 60_000L
+
+/** 24 h presa no celular sem entregar: vai para a caixa postal do servidor. */
+private const val MAILBOX_AFTER_MS = 24 * 60 * 60_000L
+
+/** Sem conexão ao vivo, o HTTP só leva para a caixa postal o que espera há mais que isto. */
+private const val HTTP_FALLBACK_AFTER_MS = 10 * 60_000L
+
+/** Um push acorda o app por este tempo (para entregar ou buscar mensagens). */
+private const val PUSH_WAKE_MS = 45_000L
 
 internal class HttpSocialRepository(private val context: Context) : SocialRepository {
 
@@ -45,6 +64,10 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
     private val accountFile = File(dir, "account.json")
     private val chatsDir = File(dir, "chats").apply { mkdirs() }
     private val imagesDir = File(dir, "images").apply { mkdirs() }
+    private val profilesDir = File(dir, "profiles").apply { mkdirs() }
+
+    // Versão do perfil de cada pessoa conhecida (chega ao conectar).
+    private val knownVersions = java.util.concurrent.ConcurrentHashMap<String, Long>()
     private val mutex = Mutex()
 
     private val _account = MutableStateFlow(runCatching { readAccount() }.getOrNull())
@@ -64,6 +87,23 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
     private var lastNow: TrackInfo? = null
     private val queuedListens = ArrayDeque<Pair<TrackInfo, Long>>()
 
+    // Até onde já lemos a caixa postal (anel) e o anel de cada grupo.
+    private val cursorsFile = File(dir, "cursors.json")
+    @Volatile
+    private var cursors = runCatching { readCursors() }.getOrDefault(Cursors())
+
+    // Mensagens que foram "ao vivo" e esperam o recibo de entrega (id → quando).
+    private val awaitingReceipt = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    private val _incoming = MutableSharedFlow<ChatMessage>(extraBufferCapacity = 64)
+    override val incoming: SharedFlow<ChatMessage> = _incoming.asSharedFlow()
+
+    // Push (UnifiedPush): o endereço que o distribuidor (ex.: ntfy) deu.
+    private val pushFile = File(dir, "push.txt")
+    private val _pushEnabled = MutableStateFlow(pushFile.exists() && UnifiedPush.getAckDistributor(context) != null)
+    override val pushEnabled: StateFlow<Boolean> = _pushEnabled.asStateFlow()
+    private var wakeJob: Job? = null
+
     private val link = SocialLink(
         scope = scope,
         url = SOCKET,
@@ -78,16 +118,53 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
 
     override fun keepConnected(reason: String, wanted: Boolean) = link.want(reason, wanted)
 
-    /** Conectou: manda o que ficou esperando (mensagens, "ouvindo agora", músicas ouvidas). */
+    init {
+        scope.launch { tickWhileOnline() }
+        // O UnifiedPush pede para registrar de novo de tempos em tempos (o endereço pode mudar).
+        if (_pushEnabled.value) runCatching { UnifiedPush.register(context, messageForDistributor = "Boom, listener!") }
+    }
+
+    /**
+     * Conectou: diz até onde já leu (o servidor manda só o que falta e cutuca
+     * quem tem mensagens para você), e manda o que ficou esperando: mensagens,
+     * "ouvindo agora" e músicas ouvidas.
+     */
     private suspend fun onLinkOpen() {
         ensureLoaded()
-        store.value.orEmpty().values.flatMap { it.messages }.filter { it.pending }.forEach { sendOverLink(it) }
+        link.send(
+            JSONObject()
+                .put("t", "hello")
+                .put("v", 2)
+                .put("since", cursors.since)
+                .put("groups", JSONObject(cursors.groups))
+                .put("push", currentPushUrl().orEmpty()),
+        )
+        resendWaiting { true }
         if (_account.value?.sharing == true) {
             link.send(JSONObject().put("t", "now").put("track", lastNow?.let(::trackToJson) ?: JSONObject.NULL))
             val listens = synchronized(queuedListens) { queuedListens.toList().also { queuedListens.clear() } }
             listens.forEach { (track, at) ->
                 link.send(JSONObject().put("t", "listened").put("track", trackToJson(track)).put("at", at))
             }
+        }
+    }
+
+    /** Manda de novo as mensagens suas que ainda esperam ([filter] escolhe quais). */
+    private fun resendWaiting(filter: (ChatMessage) -> Boolean) {
+        val now = System.currentTimeMillis()
+        store.value.orEmpty().values.flatMap { it.messages }
+            .filter { it.sender == null && it.delivery == Delivery.Waiting && filter(it) }
+            .forEach { sendOverLink(it, mailbox = now - it.sentMs > MAILBOX_AFTER_MS) }
+    }
+
+    /** Enquanto conectado: reenvia o que ficou sem recibo e manda para a caixa postal o que passou de 24 h. */
+    private suspend fun tickWhileOnline() {
+        while (true) {
+            delay(RECEIPT_TIMEOUT_MS)
+            if (!link.isOnline) continue
+            val now = System.currentTimeMillis()
+            val stale = awaitingReceipt.filterValues { now - it > RECEIPT_TIMEOUT_MS }.keys
+            resendWaiting { it.id in stale || now - it.sentMs > MAILBOX_AFTER_MS }
         }
     }
 
@@ -98,8 +175,23 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 val updated = current.withServerFields(me)
                 if (updated != current) saveAccount(updated)
             }
-            "inbox" -> receive(event.optJSONArray("messages") ?: JSONArray()) { ids ->
-                link.send(JSONObject().put("t", "ack").put("ids", JSONArray(ids)))
+            "inbox" -> {
+                val array = event.optJSONArray("messages") ?: JSONArray()
+                receive(array) { ids -> link.send(JSONObject().put("t", "ack").put("ids", JSONArray(ids))) }
+                // Recibo "entregue" para quem mandou ao vivo (conversas particulares).
+                val receipts = JSONArray()
+                for (index in 0 until array.length()) {
+                    val json = array.getJSONObject(index)
+                    val senderId = json.optJSONObject("sender")?.optString("id").orEmpty()
+                    if (json.optBoolean("live") && senderId.isNotEmpty() && json.optString("conv").startsWith(DM_PREFIX)) {
+                        receipts.put(JSONObject().put("id", json.getString("id")).put("to", senderId))
+                    }
+                }
+                if (receipts.length() > 0) link.send(JSONObject().put("t", "delivered").put("items", receipts))
+            }
+            "versions" -> {
+                val users = event.optJSONObject("users") ?: JSONObject()
+                users.keys().forEach { id -> knownVersions[id] = users.optLong(id) }
             }
             "activity" -> {
                 val list = event.optJSONArray("people") ?: JSONArray()
@@ -110,24 +202,55 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
             }
             "sent" -> {
                 val cid = event.optString("cid")
-                if (event.optInt("status") == 200 && cid.isNotEmpty()) markDelivered(cid)
+                if (event.optInt("status") != 200 || cid.isEmpty()) return
+                val delivery = deliveryAfterSend(event.optString("how"))
+                if (delivery == null) {
+                    // Foi ao vivo: espera o recibo (e manda de novo se não vier).
+                    awaitingReceipt[cid] = System.currentTimeMillis()
+                } else {
+                    setDelivery(listOf(cid), delivery)
+                }
+            }
+            "delivered" -> {
+                val list = event.optJSONArray("ids") ?: JSONArray()
+                setDelivery((0 until list.length()).map { list.getString(it) }, Delivery.Delivered)
+            }
+            // A pessoa apareceu: manda o que estava esperando por ela.
+            "poke" -> {
+                val conversation = DM_PREFIX + event.optString("to")
+                resendWaiting { it.conversationId == conversation }
             }
         }
     }
 
-    private fun sendOverLink(message: ChatMessage): Boolean = link.send(
+    private fun sendOverLink(message: ChatMessage, mailbox: Boolean = false): Boolean = link.send(
         JSONObject()
             .put("t", "send")
+            .put("v", 2)
             .put("cid", message.id)
+            .put("at", message.sentMs)
+            .put("mailbox", mailbox)
             .put("conv", message.conversationId)
             .put("body", bodyToJson(message.body)),
     )
 
-    private suspend fun markDelivered(messageId: String) {
-        val conversation = store.value.orEmpty().values.firstOrNull { stored -> stored.messages.any { it.id == messageId } }
-            ?: return
-        val message = conversation.messages.first { it.id == messageId }
-        if (message.pending) update { map -> map.withMessage(message.copy(pending = false)) }
+    /** Muda o estado das mensagens suas [ids] (só para a frente: entregue não volta a "aguardando"). */
+    private suspend fun setDelivery(ids: List<String>, delivery: Delivery) {
+        if (ids.isEmpty()) return
+        ids.forEach { awaitingReceipt.remove(it) }
+        val wanted = ids.toHashSet()
+        update { map ->
+            map.mapValues { (_, stored) ->
+                if (stored.messages.none { it.id in wanted }) {
+                    stored
+                } else {
+                    val messages = stored.messages.map { message ->
+                        if (message.id in wanted && advances(message.delivery, delivery)) message.copy(delivery = delivery) else message
+                    }
+                    stored.copy(conversation = stored.conversation.copy(lastMessage = messages.lastOrNull()), messages = messages)
+                }
+            }
+        }
     }
 
     override val conversations: Flow<List<Conversation>> = store
@@ -271,12 +394,17 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
             mutex.withLock {
                 chatsDir.deleteRecursively()
                 chatsDir.mkdirs()
+                profilesDir.deleteRecursively()
+                profilesDir.mkdirs()
                 accountFile.delete()
                 store.value = emptyMap()
                 _account.value = null
             }
         }
         people.value = null
+        cursors = Cursors()
+        cursorsFile.delete()
+        disablePush()
         link.accountChanged()
         return SocialResult.Ok(Unit)
     }
@@ -286,10 +414,39 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
 
     override suspend fun profile(userId: String): SocialResult<FriendProfile> = profileAt("/users/" + encode(userId))
 
+    override suspend fun profileCard(userId: String): FriendProfile? {
+        val cached = withContext(Dispatchers.IO) { runCatching { readProfileCard(userId) }.getOrNull() }
+        val known = knownVersions[userId]
+        // Guardado e na versão que o servidor disse (ou sem saber a versão ainda): usa o guardado.
+        if (cached != null && (known == null || known == cached.version)) return cached
+        return (profile(userId) as? SocialResult.Ok)?.value ?: cached
+    }
+
+    private fun profileCardFile(userId: String) = File(profilesDir, userId.filter { it.isLetterOrDigit() } + ".json")
+
+    private fun readProfileCard(userId: String): FriendProfile? {
+        val file = profileCardFile(userId)
+        if (!file.exists()) return null
+        return parseProfile(JSONObject(file.readText())).copy(sharing = false, now = null, recent = emptyList())
+    }
+
+    /** Guarda só a parte do perfil que não muda a toda hora (nome, foto, capa, cor, descrição). */
+    private suspend fun saveProfileCard(profile: FriendProfile) = withContext(Dispatchers.IO) {
+        runCatching {
+            val json = userToJson(profile.user)
+                .put("bio", profile.bio)
+                .put("avatar", profile.avatarVersion)
+                .put("banner", profile.bannerVersion)
+                .put("color", profile.color)
+                .put("v", profile.version)
+            profileCardFile(profile.user.id).writeText(json.toString())
+        }
+    }
+
     private suspend fun profileAt(path: String): SocialResult<FriendProfile> {
         val response = call("GET", path) ?: return SocialResult.Offline
         return when (response.code) {
-            200 -> SocialResult.Ok(parseProfile(response.body))
+            200 -> SocialResult.Ok(parseProfile(response.body).also { saveProfileCard(it) })
             404 -> SocialResult.NotFound
             else -> SocialResult.Invalid
         }
@@ -325,37 +482,45 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
             sender = null,
             body = body,
             sentMs = System.currentTimeMillis(),
-            pending = true,
+            delivery = Delivery.Waiting,
         )
         update { map -> map.withMessage(local) }
-        // Conectado: vai pela conexão (o "pendente" sai quando o servidor confirmar).
-        if (sendOverLink(local)) return SocialResult.Ok(Unit)
-        return deliver(local)
+        // Fica no seu celular até a outra pessoa aparecer. Conectado, já tenta
+        // agora; sem conexão, vai quando conectar.
+        sendOverLink(local)
+        return SocialResult.Ok(Unit)
     }
 
-    /** Manda ao servidor; se der certo, tira o "pendente". */
+    /** Sem conexão ao vivo há muito tempo: manda pelo HTTP direto para a caixa postal. */
     private suspend fun deliver(message: ChatMessage): SocialResult<Unit> {
         val response = call(
             "POST",
             "/messages",
-            JSONObject().put("cid", message.id).put("conv", message.conversationId).put("body", bodyToJson(message.body)),
+            JSONObject()
+                .put("v", 2)
+                .put("cid", message.id)
+                .put("at", message.sentMs)
+                .put("conv", message.conversationId)
+                .put("body", bodyToJson(message.body)),
         ) ?: return SocialResult.Offline
         if (response.code != 200) return SocialResult.Invalid
-        update { map -> map.withMessage(message.copy(pending = false)) }
+        setDelivery(listOf(message.id), deliveryAfterSend(response.body.optString("how")) ?: Delivery.Sent)
         return SocialResult.Ok(Unit)
     }
 
     override suspend fun sync(): SocialResult<Int> {
         if (_account.value == null) return SocialResult.Invalid
         ensureLoaded()
-        val pending = store.value.orEmpty().values.flatMap { it.messages }.filter { it.pending }
-        // Conectado: tudo chega sozinho; só pede de novo o que estiver na caixa.
-        if (link.send(JSONObject().put("t", "sync"))) {
-            pending.forEach { sendOverLink(it) }
+        // Conectado: tudo chega sozinho; só pergunta de novo o que falta.
+        if (link.isOnline) {
+            onLinkOpen()
             return SocialResult.Ok(0)
         }
-        // Primeiro reenvia o que ficou sem internet.
-        pending.forEach { deliver(it) }
+        // Sem conexão ao vivo: o que espera há muito tempo vai para a caixa postal pelo HTTP.
+        val now = System.currentTimeMillis()
+        store.value.orEmpty().values.flatMap { it.messages }
+            .filter { it.sender == null && it.pending && now - it.sentMs > HTTP_FALLBACK_AFTER_MS }
+            .forEach { deliver(it) }
 
         val response = call("GET", "/inbox") ?: return SocialResult.Offline
         if (response.code != 200) return SocialResult.Invalid
@@ -378,9 +543,15 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 sentMs = json.optLong("sent"),
             )
         }
-        val ids = (0 until array.length()).map { array.getJSONObject(it).getString("id") }
+        // Só a caixa de entrada antiga precisa de "recebi" (os anéis não apagam nada).
+        val ids = (0 until array.length()).map { array.getJSONObject(it) }
+            .filter { it.optBoolean("legacy") || !it.has("seq") && !it.optBoolean("live") }
+            .map { it.getString("id") }
+        advanceCursors(array)
         if (incoming.isNotEmpty()) {
+            val knownAll = store.value.orEmpty().values.flatMapTo(HashSet()) { stored -> stored.messages.map { it.id } }
             update { map -> mergeIncoming(map, incoming, openConversation) }
+            incoming.filter { it.id !in knownAll }.forEach { _incoming.tryEmit(it) }
             // Grupo que ainda não conhecemos (ex.: reinstalou o app): busca o nome.
             store.value.orEmpty().values
                 .filter { it.conversation.isGroup && it.conversation.title.isBlank() }
@@ -388,6 +559,28 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
         }
         if (ids.isNotEmpty()) ack(ids)
         return incoming.size
+    }
+
+    /** Guarda até onde já leu a caixa postal e cada grupo (o servidor manda só o que falta). */
+    private fun advanceCursors(array: JSONArray) {
+        var since = cursors.since
+        val groups = cursors.groups.toMutableMap()
+        for (index in 0 until array.length()) {
+            val json = array.getJSONObject(index)
+            val seq = json.optLong("seq")
+            if (seq <= 0) continue
+            val group = json.optString("group")
+            if (group.isNotEmpty()) {
+                groups[group] = maxOf(groups[group] ?: 0L, seq)
+            } else if (json.optBoolean("ring")) {
+                since = maxOf(since, seq)
+            }
+        }
+        val next = Cursors(since, groups)
+        if (next != cursors) {
+            cursors = next
+            runCatching { writeCursors(next) }
+        }
     }
 
     override suspend fun createGroup(name: String): SocialResult<Conversation> {
@@ -492,7 +685,56 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
         }
     }
 
+    // ---- Push (UnifiedPush, sem Google) -----------------------------------
+
+    override fun pushDistributors(): List<String> = runCatching { UnifiedPush.getDistributors(context) }.getOrDefault(emptyList())
+
+    override fun enablePush(distributor: String) {
+        runCatching {
+            UnifiedPush.saveDistributor(context, distributor)
+            UnifiedPush.register(context, messageForDistributor = "Boom, listener!")
+        }
+    }
+
+    override fun disablePush() {
+        runCatching { UnifiedPush.unregister(context) }
+        onPushEndpoint(null)
+    }
+
+    private fun currentPushUrl(): String? = runCatching { pushFile.readText().trim() }.getOrNull()?.takeIf { it.isNotEmpty() }
+
+    /** O distribuidor deu (ou tirou) o endereço de push: guarda e avisa o servidor. */
+    internal fun onPushEndpoint(url: String?) {
+        if (url == null) pushFile.delete() else runCatching { pushFile.writeText(url) }
+        _pushEnabled.value = url != null
+        link.send(JSONObject().put("t", "push").put("url", url.orEmpty()))
+    }
+
+    /** Chegou um push ("acorde"): conecta por alguns segundos para entregar e buscar mensagens. */
+    internal fun wakeFromPush() {
+        link.want(REASON_PUSH, true)
+        wakeJob?.cancel()
+        wakeJob = scope.launch {
+            delay(PUSH_WAKE_MS)
+            link.want(REASON_PUSH, false)
+        }
+    }
+
     // ---- Guardar no aparelho --------------------------------------------
+
+    private fun readCursors(): Cursors {
+        if (!cursorsFile.exists()) return Cursors()
+        val json = JSONObject(cursorsFile.readText())
+        val groups = json.optJSONObject("groups") ?: JSONObject()
+        return Cursors(json.optLong("since"), groups.keys().asSequence().associateWith { groups.optLong(it) })
+    }
+
+    private fun writeCursors(value: Cursors) {
+        val json = JSONObject().put("since", value.since).put("groups", JSONObject(value.groups))
+        val temp = File(dir, "cursors.json.tmp")
+        temp.writeText(json.toString())
+        temp.renameTo(cursorsFile)
+    }
 
     private suspend fun ensureLoaded() {
         if (store.value != null) return
@@ -561,7 +803,7 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 JSONObject()
                     .put("id", message.id)
                     .put("sent", message.sentMs)
-                    .put("pending", message.pending)
+                    .put("delivery", message.delivery.name)
                     .put("body", bodyToJson(message.body))
                     .apply { message.sender?.let { put("sender", userToJson(it)) } },
             )
@@ -587,7 +829,8 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
             sender = json.optJSONObject("sender")?.let(::parseUser),
             body = body,
             sentMs = json.optLong("sent"),
-            pending = json.optBoolean("pending"),
+            delivery = json.optString("delivery").let { name -> Delivery.entries.firstOrNull { it.name == name } }
+                ?: if (json.optBoolean("pending")) Delivery.Waiting else Delivery.Sent,
         )
     }
 
@@ -686,7 +929,12 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 connection.setRequestProperty("Authorization", "Bearer ${account.id}.${account.token}")
                 if (payload != null) {
                     connection.doOutput = true
-                    connection.setRequestProperty("Content-Type", if (isGif(payload)) "image/gif" else "image/jpeg")
+                    connection.setRequestProperty("Content-Type", when {
+                            isGif(payload) -> "image/gif"
+                            isWebp(payload) -> "image/webp"
+                            else -> "image/jpeg"
+                        },
+                    )
                     connection.setFixedLengthStreamingMode(payload.size)
                     connection.outputStream.use { it.write(payload) }
                 }
@@ -705,6 +953,10 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
 
 /** Nome, compartilhamento, descrição e versões das imagens, como o servidor respondeu. */
 private const val REASON_PLAYING = "playing"
+private const val REASON_PUSH = "push"
+
+/** Até onde já lemos a caixa postal ([since]) e o anel de cada grupo. */
+private data class Cursors(val since: Long = 0, val groups: Map<String, Long> = emptyMap())
 
 private fun SocialAccount.withServerFields(json: JSONObject) = copy(
     name = json.optString("name", name),
@@ -751,6 +1003,7 @@ private fun parseProfile(json: JSONObject): FriendProfile {
         avatarVersion = json.optLong("avatar"),
         bannerVersion = json.optLong("banner"),
         color = json.optString("color").takeIf { it != "null" }.orEmpty(),
+        version = json.optLong("v"),
     )
 }
 

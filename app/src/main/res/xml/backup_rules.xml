@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O mesmo, até o Android 11: conversas de Amigos fora do backup. -->
+<full-backup-content>
+    <exclude domain="file" path="social/" />
+</full-backup-content>

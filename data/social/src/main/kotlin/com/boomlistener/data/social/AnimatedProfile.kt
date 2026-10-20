@@ -15,7 +15,7 @@ import android.os.Build
 import kotlin.math.roundToInt
 
 /** Vídeo vira GIF de no máximo este tempo (sem som). */
-internal const val MAX_ANIMATION_MS = 30_000L
+internal const val MAX_ANIMATION_MS = MAX_GIF_DURATION_MS
 
 /**
  * Tamanho de cada quadro do GIF gerado: menor que a foto/capa parada, para
@@ -48,7 +48,7 @@ private interface FrameSource {
 
 /**
  * GIF grande demais ou vídeo curto → GIF animado que cabe no limite: menor,
- * com menos quadros por segundo e no máximo 30 s. Tenta de novo menor se
+ * com menos quadros por segundo e no máximo 15 s. Tenta de novo menor se
  * ainda passar. null se não der para ler.
  */
 internal fun animatedProfileGif(context: Context, uri: Uri, isVideo: Boolean, gifBytes: ByteArray?, kind: ProfileImage): ByteArray? {

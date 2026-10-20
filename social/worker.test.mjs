@@ -52,7 +52,7 @@ test("cadastro, @ ocupado e segredo", async () => {
   assert.equal((await call("GET", "/me", null, ana.data)).data.name, "Ana");
 });
 
-test("mensagem particular chega, confirma e some do servidor", async () => {
+test("app antigo: mensagem vai para a caixa postal (anel) e não duplica", async () => {
   const call = server();
   const ana = (await call("POST", "/register", { name: "Ana", handle: "ana" })).data;
   const beto = (await call("POST", "/register", { name: "Beto", handle: "beto" })).data;
@@ -62,8 +62,10 @@ test("mensagem particular chega, confirma e some do servidor", async () => {
   assert.equal(inbox.length, 1);
   assert.equal(inbox[0].conv, "dm:" + ana.id);
   assert.equal(inbox[0].sender.handle, "ana");
+  // O anel não apaga (apagar também conta como escrita); o app ignora repetidas pelo id.
   await call("POST", "/inbox/ack", { ids: [inbox[0].id] }, beto);
-  assert.equal((await call("GET", "/inbox", null, beto)).data.messages.length, 0);
+  const again = (await call("GET", "/inbox", null, beto)).data.messages;
+  assert.deepEqual(again.map((m) => m.id), [inbox[0].id]);
 });
 
 test("cartão de música aceita só informação, nada de arquivo", async () => {
@@ -196,7 +198,7 @@ test("descrição, foto e capa do perfil", async () => {
   const back = new Uint8Array(await (await send("GET", `/users/${ana.id}/image/avatar`, beto)).arrayBuffer());
   assert.equal(back.length, big.length);
   assert.deepEqual(back.slice(2_500_000, 2_500_010), big.slice(2_500_000, 2_500_010));
-  assert.equal((await send("PUT", "/me/image/banner", ana, { body: new Uint8Array(6_100_000).fill(0x47) })).status, 400);
+  assert.equal((await send("PUT", "/me/image/banner", ana, { body: new Uint8Array(3_100_000).fill(0x47) })).status, 400);
 
   // Tirar a foto.
   const removed = await (await send("DELETE", "/me/image/avatar", ana)).json();
@@ -250,7 +252,7 @@ function liveServer() {
     return { status: response.status, data: await response.json() };
   };
   // Conecta como [auth]: devolve o lado do servidor (o que o Hub manda chega em .sent).
-  const connect = async (auth) => {
+  const connect = async (auth, query = "") => {
     let server;
     globalThis.WebSocketPair = class {
       constructor() {
@@ -268,7 +270,7 @@ function liveServer() {
     };
     try {
       const response = await hub.fetch(
-        new Request("https://x/v1/ws", {
+        new Request("https://x/v1/ws" + query, {
           headers: { authorization: `Bearer ${auth.id}.${auth.token}`, upgrade: "websocket" },
         }),
       );
@@ -308,10 +310,9 @@ test("ao conectar chega o que estava esperando, e mensagem nova chega na hora", 
   await say(anaWs, { t: "send", cid, conv: "dm:" + beto.id, body: { type: "text", text: "agora" } });
   assert.equal((await call("GET", "/inbox", null, beto)).data.messages.length, 2);
 
-  // "Recebi" pela conexão apaga do servidor.
-  await say(betoWs, { t: "ack", ids: [cid] });
+  // App antigo (sem recibo): a mensagem ao vivo também fica no anel, por segurança.
   await say(betoWs, { t: "sync" });
-  assert.deepEqual(betoWs.events("inbox").at(-1).messages.map((m) => m.body.text), ["antes"]);
+  assert.deepEqual(betoWs.events("inbox").at(-1).messages.map((m) => m.body.text), ["antes", "agora"]);
 });
 
 test("ouvindo agora vive na conexão e os recentes são gravados ao fechar", async () => {
@@ -396,4 +397,201 @@ test("cotas: mensagens por dia, grupo cheio e cadastros por IP", async () => {
   hub.counters.clear();
   const late = (await call("POST", "/register", { name: "Late", handle: "late" })).data;
   assert.equal((await call("POST", "/groups/join", { code: group.code }, late)).data.error, "group_full");
+});
+
+// ---- Fase 3: mensagens presas no celular de quem enviou ----
+
+function withPushes(fn) {
+  return async () => {
+    const pushes = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async (url, init) => {
+      pushes.push({ url, body: init?.body });
+      return new Response("", { status: 200 });
+    };
+    try {
+      await fn(pushes);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  };
+}
+
+const PUSH_ANA = "https://ntfy.sh/upAnaTopico123";
+const PUSH_BETO = "https://ntfy.sh/upBetoTopico456";
+
+async function twoFriends(live) {
+  const { call, connect, say } = live;
+  const ana = (await call("POST", "/register", { name: "Ana", handle: "ana" })).data;
+  const beto = (await call("POST", "/register", { name: "Beto", handle: "beto" })).data;
+  return { ana, beto, call, connect, say };
+}
+
+test("destinatário offline: só um lembrete, push, cutucão e entrega ao vivo", withPushes(async (pushes) => {
+  const live = liveServer();
+  const { hub } = live;
+  const { ana, beto, call, connect, say } = await twoFriends(live);
+  const anaWs = await connect(ana, "?v=2");
+  await say(anaWs, { t: "hello", v: 2, since: 0, groups: {}, push: PUSH_ANA });
+  const betoWs = await connect(beto, "?v=2");
+  await say(betoWs, { t: "hello", v: 2, since: 0, groups: {}, push: PUSH_BETO });
+  await hub.webSocketClose(betoWs, 1000);
+
+  const cid1 = "1".repeat(32);
+  const cid2 = "2".repeat(32);
+  for (const cid of [cid1, cid2]) {
+    await say(anaWs, { t: "send", v: 2, cid, at: Date.now() - 1000, conv: "dm:" + beto.id, body: { type: "text", text: cid.slice(0, 1) } });
+  }
+  assert.deepEqual(anaWs.events("sent").map((e) => e.how), ["waiting", "waiting"]);
+  // Nada da mensagem foi gravado: só um lembrete (uma linha) com a Ana.
+  assert.equal(hub.all("SELECT COUNT(*) AS n FROM ring")[0].n, 0);
+  assert.deepEqual(JSON.parse(hub.first("SELECT senders FROM reminders WHERE to_user = ?", beto.id).senders), [ana.id]);
+  // Beto foi acordado uma vez só (limite de 1 push a cada 2 min).
+  assert.deepEqual(pushes.map((p) => p.url), [PUSH_BETO]);
+  assert.equal(pushes[0].body, "1"); // o push não leva a mensagem
+
+  // Beto conecta: o lembrete some e a Ana é cutucada pela conexão.
+  const betoAgain = await connect(beto, "?v=2");
+  assert.equal(betoAgain.events("inbox").length, 0); // app novo não recebe o "despejo" antigo
+  await say(betoAgain, { t: "hello", v: 2, since: 0, groups: {} });
+  assert.equal(hub.first("SELECT senders FROM reminders WHERE to_user = ?", beto.id), null);
+  assert.deepEqual(anaWs.events("poke").map((e) => e.to), [beto.id]);
+
+  // Ana reenvia a fila: vai ao vivo para o Beto, sem gravar.
+  for (const cid of [cid1, cid2]) {
+    await say(anaWs, { t: "send", v: 2, cid, conv: "dm:" + beto.id, body: { type: "text", text: cid.slice(0, 1) } });
+  }
+  assert.deepEqual(anaWs.events("sent").slice(2).map((e) => e.how), ["live", "live"]);
+  const got = betoAgain.events("inbox").flatMap((e) => e.messages).filter((m) => m.live);
+  assert.deepEqual(got.map((m) => m.id), [cid1, cid2]);
+  assert.equal(hub.all("SELECT COUNT(*) AS n FROM ring")[0].n, 0);
+
+  // Recibo "entregue" volta para a Ana pela conexão.
+  await say(betoAgain, { t: "delivered", items: got.map((m) => ({ id: m.id, to: m.sender.id })) });
+  assert.deepEqual(anaWs.events("delivered")[0].ids, [cid1, cid2]);
+}));
+
+test("rede de segurança: sem push, 24 h ou destinatário que sumiu vão para o anel", withPushes(async () => {
+  const live = liveServer();
+  const { hub } = live;
+  const { ana, beto, connect, say } = await twoFriends(live);
+  // Ana sem push: não dá para acordá-la depois, então vai direto para a caixa postal.
+  const anaWs = await connect(ana, "?v=2");
+  await say(anaWs, { t: "hello", v: 2, since: 0, groups: {} });
+  await say(anaWs, { t: "send", v: 2, cid: "a".repeat(32), conv: "dm:" + beto.id, body: { type: "text", text: "oi" } });
+  assert.equal(anaWs.events("sent")[0].how, "mailbox");
+
+  // Com push, mas 24 h sem entregar: o app manda com mailbox.
+  await say(anaWs, { t: "push", url: PUSH_ANA });
+  await say(anaWs, { t: "send", v: 2, cid: "b".repeat(32), mailbox: true, conv: "dm:" + beto.id, body: { type: "text", text: "e aí" } });
+  assert.equal(anaWs.events("sent")[1].how, "mailbox");
+
+  // Beto lê o anel e guarda até onde leu; depois só vem o que é novo.
+  const betoWs = await connect(beto, "?v=2");
+  await say(betoWs, { t: "hello", v: 2, since: 0, groups: {} });
+  const first = betoWs.events("inbox").at(-1).messages;
+  assert.deepEqual(first.map((m) => m.body.text), ["oi", "e aí"]);
+  const since = Math.max(...first.map((m) => m.seq));
+  await say(betoWs, { t: "hello", v: 2, since, groups: {} });
+  assert.equal(betoWs.events("inbox").at(-1).messages.length, 0);
+
+  // Anel circular: só as 100 mais novas.
+  for (let i = 0; i < 105; i++) {
+    hub.ringPut("ring", "user_id", beto.id, 100, { id: i.toString(16).padStart(32, "0"), conv: "dm:" + ana.id, sent: Date.now(), body: { type: "text", text: "n" + i }, sender: { id: ana.id } });
+  }
+  assert.equal(hub.first("SELECT COUNT(*) AS n FROM ring WHERE user_id = ?", beto.id).n, 100);
+  await say(betoWs, { t: "hello", v: 2, since: 0, groups: {} });
+  const ring = betoWs.events("inbox").at(-1).messages;
+  assert.equal(ring.at(-1).body.text, "n104");
+  assert.ok(!ring.some((m) => m.body.text === "n0"));
+}));
+
+test("cutucado e o destinatário sumiu de novo: vai para o anel", withPushes(async () => {
+  const live = liveServer();
+  const { hub } = live;
+  const { ana, beto, connect, say } = await twoFriends(live);
+  const anaWs = await connect(ana, "?v=2");
+  await say(anaWs, { t: "hello", v: 2, since: 0, groups: {}, push: PUSH_ANA });
+  await say(anaWs, { t: "send", v: 2, cid: "c".repeat(32), conv: "dm:" + beto.id, body: { type: "text", text: "1" } });
+  const betoWs = await connect(beto, "?v=2");
+  await say(betoWs, { t: "hello", v: 2, since: 0, groups: {} });
+  await hub.webSocketClose(betoWs, 1000);
+  await say(anaWs, { t: "send", v: 2, cid: "c".repeat(32), conv: "dm:" + beto.id, body: { type: "text", text: "1" } });
+  assert.equal(anaWs.events("sent").at(-1).how, "mailbox");
+}));
+
+test("grupo: uma escrita por mensagem, ao vivo para quem está online e cursor por grupo", withPushes(async (pushes) => {
+  const live = liveServer();
+  const { hub } = live;
+  const { ana, beto, call, connect, say } = await twoFriends(live);
+  const caio = (await call("POST", "/register", { name: "Caio", handle: "caio" })).data;
+  const group = (await call("POST", "/groups", { name: "Rolê" }, ana)).data;
+  await call("POST", "/groups/join", { code: group.code }, beto);
+  await call("POST", "/groups/join", { code: group.code }, caio);
+  const betoWs = await connect(beto, "?v=2");
+  await say(betoWs, { t: "hello", v: 2, since: 0, groups: {} });
+  const caioWs = await connect(caio, "?v=2");
+  await say(caioWs, { t: "hello", v: 2, since: 0, groups: {}, push: "https://ntfy.sh/upCaio789" });
+  await hub.webSocketClose(caioWs, 1000);
+
+  const anaWs = await connect(ana, "?v=2");
+  await say(anaWs, { t: "send", v: 2, cid: "d".repeat(32), conv: "g:" + group.id, body: { type: "text", text: "bora" } });
+  assert.equal(anaWs.events("sent")[0].how, "group");
+  assert.equal(hub.first("SELECT COUNT(*) AS n FROM group_ring").n, 1); // uma escrita, não uma por membro
+  assert.equal(betoWs.events("inbox").at(-1).messages[0].body.text, "bora");
+  assert.deepEqual(pushes.map((p) => p.url), ["https://ntfy.sh/upCaio789"]); // Caio offline foi acordado
+
+  const caioAgain = await connect(caio, "?v=2");
+  await say(caioAgain, { t: "hello", v: 2, since: 0, groups: {} });
+  const got = caioAgain.events("inbox").at(-1).messages;
+  assert.equal(got[0].body.text, "bora");
+  assert.equal(got[0].group, group.id);
+  await say(caioAgain, { t: "hello", v: 2, since: 0, groups: { [group.id]: got[0].seq } });
+  assert.equal(caioAgain.events("inbox").at(-1).messages.length, 0);
+}));
+
+test("endereço de push: só https e gravado só quando muda", withPushes(async () => {
+  const live = liveServer();
+  const { hub } = live;
+  const { ana, connect, say } = await twoFriends(live);
+  const ws = await connect(ana, "?v=2");
+  await say(ws, { t: "push", url: "http://inseguro.com/x" });
+  assert.equal(hub.first("SELECT push_url FROM users WHERE id = ?", ana.id).push_url, "");
+  await say(ws, { t: "push", url: PUSH_ANA });
+  assert.equal(hub.first("SELECT push_url FROM users WHERE id = ?", ana.id).push_url, PUSH_ANA);
+  await say(ws, { t: "push", url: "" });
+  assert.equal(hub.first("SELECT push_url FROM users WHERE id = ?", ana.id).push_url, "");
+}));
+
+test("fase 2: WebP aceito, versão pelo conteúdo e perfil com número de versão", async () => {
+  const { hub, call, connect, say } = liveServer();
+  const ana = (await call("POST", "/register", { name: "Ana", handle: "ana" })).data;
+  const beto = (await call("POST", "/register", { name: "Beto", handle: "beto" })).data;
+  const put = async (bytes) =>
+    (await hub.fetch(new Request("https://x/v1/me/image/avatar", {
+      method: "PUT",
+      headers: { authorization: `Bearer ${ana.id}.${ana.token}` },
+      body: bytes,
+    }))).json();
+  const webp = new Uint8Array([...new TextEncoder().encode("RIFF"), 0, 0, 0, 0, ...new TextEncoder().encode("WEBP"), 1, 2, 3]);
+  const first = await put(webp);
+  assert.ok(first.avatar > 0 && Number.isSafeInteger(first.avatar));
+  assert.equal(first.v, 1);
+  // A mesma imagem de novo: mesma versão de imagem (o cache do app continua valendo).
+  assert.equal((await put(webp)).avatar, first.avatar);
+  const image = await hub.fetch(new Request(`https://x/v1/users/${ana.id}/image/avatar`, {
+    headers: { authorization: `Bearer ${beto.id}.${beto.token}` },
+  }));
+  assert.equal(image.headers.get("content-type"), "image/webp");
+
+  // Editar o perfil sobe a versão; ligar o compartilhamento (não é perfil) não.
+  const renamed = (await call("PATCH", "/me", { name: "Ana Clara" }, ana)).data;
+  assert.equal(renamed.v, 3);
+  assert.equal((await call("PATCH", "/me", { sharing: true }, ana)).data.v, 3);
+
+  // Ao conectar, o app recebe as versões de quem conhece.
+  await call("POST", "/messages", { conv: "dm:" + ana.id, body: { type: "text", text: "oi" } }, beto);
+  const ws = await connect(beto, "?v=2");
+  await say(ws, { t: "hello", v: 2, since: 0, groups: {} });
+  assert.deepEqual(ws.events("versions")[0].users, { [ana.id]: 3 });
 });

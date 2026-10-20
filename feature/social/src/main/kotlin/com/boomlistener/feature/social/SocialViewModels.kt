@@ -71,6 +71,15 @@ internal class SocialHomeViewModel(
         if (people is SocialResult.Ok) _activity.value = people.value
     }
 
+    /** Mensagens com o app fechado (UnifiedPush, ex.: ntfy). */
+    val pushEnabled: StateFlow<Boolean> = social.pushEnabled
+
+    fun pushDistributors(): List<String> = social.pushDistributors()
+
+    fun enablePush(distributor: String) = social.enablePush(distributor)
+
+    fun disablePush() = social.disablePush()
+
     suspend fun checkHandle(handle: String): HandleCheck = social.checkHandle(handle)
 
     /** Cria o perfil e, se escolhido, já liga o compartilhamento. */

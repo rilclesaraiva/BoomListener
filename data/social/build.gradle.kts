@@ -14,4 +14,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     // Conexão ao vivo (WebSocket) com o servidor social.
     implementation(libs.okhttp)
+    // Mensagens com o app fechado, sem Google (UnifiedPush).
+    implementation(libs.unifiedpush.connector)
 }

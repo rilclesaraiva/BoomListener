@@ -65,6 +65,7 @@ import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.model.Track
 import com.boomlistener.data.social.ChatMessage
+import com.boomlistener.data.social.Delivery
 import com.boomlistener.data.social.MessageBody
 import kotlinx.coroutines.launch
 
@@ -266,7 +267,7 @@ private fun MessageBubble(
                     is MessageBody.Music -> MusicCard(body, viewModel, onOpenArtist, onOpenLink)
                 }
                 Text(
-                    text = if (message.pending) stringResource(R.string.feature_social_pending) else relativeTime(message.sentMs),
+                    text = deliveryLabel(message),
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.align(Alignment.End).padding(top = 4.dp),
                 )
@@ -400,5 +401,18 @@ private fun MembersSheet(viewModel: ChatViewModel, onOpenProfile: (String) -> Un
                 )
             }
         }
+    }
+}
+
+/** Hora da mensagem; nas suas, também onde ela está (aguardando, entregue, caixa postal). */
+@Composable
+private fun deliveryLabel(message: ChatMessage): String {
+    val time = relativeTime(message.sentMs)
+    if (message.sender != null) return time
+    return when (message.delivery) {
+        Delivery.Waiting -> stringResource(R.string.feature_social_delivery_waiting)
+        Delivery.Delivered -> stringResource(R.string.feature_social_delivery_delivered, time)
+        Delivery.Mailbox -> stringResource(R.string.feature_social_delivery_mailbox, time)
+        Delivery.Sent -> time
     }
 }

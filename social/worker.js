@@ -99,9 +99,17 @@ const GROUP_MEMBERS = 30;
 const GROUPS_PER_USER = 20;
 const REGISTRATIONS_PER_IP_HOUR = 5;
 const MAX_SOCKET_MESSAGE = 16_384;
+// Fase 3: a mensagem fica no celular de quem enviou; o servidor guarda só
+// lembretes e, como rede de segurança, uma caixa postal circular (anel).
+const RING_SIZE = 100;
+const GROUP_RING_SIZE = 200;
+const RING_DAYS_MS = 7 * 86_400_000;
+const PUSH_GAP_MS = 120_000;
+const POKE_MEMORY_MS = 300_000;
 const MAX_BIO = 160;
 const MAX_IMAGE_BYTES = 400_000;
-const MAX_GIF_BYTES = 6_000_000;
+// GIF: o app limita por tamanho, resolução e duração antes de enviar (fase 2 do plano).
+const MAX_GIF_BYTES = 3_000_000;
 // O SQLite do Durable Object guarda até 2 MB por valor: imagens maiores vão em pedaços.
 const IMAGE_PART_BYTES = 1_000_000;
 
@@ -116,6 +124,14 @@ function randomHex(bytes) {
   const array = new Uint8Array(bytes);
   crypto.getRandomValues(array);
   return [...array].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Versão de uma imagem: os primeiros 48 bits do SHA-256 (número seguro em JavaScript e no Kotlin). */
+async function imageVersion(bytes) {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  let value = 0;
+  for (let i = 0; i < 6; i++) value = value * 256 + digest[i];
+  return value || 1;
 }
 
 async function sha256(text) {
@@ -144,10 +160,18 @@ function cleanBio(value) {
   return value.replace(/\s*\n\s*\n+/g, "\n").trim().slice(0, MAX_BIO);
 }
 
-/** Foto ou capa: JPEG até 400 KB, ou GIF (animado) até 6 MB. Devolve o tipo, ou null. */
+/** Foto ou capa: WebP ou JPEG até 400 KB, ou GIF (animado) até 3 MB. Devolve o tipo, ou null. */
 function imageType(bytes) {
   if (bytes.length >= 3 && bytes.length <= MAX_IMAGE_BYTES && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     return "image/jpeg";
+  }
+  if (
+    bytes.length >= 12 &&
+    bytes.length <= MAX_IMAGE_BYTES &&
+    String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+    String.fromCharCode(...bytes.slice(8, 12)) === "WEBP"
+  ) {
+    return "image/webp";
   }
   const gif = bytes.length >= 6 && String.fromCharCode(...bytes.slice(0, 6));
   if ((gif === "GIF87a" || gif === "GIF89a") && bytes.length <= MAX_GIF_BYTES) return "image/gif";
@@ -207,6 +231,17 @@ function safeAttachment(ws) {
   }
 }
 
+/** Linha do banco → mensagem no formato que o app entende. */
+function messageOf(row, conv) {
+  return {
+    id: row.id,
+    conv,
+    sent: row.at,
+    body: JSON.parse(row.body),
+    sender: row.sid ? { id: row.sid, handle: row.handle, name: row.name } : null,
+  };
+}
+
 /** Recentes da conexão + os guardados, do mais novo para o mais antigo, sem repetir. */
 export function mergeRecent(live, stored) {
   const seen = new Set();
@@ -228,6 +263,10 @@ export class Hub extends DurableObject {
     this.rate = new Map();
     // Contadores das cotas: só na memória (zeram se o Hub reiniciar; o teto real é o da Cloudflare).
     this.counters = new Map();
+    // Push: quando cada celular foi acordado pela última vez (1 a cada 2 min, no máximo).
+    this.lastPush = new Map();
+    // Quem foi cutucado para entregar a quem (se o destinatário sumir de novo, vai para o anel).
+    this.poked = new Map();
     // "ping" do app responde sozinho, sem acordar o Hub.
     if (typeof WebSocketRequestResponsePair === "function") {
       ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
@@ -255,6 +294,15 @@ export class Hub extends DurableObject {
         user_id TEXT NOT NULL, kind TEXT NOT NULL, part INTEGER NOT NULL, data BLOB NOT NULL,
         PRIMARY KEY (user_id, kind, part)
       );
+      CREATE TABLE IF NOT EXISTS reminders (to_user TEXT PRIMARY KEY, senders TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS ring (
+        user_id TEXT NOT NULL, slot INTEGER NOT NULL, id TEXT NOT NULL, conv TEXT NOT NULL, sender TEXT NOT NULL,
+        body TEXT NOT NULL, at INTEGER NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY (user_id, slot)
+      );
+      CREATE TABLE IF NOT EXISTS group_ring (
+        group_id TEXT NOT NULL, slot INTEGER NOT NULL, id TEXT NOT NULL, sender TEXT NOT NULL,
+        body TEXT NOT NULL, at INTEGER NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY (group_id, slot)
+      );
       CREATE TABLE IF NOT EXISTS recent_log (user_id TEXT PRIMARY KEY, items TEXT NOT NULL, updated INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS images (
         user_id TEXT NOT NULL, kind TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (user_id, kind)
@@ -266,6 +314,8 @@ export class Hub extends DurableObject {
       "avatar_v INTEGER NOT NULL DEFAULT 0",
       "banner_v INTEGER NOT NULL DEFAULT 0",
       "color TEXT NOT NULL DEFAULT ''",
+      "push_url TEXT NOT NULL DEFAULT ''",
+      "profile_v INTEGER NOT NULL DEFAULT 0",
     ]) {
       try {
         this.sql.exec(`ALTER TABLE users ADD COLUMN ${column}`);
@@ -301,6 +351,8 @@ export class Hub extends DurableObject {
       avatar: user.avatar_v ?? 0,
       banner: user.banner_v ?? 0,
       color: user.color ?? "",
+      // Versão do perfil: muda a cada edição; o app só baixa de novo quando muda.
+      v: user.profile_v ?? 0,
     };
   }
 
@@ -444,77 +496,223 @@ export class Hub extends DurableObject {
     }
   }
 
-  /** Entrega ao vivo para quem está conectado (a cópia no inbox continua até o "recebi"). */
-  deliverLive(deliveries) {
-    for (const { to, message } of deliveries) {
-      for (const ws of this.sockets(to)) send(ws, { t: "inbox", messages: [message] });
+  /** Manda mensagens ao vivo para todos os aparelhos conectados de [userId]. */
+  deliverLive(userId, messages) {
+    const sockets = this.sockets(userId);
+    for (const ws of sockets) send(ws, { t: "inbox", messages });
+    return sockets.length > 0;
+  }
+
+  // ---- Caixa postal circular (anel) ----
+
+  /**
+   * Guarda [message] no anel: as primeiras ocupam posições novas; depois, a
+   * nova sobrescreve a mais antiga. Uma escrita por mensagem, nenhuma exclusão.
+   */
+  ringPut(table, keyColumn, key, size, message) {
+    if (this.first(`SELECT 1 AS x FROM ${table} WHERE ${keyColumn} = ? AND id = ?`, key, message.id)) return;
+    const stats = this.first(`SELECT COUNT(*) AS n, MAX(seq) AS last FROM ${table} WHERE ${keyColumn} = ?`, key);
+    const slot =
+      stats.n < size
+        ? stats.n
+        : this.first(`SELECT slot FROM ${table} WHERE ${keyColumn} = ? ORDER BY seq LIMIT 1`, key).slot;
+    // seq: ordem de chegada aqui (o celular guarda até onde já leu).
+    const seq = Math.max(Date.now(), (stats.last ?? 0) + 1);
+    const conv = table === "ring" ? [message.conv] : [];
+    this.sql.exec(
+      `INSERT OR REPLACE INTO ${table} (${keyColumn}, slot, id, ${table === "ring" ? "conv, " : ""}sender, body, at, seq) VALUES (?, ?, ?, ${table === "ring" ? "?, " : ""}?, ?, ?, ?)`,
+      key,
+      slot,
+      message.id,
+      ...conv,
+      message.sender.id,
+      JSON.stringify(message.body),
+      message.sent,
+      seq,
+    );
+  }
+
+  /** As mensagens do anel de [userId] depois de [since] (e de no máximo 7 dias). */
+  ringSince(userId, since) {
+    return this.all(
+      `SELECT r.id, r.conv, r.body, r.at, r.seq, u.id AS sid, u.handle, u.name FROM ring r LEFT JOIN users u ON u.id = r.sender
+       WHERE r.user_id = ? AND r.seq > ? AND r.seq > ? ORDER BY r.seq`,
+      userId,
+      since,
+      Date.now() - RING_DAYS_MS,
+    ).map((row) => ({ ...messageOf(row, row.conv), seq: row.seq, ring: true }));
+  }
+
+  /** Mensagens dos grupos de [me] depois dos cursores de cada um (sem as suas e as de quem você bloqueou). */
+  groupItemsFor(me, cursors) {
+    const items = [];
+    const groups = this.all("SELECT group_id FROM members WHERE user_id = ?", me.id);
+    for (const { group_id: groupId } of groups) {
+      const since = Number(cursors?.[groupId]) || 0;
+      const rows = this.all(
+        `SELECT g.id, g.body, g.at, g.seq, u.id AS sid, u.handle, u.name FROM group_ring g LEFT JOIN users u ON u.id = g.sender
+         WHERE g.group_id = ? AND g.seq > ? AND g.seq > ? AND g.sender != ? ORDER BY g.seq`,
+        groupId,
+        since,
+        Date.now() - RING_DAYS_MS,
+        me.id,
+      );
+      for (const row of rows) {
+        if (row.sid && this.blocked(me.id, row.sid)) continue;
+        items.push({ ...messageOf(row, "g:" + groupId), seq: row.seq, group: groupId });
+      }
+    }
+    return items;
+  }
+
+  /** Só a caixa de entrada antiga (mensagens de apps antigos, até alguém confirmar). */
+  legacyOnly(userId) {
+    return this.all(
+      "SELECT i.id, i.conv, i.body, i.sent AS at, u.id AS sid, u.handle, u.name FROM inbox i LEFT JOIN users u ON u.id = i.sender WHERE i.to_user = ? ORDER BY i.sent LIMIT 200",
+      userId,
+    ).map((row) => ({ ...messageOf(row, row.conv), legacy: true }));
+  }
+
+  /** Formato antigo (app até a 0.28): caixa de entrada + anéis, tudo junto. */
+  inboxOf(user) {
+    const legacy = this.all(
+      "SELECT i.id, i.conv, i.body, i.sent AS at, u.id AS sid, u.handle, u.name FROM inbox i LEFT JOIN users u ON u.id = i.sender WHERE i.to_user = ? ORDER BY i.sent LIMIT 200",
+      user.id,
+    ).map((row) => messageOf(row, row.conv));
+    return [...legacy, ...this.ringSince(user.id, 0), ...this.groupItemsFor(user, {})];
+  }
+
+  // ---- Lembretes e push ----
+
+  /** "Tenho mensagens para você": uma linha por destinatário, regravada só se o remetente for novo. */
+  remind(toId, senderId) {
+    const row = this.first("SELECT senders FROM reminders WHERE to_user = ?", toId);
+    const senders = row ? JSON.parse(row.senders) : [];
+    if (senders.includes(senderId)) return;
+    senders.push(senderId);
+    this.sql.exec(
+      "INSERT INTO reminders (to_user, senders) VALUES (?, ?) ON CONFLICT(to_user) DO UPDATE SET senders = excluded.senders",
+      toId,
+      JSON.stringify(senders),
+    );
+  }
+
+  /** [me] apareceu: cutuca quem tem mensagens para ele (pela conexão, ou por push). */
+  wakeSenders(me) {
+    const row = this.first("SELECT senders FROM reminders WHERE to_user = ?", me.id);
+    if (!row) return;
+    this.sql.exec("DELETE FROM reminders WHERE to_user = ?", me.id);
+    const now = Date.now();
+    for (const senderId of JSON.parse(row.senders)) {
+      this.poked.set(`${senderId}>${me.id}`, now);
+      const sockets = this.sockets(senderId);
+      if (sockets.length > 0) {
+        for (const ws of sockets) send(ws, { t: "poke", to: me.id });
+      } else {
+        this.push(senderId);
+      }
     }
   }
 
-  inboxOf(userId) {
-    const rows = this.all(
-      "SELECT i.id, i.conv, i.body, i.sent, u.id AS sid, u.handle, u.name FROM inbox i LEFT JOIN users u ON u.id = i.sender WHERE i.to_user = ? ORDER BY i.sent LIMIT 200",
-      userId,
-    );
-    return rows.map((row) => ({
-      id: row.id,
-      conv: row.conv,
-      sent: row.sent,
-      body: JSON.parse(row.body),
-      sender: row.sid ? { id: row.sid, handle: row.handle, name: row.name } : null,
-    }));
+  /**
+   * Acorda o celular de [userId] pelo UnifiedPush (o aviso diz só "acorde";
+   * nada da mensagem passa pelo serviço de push). No máximo 1 a cada 2 min:
+   * o que chegar nesse meio-tempo espera o próximo. false = não tem push.
+   */
+  push(userId) {
+    const user = this.first("SELECT push_url FROM users WHERE id = ?", userId);
+    if (!user?.push_url) return false;
+    const now = Date.now();
+    if (now - (this.lastPush.get(userId) ?? 0) < PUSH_GAP_MS) return true;
+    this.lastPush.set(userId, now);
+    const request = fetch(user.push_url, {
+      method: "POST",
+      headers: { "content-type": "application/octet-stream", ttl: "86400", urgency: "high" },
+      body: "1",
+    })
+      .then((response) => {
+        // Endereço que não vale mais (desinstalou o ntfy, trocou de distribuidor).
+        if (response.status === 404 || response.status === 410) {
+          this.sql.exec("UPDATE users SET push_url = '' WHERE id = ? AND push_url = ?", userId, user.push_url);
+        }
+      })
+      .catch(() => {});
+    this.ctx.waitUntil?.(request);
+    return true;
   }
 
   /**
    * Manda uma mensagem (HTTP ou WebSocket). [cid] é o id gerado no celular:
-   * reenviar a mesma mensagem não duplica. Devolve { status, data, deliveries }.
+   * reenviar a mesma mensagem não duplica. Devolve { status, data } com
+   * data.how dizendo o que aconteceu:
+   * - "live": o destinatário estava conectado e recebeu agora (nada gravado);
+   * - "waiting": fica no celular de quem enviou; o servidor guardou só um lembrete;
+   * - "mailbox": foi para a caixa postal (anel) do destinatário;
+   * - "group": gravada uma vez no anel do grupo.
+   * [opts.v2] = app novo (fase 3); [opts.at] = hora em que foi escrita no
+   * celular; [opts.mailbox] = 24 h sem entregar: manda para a caixa postal.
    */
-  postMessage(me, conv, rawBody, cid) {
-    const message = cleanBody(rawBody);
-    if (typeof conv !== "string" || !message || JSON.stringify(message).length > MAX_BODY_BYTES) {
-      return { status: 400, data: { error: "invalid" }, deliveries: [] };
+  postMessage(me, conv, rawBody, cid, opts = {}) {
+    const body = cleanBody(rawBody);
+    if (typeof conv !== "string" || !body || JSON.stringify(body).length > MAX_BODY_BYTES) {
+      return { status: 400, data: { error: "invalid" } };
     }
-    if (!this.allowMessage(me.id)) return { status: 429, data: { error: "slow_down" }, deliveries: [] };
-    if (!this.allow("messages", me.id, MESSAGES_PER_DAY)) return { status: 429, data: { error: "daily_limit" }, deliveries: [] };
+    if (!this.allowMessage(me.id)) return { status: 429, data: { error: "slow_down" } };
+    if (!this.allow("messages", me.id, MESSAGES_PER_DAY)) return { status: 429, data: { error: "daily_limit" } };
     const id = typeof cid === "string" && /^[0-9a-f]{32}$/.test(cid) ? cid : randomHex(16);
-    const sent = Date.now();
-    const payload = JSON.stringify(message);
+    const now = Date.now();
+    const at = Number.isFinite(opts.at) && opts.at <= now + 300_000 && opts.at >= now - 8 * 86_400_000 ? Math.floor(opts.at) : now;
     const sender = { id: me.id, handle: me.handle, name: me.name };
-    const deliveries = [];
-    const store = (rowId, to, convForThem) => {
-      this.sql.exec(
-        "INSERT OR IGNORE INTO inbox (id, to_user, conv, sender, body, sent) VALUES (?, ?, ?, ?, ?, ?)",
-        rowId,
-        to,
-        convForThem,
-        me.id,
-        payload,
-        sent,
-      );
-      deliveries.push({ to, message: { id: rowId, conv: convForThem, sent, body: message, sender } });
-    };
+    const result = (how) => ({ status: 200, data: { id, sent: at, how } });
+
     if (conv.startsWith("dm:")) {
       const to = this.first("SELECT * FROM users WHERE id = ?", conv.slice(3));
-      if (!to) return { status: 404, data: { error: "not_found" }, deliveries: [] };
-      if (this.blocked(to.id, me.id)) return { status: 200, data: { id, sent }, deliveries: [] }; // bloqueado: some em silêncio
+      if (!to) return { status: 404, data: { error: "not_found" } };
+      if (this.blocked(to.id, me.id)) return result("mailbox"); // bloqueado: some em silêncio
       this.sql.exec("INSERT OR IGNORE INTO contacts (a, b) VALUES (?, ?)", me.id, to.id);
       this.sql.exec("INSERT OR IGNORE INTO contacts (a, b) VALUES (?, ?)", to.id, me.id);
-      store(id, to.id, "dm:" + me.id);
-      return { status: 200, data: { id, sent }, deliveries };
+      const message = { id, conv: "dm:" + me.id, sent: at, body, sender };
+      // Destinatário conectado: vai direto, sem gravar nada.
+      if (!opts.mailbox && this.deliverLive(to.id, [{ ...message, live: true }])) {
+        if (!opts.v2) this.ringPut("ring", "user_id", to.id, RING_SIZE, message); // app antigo não manda recibo
+        return result(opts.v2 ? "live" : "mailbox");
+      }
+      // Rede de segurança: app antigo, 24 h sem entregar, quem enviou não pode ser
+      // acordado (sem push) ou o destinatário sumiu de novo depois do cutucão.
+      const recentlyPoked = now - (this.poked.get(`${me.id}>${to.id}`) ?? 0) < POKE_MEMORY_MS;
+      if (!opts.v2 || opts.mailbox || !me.push_url || recentlyPoked) {
+        this.ringPut("ring", "user_id", to.id, RING_SIZE, message);
+        this.push(to.id);
+        return result("mailbox");
+      }
+      this.remind(to.id, me.id);
+      this.push(to.id);
+      return result("waiting");
     }
     if (conv.startsWith("g:")) {
       const groupId = conv.slice(2);
       if (!this.first("SELECT 1 AS x FROM members WHERE group_id = ? AND user_id = ?", groupId, me.id)) {
-        return { status: 403, data: { error: "not_member" }, deliveries: [] };
+        return { status: 403, data: { error: "not_member" } };
       }
+      // Grupo: gravada uma vez no anel do grupo; quem está online recebe na hora, quem não está é acordado.
+      const message = { id, conv, sent: at, body, sender };
+      this.ringPut("group_ring", "group_id", groupId, GROUP_RING_SIZE, message);
+      const seq = this.first("SELECT seq FROM group_ring WHERE group_id = ? AND id = ?", groupId, id)?.seq;
       const others = this.all("SELECT user_id FROM members WHERE group_id = ? AND user_id != ?", groupId, me.id);
       for (const row of others) {
         if (this.blocked(row.user_id, me.id)) continue;
-        store(id + row.user_id.slice(0, 8), row.user_id, conv);
+        if (!this.deliverLive(row.user_id, [{ ...message, seq, group: groupId }])) this.push(row.user_id);
       }
-      return { status: 200, data: { id, sent }, deliveries };
+      return result("group");
     }
-    return { status: 400, data: { error: "invalid" }, deliveries: [] };
+    return { status: 400, data: { error: "invalid" } };
+  }
+
+  /** Endereço de push (UnifiedPush) do celular; gravado só quando muda. */
+  setPush(me, url) {
+    const clean = typeof url === "string" && /^https:\/\/[^\s]{8,500}$/.test(url) ? url : "";
+    if (clean === (me.push_url ?? "")) return;
+    this.sql.exec("UPDATE users SET push_url = ? WHERE id = ?", clean, me.id);
   }
 
   async webSocketMessage(ws, raw) {
@@ -553,10 +751,45 @@ export class Hub extends DurableObject {
         this.announce(me);
         return;
       }
+      case "hello": {
+        // App novo (fase 3): diz até onde já leu e recebe só o que falta.
+        if (msg.push !== undefined) this.setPush(me, msg.push);
+        const since = Number(msg.since) || 0;
+        const items = [...this.legacyOnly(me.id), ...this.ringSince(me.id, since), ...this.groupItemsFor(me, msg.groups)];
+        send(ws, { t: "inbox", messages: items, complete: true });
+        // Versões dos perfis de quem você conhece: o app só baixa o que mudou.
+        const versions = {};
+        for (const id of this.relatedIds(me.id)) {
+          const user = this.first("SELECT profile_v FROM users WHERE id = ?", id);
+          if (user) versions[id] = user.profile_v ?? 0;
+        }
+        send(ws, { t: "versions", users: versions });
+        this.wakeSenders(me);
+        return;
+      }
+      case "push":
+        this.setPush(me, msg.url);
+        return;
       case "send": {
-        const result = this.postMessage(me, msg.conv, msg.body, msg.cid);
+        const result = this.postMessage(me, msg.conv, msg.body, msg.cid, {
+          v2: msg.v === 2,
+          at: msg.at,
+          mailbox: msg.mailbox === true,
+        });
         send(ws, { t: "sent", cid: msg.cid ?? null, status: result.status, ...result.data });
-        this.deliverLive(result.deliveries);
+        return;
+      }
+      case "delivered": {
+        // Recibo "entregue": vai direto para o celular de quem enviou (nada gravado).
+        const items = Array.isArray(msg.items) ? msg.items.slice(0, 500) : [];
+        const bySender = new Map();
+        for (const item of items) {
+          if (typeof item?.id !== "string" || typeof item?.to !== "string") continue;
+          bySender.set(item.to, [...(bySender.get(item.to) ?? []), item.id]);
+        }
+        for (const [senderId, ids] of bySender) {
+          for (const socket of this.sockets(senderId)) send(socket, { t: "delivered", ids, by: me.id });
+        }
         return;
       }
       case "ack": {
@@ -565,7 +798,7 @@ export class Hub extends DurableObject {
         return;
       }
       case "sync":
-        return send(ws, { t: "inbox", messages: this.inboxOf(me.id) });
+        return send(ws, { t: "inbox", messages: this.inboxOf(me) });
       case "activity":
         return send(ws, { t: "activity", people: this.activityFor(me) });
     }
@@ -701,7 +934,8 @@ export class Hub extends DurableObject {
       server.serializeAttachment({ id: me.id, now: null, at: 0, recent: [] });
       // Logo ao conectar: o que chegou enquanto estava fora e quem está ouvindo o quê.
       send(server, { t: "hello", me: { ...this.publicUser(me), sharing: me.sharing === 1 } });
-      send(server, { t: "inbox", messages: this.inboxOf(me.id) });
+      // App antigo recebe tudo ao conectar; o novo (?v=2) manda "hello" com até onde já leu.
+      if (url.searchParams.get("v") !== "2") send(server, { t: "inbox", messages: this.inboxOf(me) });
       send(server, { t: "activity", people: this.activityFor(me) });
       return new Response(null, { status: 101, webSocket: client });
     }
@@ -718,12 +952,15 @@ export class Hub extends DurableObject {
       if (typeof color !== "string" || (color !== "" && !/^#[0-9a-fA-F]{6}$/.test(color))) {
         return json({ error: "invalid" }, 400);
       }
+      const changed = name !== me.name || bio !== (me.bio ?? "") || color.toUpperCase() !== (me.color ?? "");
+      const profileV = changed ? (me.profile_v ?? 0) + 1 : me.profile_v ?? 0;
       this.sql.exec(
-        "UPDATE users SET name = ?, sharing = ?, bio = ?, color = ? WHERE id = ?",
+        "UPDATE users SET name = ?, sharing = ?, bio = ?, color = ?, profile_v = ? WHERE id = ?",
         name,
         sharing,
         bio,
         color.toUpperCase(),
+        profileV,
         me.id,
       );
       if (!sharing) {
@@ -736,11 +973,12 @@ export class Hub extends DurableObject {
           if (state) ws.serializeAttachment({ ...state, now: null, recent: [], at: Date.now() });
         }
       }
-      return json({ ...this.publicUser({ ...me, name, bio, color: color.toUpperCase() }), sharing: sharing === 1 });
+      return json({ ...this.publicUser({ ...me, name, bio, color: color.toUpperCase(), profile_v: profileV }), sharing: sharing === 1 });
     }
     if (path === "/me" && method === "DELETE") {
       for (const ws of this.sockets(me.id)) ws.close(4001, "deleted");
-      for (const table of ["status", "recent", "recent_log", "images", "image_parts"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
+      this.sql.exec("DELETE FROM reminders WHERE to_user = ?", me.id);
+      for (const table of ["status", "recent", "recent_log", "images", "image_parts", "ring"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
       this.sql.exec("DELETE FROM members WHERE user_id = ?", me.id);
       this.sql.exec("DELETE FROM contacts WHERE a = ? OR b = ?", me.id, me.id);
       this.sql.exec("DELETE FROM blocks WHERE user_id = ? OR blocked = ?", me.id, me.id);
@@ -755,16 +993,19 @@ export class Hub extends DurableObject {
       if (!imageType(bytes)) return json({ error: "invalid" }, 400);
       if (!this.allow("images", me.id, IMAGES_PER_DAY)) return json({ error: "daily_limit" }, 429);
       const kind = imagePath[1];
-      const version = Date.now();
+      // Versão = começo do hash da imagem: a mesma foto tem sempre o mesmo endereço no cache do app.
+      const version = await imageVersion(bytes);
+      const profileV = (me.profile_v ?? 0) + 1;
       this.saveImage(me.id, kind, bytes);
-      this.sql.exec(`UPDATE users SET ${kind}_v = ? WHERE id = ?`, version, me.id);
-      return json({ ...this.publicUser({ ...me, [`${kind}_v`]: version }), sharing: me.sharing === 1 });
+      this.sql.exec(`UPDATE users SET ${kind}_v = ?, profile_v = ? WHERE id = ?`, version, profileV, me.id);
+      return json({ ...this.publicUser({ ...me, [`${kind}_v`]: version, profile_v: profileV }), sharing: me.sharing === 1 });
     }
     if (imagePath && method === "DELETE") {
       const kind = imagePath[1];
+      const profileV = (me.profile_v ?? 0) + 1;
       this.deleteImage(me.id, kind);
-      this.sql.exec(`UPDATE users SET ${kind}_v = 0 WHERE id = ?`, me.id);
-      return json({ ...this.publicUser({ ...me, [`${kind}_v`]: 0 }), sharing: me.sharing === 1 });
+      this.sql.exec(`UPDATE users SET ${kind}_v = 0, profile_v = ? WHERE id = ?`, profileV, me.id);
+      return json({ ...this.publicUser({ ...me, [`${kind}_v`]: 0, profile_v: profileV }), sharing: me.sharing === 1 });
     }
     const userImage = method === "GET" && path.match(/^\/users\/([0-9a-f]{32})\/image\/(avatar|banner)$/);
     if (userImage) {
@@ -819,12 +1060,15 @@ export class Hub extends DurableObject {
     }
 
     if (method === "POST" && path === "/messages") {
-      const result = this.postMessage(me, body?.conv, body?.body, body?.cid);
-      this.deliverLive(result.deliveries);
+      const result = this.postMessage(me, body?.conv, body?.body, body?.cid, {
+        v2: body?.v === 2,
+        at: body?.at,
+        mailbox: body?.v === 2,
+      });
       return json(result.data, result.status);
     }
 
-    if (method === "GET" && path === "/inbox") return json({ messages: this.inboxOf(me.id) });
+    if (method === "GET" && path === "/inbox") return json({ messages: this.inboxOf(me) });
     if (method === "POST" && path === "/inbox/ack") {
       const ids = Array.isArray(body?.ids) ? body.ids.filter((v) => typeof v === "string").slice(0, 500) : [];
       for (const id of ids) this.sql.exec("DELETE FROM inbox WHERE id = ? AND to_user = ?", id, me.id);

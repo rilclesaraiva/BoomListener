@@ -115,7 +115,7 @@
     <string name="feature_social_banner_remove">Tirar capa</string>
     <string name="feature_social_photo_change">Trocar foto</string>
     <string name="feature_social_photo_remove">Tirar foto</string>
-    <string name="feature_social_gif_hint">GIF também vale e fica rodando. GIF grande é diminuído, e um vídeo curto (até 30 s, sem som) vira GIF.</string>
+    <string name="feature_social_gif_hint">GIF também vale e fica rodando. GIF grande ou longo é diminuído, e um vídeo curto (até 15 s, sem som) vira GIF.</string>
     <string name="feature_social_saving">Salvando…</string>
     <string name="feature_social_friends_count">Amigos · %1$d</string>
     <string name="feature_social_friends_empty">Comece uma conversa na aba Amigos e a pessoa aparece aqui.</string>
@@ -124,4 +124,13 @@
     <string name="feature_social_color_none">Sem cor</string>
     <string name="feature_social_resting_title">O social está descansando até %1$s</string>
     <string name="feature_social_resting_message">O limite gratuito do servidor acabou por hoje. As músicas continuam tocando normalmente, e as mensagens saem quando ele voltar.</string>
+    <string name="feature_social_delivery_waiting">Aguardando a pessoa aparecer</string>
+    <string name="feature_social_delivery_delivered">Entregue · %1$s</string>
+    <string name="feature_social_delivery_mailbox">Na caixa postal · %1$s</string>
+    <string name="feature_social_push_title">Mensagens com o app fechado</string>
+    <string name="feature_social_push_on">Ligado. Você recebe uma notificação quando chegar mensagem.</string>
+    <string name="feature_social_push_off">Receba uma notificação quando chegar mensagem, mesmo com o app fechado.</string>
+    <string name="feature_social_push_install_hint">Instale o app gratuito ntfy (sem Google) para receber mensagens com o app fechado.</string>
+    <string name="feature_social_push_install">Instalar ntfy</string>
+    <string name="feature_social_push_choose">Qual app entrega as notificações?</string>
 </resources>

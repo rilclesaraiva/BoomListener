@@ -38,12 +38,15 @@ data class FriendProfile(
     val avatarVersion: Long = 0,
     val bannerVersion: Long = 0,
     val color: String = "",
+    /** Versão do perfil (muda a cada edição): o app só baixa de novo quando muda. */
+    val version: Long = 0,
 )
 
 /** Foto de perfil (quadrada) ou capa (faixa larga no topo do perfil). */
 enum class ProfileImage(val path: String, val width: Int, val height: Int) {
-    Avatar("avatar", 320, 320),
-    Banner("banner", 1200, 450),
+    // Fase 2 do plano: 512 px e 1080 px, em WebP (bem menor que o JPEG).
+    Avatar("avatar", 512, 512),
+    Banner("banner", 1080, 405),
 }
 
 /** O conteúdo de uma mensagem: texto ou um cartão de música/álbum/artista. */
@@ -70,9 +73,31 @@ data class ChatMessage(
     val sender: SocialUser?,
     val body: MessageBody,
     val sentMs: Long,
-    /** Ainda não chegou ao servidor (sem internet); o app tenta de novo. */
-    val pending: Boolean = false,
-)
+    /** Onde a mensagem está (só faz diferença nas suas). */
+    val delivery: Delivery = Delivery.Sent,
+) {
+    /** Ainda está no seu celular, esperando a outra pessoa aparecer. */
+    val pending: Boolean get() = delivery == Delivery.Waiting
+}
+
+/**
+ * Onde está uma mensagem sua. Numa conversa particular ela fica no seu celular
+ * ([Waiting]) até a outra pessoa aparecer; aí vai direto ([Delivered]). Se
+ * demorar demais, vai para a caixa postal do servidor ([Mailbox]).
+ */
+enum class Delivery {
+    /** Aguardando a outra pessoa aparecer (fica no seu celular). */
+    Waiting,
+
+    /** Chegou ao servidor (grupos e versões antigas). */
+    Sent,
+
+    /** Chegou no celular da outra pessoa. */
+    Delivered,
+
+    /** Na caixa postal do servidor (até 7 dias). */
+    Mailbox,
+}
 
 /**
  * Uma conversa: particular ("dm:<id da pessoa>") ou grupo ("g:<id do grupo>").

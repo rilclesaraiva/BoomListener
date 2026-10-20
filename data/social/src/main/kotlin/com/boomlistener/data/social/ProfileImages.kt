@@ -9,14 +9,41 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.Movie
 import android.net.Uri
+import android.os.Build
 import java.io.ByteArrayOutputStream
 
-/** Tamanho máximo do JPEG enviado (o servidor aceita até 400 KB). */
+/** Tamanho máximo da imagem enviada (o servidor aceita até 400 KB). */
 private const val MAX_BYTES = 380_000
 
-/** GIF animado vai como está, até este tamanho (o servidor aceita até 6 MB, guardado em pedaços). */
-internal const val MAX_GIF_BYTES = 5_900_000
+/** GIF animado vai como está até este tamanho (o servidor aceita até 3 MB, guardado em pedaços). */
+internal const val MAX_GIF_BYTES = 2_900_000
+
+/** GIF mais longo que isto é refeito (menor e mais curto). */
+internal const val MAX_GIF_DURATION_MS = 15_000L
+
+/** O arquivo é WebP? (pelos primeiros bytes) */
+internal fun isWebp(bytes: ByteArray): Boolean =
+    bytes.size >= 12 && String(bytes, 0, 4, Charsets.US_ASCII) == "RIFF" && String(bytes, 8, 4, Charsets.US_ASCII) == "WEBP"
+
+/** Largura e altura de um GIF (do cabeçalho); null se não for GIF. */
+internal fun gifSize(bytes: ByteArray): Pair<Int, Int>? {
+    if (!isGif(bytes) || bytes.size < 10) return null
+    val width = (bytes[6].toInt() and 0xFF) or ((bytes[7].toInt() and 0xFF) shl 8)
+    val height = (bytes[8].toInt() and 0xFF) or ((bytes[9].toInt() and 0xFF) shl 8)
+    return width to height
+}
+
+/**
+ * O GIF pode ir como está? Só se for pequeno, não maior que o necessário
+ * (com folga de 25%) e curto. Senão é refeito, sem perder a animação.
+ */
+internal fun gifFitsAsIs(sizeBytes: Int, width: Int, height: Int, durationMs: Long, kind: ProfileImage): Boolean =
+    sizeBytes <= MAX_GIF_BYTES &&
+        width <= kind.width * 5 / 4 &&
+        height <= maxOf(kind.height, kind.width) * 5 / 4 &&
+        durationMs <= MAX_GIF_DURATION_MS
 
 /** O arquivo é um GIF? (pelos primeiros bytes) */
 internal fun isGif(bytes: ByteArray): Boolean =
@@ -31,7 +58,7 @@ internal fun prepareProfileImage(context: Context, uri: String, kind: ProfileIma
     val parsed = Uri.parse(uri)
     // GIF animado pequeno vai inteiro (a animação se perderia se fosse recortado).
     // Grande demais: vira uma imagem parada, como as outras.
-    // Vídeo (até 30 s, sem som) vira GIF animado.
+    // Vídeo (até 15 s, sem som) vira GIF animado.
     if (context.contentResolver.getType(parsed)?.startsWith("video/") == true) {
         return animatedProfileGif(context, parsed, isVideo = true, gifBytes = null, kind = kind)
     }
@@ -40,7 +67,10 @@ internal fun prepareProfileImage(context: Context, uri: String, kind: ProfileIma
     val head = context.contentResolver.openInputStream(parsed)?.use { stream -> ByteArray(6).also { stream.read(it) } }
     if (head != null && isGif(head)) {
         val bytes = context.contentResolver.openInputStream(parsed)?.use { it.readBytes() }
-        if (bytes != null && bytes.size <= MAX_GIF_BYTES) return bytes
+        if (bytes != null) {
+            val (width, height) = gifSize(bytes) ?: (0 to 0)
+            if (gifFitsAsIs(bytes.size, width, height, gifDurationMs(bytes), kind)) return bytes
+        }
         if (bytes != null) animatedProfileGif(context, parsed, isVideo = false, gifBytes = bytes, kind = kind)?.let { return it }
     }
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -59,12 +89,15 @@ internal fun prepareProfileImage(context: Context, uri: String, kind: ProfileIma
         Paint(Paint.FILTER_BITMAP_FLAG),
     )
     source.recycle()
-    var quality = 85
+    // WebP: bem menor que o JPEG com a mesma qualidade (cabem muito mais perfis no servidor gratuito).
+    @Suppress("DEPRECATION")
+    val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Bitmap.CompressFormat.WEBP_LOSSY else Bitmap.CompressFormat.WEBP
+    var quality = 82
     var bytes: ByteArray
     do {
-        bytes = ByteArrayOutputStream().also { target.compress(Bitmap.CompressFormat.JPEG, quality, it) }.toByteArray()
+        bytes = ByteArrayOutputStream().also { target.compress(format, quality, it) }.toByteArray()
         quality -= 10
-    } while (bytes.size > MAX_BYTES && quality >= 35)
+    } while (bytes.size > MAX_BYTES && quality >= 32)
     target.recycle()
     bytes.takeIf { it.size <= MAX_BYTES }
 }.getOrNull()
@@ -92,3 +125,8 @@ internal fun sampleSize(width: Int, height: Int, targetWidth: Int, targetHeight:
     while (width / (sample * 2) >= targetWidth && height / (sample * 2) >= targetHeight) sample *= 2
     return sample
 }
+
+/** Duração de um GIF animado (0 se não der para ler). */
+@Suppress("DEPRECATION") // Movie é o jeito do Android de ler a duração de um GIF.
+private fun gifDurationMs(bytes: ByteArray): Long =
+    runCatching { Movie.decodeByteArray(bytes, 0, bytes.size)?.duration()?.toLong() }.getOrNull() ?: 0L

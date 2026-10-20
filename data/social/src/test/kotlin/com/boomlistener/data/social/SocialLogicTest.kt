@@ -108,4 +108,23 @@ class SocialLogicTest {
         assertEquals(listOf("b"), withPerson(start, person("a", false, null)).map { it.user.id })
         assertEquals(listOf("a", "b", "c"), withPerson(start, person("c", true, "X")).map { it.user.id })
     }
+
+    @Test
+    fun estadoDaMensagemDepoisDeEnviar() {
+        assertEquals(null, deliveryAfterSend("live")) // falta o recibo
+        assertEquals(Delivery.Waiting, deliveryAfterSend("waiting"))
+        assertEquals(Delivery.Mailbox, deliveryAfterSend("mailbox"))
+        assertEquals(Delivery.Sent, deliveryAfterSend("group"))
+        assertEquals(Delivery.Sent, deliveryAfterSend("")) // servidor antigo
+    }
+
+    @Test
+    fun estadoSoAndaParaFrente() {
+        assertTrue(advances(Delivery.Waiting, Delivery.Delivered))
+        assertTrue(advances(Delivery.Waiting, Delivery.Mailbox))
+        assertTrue(advances(Delivery.Mailbox, Delivery.Delivered))
+        assertFalse(advances(Delivery.Delivered, Delivery.Waiting))
+        assertFalse(advances(Delivery.Delivered, Delivery.Mailbox))
+        assertFalse(advances(Delivery.Waiting, Delivery.Waiting))
+    }
 }
