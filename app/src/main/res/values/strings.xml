@@ -6,6 +6,6 @@
     <string name="nav_home">Home</string>
     <string name="nav_collections">Library</string>
     <string name="nav_social">Friends</string>
-    <string name="notification_channel_messages">Messages</string>
-    <string name="notification_music_card">🎵 %1$s</string>
+    <string name="social_reaction_toast">%1$s reacted %2$s</string>
+    <string name="social_reaction_toast_title">%1$s reacted %2$s to %3$s</string>
 </resources>

@@ -12,7 +12,9 @@ import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
 import com.boomlistener.core.common.normalizedForSearch
+import com.boomlistener.data.social.NumberNetwork
 import com.boomlistener.data.social.ProfileImage
+import com.boomlistener.data.social.SocialNetwork
 import com.boomlistener.data.social.SocialAccount
 import com.boomlistener.data.social.SocialRepository
 import com.boomlistener.data.social.SocialResult
@@ -96,13 +98,9 @@ internal class MyProfileViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** Seus amigos: as pessoas com quem você conversa em particular. */
-    val friends: StateFlow<List<FriendChip>> = social.conversations
-        .map { list ->
-            list.mapNotNull { conversation ->
-                conversation.otherUserId?.let { FriendChip(it, conversation.title) }
-            }
-        }
+    /** Seus amigos (amizade confirmada), por nome. */
+    val friends: StateFlow<List<FriendChip>> = social.friends
+        .map { state -> state.friends.map { FriendChip(it.user.id, it.user.name) }.sortedBy { it.name.lowercase() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Versão da foto de um amigo (perfil guardado no aparelho; só baixa de novo quando muda). */
@@ -113,6 +111,27 @@ internal class MyProfileViewModel(
 
     init {
         viewModelScope.launch { tracks.value = library.getTracks() }
+        viewModelScope.launch { if (social.account.value != null) social.refreshFriends() }
+    }
+
+    /**
+     * Salva as redes do perfil. [links] e [numbers] já vêm limpos (só o @ e
+     * só dígitos com o código do país). [onDone] só se deu certo.
+     */
+    fun saveNetworks(
+        links: Map<SocialNetwork, String>,
+        numbers: Map<NumberNetwork, String>,
+        shareNumbers: Boolean,
+        onDone: () -> Unit,
+    ) {
+        if (_saving.value) return
+        _saving.value = true
+        viewModelScope.launch {
+            val ok = social.updateLinks(links, numbers, shareNumbers) is SocialResult.Ok
+            _saveFailed.value = !ok
+            _saving.value = false
+            if (ok) onDone()
+        }
     }
 
     fun rename(name: String) {

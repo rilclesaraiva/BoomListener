@@ -4,6 +4,6 @@
     <string name="nav_home">Início</string>
     <string name="nav_collections">Biblioteca</string>
     <string name="nav_social">Amigos</string>
-    <string name="notification_channel_messages">Mensagens</string>
-    <string name="notification_music_card">🎵 %1$s</string>
+    <string name="social_reaction_toast">%1$s reagiu %2$s</string>
+    <string name="social_reaction_toast_title">%1$s reagiu %2$s a %3$s</string>
 </resources>

@@ -23,8 +23,6 @@ palette = "1.0.0"
 taglib = "1.0.6"
 # WebSocket do social (Amigos): conexão ao vivo no lugar de consultas repetidas.
 okhttp = "5.3.2"
-# Push sem Google (UnifiedPush; o usuário escolhe o distribuidor, ex.: ntfy).
-unifiedpush = "3.0.10"
 
 [libraries]
 androidx-core = { group = "androidx.core", name = "core", version.ref = "androidxCore" }
@@ -41,7 +39,6 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIconsCore" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
-unifiedpush-connector = { group = "org.unifiedpush.android", name = "connector", version.ref = "unifiedpush" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }

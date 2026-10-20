@@ -36,14 +36,15 @@ import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.data.deezer.DeezerData
 import com.boomlistener.data.library.LibraryData
+import com.boomlistener.data.social.ProfileImage
 import com.boomlistener.data.social.SocialData
-import kotlinx.coroutines.delay
+import com.boomlistener.data.social.SocialResult
 import kotlinx.coroutines.launch
 
 /**
- * "Recomendar para…": escolhe uma conversa e manda o cartão da música
- * [trackUri] (só a informação, nunca o arquivo). Pública porque o :app usa
- * nos menus da biblioteca e do player.
+ * "Recomendar para…": um toque num amigo e ele recebe o cartão da música
+ * [trackUri] (capa, artista e link; nunca o arquivo). Pública porque o :app
+ * usa nos menus da biblioteca e do player.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,20 +52,17 @@ fun RecommendSheet(trackUri: String, onDismiss: () -> Unit) {
     val context = LocalContext.current.applicationContext
     val social = remember { SocialData.repository(context) }
     val account by social.account.collectAsStateWithLifecycle()
-    val conversations by social.conversations.collectAsStateWithLifecycle(initialValue = emptyList())
+    val friendsState by social.friends.collectAsStateWithLifecycle()
+    val friends = remember(friendsState) { friendsState.friends.sortedBy { it.user.name.lowercase() } }
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var sentTo by remember { mutableStateOf<String?>(null) }
-    var sending by remember { mutableStateOf(false) }
+    // Quem já recebeu (marcado com ✓); dá para mandar para vários.
+    var sentTo by remember { mutableStateOf(setOf<String>()) }
+    var sending by remember { mutableStateOf<String?>(null) }
+    var failed by remember { mutableStateOf(false) }
     val effects = boomEffectsSpec<Float>()
 
-    LaunchedEffect(sentTo) {
-        if (sentTo != null) {
-            delay(700)
-            sheetState.hide()
-            onDismiss()
-        }
-    }
+    LaunchedEffect(account?.id) { if (account != null) social.refreshFriends() }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Text(
@@ -72,39 +70,57 @@ fun RecommendSheet(trackUri: String, onDismiss: () -> Unit) {
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
         )
-        if (account == null || conversations.isEmpty()) {
+        if (account == null || friends.isEmpty()) {
             Text(
-                stringResource(if (account == null) R.string.feature_social_recommend_no_profile else R.string.feature_social_no_conversations),
+                stringResource(if (account == null) R.string.feature_social_recommend_no_profile else R.string.feature_social_recommend_no_friends),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
             )
         }
+        if (failed) {
+            Text(
+                stringResource(R.string.feature_social_offline),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 24.dp),
+            )
+        }
         LazyColumn(Modifier.padding(bottom = 24.dp)) {
-            items(conversations, key = { it.id }) { conversation ->
+            items(friends, key = { it.user.id }) { friend ->
+                val id = friend.user.id
                 ListItem(
-                    modifier = Modifier.clickable(enabled = !sending) {
-                        sending = true
+                    modifier = Modifier.clickable(enabled = sending == null && id !in sentTo) {
+                        sending = id
+                        failed = false
                         scope.launch {
                             val track = LibraryData.repository(context).getTracks().firstOrNull { it.uri == trackUri }
-                            if (track != null) {
-                                social.send(conversation.id, buildTrackCard(track, DeezerData.repository(context)))
-                            }
-                            sentTo = conversation.id
+                            val ok = track != null &&
+                                social.recommend(listOf(id), buildTrackCard(track, DeezerData.repository(context))) is SocialResult.Ok
+                            if (ok) sentTo = sentTo + id else failed = true
+                            sending = null
                         }
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     leadingContent = {
                         AnimatedContent(
-                            targetState = sentTo == conversation.id,
+                            targetState = id in sentTo,
                             transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
                             label = "sent",
                         ) { sent ->
-                            if (sent) Icon(BoomIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            else Avatar(conversation.title, isGroup = conversation.isGroup, size = 40.dp)
+                            if (sent) {
+                                Icon(BoomIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            } else {
+                                Avatar(
+                                    friend.user.name,
+                                    size = 40.dp,
+                                    picture = rememberProfileImage(id, ProfileImage.Avatar, friend.avatarVersion),
+                                )
+                            }
                         }
                     },
-                    headlineContent = { Text(conversation.title.ifBlank { stringResource(R.string.feature_social_group) }) },
+                    headlineContent = { Text(friend.user.name) },
+                    supportingContent = { Text("@" + friend.user.handle) },
                 )
             }
         }

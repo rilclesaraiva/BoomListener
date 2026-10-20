@@ -11,13 +11,14 @@ import com.boomlistener.data.deezer.AlbumResult
 import com.boomlistener.data.deezer.DeezerRepository
 import com.boomlistener.data.deezer.ProfileResult
 import com.boomlistener.data.library.LibraryRepository
-import com.boomlistener.data.social.ChatMessage
-import com.boomlistener.data.social.Conversation
 import com.boomlistener.data.social.FriendProfile
+import com.boomlistener.data.social.FriendsState
+import com.boomlistener.data.social.MusicCard
+import com.boomlistener.data.social.Recommendation
+import com.boomlistener.data.social.Relation
 import com.boomlistener.data.social.HandleCheck
 import com.boomlistener.data.social.LinkStatus
 import com.boomlistener.data.social.SocialLive
-import com.boomlistener.data.social.MessageBody
 import com.boomlistener.data.social.MusicKind
 import com.boomlistener.data.social.ProfileImage
 import com.boomlistener.data.social.SocialAccount
@@ -27,11 +28,9 @@ import com.boomlistener.data.social.SocialUser
 import com.boomlistener.data.social.TrackInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -47,10 +46,9 @@ private val ana = SocialUser("a1", "ana", "Ana")
 
 internal class FakeSocial : SocialRepository {
     override val account = MutableStateFlow<SocialAccount?>(null)
-    val sent = mutableListOf<Pair<String, MessageBody>>()
     var blocked = false
-    override val conversations: Flow<List<Conversation>> = flowOf(emptyList())
-    override fun messages(conversationId: String): Flow<List<ChatMessage>> = flowOf(emptyList())
+    var relation = Relation.None
+    val reacted = mutableListOf<Pair<String, String>>()
     override suspend fun checkHandle(handle: String) = HandleCheck.Available
     override suspend fun register(name: String, handle: String): SocialResult<SocialAccount> {
         val created = SocialAccount("me", handle, name, "t", sharing = false)
@@ -90,29 +88,37 @@ internal class FakeSocial : SocialRepository {
     override suspend fun deleteAccount() = SocialResult.Ok(Unit)
     override suspend fun findByHandle(handle: String): SocialResult<FriendProfile> = SocialResult.NotFound
     override suspend fun profile(userId: String): SocialResult<FriendProfile> =
-        SocialResult.Ok(FriendProfile(ana, sharing = true, now = TrackInfo("Oceano", "Djavan", null), updatedMs = 1, recent = emptyList(), blockedByMe = blocked))
+        SocialResult.Ok(
+            FriendProfile(
+                ana, sharing = true, now = TrackInfo("Oceano", "Djavan", null), updatedMs = 1, recent = emptyList(),
+                blockedByMe = blocked, relation = relation,
+            ),
+        )
     var fetchedPeople: List<FriendProfile> = emptyList()
     var syncs = 0
     override val live = MutableStateFlow(SocialLive())
-    override suspend fun activity(): SocialResult<List<FriendProfile>> = SocialResult.Ok(fetchedPeople)
-    override suspend fun openDirect(user: SocialUser) = "dm:" + user.id
-    override suspend fun send(conversationId: String, body: MessageBody): SocialResult<Unit> {
-        sent += conversationId to body
-        return SocialResult.Ok(Unit)
-    }
-    override suspend fun sync(): SocialResult<Int> {
+    override val friends = MutableStateFlow(FriendsState())
+    override val recommendations = MutableStateFlow<List<Recommendation>>(emptyList())
+    override suspend fun refreshFriends(): SocialResult<FriendsState> {
         syncs++
-        return SocialResult.Ok(0)
+        friends.value = friends.value.copy(friends = fetchedPeople)
+        return SocialResult.Ok(friends.value)
     }
-    override suspend fun createGroup(name: String): SocialResult<Conversation> = SocialResult.Invalid
-    override suspend fun joinGroup(code: String): SocialResult<Conversation> = SocialResult.NotFound
-    override suspend fun groupMembers(conversationId: String): SocialResult<List<SocialUser>> = SocialResult.Ok(listOf(ana))
-    override suspend fun leaveGroup(conversationId: String) = SocialResult.Ok(Unit)
+    override suspend fun addFriend(userId: String): SocialResult<Relation> {
+        relation = if (relation == Relation.Received) Relation.Friend else Relation.Sent
+        return SocialResult.Ok(relation)
+    }
+    override suspend fun removeFriend(userId: String): SocialResult<Relation> {
+        relation = Relation.None
+        return SocialResult.Ok(relation)
+    }
+    override suspend fun react(toUserId: String, emoji: String, title: String?): Boolean {
+        reacted += toUserId to emoji
+        return live.value.status == LinkStatus.Online
+    }
+    override suspend fun activity(): SocialResult<List<FriendProfile>> = SocialResult.Ok(fetchedPeople)
     override suspend fun block(userId: String): SocialResult<Unit> { blocked = true; return SocialResult.Ok(Unit) }
     override suspend fun unblock(userId: String): SocialResult<Unit> { blocked = false; return SocialResult.Ok(Unit) }
-    override fun setOpenConversation(conversationId: String?) = Unit
-    override suspend fun markRead(conversationId: String) = Unit
-    override suspend fun deleteConversation(conversationId: String) = Unit
     override suspend fun publishNowPlaying(track: TrackInfo?) = Unit
     override suspend fun publishListened(track: TrackInfo) = Unit
 }
@@ -168,40 +174,49 @@ class SocialViewModelsTest {
     }
 
     @Test
-    fun recomendarMandaSoInformacaoETocarSeTiver() = runTest(dispatcher) {
+    fun recomendacaoTocaSeVoceTiver() = runTest(dispatcher) {
         val social = FakeSocial()
         val player = FakePlayer()
-        val vm = ChatViewModel("dm:a1", social, FakeLibrary(), NoDeezer, player)
+        val vm = SocialHomeViewModel(social, library = { listOf(acai) }, player = player)
+        assertTrue(vm.play(MusicCard(MusicKind.Track, "ACAI", "djavan", null, null, null)))
+        assertEquals(listOf(acai), player.played)
+        assertNull(vm.localMatch(MusicCard(MusicKind.Track, "Açaí", "Outra Pessoa", null, null, null)))
+        assertEquals(false, vm.play(MusicCard(MusicKind.Track, "Outra", null, null, null, "https://x")))
+    }
 
-        vm.sendTrack(acai, note = " ouve essa ")
-        val card = social.sent.single().second as MessageBody.Music
+    @Test
+    fun cartaoDaMusicaLevaSoInformacao() = runTest(dispatcher) {
+        val card = buildTrackCard(acai, NoDeezer)
         assertEquals("Açaí", card.title)
-        assertEquals("ouve essa", card.note)
         // Sem resultado no Deezer: o link é a busca no YouTube Music.
         assertTrue(card.link!!.startsWith("https://music.youtube.com/search"))
-
-        assertTrue(vm.play(MessageBody.Music(MusicKind.Track, "ACAI", "djavan", null, null, null, null)))
-        assertEquals(listOf(acai), player.played)
-        assertNull(vm.localMatch(MessageBody.Music(MusicKind.Track, "Açaí", "Outra Pessoa", null, null, null, null)))
     }
 
     @Test
-    fun textoVazioNaoVai() = runTest(dispatcher) {
-        val social = FakeSocial()
-        val vm = ChatViewModel("dm:a1", social, FakeLibrary(), NoDeezer, FakePlayer())
-        vm.sendText("   ")
-        vm.sendText(" oi ")
-        assertEquals(listOf("dm:a1" to MessageBody.Text("oi")), social.sent)
-    }
-
-    @Test
-    fun perfilBloquearEDesbloquear() = runTest(dispatcher) {
+    fun perfilAmizadeEBloqueio() = runTest(dispatcher) {
         val social = FakeSocial()
         val vm = FriendProfileViewModel("a1", social)
-        assertEquals("Oceano", (vm.state.value as ProfileUiState.Ready).profile.now?.title)
+        assertEquals(Relation.None, (vm.state.value as ProfileUiState.Ready).profile.relation)
+        vm.addFriend()
+        assertEquals(Relation.Sent, (vm.state.value as ProfileUiState.Ready).profile.relation)
+        vm.removeFriend()
+        assertEquals(Relation.None, (vm.state.value as ProfileUiState.Ready).profile.relation)
+        social.relation = Relation.Received
+        vm.load()
+        vm.addFriend()
+        assertEquals(Relation.Friend, (vm.state.value as ProfileUiState.Ready).profile.relation)
         vm.toggleBlock()
         assertTrue((vm.state.value as ProfileUiState.Ready).profile.blockedByMe)
-        assertEquals("dm:a1", vm.openChat())
+    }
+
+    @Test
+    fun reacaoSoComConexao() = runTest(dispatcher) {
+        val social = FakeSocial()
+        val vm = FriendProfileViewModel("a1", social)
+        assertEquals(false, vm.react("🔥"))
+        social.live.value = SocialLive(LinkStatus.Online)
+        assertEquals(true, vm.react("🔥"))
+        assertEquals(listOf("a1" to "🔥", "a1" to "🔥"), social.reacted)
     }
 
     private fun listener(id: String, song: String) = FriendProfile(
@@ -211,26 +226,25 @@ class SocialViewModelsTest {
         updatedMs = null,
         recent = emptyList(),
         blockedByMe = false,
+        relation = Relation.Friend,
     )
 
     @Test
-    fun conectadoNaoFicaPerguntandoEUsaListaAoVivo() = runTest {
+    fun listaAoVivoQuandoConectado() = runTest {
         val social = FakeSocial().apply { account.value = SocialAccount("me", "eu", "Eu", "t", sharing = true) }
         val vm = SocialHomeViewModel(social)
         val seen = mutableListOf<List<FriendProfile>>()
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.activity.collect { seen += it } }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.friends.collect { seen += it } }
 
         // Sem conexão: consulta pelo HTTP.
         social.fetchedPeople = listOf(listener("b", "Antiga"))
         vm.refresh()
         assertEquals(1, social.syncs)
-        assertEquals("Antiga", vm.activity.value.single().now?.title)
+        assertEquals("Antiga", vm.friends.value.single().now?.title)
 
-        // Conectado: a lista vem ao vivo e refresh() não consulta.
+        // Conectado: a lista vem ao vivo.
         social.live.value = SocialLive(LinkStatus.Online, listOf(listener("b", "Ao vivo")))
-        vm.refresh()
-        assertEquals(1, social.syncs)
-        assertEquals("Ao vivo", vm.activity.value.single().now?.title)
+        assertEquals("Ao vivo", vm.friends.value.single().now?.title)
     }
 
     @Test

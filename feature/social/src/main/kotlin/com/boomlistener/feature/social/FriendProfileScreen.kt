@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -42,18 +46,19 @@ import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.data.social.FriendProfile
-import kotlinx.coroutines.launch
+import com.boomlistener.data.social.Relation
 
-/** Perfil de outra pessoa: o que está ouvindo (se compartilha com você), conversar e bloquear. */
+/**
+ * Perfil de outra pessoa: redes (as públicas para todos; o número só para
+ * amigos), amizade, o que está ouvindo (amigos que compartilham), reações e bloqueio.
+ */
 @Composable
 internal fun FriendProfileScreen(
     viewModel: FriendProfileViewModel,
     onBack: () -> Unit,
-    onOpenChat: (conversationId: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
     val ready = (state as? ProfileUiState.Ready)?.profile
 
     BoomScreenScaffold(title = ready?.user?.name.orEmpty(), onBack = onBack, modifier = modifier) { padding ->
@@ -78,11 +83,14 @@ internal fun FriendProfileScreen(
                 item(key = "header") {
                     Header(
                         profile = current.profile,
-                        onMessage = { scope.launch { viewModel.openChat()?.let(onOpenChat) } },
+                        onAdd = viewModel::addFriend,
+                        onRemove = viewModel::removeFriend,
                         onToggleBlock = viewModel::toggleBlock,
                     )
                 }
-                item(key = "now") { NowSection(current.profile) }
+                if (current.profile.relation == Relation.Friend) {
+                    item(key = "now") { NowSection(current.profile, onReact = viewModel::react) }
+                }
                 if (current.profile.recent.isNotEmpty()) {
                     item(key = "recent-title") {
                         Text(
@@ -112,9 +120,15 @@ internal fun FriendProfileScreen(
 }
 
 @Composable
-private fun Header(profile: FriendProfile, onMessage: () -> Unit, onToggleBlock: () -> Unit) {
+private fun Header(
+    profile: FriendProfile,
+    onAdd: () -> Unit,
+    onRemove: () -> Unit,
+    onToggleBlock: () -> Unit,
+) {
     val banner = rememberProfileImage(profile.user.id, ProfileImage.Banner, profile.bannerVersion)
     val photo = rememberProfileImage(profile.user.id, ProfileImage.Avatar, profile.avatarVersion)
+    var confirmUnfriend by remember { mutableStateOf(false) }
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         // Capa no topo, com a foto encaixada na borda de baixo.
         Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp), contentAlignment = Alignment.BottomCenter) {
@@ -139,22 +153,62 @@ private fun Header(profile: FriendProfile, onMessage: () -> Unit, onToggleBlock:
             )
         }
         Spacer(Modifier.height(16.dp))
+        // Redes: a conversa acontece lá (o app não tem chat).
+        NetworkButtons(links = profile.links, numbers = profile.numbers)
+        Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = onMessage, enabled = !profile.blockedByMe) {
-                Icon(BoomIcons.Chat, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.feature_social_message))
+            if (!profile.blockedByMe) {
+                when (profile.relation) {
+                    Relation.Friend -> OutlinedButton(onClick = { confirmUnfriend = true }) {
+                        Icon(BoomIcons.Check, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.feature_social_already_friends))
+                    }
+                    Relation.Sent -> OutlinedButton(onClick = onRemove) {
+                        Text(stringResource(R.string.feature_social_cancel_request))
+                    }
+                    Relation.Received -> Button(onClick = onAdd) {
+                        Text(stringResource(R.string.feature_social_accept))
+                    }
+                    Relation.None -> Button(onClick = onAdd) {
+                        Icon(BoomIcons.Add, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.feature_social_add_friend))
+                    }
+                    Relation.Self -> Unit
+                }
             }
-            TextButton(onClick = onToggleBlock) {
-                Text(stringResource(if (profile.blockedByMe) R.string.feature_social_unblock else R.string.feature_social_block))
+            if (profile.relation != Relation.Self) {
+                TextButton(onClick = onToggleBlock) {
+                    Text(stringResource(if (profile.blockedByMe) R.string.feature_social_unblock else R.string.feature_social_block))
+                }
             }
         }
+        if (profile.relation == Relation.Received) {
+            TextButton(onClick = onRemove) { Text(stringResource(R.string.feature_social_decline)) }
+        }
         Spacer(Modifier.height(16.dp))
+    }
+    if (confirmUnfriend) {
+        AlertDialog(
+            onDismissRequest = { confirmUnfriend = false },
+            title = { Text(stringResource(R.string.feature_social_unfriend_title, profile.user.name)) },
+            text = { Text(stringResource(R.string.feature_social_unfriend_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmUnfriend = false
+                    onRemove()
+                }) { Text(stringResource(R.string.feature_social_unfriend)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmUnfriend = false }) { Text(stringResource(R.string.feature_social_cancel)) }
+            },
+        )
     }
 }
 
 @Composable
-private fun NowSection(profile: FriendProfile) {
+private fun NowSection(profile: FriendProfile, onReact: suspend (String) -> Boolean) {
     val now = profile.now
     Surface(
         color = if (now != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -175,6 +229,8 @@ private fun NowSection(profile: FriendProfile) {
                     Spacer(Modifier.height(6.dp))
                     Text(now.title, style = MaterialTheme.typography.titleLarge)
                     Text(listOfNotNull(now.artist, now.album).joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                    ReactionRow(onReact)
                 }
             }
         }

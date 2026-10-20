@@ -35,7 +35,7 @@ data/
   musicbrainz/    ← reserva quando o Deezer não acha: MusicBrainz (tags, discografia) + capas do Cover Art Archive
   releases/       ← artistas seguidos, comparação de discografia, WorkManager diário, notificações
   wellbeing/      ← estatísticas de escuta (mais ouvidas) e, depois, tempo de escuta e avisos de tela
-  social/         ← Amigos: perfil (@), conversas e grupos, cartões de música, "ouvindo agora" (servidor em social/; conexão ao vivo por WebSocket, ver docs/PLANO-SOCIAL.md)
+  social/         ← Amigos (sem chat): perfil (@, foto, redes), amizades, "ouvindo agora", recomendações e reações (servidor em social/; conexão ao vivo por WebSocket, ver docs/PLANO-SOCIAL.md)
   lyrics/         ← letras: LRCLIB + cache no aparelho + leitor de LRC
   updates/        ← "Verificar atualizações": compara a versão instalada com a última Release do GitHub
 
@@ -47,7 +47,7 @@ feature/
   releases/       ← aba de lançamentos e gerenciamento de quem você segue
   settings/       ← ajustes, tema, sobre, licenças, privacidade
   wellbeing/      ← estatísticas de escuta e configuração dos avisos
-  social/         ← aba Amigos: conversas, chat com cartões de música, perfil de amigo, grupos por código
+  social/         ← aba Amigos: "o que seus amigos estão ouvindo", pedidos de amizade, recomendações, perfil com redes
 
 proxy/            ← Cloudflare Worker que guarda a chave e o segredo do Last.fm (igual ao do BusBus)
 ```

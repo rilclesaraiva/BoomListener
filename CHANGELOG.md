@@ -4,6 +4,19 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.30.0] — 2026-10-20
+
+### ✨ New
+- **Friends is now "What your friends are listening to".** Chat is gone: you talk where you already are. Each friend gets a card with the song they're playing now, or the last one they heard and when.
+- **Friend requests.** Find someone by their @ and add them. They become your friend when they accept. Requests show up at the top of Friends.
+- **Your social networks on your profile:** Instagram, X, TikTok, Threads, Bluesky, YouTube, Last.fm, SoundCloud, Bandcamp, Spotify and Telegram. You only type your @. The app builds the link, so nobody can sneak in a fake page.
+- **WhatsApp and Telegram by number, for friends only.** It's off by default. Turn on "Show my number to my friends" and only your friends see it. The country code comes from your phone and you can change it.
+- **React with an emoji** (🔥 ❤️ 😂 😮 👏 🎧) to what a friend is listening to right now. They see it pop up for a moment.
+- **Recommend a song with one tap:** pick friends from the song menu. They get a card with the cover, artist and link under "Recommended to you". If they have the song, tapping it plays it.
+
+### 🐛 Fixes
+- Conversations, groups, mailbox and message notifications are gone, and so is the notification permission. Old conversations are erased from your phone.
+
 ## [0.29.0] — 2026-10-20
 
 ### ✨ New

@@ -2,25 +2,24 @@
 // Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 //
-// O que isto faz: guarda perfis (@nome), entrega mensagens (conversa e grupo)
-// e o "ouvindo agora" de quem escolheu compartilhar. NUNCA passa áudio: só
-// texto e informações de músicas (título, artista, capa, links).
-//
-// As mensagens ficam aqui só até o app do destinatário confirmar que recebeu;
-// depois são apagadas. O histórico do chat mora no celular de cada um.
+// O que isto faz: guarda perfis (@nome, foto, redes públicas), amizades
+// (pedido + aceite) e o "ouvindo agora" de quem escolheu compartilhar com os
+// amigos. Também entrega recomendações de música (cartões com capa, artista e
+// link) e reações com emoji. NUNCA passa áudio, e não existe chat: a conversa
+// acontece nas redes que cada um põe no perfil (ver docs/PLANO-SOCIAL.md).
 //
 // Com o app aberto (ou tocando música, para o "ouvindo agora"), o celular
 // fica ligado por um WebSocket com hibernação (/v1/ws): o Hub dorme entre uma
-// mensagem e outra e entrega tudo na hora, sem o app ficar perguntando.
-// O "ouvindo agora" mora na própria conexão (zero escritas no banco), e as
-// músicas recentes são gravadas uma vez só, quando a conexão fecha.
-// Os endereços HTTP antigos continuam valendo para versões antigas do app.
+// mensagem e outra. O "ouvindo agora" e as reações moram na conexão (zero
+// escritas no banco); as músicas recentes são gravadas uma vez, quando a
+// conexão fecha. O limite mais apertado do plano gratuito é o de linhas
+// escritas, então quase nada aqui grava.
+//
+// Números de telefone (WhatsApp, Telegram) só ficam aqui se a pessoa ligar
+// "Mostrar meu número aos amigos", e só são entregues a amigos confirmados.
 //
 // Sem login do Google: ao criar o perfil, o app recebe um id e um segredo
 // (token) que guarda no aparelho. O servidor guarda só o hash do segredo.
-//
-// Tudo roda num único Durable Object ("Hub") com SQLite, que cabe na faixa
-// gratuita da Cloudflare para o tamanho do app.
 
 import { DurableObject } from "cloudflare:workers";
 
@@ -42,31 +41,26 @@ export default {
   },
 };
 
+const ID = "[0-9a-f]{32}";
+// [métodos, caminho, precisa do segredo]
 /** Meia-noite UTC seguinte (quando os contadores do plano gratuito zeram). */
 export function nextUtcMidnight(now = Date.now()) {
   const day = 86_400_000;
   return Math.floor(now / day) * day + day;
 }
 
-const ID = "[0-9a-f]{32}";
-// [métodos, caminho, precisa do segredo]
 const ROUTES = [
   ["GET", new RegExp("^/v1/handles/[^/]{1,60}$"), false],
   ["POST", /^\/v1\/register$/, false],
   ["GET", /^\/v1\/ws$/, true],
   ["GET PATCH DELETE", /^\/v1\/me$/, true],
   ["PUT DELETE", /^\/v1\/me\/image\/(avatar|banner)$/, true],
-  ["PUT", /^\/v1\/me\/now$/, true],
-  ["POST", /^\/v1\/me\/recent$/, true],
   ["GET", new RegExp(`^/v1/users/${ID}(/image/(avatar|banner))?$`), true],
   ["GET", new RegExp("^/v1/users/by-handle/[^/]{1,60}$"), true],
   ["GET", /^\/v1\/activity$/, true],
-  ["POST", /^\/v1\/messages$/, true],
-  ["GET", /^\/v1\/inbox$/, true],
-  ["POST", /^\/v1\/inbox\/ack$/, true],
-  ["POST", /^\/v1\/groups(\/join)?$/, true],
-  ["GET", new RegExp(`^/v1/groups/${ID}$`), true],
-  ["POST", new RegExp(`^/v1/groups/${ID}/leave$`), true],
+  ["GET", /^\/v1\/friends$/, true],
+  ["POST DELETE", new RegExp(`^/v1/friends/${ID}$`), true],
+  ["GET POST", /^\/v1\/recommendations$/, true],
   ["POST", /^\/v1\/blocks$/, true],
   ["DELETE", new RegExp(`^/v1/blocks/${ID}$`), true],
 ];
@@ -88,31 +82,34 @@ export function gate(request, url) {
 }
 
 const HANDLE = /^[a-z0-9_.]{3,20}$/;
-const MAX_TEXT = 2000;
-const MAX_BODY_BYTES = 4096;
+const USER_ID = /^[0-9a-f]{32}$/;
 const RECENT_KEEP = 20;
-const MESSAGES_PER_MINUTE = 40;
-// Cotas por pessoa: um abusador não pode gastar o teto diário de todo mundo.
-const MESSAGES_PER_DAY = 300;
-const IMAGES_PER_DAY = 5;
-const GROUP_MEMBERS = 30;
-const GROUPS_PER_USER = 20;
-const REGISTRATIONS_PER_IP_HOUR = 5;
-const MAX_SOCKET_MESSAGE = 16_384;
-// Fase 3: a mensagem fica no celular de quem enviou; o servidor guarda só
-// lembretes e, como rede de segurança, uma caixa postal circular (anel).
-const RING_SIZE = 100;
-const GROUP_RING_SIZE = 200;
-const RING_DAYS_MS = 7 * 86_400_000;
-const PUSH_GAP_MS = 120_000;
-const POKE_MEMORY_MS = 300_000;
 const MAX_BIO = 160;
 const MAX_IMAGE_BYTES = 400_000;
-// GIF: o app limita por tamanho, resolução e duração antes de enviar (fase 2 do plano).
+// GIF: o app limita por tamanho, resolução e duração antes de enviar.
 const MAX_GIF_BYTES = 3_000_000;
 // O SQLite do Durable Object guarda até 2 MB por valor: imagens maiores vão em pedaços.
 const IMAGE_PART_BYTES = 1_000_000;
-
+const MAX_SOCKET_MESSAGE = 16_384;
+// Cotas por pessoa: um abusador não pode gastar o teto diário de todo mundo.
+const IMAGES_PER_DAY = 5;
+const FRIEND_REQUESTS_PER_DAY = 50;
+const RECOMMENDATIONS_PER_DAY = 100;
+const REACTIONS_PER_MINUTE = 30;
+const REGISTRATIONS_PER_IP_HOUR = 5;
+// Recomendações: anel de 50 por pessoa, guardadas por 30 dias (uma escrita cada, nenhuma exclusão).
+const RECS_SIZE = 50;
+const RECS_MS = 30 * 86_400_000;
+const MAX_RECIPIENTS = 20;
+// Reações: só estes emojis (sem texto livre, nada para moderar).
+const REACTIONS = ["🔥", "❤️", "😂", "😮", "👏", "🎧"];
+// Redes públicas no perfil: o app manda só o @; quem monta o link é o app de quem vê.
+export const LINK_NETWORKS = [
+  "instagram", "x", "tiktok", "threads", "bluesky", "youtube",
+  "lastfm", "soundcloud", "bandcamp", "spotify", "telegram",
+];
+// Redes que expõem o número: só para amigos confirmados.
+export const NUMBER_NETWORKS = ["whatsapp", "telegram"];
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -137,14 +134,6 @@ async function imageVersion(bytes) {
 async function sha256(text) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/** Código de grupo fácil de ditar: 8 letras/números sem os que confundem (0/O, 1/I). */
-function groupCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const array = new Uint8Array(8);
-  crypto.getRandomValues(array);
-  return [...array].map((b) => alphabet[b % alphabet.length]).join("");
 }
 
 function cleanName(value) {
@@ -186,34 +175,65 @@ function cleanTrack(value) {
   return { title, artist: str(value.artist, 200), album: str(value.album, 200) };
 }
 
-function cleanBody(value) {
+
+/** Só informações de música (cartão de recomendação), com tamanho limitado. */
+function cleanCard(value) {
   if (!value || typeof value !== "object") return null;
-  if (value.type === "text") {
-    if (typeof value.text !== "string") return null;
-    const text = value.text.trim();
-    if (!text || text.length > MAX_TEXT) return null;
-    return { type: "text", text };
-  }
-  if (value.type === "music") {
-    const str = (v, max) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
-    const title = str(value.title, 200);
-    const kind = ["track", "album", "artist"].includes(value.kind) ? value.kind : "track";
-    if (!title) return null;
-    const url = (v) => (typeof v === "string" && /^https:\/\//.test(v) ? v.slice(0, 500) : null);
-    return {
-      type: "music",
-      kind,
-      title,
-      artist: str(value.artist, 200),
-      album: str(value.album, 200),
-      coverUrl: url(value.coverUrl),
-      link: url(value.link),
-      note: str(value.note, 500),
-    };
-  }
-  return null;
+  const str = (v, max) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+  const title = str(value.title, 200);
+  if (!title) return null;
+  const kind = ["track", "album", "artist"].includes(value.kind) ? value.kind : "track";
+  const url = (v) => (typeof v === "string" && /^https:\/\//.test(v) ? v.slice(0, 500) : null);
+  return {
+    kind,
+    title,
+    artist: str(value.artist, 200),
+    album: str(value.album, 200),
+    coverUrl: url(value.coverUrl),
+    link: url(value.link),
+  };
 }
 
+/**
+ * Redes públicas: { rede: "usuario" }, só as conhecidas e só o @ (letras,
+ * números, ponto, traço e sublinhado). null = inválido. Vazio some.
+ */
+export function cleanLinks(value) {
+  if (value === null || value === undefined) return {};
+  if (typeof value !== "object" || Array.isArray(value)) return null;
+  const links = {};
+  for (const [network, raw] of Object.entries(value)) {
+    if (!LINK_NETWORKS.includes(network)) return null;
+    if (raw === null || raw === "") continue;
+    if (typeof raw !== "string") return null;
+    const handle = raw.trim().replace(/^@/, "");
+    if (!/^[A-Za-z0-9._-]{1,60}$/.test(handle)) return null;
+    links[network] = handle;
+  }
+  return links;
+}
+
+/** Números: { whatsapp: "5591999999999" }, só dígitos com código do país (8 a 15). null = inválido. */
+export function cleanNumbers(value) {
+  if (value === null || value === undefined) return {};
+  if (typeof value !== "object" || Array.isArray(value)) return null;
+  const numbers = {};
+  for (const [network, raw] of Object.entries(value)) {
+    if (!NUMBER_NETWORKS.includes(network)) return null;
+    if (raw === null || raw === "") continue;
+    if (typeof raw !== "string" || !/^[1-9][0-9]{7,14}$/.test(raw)) return null;
+    numbers[network] = raw;
+  }
+  return numbers;
+}
+
+function parseJson(text, fallback) {
+  try {
+    return text ? JSON.parse(text) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 /** Manda um evento pela conexão; se ela já fechou, deixa para lá. */
 function send(ws, event) {
   try {
@@ -231,13 +251,13 @@ function safeAttachment(ws) {
   }
 }
 
-/** Linha do banco → mensagem no formato que o app entende. */
-function messageOf(row, conv) {
+/** Linha do anel → recomendação no formato que o app entende. */
+function recOf(row) {
   return {
     id: row.id,
-    conv,
-    sent: row.at,
-    body: JSON.parse(row.body),
+    at: row.at,
+    seq: row.seq,
+    card: JSON.parse(row.body),
     sender: row.sid ? { id: row.sid, handle: row.handle, name: row.name } : null,
   };
 }
@@ -260,13 +280,8 @@ export class Hub extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
-    this.rate = new Map();
     // Contadores das cotas: só na memória (zeram se o Hub reiniciar; o teto real é o da Cloudflare).
     this.counters = new Map();
-    // Push: quando cada celular foi acordado pela última vez (1 a cada 2 min, no máximo).
-    this.lastPush = new Map();
-    // Quem foi cutucado para entregar a quem (se o destinatário sumir de novo, vai para o anel).
-    this.poked = new Map();
     // "ping" do app responde sozinho, sem acordar o Hub.
     if (typeof WebSocketRequestResponsePair === "function") {
       ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
@@ -276,39 +291,26 @@ export class Hub extends DurableObject {
         id TEXT PRIMARY KEY, handle TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
         token_hash TEXT NOT NULL, created INTEGER NOT NULL, sharing INTEGER NOT NULL DEFAULT 0
       );
-      CREATE TABLE IF NOT EXISTS status (user_id TEXT PRIMARY KEY, now TEXT, updated INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS recent (user_id TEXT NOT NULL, at INTEGER NOT NULL, track TEXT NOT NULL);
-      CREATE INDEX IF NOT EXISTS recent_user ON recent(user_id, at);
-      CREATE TABLE IF NOT EXISTS groups (
-        id TEXT PRIMARY KEY, name TEXT NOT NULL, code TEXT UNIQUE NOT NULL, owner TEXT NOT NULL, created INTEGER NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS members (group_id TEXT NOT NULL, user_id TEXT NOT NULL, PRIMARY KEY (group_id, user_id));
-      CREATE TABLE IF NOT EXISTS contacts (a TEXT NOT NULL, b TEXT NOT NULL, PRIMARY KEY (a, b));
+      CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS friends (a TEXT NOT NULL, b TEXT NOT NULL, PRIMARY KEY (a, b));
+      CREATE INDEX IF NOT EXISTS friends_b ON friends(b);
+      CREATE TABLE IF NOT EXISTS requests (from_user TEXT NOT NULL, to_user TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (from_user, to_user));
+      CREATE INDEX IF NOT EXISTS requests_to ON requests(to_user);
       CREATE TABLE IF NOT EXISTS blocks (user_id TEXT NOT NULL, blocked TEXT NOT NULL, PRIMARY KEY (user_id, blocked));
-      CREATE TABLE IF NOT EXISTS inbox (
-        id TEXT PRIMARY KEY, to_user TEXT NOT NULL, conv TEXT NOT NULL, sender TEXT NOT NULL,
-        body TEXT NOT NULL, sent INTEGER NOT NULL
+      CREATE TABLE IF NOT EXISTS recs (
+        user_id TEXT NOT NULL, slot INTEGER NOT NULL, id TEXT NOT NULL, sender TEXT NOT NULL,
+        body TEXT NOT NULL, at INTEGER NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY (user_id, slot)
       );
-      CREATE INDEX IF NOT EXISTS inbox_user ON inbox(to_user, sent);
       CREATE TABLE IF NOT EXISTS image_parts (
         user_id TEXT NOT NULL, kind TEXT NOT NULL, part INTEGER NOT NULL, data BLOB NOT NULL,
         PRIMARY KEY (user_id, kind, part)
-      );
-      CREATE TABLE IF NOT EXISTS reminders (to_user TEXT PRIMARY KEY, senders TEXT NOT NULL);
-      CREATE TABLE IF NOT EXISTS ring (
-        user_id TEXT NOT NULL, slot INTEGER NOT NULL, id TEXT NOT NULL, conv TEXT NOT NULL, sender TEXT NOT NULL,
-        body TEXT NOT NULL, at INTEGER NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY (user_id, slot)
-      );
-      CREATE TABLE IF NOT EXISTS group_ring (
-        group_id TEXT NOT NULL, slot INTEGER NOT NULL, id TEXT NOT NULL, sender TEXT NOT NULL,
-        body TEXT NOT NULL, at INTEGER NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY (group_id, slot)
       );
       CREATE TABLE IF NOT EXISTS recent_log (user_id TEXT PRIMARY KEY, items TEXT NOT NULL, updated INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS images (
         user_id TEXT NOT NULL, kind TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (user_id, kind)
       );
     `);
-    // Colunas que chegaram depois (descrição, versões da foto e da capa).
+    // Colunas que chegaram depois.
     for (const column of [
       "bio TEXT NOT NULL DEFAULT ''",
       "avatar_v INTEGER NOT NULL DEFAULT 0",
@@ -316,6 +318,8 @@ export class Hub extends DurableObject {
       "color TEXT NOT NULL DEFAULT ''",
       "push_url TEXT NOT NULL DEFAULT ''",
       "profile_v INTEGER NOT NULL DEFAULT 0",
+      "links TEXT NOT NULL DEFAULT '{}'",
+      "numbers TEXT NOT NULL DEFAULT ''",
     ]) {
       try {
         this.sql.exec(`ALTER TABLE users ADD COLUMN ${column}`);
@@ -323,6 +327,25 @@ export class Hub extends DurableObject {
         // Já existe.
       }
     }
+    this.migrateToFriends();
+  }
+
+  /**
+   * Uma vez só: o chat saiu (0.30). Quem conversava vira amigo; mensagens,
+   * grupos, lembretes, caixas postais e endereços de push são apagados.
+   */
+  migrateToFriends() {
+    if (this.first("SELECT value FROM meta WHERE key = 'no_chat'")) return;
+    try {
+      this.sql.exec("INSERT OR IGNORE INTO friends (a, b) SELECT a, b FROM contacts WHERE a < b");
+    } catch {
+      // Banco novo: nunca teve conversas.
+    }
+    for (const table of ["inbox", "ring", "group_ring", "reminders", "groups", "members", "contacts", "status", "recent"]) {
+      this.sql.exec(`DROP TABLE IF EXISTS ${table}`);
+    }
+    this.sql.exec("UPDATE users SET push_url = '' WHERE push_url != ''");
+    this.sql.exec("INSERT INTO meta (key, value) VALUES ('no_chat', '1')");
   }
 
   all(query, ...args) {
@@ -342,6 +365,7 @@ export class Hub extends DurableObject {
     return user.token_hash === (await sha256(match[2])) ? user : null;
   }
 
+  /** O que qualquer pessoa vê de um perfil (sem número, sem "ouvindo"). */
   publicUser(user) {
     return {
       id: user.id,
@@ -351,56 +375,73 @@ export class Hub extends DurableObject {
       avatar: user.avatar_v ?? 0,
       banner: user.banner_v ?? 0,
       color: user.color ?? "",
+      links: parseJson(user.links, {}),
       // Versão do perfil: muda a cada edição; o app só baixa de novo quando muda.
       v: user.profile_v ?? 0,
     };
   }
 
-  /** Conversaram em particular ou estão num mesmo grupo. */
-  related(a, b) {
-    if (a === b) return true;
-    if (this.first("SELECT 1 AS x FROM contacts WHERE a = ? AND b = ?", a, b)) return true;
-    return !!this.first(
-      "SELECT 1 AS x FROM members m1 JOIN members m2 ON m1.group_id = m2.group_id WHERE m1.user_id = ? AND m2.user_id = ?",
-      a,
-      b,
-    );
+  /** O seu próprio perfil, com o que só você vê (números guardados e compartilhamento). */
+  ownProfile(me) {
+    const numbers = parseJson(me.numbers, null);
+    return { ...this.publicUser(me), sharing: me.sharing === 1, numbers: numbers ?? {}, shareNumbers: numbers !== null };
+  }
+
+  // ---- Amizades ----
+
+  isFriend(x, y) {
+    const [a, b] = x < y ? [x, y] : [y, x];
+    return !!this.first("SELECT 1 AS x FROM friends WHERE a = ? AND b = ?", a, b);
+  }
+
+  friendIds(userId) {
+    return this.all(
+      "SELECT b AS id FROM friends WHERE a = ? UNION SELECT a AS id FROM friends WHERE b = ?",
+      userId,
+      userId,
+    ).map((row) => row.id);
+  }
+
+  /** Relação de [viewer] com [user]: "self", "friend", "sent" (pedido seu), "received" (pedido dele) ou "none". */
+  relation(viewerId, userId) {
+    if (viewerId === userId) return "self";
+    if (this.isFriend(viewerId, userId)) return "friend";
+    if (this.first("SELECT 1 AS x FROM requests WHERE from_user = ? AND to_user = ?", viewerId, userId)) return "sent";
+    if (this.first("SELECT 1 AS x FROM requests WHERE from_user = ? AND to_user = ?", userId, viewerId)) return "received";
+    return "none";
+  }
+
+  /** Avisa os aparelhos conectados de [userIds] que a lista de amigos mudou (nada é gravado). */
+  friendsChanged(...userIds) {
+    for (const id of userIds) for (const ws of this.sockets(id)) send(ws, { t: "friends" });
   }
 
   blocked(owner, other) {
     return !!this.first("SELECT 1 AS x FROM blocks WHERE user_id = ? AND blocked = ?", owner, other);
   }
 
-  /** O que [viewer] pode ver de [user]: o "ouvindo" só com compartilhamento ligado e sendo próximos. */
+  /**
+   * O que [viewer] pode ver de [user]: redes públicas para todos; número e
+   * "ouvindo agora" só para amigos (e o "ouvindo" só com o compartilhamento ligado).
+   */
   profileFor(viewer, user) {
+    const blockedMe = this.blocked(user.id, viewer.id);
     const profile = this.publicUser(user);
-    const canSee =
-      user.sharing === 1 && this.related(viewer.id, user.id) && !this.blocked(user.id, viewer.id);
+    if (blockedMe) profile.links = {};
+    profile.relation = blockedMe ? "none" : this.relation(viewer.id, user.id);
+    const friend = profile.relation === "friend";
+    profile.numbers = friend ? parseJson(user.numbers, null) ?? {} : {};
+    const canSee = friend && user.sharing === 1;
     if (canSee) {
-      // Conectado: o "ouvindo agora" vem da conexão. Senão, do formato antigo (app antigo).
+      // Conectado: o "ouvindo agora" vem da conexão.
       const live = this.liveOf(user.id);
-      if (live) {
-        profile.now = live.now ?? null;
-        profile.updated = live.at || null;
-      } else {
-        const status = this.first("SELECT now, updated FROM status WHERE user_id = ?", user.id);
-        profile.now = status?.now ? JSON.parse(status.now) : null;
-        profile.updated = status?.updated ?? null;
-      }
+      profile.now = live?.now ?? null;
+      profile.updated = live?.at || null;
       profile.recent = mergeRecent(live?.recent ?? [], this.storedRecent(user.id));
     }
     profile.sharing = canSee;
     profile.blockedByMe = this.blocked(viewer.id, user.id);
     return profile;
-  }
-
-  allowMessage(userId) {
-    const now = Date.now();
-    const recent = (this.rate.get(userId) ?? []).filter((t) => now - t < 60_000);
-    if (recent.length >= MESSAGES_PER_MINUTE) return false;
-    recent.push(now);
-    this.rate.set(userId, recent);
-    return true;
   }
 
   /** Cota diária (ou por hora, com [windowMs]) de [kind] para [key]. */
@@ -435,10 +476,7 @@ export class Hub extends DurableObject {
 
   storedRecent(userId) {
     const row = this.first("SELECT items FROM recent_log WHERE user_id = ?", userId);
-    if (row) return JSON.parse(row.items);
-    return this.all("SELECT at, track FROM recent WHERE user_id = ? ORDER BY at DESC LIMIT ?", userId, RECENT_KEEP).map(
-      (r) => ({ at: r.at, ...JSON.parse(r.track) }),
-    );
+    return row ? JSON.parse(row.items) : [];
   }
 
   /** Grava de uma vez as músicas ouvidas na conexão (uma escrita por sessão). */
@@ -454,7 +492,6 @@ export class Hub extends DurableObject {
         JSON.stringify(items),
         Date.now(),
       );
-      this.sql.exec("DELETE FROM recent WHERE user_id = ?", state.id);
     }
     try {
       ws.serializeAttachment({ ...state, recent: [], flushed: true });
@@ -463,30 +500,17 @@ export class Hub extends DurableObject {
     }
   }
 
-  /** Quem pode ver o "ouvindo" de [userId]: conversaram ou dividem grupo. */
-  relatedIds(userId) {
-    return this.all(
-      `SELECT b AS id FROM contacts WHERE a = ?
-       UNION SELECT m2.user_id AS id FROM members m1 JOIN members m2 ON m1.group_id = m2.group_id
-       WHERE m1.user_id = ? AND m2.user_id != ?`,
-      userId,
-      userId,
-      userId,
-    ).map((row) => row.id);
-  }
-
-  /** A lista "ouvindo agora" de [me] (a mesma de GET /activity). */
+  /** Os seus amigos, com o que cada um está ouvindo (quem não compartilha vem só com o nome). */
   activityFor(me) {
-    return this.relatedIds(me.id)
+    return this.friendIds(me.id)
       .map((id) => this.first("SELECT * FROM users WHERE id = ?", id))
-      .filter((user) => user && user.sharing === 1)
-      .map((user) => this.profileFor(me, user))
-      .filter((profile) => profile.sharing);
+      .filter(Boolean)
+      .map((user) => this.profileFor(me, user));
   }
 
   /** Avisa os amigos conectados que o "ouvindo agora" de [user] mudou. */
   announce(user) {
-    for (const viewerId of this.relatedIds(user.id)) {
+    for (const viewerId of this.friendIds(user.id)) {
       const sockets = this.sockets(viewerId);
       if (sockets.length === 0) continue;
       const viewer = this.first("SELECT * FROM users WHERE id = ?", viewerId);
@@ -496,18 +520,11 @@ export class Hub extends DurableObject {
     }
   }
 
-  /** Manda mensagens ao vivo para todos os aparelhos conectados de [userId]. */
-  deliverLive(userId, messages) {
-    const sockets = this.sockets(userId);
-    for (const ws of sockets) send(ws, { t: "inbox", messages });
-    return sockets.length > 0;
-  }
-
-  // ---- Caixa postal circular (anel) ----
+  // ---- Recomendações (anel de 50 por pessoa, 30 dias) ----
 
   /**
-   * Guarda [message] no anel: as primeiras ocupam posições novas; depois, a
-   * nova sobrescreve a mais antiga. Uma escrita por mensagem, nenhuma exclusão.
+   * Guarda no anel: as primeiras ocupam posições novas; depois, a nova
+   * sobrescreve a mais antiga. Uma escrita por recomendação, nenhuma exclusão.
    */
   ringPut(table, keyColumn, key, size, message) {
     if (this.first(`SELECT 1 AS x FROM ${table} WHERE ${keyColumn} = ? AND id = ?`, key, message.id)) return;
@@ -532,187 +549,39 @@ export class Hub extends DurableObject {
     );
   }
 
-  /** As mensagens do anel de [userId] depois de [since] (e de no máximo 7 dias). */
-  ringSince(userId, since) {
+  /** Recomendações recebidas por [userId] depois de [since]. */
+  recsSince(userId, since) {
     return this.all(
-      `SELECT r.id, r.conv, r.body, r.at, r.seq, u.id AS sid, u.handle, u.name FROM ring r LEFT JOIN users u ON u.id = r.sender
+      `SELECT r.id, r.body, r.at, r.seq, u.id AS sid, u.handle, u.name FROM recs r LEFT JOIN users u ON u.id = r.sender
        WHERE r.user_id = ? AND r.seq > ? AND r.seq > ? ORDER BY r.seq`,
       userId,
-      since,
-      Date.now() - RING_DAYS_MS,
-    ).map((row) => ({ ...messageOf(row, row.conv), seq: row.seq, ring: true }));
-  }
-
-  /** Mensagens dos grupos de [me] depois dos cursores de cada um (sem as suas e as de quem você bloqueou). */
-  groupItemsFor(me, cursors) {
-    const items = [];
-    const groups = this.all("SELECT group_id FROM members WHERE user_id = ?", me.id);
-    for (const { group_id: groupId } of groups) {
-      const since = Number(cursors?.[groupId]) || 0;
-      const rows = this.all(
-        `SELECT g.id, g.body, g.at, g.seq, u.id AS sid, u.handle, u.name FROM group_ring g LEFT JOIN users u ON u.id = g.sender
-         WHERE g.group_id = ? AND g.seq > ? AND g.seq > ? AND g.sender != ? ORDER BY g.seq`,
-        groupId,
-        since,
-        Date.now() - RING_DAYS_MS,
-        me.id,
-      );
-      for (const row of rows) {
-        if (row.sid && this.blocked(me.id, row.sid)) continue;
-        items.push({ ...messageOf(row, "g:" + groupId), seq: row.seq, group: groupId });
-      }
-    }
-    return items;
-  }
-
-  /** Só a caixa de entrada antiga (mensagens de apps antigos, até alguém confirmar). */
-  legacyOnly(userId) {
-    return this.all(
-      "SELECT i.id, i.conv, i.body, i.sent AS at, u.id AS sid, u.handle, u.name FROM inbox i LEFT JOIN users u ON u.id = i.sender WHERE i.to_user = ? ORDER BY i.sent LIMIT 200",
-      userId,
-    ).map((row) => ({ ...messageOf(row, row.conv), legacy: true }));
-  }
-
-  /** Formato antigo (app até a 0.28): caixa de entrada + anéis, tudo junto. */
-  inboxOf(user) {
-    const legacy = this.all(
-      "SELECT i.id, i.conv, i.body, i.sent AS at, u.id AS sid, u.handle, u.name FROM inbox i LEFT JOIN users u ON u.id = i.sender WHERE i.to_user = ? ORDER BY i.sent LIMIT 200",
-      user.id,
-    ).map((row) => messageOf(row, row.conv));
-    return [...legacy, ...this.ringSince(user.id, 0), ...this.groupItemsFor(user, {})];
-  }
-
-  // ---- Lembretes e push ----
-
-  /** "Tenho mensagens para você": uma linha por destinatário, regravada só se o remetente for novo. */
-  remind(toId, senderId) {
-    const row = this.first("SELECT senders FROM reminders WHERE to_user = ?", toId);
-    const senders = row ? JSON.parse(row.senders) : [];
-    if (senders.includes(senderId)) return;
-    senders.push(senderId);
-    this.sql.exec(
-      "INSERT INTO reminders (to_user, senders) VALUES (?, ?) ON CONFLICT(to_user) DO UPDATE SET senders = excluded.senders",
-      toId,
-      JSON.stringify(senders),
-    );
-  }
-
-  /** [me] apareceu: cutuca quem tem mensagens para ele (pela conexão, ou por push). */
-  wakeSenders(me) {
-    const row = this.first("SELECT senders FROM reminders WHERE to_user = ?", me.id);
-    if (!row) return;
-    this.sql.exec("DELETE FROM reminders WHERE to_user = ?", me.id);
-    const now = Date.now();
-    for (const senderId of JSON.parse(row.senders)) {
-      this.poked.set(`${senderId}>${me.id}`, now);
-      const sockets = this.sockets(senderId);
-      if (sockets.length > 0) {
-        for (const ws of sockets) send(ws, { t: "poke", to: me.id });
-      } else {
-        this.push(senderId);
-      }
-    }
+      Number(since) || 0,
+      Date.now() - RECS_MS,
+    ).map((row) => recOf(row));
   }
 
   /**
-   * Acorda o celular de [userId] pelo UnifiedPush (o aviso diz só "acorde";
-   * nada da mensagem passa pelo serviço de push). No máximo 1 a cada 2 min:
-   * o que chegar nesse meio-tempo espera o próximo. false = não tem push.
+   * Recomenda [rawCard] a amigos [to]. [cid] é o id gerado no celular:
+   * reenviar não duplica. Devolve os ids de quem recebeu.
    */
-  push(userId) {
-    const user = this.first("SELECT push_url FROM users WHERE id = ?", userId);
-    if (!user?.push_url) return false;
-    const now = Date.now();
-    if (now - (this.lastPush.get(userId) ?? 0) < PUSH_GAP_MS) return true;
-    this.lastPush.set(userId, now);
-    const request = fetch(user.push_url, {
-      method: "POST",
-      headers: { "content-type": "application/octet-stream", ttl: "86400", urgency: "high" },
-      body: "1",
-    })
-      .then((response) => {
-        // Endereço que não vale mais (desinstalou o ntfy, trocou de distribuidor).
-        if (response.status === 404 || response.status === 410) {
-          this.sql.exec("UPDATE users SET push_url = '' WHERE id = ? AND push_url = ?", userId, user.push_url);
-        }
-      })
-      .catch(() => {});
-    this.ctx.waitUntil?.(request);
-    return true;
-  }
-
-  /**
-   * Manda uma mensagem (HTTP ou WebSocket). [cid] é o id gerado no celular:
-   * reenviar a mesma mensagem não duplica. Devolve { status, data } com
-   * data.how dizendo o que aconteceu:
-   * - "live": o destinatário estava conectado e recebeu agora (nada gravado);
-   * - "waiting": fica no celular de quem enviou; o servidor guardou só um lembrete;
-   * - "mailbox": foi para a caixa postal (anel) do destinatário;
-   * - "group": gravada uma vez no anel do grupo.
-   * [opts.v2] = app novo (fase 3); [opts.at] = hora em que foi escrita no
-   * celular; [opts.mailbox] = 24 h sem entregar: manda para a caixa postal.
-   */
-  postMessage(me, conv, rawBody, cid, opts = {}) {
-    const body = cleanBody(rawBody);
-    if (typeof conv !== "string" || !body || JSON.stringify(body).length > MAX_BODY_BYTES) {
-      return { status: 400, data: { error: "invalid" } };
-    }
-    if (!this.allowMessage(me.id)) return { status: 429, data: { error: "slow_down" } };
-    if (!this.allow("messages", me.id, MESSAGES_PER_DAY)) return { status: 429, data: { error: "daily_limit" } };
-    const id = typeof cid === "string" && /^[0-9a-f]{32}$/.test(cid) ? cid : randomHex(16);
-    const now = Date.now();
-    const at = Number.isFinite(opts.at) && opts.at <= now + 300_000 && opts.at >= now - 8 * 86_400_000 ? Math.floor(opts.at) : now;
+  recommend(me, to, rawCard, cid) {
+    const card = cleanCard(rawCard);
+    const ids = Array.isArray(to) ? [...new Set(to.filter((id) => typeof id === "string" && USER_ID.test(id)))].slice(0, MAX_RECIPIENTS) : [];
+    if (!card || ids.length === 0) return { status: 400, data: { error: "invalid" } };
+    const id = typeof cid === "string" && USER_ID.test(cid) ? cid : randomHex(16);
+    const at = Date.now();
     const sender = { id: me.id, handle: me.handle, name: me.name };
-    const result = (how) => ({ status: 200, data: { id, sent: at, how } });
-
-    if (conv.startsWith("dm:")) {
-      const to = this.first("SELECT * FROM users WHERE id = ?", conv.slice(3));
-      if (!to) return { status: 404, data: { error: "not_found" } };
-      if (this.blocked(to.id, me.id)) return result("mailbox"); // bloqueado: some em silêncio
-      this.sql.exec("INSERT OR IGNORE INTO contacts (a, b) VALUES (?, ?)", me.id, to.id);
-      this.sql.exec("INSERT OR IGNORE INTO contacts (a, b) VALUES (?, ?)", to.id, me.id);
-      const message = { id, conv: "dm:" + me.id, sent: at, body, sender };
-      // Destinatário conectado: vai direto, sem gravar nada.
-      if (!opts.mailbox && this.deliverLive(to.id, [{ ...message, live: true }])) {
-        if (!opts.v2) this.ringPut("ring", "user_id", to.id, RING_SIZE, message); // app antigo não manda recibo
-        return result(opts.v2 ? "live" : "mailbox");
-      }
-      // Rede de segurança: app antigo, 24 h sem entregar, quem enviou não pode ser
-      // acordado (sem push) ou o destinatário sumiu de novo depois do cutucão.
-      const recentlyPoked = now - (this.poked.get(`${me.id}>${to.id}`) ?? 0) < POKE_MEMORY_MS;
-      if (!opts.v2 || opts.mailbox || !me.push_url || recentlyPoked) {
-        this.ringPut("ring", "user_id", to.id, RING_SIZE, message);
-        this.push(to.id);
-        return result("mailbox");
-      }
-      this.remind(to.id, me.id);
-      this.push(to.id);
-      return result("waiting");
+    const sent = [];
+    for (const toId of ids) {
+      if (!this.isFriend(me.id, toId)) continue;
+      if (!this.allow("recs", me.id, RECOMMENDATIONS_PER_DAY)) return { status: 429, data: { error: "daily_limit", sent } };
+      sent.push(toId);
+      if (this.blocked(toId, me.id)) continue; // bloqueado: some em silêncio
+      this.ringPut("recs", "user_id", toId, RECS_SIZE, { id, sent: at, body: card, sender });
+      const row = this.first("SELECT seq FROM recs WHERE user_id = ? AND id = ?", toId, id);
+      for (const ws of this.sockets(toId)) send(ws, { t: "rec", items: [{ id, at, seq: row?.seq ?? 0, card, sender }] });
     }
-    if (conv.startsWith("g:")) {
-      const groupId = conv.slice(2);
-      if (!this.first("SELECT 1 AS x FROM members WHERE group_id = ? AND user_id = ?", groupId, me.id)) {
-        return { status: 403, data: { error: "not_member" } };
-      }
-      // Grupo: gravada uma vez no anel do grupo; quem está online recebe na hora, quem não está é acordado.
-      const message = { id, conv, sent: at, body, sender };
-      this.ringPut("group_ring", "group_id", groupId, GROUP_RING_SIZE, message);
-      const seq = this.first("SELECT seq FROM group_ring WHERE group_id = ? AND id = ?", groupId, id)?.seq;
-      const others = this.all("SELECT user_id FROM members WHERE group_id = ? AND user_id != ?", groupId, me.id);
-      for (const row of others) {
-        if (this.blocked(row.user_id, me.id)) continue;
-        if (!this.deliverLive(row.user_id, [{ ...message, seq, group: groupId }])) this.push(row.user_id);
-      }
-      return result("group");
-    }
-    return { status: 400, data: { error: "invalid" } };
-  }
-
-  /** Endereço de push (UnifiedPush) do celular; gravado só quando muda. */
-  setPush(me, url) {
-    const clean = typeof url === "string" && /^https:\/\/[^\s]{8,500}$/.test(url) ? url : "";
-    if (clean === (me.push_url ?? "")) return;
-    this.sql.exec("UPDATE users SET push_url = ? WHERE id = ?", clean, me.id);
+    return { status: 200, data: { id, sent } };
   }
 
   async webSocketMessage(ws, raw) {
@@ -731,6 +600,9 @@ export class Hub extends DurableObject {
       return;
     }
     switch (msg?.t) {
+      case "hello":
+        // Recomendações que chegaram desde a última vez (o celular guarda até onde já leu).
+        return send(ws, { t: "rec", items: this.recsSince(me.id, msg.since), complete: true });
       case "now": {
         // "Ouvindo agora": guardado na conexão, nunca no banco.
         if (me.sharing !== 1) return;
@@ -751,54 +623,21 @@ export class Hub extends DurableObject {
         this.announce(me);
         return;
       }
-      case "hello": {
-        // App novo (fase 3): diz até onde já leu e recebe só o que falta.
-        if (msg.push !== undefined) this.setPush(me, msg.push);
-        const since = Number(msg.since) || 0;
-        const items = [...this.legacyOnly(me.id), ...this.ringSince(me.id, since), ...this.groupItemsFor(me, msg.groups)];
-        send(ws, { t: "inbox", messages: items, complete: true });
-        // Versões dos perfis de quem você conhece: o app só baixa o que mudou.
-        const versions = {};
-        for (const id of this.relatedIds(me.id)) {
-          const user = this.first("SELECT profile_v FROM users WHERE id = ?", id);
-          if (user) versions[id] = user.profile_v ?? 0;
-        }
-        send(ws, { t: "versions", users: versions });
-        this.wakeSenders(me);
+      case "react": {
+        // Reação com emoji ao que o amigo está ouvindo: só ao vivo, nada gravado.
+        if (typeof msg.to !== "string" || !REACTIONS.includes(msg.emoji)) return;
+        if (!this.isFriend(me.id, msg.to) || this.blocked(msg.to, me.id)) return;
+        if (!this.allow("reactions", me.id, REACTIONS_PER_MINUTE, 60_000)) return;
+        const title = typeof msg.title === "string" ? msg.title.trim().slice(0, 200) || null : null;
+        const from = { id: me.id, handle: me.handle, name: me.name };
+        for (const socket of this.sockets(msg.to)) send(socket, { t: "reaction", from, emoji: msg.emoji, title, at: Date.now() });
         return;
       }
-      case "push":
-        this.setPush(me, msg.url);
-        return;
-      case "send": {
-        const result = this.postMessage(me, msg.conv, msg.body, msg.cid, {
-          v2: msg.v === 2,
-          at: msg.at,
-          mailbox: msg.mailbox === true,
-        });
-        send(ws, { t: "sent", cid: msg.cid ?? null, status: result.status, ...result.data });
+      case "recommend": {
+        const result = this.recommend(me, msg.to, msg.card, msg.cid);
+        send(ws, { t: "recommended", cid: msg.cid ?? null, status: result.status, ...result.data });
         return;
       }
-      case "delivered": {
-        // Recibo "entregue": vai direto para o celular de quem enviou (nada gravado).
-        const items = Array.isArray(msg.items) ? msg.items.slice(0, 500) : [];
-        const bySender = new Map();
-        for (const item of items) {
-          if (typeof item?.id !== "string" || typeof item?.to !== "string") continue;
-          bySender.set(item.to, [...(bySender.get(item.to) ?? []), item.id]);
-        }
-        for (const [senderId, ids] of bySender) {
-          for (const socket of this.sockets(senderId)) send(socket, { t: "delivered", ids, by: me.id });
-        }
-        return;
-      }
-      case "ack": {
-        const ids = Array.isArray(msg.ids) ? msg.ids.filter((v) => typeof v === "string").slice(0, 500) : [];
-        for (const id of ids) this.sql.exec("DELETE FROM inbox WHERE id = ? AND to_user = ?", id, me.id);
-        return;
-      }
-      case "sync":
-        return send(ws, { t: "inbox", messages: this.inboxOf(me) });
       case "activity":
         return send(ws, { t: "activity", people: this.activityFor(me) });
     }
@@ -872,18 +711,6 @@ export class Hub extends DurableObject {
     return joined;
   }
 
-  groupCount(userId) {
-    return this.first("SELECT COUNT(*) AS n FROM members WHERE user_id = ?", userId).n;
-  }
-
-  groupInfo(group) {
-    const members = this.all(
-      "SELECT u.id, u.handle, u.name FROM members m JOIN users u ON u.id = m.user_id WHERE m.group_id = ? ORDER BY u.name",
-      group.id,
-    );
-    return { id: group.id, name: group.name, code: group.code, owner: group.owner, members };
-  }
-
   async fetch(request) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/^\/v1/, "");
@@ -932,15 +759,12 @@ export class Hub extends DurableObject {
       const [client, server] = Object.values(pair);
       this.ctx.acceptWebSocket(server, [me.id]);
       server.serializeAttachment({ id: me.id, now: null, at: 0, recent: [] });
-      // Logo ao conectar: o que chegou enquanto estava fora e quem está ouvindo o quê.
-      send(server, { t: "hello", me: { ...this.publicUser(me), sharing: me.sharing === 1 } });
-      // App antigo recebe tudo ao conectar; o novo (?v=2) manda "hello" com até onde já leu.
-      if (url.searchParams.get("v") !== "2") send(server, { t: "inbox", messages: this.inboxOf(me) });
+      send(server, { t: "hello", me: this.ownProfile(me) });
       send(server, { t: "activity", people: this.activityFor(me) });
       return new Response(null, { status: 101, webSocket: client });
     }
 
-    if (path === "/me" && method === "GET") return json({ ...this.publicUser(me), sharing: me.sharing === 1 });
+    if (path === "/me" && method === "GET") return json(this.ownProfile(me));
     if (path === "/me" && method === "PATCH") {
       const name = body?.name === undefined ? me.name : cleanName(body.name);
       if (!name) return json({ error: "invalid" }, 400);
@@ -952,42 +776,57 @@ export class Hub extends DurableObject {
       if (typeof color !== "string" || (color !== "" && !/^#[0-9a-fA-F]{6}$/.test(color))) {
         return json({ error: "invalid" }, 400);
       }
-      const changed = name !== me.name || bio !== (me.bio ?? "") || color.toUpperCase() !== (me.color ?? "");
+      const links = body?.links === undefined ? parseJson(me.links, {}) : cleanLinks(body.links);
+      if (links === null) return json({ error: "invalid" }, 400);
+      // Números: só guardados com "Mostrar meu número aos amigos" ligado; desligar apaga.
+      const shareNumbers = body?.shareNumbers === undefined ? me.numbers !== "" : body.shareNumbers === true;
+      const numbers = body?.numbers === undefined ? parseJson(me.numbers, {}) : cleanNumbers(body.numbers);
+      if (numbers === null) return json({ error: "invalid" }, 400);
+      const numbersText = shareNumbers ? JSON.stringify(numbers) : "";
+      const linksText = JSON.stringify(links);
+      const changed =
+        name !== me.name ||
+        bio !== (me.bio ?? "") ||
+        color.toUpperCase() !== (me.color ?? "") ||
+        linksText !== (me.links ?? "{}") ||
+        numbersText !== (me.numbers ?? "");
       const profileV = changed ? (me.profile_v ?? 0) + 1 : me.profile_v ?? 0;
       this.sql.exec(
-        "UPDATE users SET name = ?, sharing = ?, bio = ?, color = ?, profile_v = ? WHERE id = ?",
+        "UPDATE users SET name = ?, sharing = ?, bio = ?, color = ?, links = ?, numbers = ?, profile_v = ? WHERE id = ?",
         name,
         sharing,
         bio,
         color.toUpperCase(),
+        linksText,
+        numbersText,
         profileV,
         me.id,
       );
       if (!sharing) {
         // Parou de compartilhar: apaga o que estava guardado.
-        this.sql.exec("DELETE FROM status WHERE user_id = ?", me.id);
-        this.sql.exec("DELETE FROM recent WHERE user_id = ?", me.id);
         this.sql.exec("DELETE FROM recent_log WHERE user_id = ?", me.id);
         for (const ws of this.sockets(me.id)) {
           const state = safeAttachment(ws);
           if (state) ws.serializeAttachment({ ...state, now: null, recent: [], at: Date.now() });
         }
       }
-      return json({ ...this.publicUser({ ...me, name, bio, color: color.toUpperCase(), profile_v: profileV }), sharing: sharing === 1 });
+      const updated = { ...me, name, sharing, bio, color: color.toUpperCase(), links: linksText, numbers: numbersText, profile_v: profileV };
+      if (changed || sharing !== me.sharing) this.announce(updated);
+      return json(this.ownProfile(updated));
     }
     if (path === "/me" && method === "DELETE") {
+      const friends = this.friendIds(me.id);
       for (const ws of this.sockets(me.id)) ws.close(4001, "deleted");
-      this.sql.exec("DELETE FROM reminders WHERE to_user = ?", me.id);
-      for (const table of ["status", "recent", "recent_log", "images", "image_parts", "ring"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
-      this.sql.exec("DELETE FROM members WHERE user_id = ?", me.id);
-      this.sql.exec("DELETE FROM contacts WHERE a = ? OR b = ?", me.id, me.id);
+      for (const table of ["recent_log", "images", "image_parts", "recs"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
+      this.sql.exec("DELETE FROM friends WHERE a = ? OR b = ?", me.id, me.id);
+      this.sql.exec("DELETE FROM requests WHERE from_user = ? OR to_user = ?", me.id, me.id);
       this.sql.exec("DELETE FROM blocks WHERE user_id = ? OR blocked = ?", me.id, me.id);
-      this.sql.exec("DELETE FROM inbox WHERE to_user = ? OR sender = ?", me.id, me.id);
       this.sql.exec("DELETE FROM users WHERE id = ?", me.id);
+      this.friendsChanged(...friends);
       return json({ ok: true });
     }
 
-    // Foto de perfil e capa (banner): o app manda o JPEG já reduzido.
+    // Foto de perfil e capa (banner): o app manda a imagem já reduzida (WebP ou GIF).
     if (imagePath && method === "PUT") {
       const bytes = new Uint8Array(await request.arrayBuffer());
       if (!imageType(bytes)) return json({ error: "invalid" }, 400);
@@ -998,14 +837,14 @@ export class Hub extends DurableObject {
       const profileV = (me.profile_v ?? 0) + 1;
       this.saveImage(me.id, kind, bytes);
       this.sql.exec(`UPDATE users SET ${kind}_v = ?, profile_v = ? WHERE id = ?`, version, profileV, me.id);
-      return json({ ...this.publicUser({ ...me, [`${kind}_v`]: version, profile_v: profileV }), sharing: me.sharing === 1 });
+      return json(this.ownProfile({ ...me, [`${kind}_v`]: version, profile_v: profileV }));
     }
     if (imagePath && method === "DELETE") {
       const kind = imagePath[1];
       const profileV = (me.profile_v ?? 0) + 1;
       this.deleteImage(me.id, kind);
       this.sql.exec(`UPDATE users SET ${kind}_v = 0, profile_v = ? WHERE id = ?`, profileV, me.id);
-      return json({ ...this.publicUser({ ...me, [`${kind}_v`]: 0, profile_v: profileV }), sharing: me.sharing === 1 });
+      return json(this.ownProfile({ ...me, [`${kind}_v`]: 0, profile_v: profileV }));
     }
     const userImage = method === "GET" && path.match(/^\/users\/([0-9a-f]{32})\/image\/(avatar|banner)$/);
     if (userImage) {
@@ -1017,35 +856,11 @@ export class Hub extends DurableObject {
       });
     }
 
-    if (path === "/me/now" && method === "PUT") {
-      if (me.sharing !== 1) return json({ ok: true, ignored: true });
-      const track = body?.track === null ? null : cleanTrack(body?.track);
-      this.sql.exec(
-        "INSERT INTO status (user_id, now, updated) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET now = excluded.now, updated = excluded.updated",
-        me.id,
-        track ? JSON.stringify(track) : null,
-        Date.now(),
-      );
-      return json({ ok: true });
-    }
-    if (path === "/me/recent" && method === "POST") {
-      if (me.sharing !== 1) return json({ ok: true, ignored: true });
-      const track = cleanTrack(body?.track);
-      if (!track) return json({ error: "invalid" }, 400);
-      this.sql.exec("INSERT INTO recent (user_id, at, track) VALUES (?, ?, ?)", me.id, Date.now(), JSON.stringify(track));
-      this.sql.exec(
-        "DELETE FROM recent WHERE user_id = ? AND at NOT IN (SELECT at FROM recent WHERE user_id = ? ORDER BY at DESC LIMIT ?)",
-        me.id,
-        me.id,
-        RECENT_KEEP,
-      );
-      return json({ ok: true });
-    }
-
     if (method === "GET" && path.startsWith("/users/by-handle/")) {
       const handle = decodeURIComponent(path.slice("/users/by-handle/".length)).toLowerCase();
       const user = this.first("SELECT * FROM users WHERE handle = ?", handle);
-      if (!user) return json({ error: "not_found" }, 404);
+      // Quem bloqueou você não aparece na busca.
+      if (!user || this.blocked(user.id, me.id)) return json({ error: "not_found" }, 404);
       return json(this.profileFor(me, user));
     }
     if (method === "GET" && path.startsWith("/users/")) {
@@ -1054,69 +869,65 @@ export class Hub extends DurableObject {
       return json(this.profileFor(me, user));
     }
 
-    if (method === "GET" && path === "/activity") {
-      // Todo mundo com quem conversei ou divido grupo, que compartilha o que ouve.
-      return json({ people: this.activityFor(me) });
+    if (method === "GET" && path === "/activity") return json({ people: this.activityFor(me) });
+
+    // ---- Amizade: pedido + aceite ----
+    if (method === "GET" && path === "/friends") {
+      const users = (rows) => rows.map((row) => this.first("SELECT * FROM users WHERE id = ?", row.id)).filter(Boolean).map((u) => this.publicUser(u));
+      return json({
+        friends: this.activityFor(me),
+        incoming: users(this.all("SELECT from_user AS id FROM requests WHERE to_user = ? ORDER BY at DESC", me.id)).filter(
+          (u) => !this.blocked(me.id, u.id),
+        ),
+        outgoing: users(this.all("SELECT to_user AS id FROM requests WHERE from_user = ? ORDER BY at DESC", me.id)),
+      });
+    }
+    const friendPath = path.match(/^\/friends\/([0-9a-f]{32})$/);
+    if (friendPath) {
+      const other = this.first("SELECT * FROM users WHERE id = ?", friendPath[1]);
+      if (!other || other.id === me.id) return json({ error: "not_found" }, 404);
+      if (method === "DELETE") {
+        // Desfazer amizade, cancelar o seu pedido ou recusar o dele.
+        const [a, b] = me.id < other.id ? [me.id, other.id] : [other.id, me.id];
+        this.sql.exec("DELETE FROM friends WHERE a = ? AND b = ?", a, b);
+        this.sql.exec("DELETE FROM requests WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)", me.id, other.id, other.id, me.id);
+        this.friendsChanged(me.id, other.id);
+        return json({ relation: "none" });
+      }
+      // POST: pedir, ou aceitar se a outra pessoa já tinha pedido.
+      const current = this.relation(me.id, other.id);
+      if (current === "friend" || current === "sent") return json({ relation: current });
+      if (this.blocked(other.id, me.id) || this.blocked(me.id, other.id)) return json({ relation: "sent" }); // bloqueado: some em silêncio
+      if (current === "received") {
+        const [a, b] = me.id < other.id ? [me.id, other.id] : [other.id, me.id];
+        this.sql.exec("DELETE FROM requests WHERE from_user = ? AND to_user = ?", other.id, me.id);
+        this.sql.exec("INSERT OR IGNORE INTO friends (a, b) VALUES (?, ?)", a, b);
+        this.friendsChanged(me.id, other.id);
+        return json({ relation: "friend" });
+      }
+      if (!this.allow("friend_requests", me.id, FRIEND_REQUESTS_PER_DAY)) return json({ error: "daily_limit" }, 429);
+      this.sql.exec("INSERT OR IGNORE INTO requests (from_user, to_user, at) VALUES (?, ?, ?)", me.id, other.id, Date.now());
+      this.friendsChanged(other.id);
+      return json({ relation: "sent" });
     }
 
-    if (method === "POST" && path === "/messages") {
-      const result = this.postMessage(me, body?.conv, body?.body, body?.cid, {
-        v2: body?.v === 2,
-        at: body?.at,
-        mailbox: body?.v === 2,
-      });
+    // ---- Recomendações (reserva HTTP; o normal é pela conexão) ----
+    if (path === "/recommendations" && method === "GET") {
+      return json({ items: this.recsSince(me.id, url.searchParams.get("since")) });
+    }
+    if (path === "/recommendations" && method === "POST") {
+      const result = this.recommend(me, body?.to, body?.card, body?.cid);
       return json(result.data, result.status);
     }
 
-    if (method === "GET" && path === "/inbox") return json({ messages: this.inboxOf(me) });
-    if (method === "POST" && path === "/inbox/ack") {
-      const ids = Array.isArray(body?.ids) ? body.ids.filter((v) => typeof v === "string").slice(0, 500) : [];
-      for (const id of ids) this.sql.exec("DELETE FROM inbox WHERE id = ? AND to_user = ?", id, me.id);
-      return json({ ok: true });
-    }
-
-    if (method === "POST" && path === "/groups") {
-      const name = cleanName(body?.name);
-      if (!name) return json({ error: "invalid" }, 400);
-      if (this.groupCount(me.id) >= GROUPS_PER_USER) return json({ error: "too_many_groups" }, 409);
-      const id = randomHex(16);
-      let code = groupCode();
-      while (this.first("SELECT 1 AS x FROM groups WHERE code = ?", code)) code = groupCode();
-      this.sql.exec("INSERT INTO groups (id, name, code, owner, created) VALUES (?, ?, ?, ?, ?)", id, name, code, me.id, Date.now());
-      this.sql.exec("INSERT INTO members (group_id, user_id) VALUES (?, ?)", id, me.id);
-      return json(this.groupInfo(this.first("SELECT * FROM groups WHERE id = ?", id)));
-    }
-    if (method === "POST" && path === "/groups/join") {
-      const code = typeof body?.code === "string" ? body.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") : "";
-      const group = this.first("SELECT * FROM groups WHERE code = ?", code);
-      if (!group) return json({ error: "not_found" }, 404);
-      const already = this.first("SELECT 1 AS x FROM members WHERE group_id = ? AND user_id = ?", group.id, me.id);
-      if (!already) {
-        if (this.first("SELECT COUNT(*) AS n FROM members WHERE group_id = ?", group.id).n >= GROUP_MEMBERS) {
-          return json({ error: "group_full" }, 409);
-        }
-        if (this.groupCount(me.id) >= GROUPS_PER_USER) return json({ error: "too_many_groups" }, 409);
-      }
-      this.sql.exec("INSERT OR IGNORE INTO members (group_id, user_id) VALUES (?, ?)", group.id, me.id);
-      return json(this.groupInfo(group));
-    }
-    const groupMatch = path.match(/^\/groups\/([0-9a-f]{32})(\/leave)?$/);
-    if (groupMatch) {
-      const group = this.first("SELECT * FROM groups WHERE id = ?", groupMatch[1]);
-      const member = group && this.first("SELECT 1 AS x FROM members WHERE group_id = ? AND user_id = ?", group.id, me.id);
-      if (!group || !member) return json({ error: "not_found" }, 404);
-      if (method === "GET" && !groupMatch[2]) return json(this.groupInfo(group));
-      if (method === "POST" && groupMatch[2]) {
-        this.sql.exec("DELETE FROM members WHERE group_id = ? AND user_id = ?", group.id, me.id);
-        const left = this.first("SELECT COUNT(*) AS n FROM members WHERE group_id = ?", group.id);
-        if (!left || left.n === 0) this.sql.exec("DELETE FROM groups WHERE id = ?", group.id);
-        return json({ ok: true });
-      }
-    }
-
     if (method === "POST" && path === "/blocks") {
-      if (typeof body?.id !== "string") return json({ error: "invalid" }, 400);
+      if (typeof body?.id !== "string" || !USER_ID.test(body.id)) return json({ error: "invalid" }, 400);
       this.sql.exec("INSERT OR IGNORE INTO blocks (user_id, blocked) VALUES (?, ?)", me.id, body.id);
+      // Bloquear também desfaz a amizade e os pedidos.
+      const [a, b] = me.id < body.id ? [me.id, body.id] : [body.id, me.id];
+      this.sql.exec("DELETE FROM friends WHERE a = ? AND b = ?", a, b);
+      this.sql.exec("DELETE FROM requests WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)", me.id, body.id, body.id, me.id);
+      this.friendsChanged(me.id, body.id);
       return json({ ok: true });
     }
     if (method === "DELETE" && path.startsWith("/blocks/")) {

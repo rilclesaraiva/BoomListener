@@ -5,25 +5,17 @@ package com.boomlistener.data.social
 
 import android.content.Context
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
-import org.unifiedpush.android.connector.UnifiedPush
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -38,45 +30,31 @@ import java.util.UUID
 
 /**
  * Servidor social na Cloudflare (social/worker.js). Não precisa de chave: o
- * perfil é criado aqui e o segredo fica guardado no aparelho.
+ * perfil é criado aqui e o segredo fica guardado no aparelho. Sem chat: só
+ * perfis, amizades, "ouvindo agora", recomendações e reações.
  */
 private const val SERVER = "https://boomlistener-social.saraivarilcle.workers.dev/v1"
-private const val SOCKET = "wss://boomlistener-social.saraivarilcle.workers.dev/v1/ws?v=2"
+private const val SOCKET = "wss://boomlistener-social.saraivarilcle.workers.dev/v1/ws?v=3"
 
 /** Músicas ouvidas sem conexão, guardadas para mandar quando conectar. */
 private const val MAX_QUEUED_LISTENS = 20
 
-/** Sem recibo depois de ir "ao vivo": manda de novo (o outro lado ignora repetidas). */
-private const val RECEIPT_TIMEOUT_MS = 60_000L
-
-/** 24 h presa no celular sem entregar: vai para a caixa postal do servidor. */
-private const val MAILBOX_AFTER_MS = 24 * 60 * 60_000L
-
-/** Sem conexão ao vivo, o HTTP só leva para a caixa postal o que espera há mais que isto. */
-private const val HTTP_FALLBACK_AFTER_MS = 10 * 60_000L
-
-/** Um push acorda o app por este tempo (para entregar ou buscar mensagens). */
-private const val PUSH_WAKE_MS = 45_000L
+private const val REASON_PLAYING = "playing"
 
 internal class HttpSocialRepository(private val context: Context) : SocialRepository {
 
     private val dir = File(context.filesDir, "social").apply { mkdirs() }
     private val accountFile = File(dir, "account.json")
-    private val chatsDir = File(dir, "chats").apply { mkdirs() }
     private val imagesDir = File(dir, "images").apply { mkdirs() }
     private val profilesDir = File(dir, "profiles").apply { mkdirs() }
-
-    // Versão do perfil de cada pessoa conhecida (chega ao conectar).
-    private val knownVersions = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    private val recommendationsFile = File(dir, "recommendations.json")
     private val mutex = Mutex()
 
     private val _account = MutableStateFlow(runCatching { readAccount() }.getOrNull())
     override val account: StateFlow<SocialAccount?> = _account.asStateFlow()
 
-    private val store = MutableStateFlow<Map<String, StoredConversation>?>(null)
-
-    @Volatile
-    private var openConversation: String? = null
+    // Versão do perfil de cada amigo (chega com a lista de amigos).
+    private val knownVersions = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     // ---- Conexão ao vivo (WebSocket) -------------------------------------
 
@@ -87,22 +65,14 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
     private var lastNow: TrackInfo? = null
     private val queuedListens = ArrayDeque<Pair<TrackInfo, Long>>()
 
-    // Até onde já lemos a caixa postal (anel) e o anel de cada grupo.
-    private val cursorsFile = File(dir, "cursors.json")
-    @Volatile
-    private var cursors = runCatching { readCursors() }.getOrDefault(Cursors())
+    private val _friends = MutableStateFlow(FriendsState())
+    override val friends: StateFlow<FriendsState> = _friends.asStateFlow()
 
-    // Mensagens que foram "ao vivo" e esperam o recibo de entrega (id → quando).
-    private val awaitingReceipt = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    private val _recommendations = MutableStateFlow(runCatching { readRecommendations() }.getOrDefault(emptyList()))
+    override val recommendations: StateFlow<List<Recommendation>> = _recommendations.asStateFlow()
 
-    private val _incoming = MutableSharedFlow<ChatMessage>(extraBufferCapacity = 64)
-    override val incoming: SharedFlow<ChatMessage> = _incoming.asSharedFlow()
-
-    // Push (UnifiedPush): o endereço que o distribuidor (ex.: ntfy) deu.
-    private val pushFile = File(dir, "push.txt")
-    private val _pushEnabled = MutableStateFlow(pushFile.exists() && UnifiedPush.getAckDistributor(context) != null)
-    override val pushEnabled: StateFlow<Boolean> = _pushEnabled.asStateFlow()
-    private var wakeJob: Job? = null
+    private val _reactions = MutableSharedFlow<Reaction>(extraBufferCapacity = 16)
+    override val reactions: SharedFlow<Reaction> = _reactions.asSharedFlow()
 
     private val link = SocialLink(
         scope = scope,
@@ -119,52 +89,19 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
     override fun keepConnected(reason: String, wanted: Boolean) = link.want(reason, wanted)
 
     init {
-        scope.launch { tickWhileOnline() }
-        // O UnifiedPush pede para registrar de novo de tempos em tempos (o endereço pode mudar).
-        if (_pushEnabled.value) runCatching { UnifiedPush.register(context, messageForDistributor = "Boom, listener!") }
+        // O chat saiu (0.30): conversas, cursores e push antigos são apagados do aparelho.
+        listOf("chats", "cursors.json", "cursors.json.tmp", "push.txt").forEach { File(dir, it).deleteRecursively() }
     }
 
-    /**
-     * Conectou: diz até onde já leu (o servidor manda só o que falta e cutuca
-     * quem tem mensagens para você), e manda o que ficou esperando: mensagens,
-     * "ouvindo agora" e músicas ouvidas.
-     */
+    /** Conectou: pede as recomendações que faltam e manda o "ouvindo agora" e as músicas ouvidas. */
     private suspend fun onLinkOpen() {
-        ensureLoaded()
-        link.send(
-            JSONObject()
-                .put("t", "hello")
-                .put("v", 2)
-                .put("since", cursors.since)
-                .put("groups", JSONObject(cursors.groups))
-                .put("push", currentPushUrl().orEmpty()),
-        )
-        resendWaiting { true }
+        link.send(JSONObject().put("t", "hello").put("since", recommendationsCursor()))
         if (_account.value?.sharing == true) {
             link.send(JSONObject().put("t", "now").put("track", lastNow?.let(::trackToJson) ?: JSONObject.NULL))
             val listens = synchronized(queuedListens) { queuedListens.toList().also { queuedListens.clear() } }
             listens.forEach { (track, at) ->
                 link.send(JSONObject().put("t", "listened").put("track", trackToJson(track)).put("at", at))
             }
-        }
-    }
-
-    /** Manda de novo as mensagens suas que ainda esperam ([filter] escolhe quais). */
-    private fun resendWaiting(filter: (ChatMessage) -> Boolean) {
-        val now = System.currentTimeMillis()
-        store.value.orEmpty().values.flatMap { it.messages }
-            .filter { it.sender == null && it.delivery == Delivery.Waiting && filter(it) }
-            .forEach { sendOverLink(it, mailbox = now - it.sentMs > MAILBOX_AFTER_MS) }
-    }
-
-    /** Enquanto conectado: reenvia o que ficou sem recibo e manda para a caixa postal o que passou de 24 h. */
-    private suspend fun tickWhileOnline() {
-        while (true) {
-            delay(RECEIPT_TIMEOUT_MS)
-            if (!link.isOnline) continue
-            val now = System.currentTimeMillis()
-            val stale = awaitingReceipt.filterValues { now - it > RECEIPT_TIMEOUT_MS }.keys
-            resendWaiting { it.id in stale || now - it.sentMs > MAILBOX_AFTER_MS }
         }
     }
 
@@ -175,93 +112,31 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 val updated = current.withServerFields(me)
                 if (updated != current) saveAccount(updated)
             }
-            "inbox" -> {
-                val array = event.optJSONArray("messages") ?: JSONArray()
-                receive(array) { ids -> link.send(JSONObject().put("t", "ack").put("ids", JSONArray(ids))) }
-                // Recibo "entregue" para quem mandou ao vivo (conversas particulares).
-                val receipts = JSONArray()
-                for (index in 0 until array.length()) {
-                    val json = array.getJSONObject(index)
-                    val senderId = json.optJSONObject("sender")?.optString("id").orEmpty()
-                    if (json.optBoolean("live") && senderId.isNotEmpty() && json.optString("conv").startsWith(DM_PREFIX)) {
-                        receipts.put(JSONObject().put("id", json.getString("id")).put("to", senderId))
-                    }
-                }
-                if (receipts.length() > 0) link.send(JSONObject().put("t", "delivered").put("items", receipts))
-            }
-            "versions" -> {
-                val users = event.optJSONObject("users") ?: JSONObject()
-                users.keys().forEach { id -> knownVersions[id] = users.optLong(id) }
-            }
             "activity" -> {
                 val list = event.optJSONArray("people") ?: JSONArray()
-                people.value = (0 until list.length()).map { parseProfile(list.getJSONObject(it)) }
+                val profiles = (0 until list.length()).map { parseProfile(list.getJSONObject(it)) }
+                profiles.forEach { knownVersions[it.user.id] = it.version }
+                people.value = profiles
+                _friends.value = _friends.value.copy(friends = profiles)
             }
             "person" -> event.optJSONObject("profile")?.let { json ->
-                people.value = withPerson(people.value.orEmpty(), parseProfile(json))
+                val profile = parseProfile(json)
+                knownVersions[profile.user.id] = profile.version
+                val updated = withPerson(people.value.orEmpty(), profile)
+                people.value = updated
+                _friends.value = _friends.value.copy(friends = updated)
             }
-            "sent" -> {
-                val cid = event.optString("cid")
-                if (event.optInt("status") != 200 || cid.isEmpty()) return
-                val delivery = deliveryAfterSend(event.optString("how"))
-                if (delivery == null) {
-                    // Foi ao vivo: espera o recibo (e manda de novo se não vier).
-                    awaitingReceipt[cid] = System.currentTimeMillis()
-                } else {
-                    setDelivery(listOf(cid), delivery)
-                }
-            }
-            "delivered" -> {
-                val list = event.optJSONArray("ids") ?: JSONArray()
-                setDelivery((0 until list.length()).map { list.getString(it) }, Delivery.Delivered)
-            }
-            // A pessoa apareceu: manda o que estava esperando por ela.
-            "poke" -> {
-                val conversation = DM_PREFIX + event.optString("to")
-                resendWaiting { it.conversationId == conversation }
+            // A lista de amigos ou os pedidos mudaram: busca de novo.
+            "friends" -> refreshFriends()
+            "rec" -> receiveRecommendations(event.optJSONArray("items") ?: JSONArray())
+            "reaction" -> {
+                val from = event.optJSONObject("from")?.let(::parseUser) ?: return
+                _reactions.tryEmit(
+                    Reaction(from, event.optString("emoji"), event.str("title"), event.optLong("at").takeIf { it > 0 } ?: System.currentTimeMillis()),
+                )
             }
         }
     }
-
-    private fun sendOverLink(message: ChatMessage, mailbox: Boolean = false): Boolean = link.send(
-        JSONObject()
-            .put("t", "send")
-            .put("v", 2)
-            .put("cid", message.id)
-            .put("at", message.sentMs)
-            .put("mailbox", mailbox)
-            .put("conv", message.conversationId)
-            .put("body", bodyToJson(message.body)),
-    )
-
-    /** Muda o estado das mensagens suas [ids] (só para a frente: entregue não volta a "aguardando"). */
-    private suspend fun setDelivery(ids: List<String>, delivery: Delivery) {
-        if (ids.isEmpty()) return
-        ids.forEach { awaitingReceipt.remove(it) }
-        val wanted = ids.toHashSet()
-        update { map ->
-            map.mapValues { (_, stored) ->
-                if (stored.messages.none { it.id in wanted }) {
-                    stored
-                } else {
-                    val messages = stored.messages.map { message ->
-                        if (message.id in wanted && advances(message.delivery, delivery)) message.copy(delivery = delivery) else message
-                    }
-                    stored.copy(conversation = stored.conversation.copy(lastMessage = messages.lastOrNull()), messages = messages)
-                }
-            }
-        }
-    }
-
-    override val conversations: Flow<List<Conversation>> = store
-        .onStart { ensureLoaded() }
-        .map { map -> sortConversations(map.orEmpty().values.map { it.conversation }) }
-        .distinctUntilChanged()
-
-    override fun messages(conversationId: String): Flow<List<ChatMessage>> = store
-        .onStart { ensureLoaded() }
-        .map { map -> map?.get(conversationId)?.messages.orEmpty() }
-        .distinctUntilChanged()
 
     // ---- Perfil ----------------------------------------------------------
 
@@ -386,25 +261,22 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 imageFile(userId, kind, version).writeBytes(bytes)
             }
         }
-
     override suspend fun deleteAccount(): SocialResult<Unit> {
         val response = call("DELETE", "/me") ?: return SocialResult.Offline
         if (response.code != 200 && response.code != 401) return SocialResult.Invalid
         withContext(Dispatchers.IO) {
             mutex.withLock {
-                chatsDir.deleteRecursively()
-                chatsDir.mkdirs()
                 profilesDir.deleteRecursively()
                 profilesDir.mkdirs()
+                recommendationsFile.delete()
                 accountFile.delete()
-                store.value = emptyMap()
                 _account.value = null
             }
         }
         people.value = null
-        cursors = Cursors()
-        cursorsFile.delete()
-        disablePush()
+        _friends.value = FriendsState()
+        _recommendations.value = emptyList()
+        recsCursor = 0
         link.accountChanged()
         return SocialResult.Ok(Unit)
     }
@@ -439,6 +311,7 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 .put("banner", profile.bannerVersion)
                 .put("color", profile.color)
                 .put("v", profile.version)
+                .put("links", linksToJson(profile.links))
             profileCardFile(profile.user.id).writeText(json.toString())
         }
     }
@@ -452,191 +325,172 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
         }
     }
 
+
+    // ---- Amizades --------------------------------------------------------
+
+    override suspend fun refreshFriends(): SocialResult<FriendsState> {
+        val response = call("GET", "/friends") ?: return SocialResult.Offline
+        if (response.code != 200) return SocialResult.Invalid
+        fun users(name: String): List<SocialUser> {
+            val array = response.body.optJSONArray(name) ?: JSONArray()
+            return (0 until array.length()).map { parseUser(array.getJSONObject(it)) }
+        }
+        val list = response.body.optJSONArray("friends") ?: JSONArray()
+        val profiles = (0 until list.length()).map { parseProfile(list.getJSONObject(it)) }
+        profiles.forEach { knownVersions[it.user.id] = it.version }
+        val state = FriendsState(profiles, users("incoming"), users("outgoing"))
+        _friends.value = state
+        if (link.isOnline) people.value = profiles
+        return SocialResult.Ok(state)
+    }
+
+    override suspend fun addFriend(userId: String): SocialResult<Relation> = changeFriend("POST", userId)
+
+    override suspend fun removeFriend(userId: String): SocialResult<Relation> = changeFriend("DELETE", userId)
+
+    private suspend fun changeFriend(method: String, userId: String): SocialResult<Relation> {
+        val response = call(method, "/friends/" + encode(userId)) ?: return SocialResult.Offline
+        if (response.code != 200) return if (response.code == 404) SocialResult.NotFound else SocialResult.Invalid
+        refreshFriends()
+        return SocialResult.Ok(
+            when (response.body.optString("relation")) {
+                "friend" -> Relation.Friend
+                "sent" -> Relation.Sent
+                else -> Relation.None
+            },
+        )
+    }
+
     override suspend fun activity(): SocialResult<List<FriendProfile>> {
         // Conectado: a lista já chega ao vivo.
         live.value.people?.let { return SocialResult.Ok(it) }
-        val response = call("GET", "/activity") ?: return SocialResult.Offline
-        if (response.code != 200) return SocialResult.Invalid
-        val people = response.body.optJSONArray("people") ?: JSONArray()
-        return SocialResult.Ok((0 until people.length()).map { parseProfile(people.getJSONObject(it)) })
-    }
-
-    // ---- Conversas -------------------------------------------------------
-
-    override suspend fun openDirect(user: SocialUser): String {
-        val id = DM_PREFIX + user.id
-        update { map ->
-            val current = map[id]
-            val conversation = current?.conversation?.copy(title = user.name)
-                ?: Conversation(id, user.name, isGroup = false, code = null, lastMessage = null, unread = 0, updatedMs = System.currentTimeMillis())
-            map + (id to StoredConversation(conversation, current?.messages.orEmpty()))
-        }
-        return id
-    }
-
-    override suspend fun send(conversationId: String, body: MessageBody): SocialResult<Unit> {
-        // O id nasce aqui e vai junto: reenviar nunca duplica do outro lado.
-        val local = ChatMessage(
-            id = UUID.randomUUID().toString().replace("-", ""),
-            conversationId = conversationId,
-            sender = null,
-            body = body,
-            sentMs = System.currentTimeMillis(),
-            delivery = Delivery.Waiting,
-        )
-        update { map -> map.withMessage(local) }
-        // Fica no seu celular até a outra pessoa aparecer. Conectado, já tenta
-        // agora; sem conexão, vai quando conectar.
-        sendOverLink(local)
-        return SocialResult.Ok(Unit)
-    }
-
-    /** Sem conexão ao vivo há muito tempo: manda pelo HTTP direto para a caixa postal. */
-    private suspend fun deliver(message: ChatMessage): SocialResult<Unit> {
-        val response = call(
-            "POST",
-            "/messages",
-            JSONObject()
-                .put("v", 2)
-                .put("cid", message.id)
-                .put("at", message.sentMs)
-                .put("conv", message.conversationId)
-                .put("body", bodyToJson(message.body)),
-        ) ?: return SocialResult.Offline
-        if (response.code != 200) return SocialResult.Invalid
-        setDelivery(listOf(message.id), deliveryAfterSend(response.body.optString("how")) ?: Delivery.Sent)
-        return SocialResult.Ok(Unit)
-    }
-
-    override suspend fun sync(): SocialResult<Int> {
-        if (_account.value == null) return SocialResult.Invalid
-        ensureLoaded()
-        // Conectado: tudo chega sozinho; só pergunta de novo o que falta.
-        if (link.isOnline) {
-            onLinkOpen()
-            return SocialResult.Ok(0)
-        }
-        // Sem conexão ao vivo: o que espera há muito tempo vai para a caixa postal pelo HTTP.
-        val now = System.currentTimeMillis()
-        store.value.orEmpty().values.flatMap { it.messages }
-            .filter { it.sender == null && it.pending && now - it.sentMs > HTTP_FALLBACK_AFTER_MS }
-            .forEach { deliver(it) }
-
-        val response = call("GET", "/inbox") ?: return SocialResult.Offline
-        if (response.code != 200) return SocialResult.Invalid
-        val count = receive(response.body.optJSONArray("messages") ?: JSONArray()) { ids ->
-            call("POST", "/inbox/ack", JSONObject().put("ids", JSONArray(ids)))
-        }
-        return SocialResult.Ok(count)
-    }
-
-    /** Guarda as mensagens que chegaram e confirma ao servidor ([ack]), que então apaga. */
-    private suspend fun receive(array: JSONArray, ack: suspend (List<String>) -> Unit): Int {
-        val incoming = (0 until array.length()).mapNotNull { index ->
-            val json = array.getJSONObject(index)
-            val body = jsonToBody(json.optJSONObject("body")) ?: return@mapNotNull null
-            ChatMessage(
-                id = json.getString("id"),
-                conversationId = json.getString("conv"),
-                sender = json.optJSONObject("sender")?.let(::parseUser),
-                body = body,
-                sentMs = json.optLong("sent"),
-            )
-        }
-        // Só a caixa de entrada antiga precisa de "recebi" (os anéis não apagam nada).
-        val ids = (0 until array.length()).map { array.getJSONObject(it) }
-            .filter { it.optBoolean("legacy") || !it.has("seq") && !it.optBoolean("live") }
-            .map { it.getString("id") }
-        advanceCursors(array)
-        if (incoming.isNotEmpty()) {
-            val knownAll = store.value.orEmpty().values.flatMapTo(HashSet()) { stored -> stored.messages.map { it.id } }
-            update { map -> mergeIncoming(map, incoming, openConversation) }
-            incoming.filter { it.id !in knownAll }.forEach { _incoming.tryEmit(it) }
-            // Grupo que ainda não conhecemos (ex.: reinstalou o app): busca o nome.
-            store.value.orEmpty().values
-                .filter { it.conversation.isGroup && it.conversation.title.isBlank() }
-                .forEach { refreshGroup(it.conversation.id) }
-        }
-        if (ids.isNotEmpty()) ack(ids)
-        return incoming.size
-    }
-
-    /** Guarda até onde já leu a caixa postal e cada grupo (o servidor manda só o que falta). */
-    private fun advanceCursors(array: JSONArray) {
-        var since = cursors.since
-        val groups = cursors.groups.toMutableMap()
-        for (index in 0 until array.length()) {
-            val json = array.getJSONObject(index)
-            val seq = json.optLong("seq")
-            if (seq <= 0) continue
-            val group = json.optString("group")
-            if (group.isNotEmpty()) {
-                groups[group] = maxOf(groups[group] ?: 0L, seq)
-            } else if (json.optBoolean("ring")) {
-                since = maxOf(since, seq)
-            }
-        }
-        val next = Cursors(since, groups)
-        if (next != cursors) {
-            cursors = next
-            runCatching { writeCursors(next) }
-        }
-    }
-
-    override suspend fun createGroup(name: String): SocialResult<Conversation> {
-        val response = call("POST", "/groups", JSONObject().put("name", name.trim())) ?: return SocialResult.Offline
-        if (response.code != 200) return SocialResult.Invalid
-        return SocialResult.Ok(saveGroup(response.body))
-    }
-
-    override suspend fun joinGroup(code: String): SocialResult<Conversation> {
-        val response = call("POST", "/groups/join", JSONObject().put("code", code.trim())) ?: return SocialResult.Offline
-        return when (response.code) {
-            200 -> SocialResult.Ok(saveGroup(response.body))
-            404 -> SocialResult.NotFound
+        return when (val result = refreshFriends()) {
+            is SocialResult.Ok -> SocialResult.Ok(result.value.friends)
+            SocialResult.Offline -> SocialResult.Offline
             else -> SocialResult.Invalid
         }
     }
 
-    override suspend fun groupMembers(conversationId: String): SocialResult<List<SocialUser>> {
-        val groupId = conversationId.removePrefix(GROUP_PREFIX)
-        val response = call("GET", "/groups/" + encode(groupId)) ?: return SocialResult.Offline
-        if (response.code != 200) return SocialResult.NotFound
-        saveGroup(response.body)
-        val members = response.body.optJSONArray("members") ?: JSONArray()
-        return SocialResult.Ok((0 until members.length()).map { parseUser(members.getJSONObject(it)) })
+    // ---- Redes no perfil -------------------------------------------------
+
+    override suspend fun updateLinks(
+        links: Map<SocialNetwork, String>,
+        numbers: Map<NumberNetwork, String>,
+        shareNumbers: Boolean,
+    ): SocialResult<SocialAccount> {
+        val current = _account.value ?: return SocialResult.Invalid
+        val body = JSONObject()
+            .put("links", linksToJson(links))
+            .put("shareNumbers", shareNumbers)
+            .put("numbers", if (shareNumbers) numbersToJson(numbers) else JSONObject())
+        val response = call("PATCH", "/me", body) ?: return SocialResult.Offline
+        if (response.code != 200) return SocialResult.Invalid
+        // O número fica guardado no aparelho mesmo desligado (para não precisar digitar de novo).
+        val updated = current.withServerFields(response.body).copy(numbers = numbers, shareNumbers = shareNumbers)
+        saveAccount(updated)
+        return SocialResult.Ok(updated)
     }
 
-    private suspend fun refreshGroup(conversationId: String) {
-        groupMembers(conversationId)
+    // ---- Recomendações e reações ----------------------------------------
+
+    override suspend fun recommend(to: List<String>, card: MusicCard): SocialResult<Unit> {
+        if (to.isEmpty()) return SocialResult.Invalid
+        val cid = UUID.randomUUID().toString().replace("-", "")
+        val event = JSONObject().put("t", "recommend").put("cid", cid).put("to", JSONArray(to)).put("card", cardToJson(card))
+        if (link.send(event)) return SocialResult.Ok(Unit)
+        // Sem conexão ao vivo: pelo HTTP.
+        val response = call(
+            "POST",
+            "/recommendations",
+            JSONObject().put("cid", cid).put("to", JSONArray(to)).put("card", cardToJson(card)),
+        ) ?: return SocialResult.Offline
+        return if (response.code == 200) SocialResult.Ok(Unit) else SocialResult.Invalid
     }
 
-    override suspend fun leaveGroup(conversationId: String): SocialResult<Unit> {
-        val groupId = conversationId.removePrefix(GROUP_PREFIX)
-        val response = call("POST", "/groups/" + encode(groupId) + "/leave") ?: return SocialResult.Offline
-        if (response.code != 200 && response.code != 404) return SocialResult.Invalid
-        deleteConversation(conversationId)
-        return SocialResult.Ok(Unit)
-    }
-
-    private suspend fun saveGroup(json: JSONObject): Conversation {
-        val id = GROUP_PREFIX + json.getString("id")
-        var saved: Conversation? = null
-        update { map ->
-            val current = map[id]
-            val conversation = (current?.conversation ?: Conversation(
-                id = id,
-                title = "",
-                isGroup = true,
-                code = null,
-                lastMessage = null,
-                unread = 0,
-                updatedMs = System.currentTimeMillis(),
-            )).copy(title = json.optString("name"), code = json.optString("code").ifEmpty { null })
-            saved = conversation
-            map + (id to StoredConversation(conversation, current?.messages.orEmpty()))
+    /** Guarda as recomendações que chegaram (sem repetir) e até onde já leu. */
+    private suspend fun receiveRecommendations(items: JSONArray) {
+        val incoming = (0 until items.length()).mapNotNull { index ->
+            val json = items.getJSONObject(index)
+            val card = parseCard(json.optJSONObject("card")) ?: return@mapNotNull null
+            Recommendation(
+                id = json.getString("id"),
+                from = json.optJSONObject("sender")?.let(::parseUser),
+                card = card,
+                atMs = json.optLong("at"),
+            ) to json.optLong("seq")
         }
-        return saved!!
+        if (incoming.isEmpty()) return
+        val cursor = maxOf(recommendationsCursor(), incoming.maxOf { it.second })
+        updateRecommendations(cursor) { stored ->
+            mergeRecommendations(stored, incoming.map { it.first }, System.currentTimeMillis())
+        }
+    }
+
+    override suspend fun markRecommendationsSeen() {
+        if (_recommendations.value.all { it.seen }) return
+        updateRecommendations(recommendationsCursor()) { list -> list.map { it.copy(seen = true) } }
+    }
+
+    override suspend fun removeRecommendation(id: String) {
+        updateRecommendations(recommendationsCursor()) { list -> list.filterNot { it.id == id } }
+    }
+
+    override suspend fun react(toUserId: String, emoji: String, title: String?): Boolean {
+        if (emoji !in REACTION_EMOJIS) return false
+        return link.send(
+            JSONObject().put("t", "react").put("to", toUserId).put("emoji", emoji).put("title", title ?: JSONObject.NULL),
+        )
+    }
+
+    @Volatile
+    private var recsCursor: Long = -1
+
+    private fun recommendationsCursor(): Long {
+        if (recsCursor < 0) {
+            recsCursor = runCatching { JSONObject(recommendationsFile.readText()).optLong("since") }.getOrDefault(0L)
+        }
+        return recsCursor
+    }
+
+    private suspend fun updateRecommendations(cursor: Long, change: (List<Recommendation>) -> List<Recommendation>) =
+        withContext(Dispatchers.IO) {
+            mutex.withLock {
+                val next = change(_recommendations.value)
+                _recommendations.value = next
+                recsCursor = cursor
+                runCatching {
+                    val array = JSONArray()
+                    next.forEach { rec ->
+                        array.put(
+                            JSONObject()
+                                .put("id", rec.id)
+                                .put("at", rec.atMs)
+                                .put("seen", rec.seen)
+                                .put("card", cardToJson(rec.card))
+                                .apply { rec.from?.let { put("sender", userToJson(it)) } },
+                        )
+                    }
+                    val temp = File(dir, "recommendations.json.tmp")
+                    temp.writeText(JSONObject().put("since", cursor).put("items", array).toString())
+                    temp.renameTo(recommendationsFile)
+                }
+            }
+        }
+
+    private fun readRecommendations(): List<Recommendation> {
+        if (!recommendationsFile.exists()) return emptyList()
+        val array = JSONObject(recommendationsFile.readText()).optJSONArray("items") ?: return emptyList()
+        return (0 until array.length()).mapNotNull { index ->
+            val json = array.getJSONObject(index)
+            val card = parseCard(json.optJSONObject("card")) ?: return@mapNotNull null
+            Recommendation(
+                id = json.getString("id"),
+                from = json.optJSONObject("sender")?.let(::parseUser),
+                card = card,
+                atMs = json.optLong("at"),
+                seen = json.optBoolean("seen"),
+            )
+        }
     }
 
     override suspend fun block(userId: String): SocialResult<Unit> {
@@ -649,19 +503,6 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
         return if (response.code == 200) SocialResult.Ok(Unit) else SocialResult.Invalid
     }
 
-    override fun setOpenConversation(conversationId: String?) {
-        openConversation = conversationId
-    }
-
-    override suspend fun markRead(conversationId: String) {
-        val current = store.value?.get(conversationId) ?: return
-        if (current.conversation.unread == 0) return
-        update { map -> map + (conversationId to current.copy(conversation = current.conversation.copy(unread = 0))) }
-    }
-
-    override suspend fun deleteConversation(conversationId: String) {
-        update { map -> map - conversationId }
-    }
 
     override suspend fun publishNowPlaying(track: TrackInfo?) {
         lastNow = track
@@ -685,154 +526,7 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
         }
     }
 
-    // ---- Push (UnifiedPush, sem Google) -----------------------------------
-
-    override fun pushDistributors(): List<String> = runCatching { UnifiedPush.getDistributors(context) }.getOrDefault(emptyList())
-
-    override fun enablePush(distributor: String) {
-        runCatching {
-            UnifiedPush.saveDistributor(context, distributor)
-            UnifiedPush.register(context, messageForDistributor = "Boom, listener!")
-        }
-    }
-
-    override fun disablePush() {
-        runCatching { UnifiedPush.unregister(context) }
-        onPushEndpoint(null)
-    }
-
-    private fun currentPushUrl(): String? = runCatching { pushFile.readText().trim() }.getOrNull()?.takeIf { it.isNotEmpty() }
-
-    /** O distribuidor deu (ou tirou) o endereço de push: guarda e avisa o servidor. */
-    internal fun onPushEndpoint(url: String?) {
-        if (url == null) pushFile.delete() else runCatching { pushFile.writeText(url) }
-        _pushEnabled.value = url != null
-        link.send(JSONObject().put("t", "push").put("url", url.orEmpty()))
-    }
-
-    /** Chegou um push ("acorde"): conecta por alguns segundos para entregar e buscar mensagens. */
-    internal fun wakeFromPush() {
-        link.want(REASON_PUSH, true)
-        wakeJob?.cancel()
-        wakeJob = scope.launch {
-            delay(PUSH_WAKE_MS)
-            link.want(REASON_PUSH, false)
-        }
-    }
-
     // ---- Guardar no aparelho --------------------------------------------
-
-    private fun readCursors(): Cursors {
-        if (!cursorsFile.exists()) return Cursors()
-        val json = JSONObject(cursorsFile.readText())
-        val groups = json.optJSONObject("groups") ?: JSONObject()
-        return Cursors(json.optLong("since"), groups.keys().asSequence().associateWith { groups.optLong(it) })
-    }
-
-    private fun writeCursors(value: Cursors) {
-        val json = JSONObject().put("since", value.since).put("groups", JSONObject(value.groups))
-        val temp = File(dir, "cursors.json.tmp")
-        temp.writeText(json.toString())
-        temp.renameTo(cursorsFile)
-    }
-
-    private suspend fun ensureLoaded() {
-        if (store.value != null) return
-        withContext(Dispatchers.IO) {
-            mutex.withLock {
-                if (store.value == null) store.value = runCatching { readChats() }.getOrDefault(emptyMap())
-            }
-        }
-    }
-
-    /** Aplica [change] e grava as conversas que mudaram. */
-    private suspend fun update(change: (Map<String, StoredConversation>) -> Map<String, StoredConversation>) {
-        ensureLoaded()
-        withContext(Dispatchers.IO) {
-            mutex.withLock {
-                val before = store.value.orEmpty()
-                val after = change(before)
-                store.value = after
-                (before.keys - after.keys).forEach { fileFor(it).delete() }
-                after.forEach { (id, stored) -> if (before[id] != stored) runCatching { writeChat(stored) } }
-            }
-        }
-    }
-
-    private fun Map<String, StoredConversation>.withMessage(message: ChatMessage): Map<String, StoredConversation> {
-        val current = this[message.conversationId] ?: return this
-        val messages = (current.messages.filterNot { it.id == message.id } + message)
-            .sortedBy { it.sentMs }
-            .takeLast(MAX_STORED_MESSAGES)
-        val conversation = current.conversation.copy(
-            lastMessage = messages.lastOrNull(),
-            updatedMs = maxOf(current.conversation.updatedMs, message.sentMs),
-        )
-        return this + (message.conversationId to StoredConversation(conversation, messages))
-    }
-
-    private fun fileFor(conversationId: String) = File(chatsDir, conversationId.replace(':', '_') + ".json")
-
-    private fun readChats(): Map<String, StoredConversation> =
-        chatsDir.listFiles { file -> file.extension == "json" }.orEmpty().mapNotNull { file ->
-            runCatching {
-                val json = JSONObject(file.readText())
-                val id = json.getString("id")
-                val messages = json.optJSONArray("messages") ?: JSONArray()
-                val list = (0 until messages.length()).mapNotNull { index -> parseStoredMessage(id, messages.getJSONObject(index)) }
-                id to StoredConversation(
-                    Conversation(
-                        id = id,
-                        title = json.optString("title"),
-                        isGroup = id.startsWith(GROUP_PREFIX),
-                        code = json.optString("code").ifEmpty { null },
-                        lastMessage = list.lastOrNull(),
-                        unread = json.optInt("unread"),
-                        updatedMs = json.optLong("updated"),
-                    ),
-                    list,
-                )
-            }.getOrNull()
-        }.toMap()
-
-    private fun writeChat(stored: StoredConversation) {
-        val conversation = stored.conversation
-        val messages = JSONArray()
-        stored.messages.forEach { message ->
-            messages.put(
-                JSONObject()
-                    .put("id", message.id)
-                    .put("sent", message.sentMs)
-                    .put("delivery", message.delivery.name)
-                    .put("body", bodyToJson(message.body))
-                    .apply { message.sender?.let { put("sender", userToJson(it)) } },
-            )
-        }
-        val json = JSONObject()
-            .put("id", conversation.id)
-            .put("title", conversation.title)
-            .put("code", conversation.code.orEmpty())
-            .put("unread", conversation.unread)
-            .put("updated", conversation.updatedMs)
-            .put("messages", messages)
-        val file = fileFor(conversation.id)
-        val temp = File(file.parentFile, file.name + ".tmp")
-        temp.writeText(json.toString())
-        temp.renameTo(file)
-    }
-
-    private fun parseStoredMessage(conversationId: String, json: JSONObject): ChatMessage? {
-        val body = jsonToBody(json.optJSONObject("body")) ?: return null
-        return ChatMessage(
-            id = json.getString("id"),
-            conversationId = conversationId,
-            sender = json.optJSONObject("sender")?.let(::parseUser),
-            body = body,
-            sentMs = json.optLong("sent"),
-            delivery = json.optString("delivery").let { name -> Delivery.entries.firstOrNull { it.name == name } }
-                ?: if (json.optBoolean("pending")) Delivery.Waiting else Delivery.Sent,
-        )
-    }
 
     private fun readAccount(): SocialAccount? {
         if (!accountFile.exists()) return null
@@ -847,6 +541,9 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
             avatarVersion = json.optLong("avatar"),
             bannerVersion = json.optLong("banner"),
             color = json.optString("color"),
+            links = parseLinks(json.optJSONObject("links")),
+            numbers = parseNumbers(json.optJSONObject("numbers")),
+            shareNumbers = json.optBoolean("shareNumbers"),
         )
     }
 
@@ -862,6 +559,9 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 .put("avatar", account.avatarVersion)
                 .put("banner", account.bannerVersion)
                 .put("color", account.color)
+                .put("links", linksToJson(account.links))
+                .put("numbers", numbersToJson(account.numbers))
+                .put("shareNumbers", account.shareNumbers)
             val temp = File(dir, "account.json.tmp")
             temp.writeText(json.toString())
             temp.renameTo(accountFile)
@@ -951,13 +651,6 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
     private fun encode(value: String) = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 }
 
-/** Nome, compartilhamento, descrição e versões das imagens, como o servidor respondeu. */
-private const val REASON_PLAYING = "playing"
-private const val REASON_PUSH = "push"
-
-/** Até onde já lemos a caixa postal ([since]) e o anel de cada grupo. */
-private data class Cursors(val since: Long = 0, val groups: Map<String, Long> = emptyMap())
-
 private fun SocialAccount.withServerFields(json: JSONObject) = copy(
     name = json.optString("name", name),
     sharing = json.optBoolean("sharing", sharing),
@@ -965,6 +658,8 @@ private fun SocialAccount.withServerFields(json: JSONObject) = copy(
     avatarVersion = if (json.has("avatar")) json.optLong("avatar") else avatarVersion,
     bannerVersion = if (json.has("banner")) json.optLong("banner") else bannerVersion,
     color = if (json.has("color")) json.optString("color") else color,
+    links = if (json.has("links")) parseLinks(json.optJSONObject("links")) else links,
+    shareNumbers = if (json.has("shareNumbers")) json.optBoolean("shareNumbers") else shareNumbers,
 )
 
 // ---- JSON (formato combinado com social/worker.js) ---------------------
@@ -1004,38 +699,61 @@ private fun parseProfile(json: JSONObject): FriendProfile {
         bannerVersion = json.optLong("banner"),
         color = json.optString("color").takeIf { it != "null" }.orEmpty(),
         version = json.optLong("v"),
+        links = parseLinks(json.optJSONObject("links")),
+        numbers = parseNumbers(json.optJSONObject("numbers")),
+        relation = when (json.optString("relation")) {
+            "self" -> Relation.Self
+            "friend" -> Relation.Friend
+            "sent" -> Relation.Sent
+            "received" -> Relation.Received
+            else -> Relation.None
+        },
     )
 }
 
-private fun bodyToJson(body: MessageBody): JSONObject = when (body) {
-    is MessageBody.Text -> JSONObject().put("type", "text").put("text", body.text)
-    is MessageBody.Music -> JSONObject()
-        .put("type", "music")
-        .put("kind", body.kind.name.lowercase())
-        .put("title", body.title)
-        .put("artist", body.artist ?: JSONObject.NULL)
-        .put("album", body.album ?: JSONObject.NULL)
-        .put("coverUrl", body.coverUrl ?: JSONObject.NULL)
-        .put("link", body.link ?: JSONObject.NULL)
-        .put("note", body.note ?: JSONObject.NULL)
+
+private fun parseLinks(json: JSONObject?): Map<SocialNetwork, String> {
+    if (json == null) return emptyMap()
+    return json.keys().asSequence().mapNotNull { key ->
+        val network = SocialNetwork.fromKey(key) ?: return@mapNotNull null
+        json.str(key)?.let { network to it }
+    }.toMap()
 }
 
-private fun jsonToBody(json: JSONObject?): MessageBody? = when (json?.optString("type")) {
-    "text" -> json.str("text")?.let { MessageBody.Text(it) }
-    "music" -> json.str("title")?.let { title ->
-        MessageBody.Music(
-            kind = when (json.optString("kind")) {
-                "album" -> MusicKind.Album
-                "artist" -> MusicKind.Artist
-                else -> MusicKind.Track
-            },
-            title = title,
-            artist = json.str("artist"),
-            album = json.str("album"),
-            coverUrl = json.str("coverUrl"),
-            link = json.str("link"),
-            note = json.str("note"),
-        )
-    }
-    else -> null
+private fun linksToJson(links: Map<SocialNetwork, String>) =
+    JSONObject().apply { links.forEach { (network, handle) -> if (handle.isNotBlank()) put(network.key, handle) } }
+
+private fun parseNumbers(json: JSONObject?): Map<NumberNetwork, String> {
+    if (json == null) return emptyMap()
+    return json.keys().asSequence().mapNotNull { key ->
+        val network = NumberNetwork.fromKey(key) ?: return@mapNotNull null
+        json.str(key)?.let { network to it }
+    }.toMap()
+}
+
+private fun numbersToJson(numbers: Map<NumberNetwork, String>) =
+    JSONObject().apply { numbers.forEach { (network, digits) -> if (digits.isNotBlank()) put(network.key, digits) } }
+
+private fun cardToJson(card: MusicCard) = JSONObject()
+    .put("kind", card.kind.name.lowercase())
+    .put("title", card.title)
+    .put("artist", card.artist ?: JSONObject.NULL)
+    .put("album", card.album ?: JSONObject.NULL)
+    .put("coverUrl", card.coverUrl ?: JSONObject.NULL)
+    .put("link", card.link ?: JSONObject.NULL)
+
+private fun parseCard(json: JSONObject?): MusicCard? {
+    val title = json?.str("title") ?: return null
+    return MusicCard(
+        kind = when (json.optString("kind")) {
+            "album" -> MusicKind.Album
+            "artist" -> MusicKind.Artist
+            else -> MusicKind.Track
+        },
+        title = title,
+        artist = json.str("artist"),
+        album = json.str("album"),
+        coverUrl = json.str("coverUrl"),
+        link = json.str("link"),
+    )
 }

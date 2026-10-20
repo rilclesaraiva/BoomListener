@@ -9,7 +9,7 @@ import com.boomlistener.core.model.Track
 import com.boomlistener.data.deezer.DeezerRepository
 import com.boomlistener.data.deezer.LocalTrackInfo
 import com.boomlistener.data.deezer.TrackSearchResult
-import com.boomlistener.data.social.MessageBody
+import com.boomlistener.data.social.MusicCard
 import com.boomlistener.data.social.MusicKind
 
 /** Confiança mínima para usar capa e link do Deezer num cartão. */
@@ -20,21 +20,20 @@ private const val CARD_CONFIDENCE = 0.6f
  * e, se o Deezer achar com segurança, a capa e o link do YouTube Music. Nunca
  * vai o arquivo.
  */
-internal suspend fun buildTrackCard(track: Track, deezer: DeezerRepository, note: String? = null): MessageBody.Music {
+internal suspend fun buildTrackCard(track: Track, deezer: DeezerRepository): MusicCard {
     val found = runCatching {
         deezer.searchTrack(LocalTrackInfo(track.title, track.artist, track.album, track.durationMs))
     }.getOrNull() as? TrackSearchResult.Found
     val best = found?.candidates?.firstOrNull()?.takeIf { it.confidence >= CARD_CONFIDENCE }
     val link = best?.link?.let { runCatching { deezer.youtubeMusicLink(it) }.getOrNull() }
         ?: ExternalLinks.youtubeMusicSearch(track.title, track.artist)
-    return MessageBody.Music(
+    return MusicCard(
         kind = MusicKind.Track,
         title = track.title,
         artist = track.artist,
         album = track.album,
         coverUrl = best?.coverUrl,
         link = link,
-        note = note?.trim()?.takeIf { it.isNotEmpty() },
     )
 }
 
@@ -42,7 +41,7 @@ internal suspend fun buildTrackCard(track: Track, deezer: DeezerRepository, note
  * A música do cartão que você já tem no aparelho (mesmo título e artista,
  * sem diferença de acento ou maiúscula), ou null.
  */
-internal fun findLocalMatch(card: MessageBody.Music, library: List<Track>): Track? {
+internal fun findLocalMatch(card: MusicCard, library: List<Track>): Track? {
     if (card.kind != MusicKind.Track) return null
     val title = card.title.normalizedForSearch()
     val artist = card.artist?.normalizedForSearch()

@@ -4,8 +4,8 @@
 package com.boomlistener.data.social
 
 /*
- * Regras puras do chat (testadas): validar o @, juntar mensagens que chegam
- * às conversas guardadas no aparelho.
+ * Regras puras do social (testadas): validar o @, cor do perfil, reconexão,
+ * lista de amigos ao vivo e recomendações guardadas no aparelho.
  */
 
 private val HANDLE = Regex("^[a-z0-9_.]{3,20}$")
@@ -24,61 +24,6 @@ fun suggestHandle(name: String): String =
         .trim('_')
         .take(20)
         .padEnd(3, '_')
-
-/** Mensagens novas de uma conversa, no estado guardado. */
-internal data class StoredConversation(
-    val conversation: Conversation,
-    val messages: List<ChatMessage>,
-)
-
-/** Máximo de mensagens guardadas por conversa (as mais antigas saem). */
-internal const val MAX_STORED_MESSAGES = 3_000
-
-/**
- * Junta [incoming] (do servidor) ao que está guardado. Cria a conversa se for
- * nova (título = nome de quem mandou, numa particular), soma as não lidas
- * (menos na conversa que está aberta, [openConversationId]) e ignora repetidas.
- */
-internal fun mergeIncoming(
-    stored: Map<String, StoredConversation>,
-    incoming: List<ChatMessage>,
-    openConversationId: String?,
-): Map<String, StoredConversation> {
-    val result = stored.toMutableMap()
-    for ((conversationId, batch) in incoming.groupBy { it.conversationId }) {
-        val current = result[conversationId]
-        val known = current?.messages.orEmpty().mapTo(HashSet()) { it.id }
-        val fresh = batch.filter { it.id !in known }.sortedBy { it.sentMs }
-        if (fresh.isEmpty() && current != null) continue
-        val messages = (current?.messages.orEmpty() + fresh).sortedBy { it.sentMs }.takeLast(MAX_STORED_MESSAGES)
-        val isGroup = conversationId.startsWith(GROUP_PREFIX)
-        val base = current?.conversation ?: Conversation(
-            id = conversationId,
-            title = if (isGroup) "" else fresh.firstOrNull()?.sender?.name.orEmpty(),
-            isGroup = isGroup,
-            code = null,
-            lastMessage = null,
-            unread = 0,
-            updatedMs = 0,
-        )
-        // Numa particular, o título acompanha o nome atual da pessoa.
-        val title = if (!isGroup) fresh.lastOrNull()?.sender?.name ?: base.title else base.title
-        result[conversationId] = StoredConversation(
-            conversation = base.copy(
-                title = title,
-                lastMessage = messages.lastOrNull(),
-                unread = if (conversationId == openConversationId) 0 else base.unread + fresh.size,
-                updatedMs = maxOf(base.updatedMs, messages.lastOrNull()?.sentMs ?: 0),
-            ),
-            messages = messages,
-        )
-    }
-    return result
-}
-
-/** Conversas na lista: a com mensagem mais recente primeiro. */
-internal fun sortConversations(list: Collection<Conversation>): List<Conversation> =
-    list.sortedByDescending { it.updatedMs }
 
 private val PROFILE_COLOR = Regex("^#?([0-9a-fA-F]{6})$")
 
@@ -120,29 +65,33 @@ internal fun restingUntil(code: Int, error: String?, until: Long, nowMs: Long): 
     else -> null
 }
 
-/** Atualiza (ou tira) uma pessoa da lista "ouvindo agora". */
+/** Atualiza um amigo na lista (ou tira, se deixou de ser amigo), mantendo a posição. */
 internal fun withPerson(people: List<FriendProfile>, profile: FriendProfile): List<FriendProfile> {
-    if (!profile.sharing) return people.filterNot { it.user.id == profile.user.id }
+    if (profile.relation != Relation.Friend) return people.filterNot { it.user.id == profile.user.id }
     val index = people.indexOfFirst { it.user.id == profile.user.id }
     return if (index < 0) people + profile else people.toMutableList().also { it[index] = profile }
 }
 
 /**
- * O que a resposta do servidor ao envio quer dizer para a mensagem. null =
- * foi ao vivo para o celular da pessoa: ainda falta o recibo de entrega.
+ * Amigos na aba: quem está ouvindo agora primeiro, depois quem ouviu algo há
+ * menos tempo, depois quem não compartilha (por nome).
  */
-internal fun deliveryAfterSend(how: String): Delivery? = when (how) {
-    "live" -> null
-    "waiting" -> Delivery.Waiting
-    "mailbox" -> Delivery.Mailbox
-    else -> Delivery.Sent // grupo, ou servidor antigo
-}
+fun sortFriends(friends: List<FriendProfile>): List<FriendProfile> =
+    friends.sortedWith(
+        compareByDescending<FriendProfile> { it.now != null }
+            .thenByDescending { it.recent.firstOrNull()?.atMs ?: it.updatedMs ?: 0L }
+            .thenBy { it.user.name.lowercase() },
+    )
 
-/** O estado só anda para a frente (um recibo atrasado não faz "entregue" voltar a "aguardando"). */
-internal fun advances(from: Delivery, to: Delivery): Boolean = rank(to) > rank(from)
+/** Recomendações guardadas: até 50, de no máximo 30 dias, sem repetir, a mais nova primeiro. */
+internal const val MAX_RECOMMENDATIONS = 50
+internal const val RECOMMENDATION_DAYS_MS = 30L * 86_400_000L
 
-private fun rank(delivery: Delivery) = when (delivery) {
-    Delivery.Waiting -> 0
-    Delivery.Sent, Delivery.Mailbox -> 1
-    Delivery.Delivered -> 2
+internal fun mergeRecommendations(stored: List<Recommendation>, incoming: List<Recommendation>, nowMs: Long): List<Recommendation> {
+    val known = stored.associateBy { it.id }
+    val fresh = incoming.filter { it.id !in known }
+    return (stored + fresh)
+        .filter { nowMs - it.atMs <= RECOMMENDATION_DAYS_MS }
+        .sortedByDescending { it.atMs }
+        .take(MAX_RECOMMENDATIONS)
 }

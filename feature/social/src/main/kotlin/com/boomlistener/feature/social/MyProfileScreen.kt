@@ -112,6 +112,7 @@ internal fun MyProfileScreen(
     val saveFailed by viewModel.saveFailed.collectAsStateWithLifecycle()
     val friends by viewModel.friends.collectAsStateWithLifecycle()
     var renaming by remember { mutableStateOf(false) }
+    var editingNetworks by remember { mutableStateOf(false) }
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_social_my_profile),
@@ -150,6 +151,28 @@ internal fun MyProfileScreen(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(horizontal = 20.dp),
                     )
+                }
+            }
+            current.account?.let { account ->
+                item(key = "networks") {
+                    // Suas redes (como os outros veem; o número, só os amigos).
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        NetworkButtons(
+                            links = account.links,
+                            numbers = if (account.shareNumbers) account.numbers else emptyMap(),
+                        )
+                        TextButton(onClick = { editingNetworks = true }) {
+                            Text(
+                                stringResource(
+                                    if (account.links.isEmpty() && account.numbers.isEmpty()) {
+                                        R.string.feature_social_networks_add
+                                    } else {
+                                        R.string.feature_social_networks_edit
+                                    },
+                                ),
+                            )
+                        }
+                    }
                 }
             }
             item(key = "month") { MonthCard(current) }
@@ -205,7 +228,7 @@ internal fun MyProfileScreen(
                 }
             }
 
-            // Amigos (pessoas com quem você conversa). Os artistas seguidos já
+            // Seus amigos (amizade confirmada). Os artistas seguidos já
             // aparecem na aba Lançamentos.
             item(key = "friends") {
                 SectionTitle(stringResource(R.string.feature_social_friends_count, friends.size), null)
@@ -230,6 +253,9 @@ internal fun MyProfileScreen(
     val account = state?.account
     if (renaming && account != null) {
         EditProfileSheet(account = account, viewModel = viewModel, onDismiss = { renaming = false })
+    }
+    if (editingNetworks && account != null) {
+        NetworksSheet(account = account, viewModel = viewModel, onDismiss = { editingNetworks = false })
     }
 }
 

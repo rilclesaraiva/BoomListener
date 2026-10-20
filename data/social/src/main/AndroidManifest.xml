@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Mensagens e "ouvindo agora" pelo servidor social (social/worker.js). -->
+    <!-- Perfis, amizades e "ouvindo agora" pelo servidor social (social/worker.js). -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <application>
-        <!-- Avisos do UnifiedPush (app distribuidor, ex.: ntfy; nada do Google). -->
-        <service
-            android:name="com.boomlistener.data.social.SocialPushService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
-            </intent-filter>
-        </service>
-    </application>
 </manifest>

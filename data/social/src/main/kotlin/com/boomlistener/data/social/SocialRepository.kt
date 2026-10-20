@@ -4,23 +4,20 @@
 package com.boomlistener.data.social
 
 import android.content.Context
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Amigos: perfil (@), conversas e grupos, cartões de música e o "ouvindo
- * agora". Nunca passa áudio. As conversas ficam guardadas só no aparelho; o
- * servidor (social/worker.js) só entrega.
+ * Amigos: perfil (@, foto, redes), amizades (pedido + aceite), o "ouvindo
+ * agora" dos amigos, recomendações de música e reações com emoji. Não existe
+ * chat: a conversa acontece nas redes de cada um (ver docs/PLANO-SOCIAL.md).
+ * Nunca passa áudio.
  */
 interface SocialRepository {
     /** null = ainda não criou o perfil. */
     val account: StateFlow<SocialAccount?>
-
-    /** Mensagem mais recente primeiro. */
-    val conversations: Flow<List<Conversation>>
-
-    fun messages(conversationId: String): Flow<List<ChatMessage>>
 
     suspend fun checkHandle(handle: String): HandleCheck
     suspend fun register(name: String, handle: String): SocialResult<SocialAccount>
@@ -31,6 +28,17 @@ interface SocialRepository {
 
     /** Cor do perfil: "#RRGGBB", ou "" para nenhuma. */
     suspend fun updateColor(color: String): SocialResult<SocialAccount> = SocialResult.Invalid
+
+    /**
+     * Redes do perfil. [links]: só o @ de cada rede pública (vazio tira).
+     * [numbers]: números com código do país; só vão para o servidor (e para os
+     * amigos) com [shareNumbers] ligado. Desligar apaga do servidor.
+     */
+    suspend fun updateLinks(
+        links: Map<SocialNetwork, String>,
+        numbers: Map<NumberNetwork, String>,
+        shareNumbers: Boolean,
+    ): SocialResult<SocialAccount> = SocialResult.Invalid
 
     /**
      * Troca a foto ou a capa por [uri] (o content:// do seletor de fotos do
@@ -48,39 +56,53 @@ interface SocialRepository {
     suspend fun profile(userId: String): SocialResult<FriendProfile>
 
     /**
-     * Nome, foto, capa, cor e descrição de alguém, guardados no aparelho: só
+     * Nome, foto, capa, cor e redes de alguém, guardados no aparelho: só
      * baixa de novo quando a versão do perfil muda (para listas de amigos).
      * null sem internet e sem nada guardado.
      */
     suspend fun profileCard(userId: String): FriendProfile? = (profile(userId) as? SocialResult.Ok)?.value
 
-    /** Quem conversa com você (ou divide grupo) e compartilha o que ouve. */
+    // ---- Amizades ----
+
+    /** Seus amigos (com o que estão ouvindo) e os pedidos de amizade. */
+    val friends: StateFlow<FriendsState> get() = NO_FRIENDS
+
+    suspend fun refreshFriends(): SocialResult<FriendsState> = SocialResult.Invalid
+
+    /** Pede amizade (ou aceita, se a pessoa já tinha pedido). Devolve como ficou. */
+    suspend fun addFriend(userId: String): SocialResult<Relation> = SocialResult.Invalid
+
+    /** Desfaz a amizade, cancela o seu pedido ou recusa o dela. */
+    suspend fun removeFriend(userId: String): SocialResult<Relation> = SocialResult.Invalid
+
+    /** Seus amigos com o que estão ouvindo (o mesmo de [friends], buscado agora). */
     suspend fun activity(): SocialResult<List<FriendProfile>>
 
-    /** Abre (ou cria no aparelho) a conversa particular com [user]. Devolve o id. */
-    suspend fun openDirect(user: SocialUser): String
+    // ---- Recomendações e reações ----
 
-    suspend fun send(conversationId: String, body: MessageBody): SocialResult<Unit>
+    /** Músicas que os amigos recomendaram (a mais nova primeiro; guardadas no aparelho). */
+    val recommendations: StateFlow<List<Recommendation>> get() = NO_RECOMMENDATIONS
 
-    /** Busca mensagens novas no servidor e reenvia as que ficaram pendentes. */
-    suspend fun sync(): SocialResult<Int>
+    /** Recomenda [card] para os amigos [to] (só a informação, nunca o arquivo). */
+    suspend fun recommend(to: List<String>, card: MusicCard): SocialResult<Unit> = SocialResult.Invalid
 
-    suspend fun createGroup(name: String): SocialResult<Conversation>
-    suspend fun joinGroup(code: String): SocialResult<Conversation>
-    suspend fun groupMembers(conversationId: String): SocialResult<List<SocialUser>>
-    suspend fun leaveGroup(conversationId: String): SocialResult<Unit>
+    /** Viu a lista de recomendações (some o número na aba). */
+    suspend fun markRecommendationsSeen() {}
+
+    suspend fun removeRecommendation(id: String) {}
+
+    /** Reações que chegam ao vivo ao que você está ouvindo. */
+    val reactions: SharedFlow<Reaction> get() = NO_REACTIONS
+
+    /** Reage com [emoji] ao que o amigo [toUserId] está ouvindo ([title]). Só ao vivo. */
+    suspend fun react(toUserId: String, emoji: String, title: String?): Boolean = false
 
     suspend fun block(userId: String): SocialResult<Unit>
     suspend fun unblock(userId: String): SocialResult<Unit>
 
-    /** A conversa aberta na tela (não acumula "não lidas"); null ao sair. */
-    fun setOpenConversation(conversationId: String?)
-    suspend fun markRead(conversationId: String)
-    suspend fun deleteConversation(conversationId: String)
-
     /**
-     * A conexão ao vivo: estado e quem está ouvindo o quê. Com ela aberta,
-     * mensagens chegam sozinhas (sem ficar perguntando ao servidor).
+     * A conexão ao vivo: estado e seus amigos com o que estão ouvindo. Com
+     * ela aberta, tudo chega sozinho (sem ficar perguntando ao servidor).
      */
     val live: StateFlow<SocialLive> get() = NO_LIVE
 
@@ -91,23 +113,6 @@ interface SocialRepository {
      */
     fun keepConnected(reason: String, wanted: Boolean) {}
 
-    /** Mensagens novas que acabaram de chegar (para a notificação, com o app fechado). */
-    val incoming: SharedFlow<ChatMessage> get() = NO_INCOMING
-
-    /**
-     * Mensagens com o app fechado, pelo UnifiedPush (um app distribuidor como o
-     * ntfy, gratuito e sem Google). O aviso só diz "acorde"; o conteúdo vem
-     * pela conexão.
-     */
-    val pushEnabled: StateFlow<Boolean> get() = NO_PUSH
-
-    /** Os apps distribuidores instalados (nomes de pacote). Vazio = precisa instalar um (ntfy). */
-    fun pushDistributors(): List<String> = emptyList()
-
-    fun enablePush(distributor: String) {}
-
-    fun disablePush() {}
-
     /** "Ouvindo agora" (só vai se o compartilhamento estiver ligado). */
     suspend fun publishNowPlaying(track: TrackInfo?)
 
@@ -115,9 +120,10 @@ interface SocialRepository {
     suspend fun publishListened(track: TrackInfo)
 }
 
-private val NO_LIVE: StateFlow<SocialLive> = kotlinx.coroutines.flow.MutableStateFlow(SocialLive())
-private val NO_INCOMING: SharedFlow<ChatMessage> = kotlinx.coroutines.flow.MutableSharedFlow()
-private val NO_PUSH: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
+private val NO_LIVE: StateFlow<SocialLive> = MutableStateFlow(SocialLive())
+private val NO_FRIENDS: StateFlow<FriendsState> = MutableStateFlow(FriendsState())
+private val NO_RECOMMENDATIONS: StateFlow<List<Recommendation>> = MutableStateFlow(emptyList())
+private val NO_REACTIONS: SharedFlow<Reaction> = MutableSharedFlow()
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */
 object SocialData {

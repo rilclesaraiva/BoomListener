@@ -115,15 +115,27 @@ fun BoomListenerApp() {
     // Música a recomendar para alguém (folha de Amigos por cima de tudo).
     var recommendUri by remember { mutableStateOf<String?>(null) }
 
-    // Amigos: com o app na tela, fica ligado ao servidor por WebSocket (as
-    // mensagens chegam sozinhas). Sem conexão, consulta a cada minuto; em
+    // Amigos: com o app na tela, fica ligado ao servidor por WebSocket (o
+    // "ouvindo agora" e as recomendações chegam sozinhos). Sem conexão, consulta a cada minuto; em
     // segundo plano não consulta (só fica ligado se uma música estiver tocando
     // com o "ouvindo agora" ligado).
     val context = LocalContext.current.applicationContext
     val social = remember { SocialData.repository(context) }
     val socialAccount by social.account.collectAsStateWithLifecycle()
-    val conversations by social.conversations.collectAsStateWithLifecycle(initialValue = emptyList())
-    val unread = conversations.sumOf { it.unread }
+    // Número na aba Amigos: pedidos de amizade + recomendações ainda não vistas.
+    val friendsState by social.friends.collectAsStateWithLifecycle()
+    val recommendations by social.recommendations.collectAsStateWithLifecycle()
+    val unread = friendsState.incoming.size + recommendations.count { !it.seen }
+    // Reação de um amigo ao que você está ouvindo: aparece por um instante, com o app na tela.
+    val reactionText = stringResource(R.string.social_reaction_toast)
+    val reactionWithTitle = stringResource(R.string.social_reaction_toast_title)
+    LaunchedEffect(social) {
+        social.reactions.collect { reaction ->
+            val text = reaction.title?.let { String.format(reactionWithTitle, reaction.from.name, reaction.emoji, it) }
+                ?: String.format(reactionText, reaction.from.name, reaction.emoji)
+            android.widget.Toast.makeText(context, text, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(socialAccount?.id) {
         if (socialAccount == null) return@LaunchedEffect
@@ -137,7 +149,7 @@ fun BoomListenerApp() {
                     wait = 60_000L
                     when (social.live.value.status) {
                         LinkStatus.Online, is LinkStatus.Resting -> Unit
-                        else -> social.sync()
+                        else -> social.refreshFriends()
                     }
                 }
             } finally {

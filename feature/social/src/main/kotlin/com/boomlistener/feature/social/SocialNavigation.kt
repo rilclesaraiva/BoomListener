@@ -22,15 +22,11 @@ import com.boomlistener.data.wellbeing.StatsData
 /** Aba Amigos. */
 const val SOCIAL_ROUTE = "social"
 private const val ARG_ID = "id"
-private const val CHAT_ROUTE = "social/chat?$ARG_ID={$ARG_ID}"
 private const val PROFILE_ROUTE = "social/profile?$ARG_ID={$ARG_ID}"
 const val MY_PROFILE_ROUTE = "social/me"
 
 /** O seu perfil (estatísticas de escuta, mais ouvidas, histórico, quem segue). */
 fun NavController.navigateToMyProfile() = navigate(MY_PROFILE_ROUTE) { launchSingleTop = true }
-
-fun NavController.navigateToChat(conversationId: String) =
-    navigate("social/chat?$ARG_ID=" + Uri.encode(conversationId)) { launchSingleTop = true }
 
 fun NavController.navigateToFriend(userId: String) =
     navigate("social/profile?$ARG_ID=" + Uri.encode(userId)) { launchSingleTop = true }
@@ -44,40 +40,28 @@ fun NavGraphBuilder.socialScreen(
     val back: () -> Unit = { navController.popBackStack() }
     composable(SOCIAL_ROUTE) {
         val context = LocalContext.current.applicationContext
-        val viewModel = viewModel { SocialHomeViewModel(SocialData.repository(context)) }
+        val viewModel = viewModel {
+            val library = LibraryData.repository(context)
+            SocialHomeViewModel(
+                social = SocialData.repository(context),
+                library = library::getTracks,
+                player = PlayerConnection.controller(context),
+                remoteImage = DeezerData.repository(context)::image,
+            )
+        }
         SocialHomeScreen(
             viewModel = viewModel,
-            onOpenChat = navController::navigateToChat,
             onOpenProfile = navController::navigateToFriend,
             onOpenMyProfile = navController::navigateToMyProfile,
             onOpenHistory = onOpenHistory,
             onOpenSettings = onOpenSettings,
         )
     }
-    composable(CHAT_ROUTE, arguments = listOf(navArgument(ARG_ID) { type = NavType.StringType })) { entry ->
-        val id = entry.arguments?.getString(ARG_ID).orEmpty()
-        val context = LocalContext.current.applicationContext
-        val viewModel = viewModel(key = "chat:$id") {
-            ChatViewModel(
-                conversationId = id,
-                social = SocialData.repository(context),
-                libraryRepository = LibraryData.repository(context),
-                deezer = DeezerData.repository(context),
-                player = PlayerConnection.controller(context),
-            )
-        }
-        ChatScreen(
-            viewModel = viewModel,
-            onBack = back,
-            onOpenProfile = navController::navigateToFriend,
-            onOpenArtist = onOpenArtist,
-        )
-    }
     composable(PROFILE_ROUTE, arguments = listOf(navArgument(ARG_ID) { type = NavType.StringType })) { entry ->
         val id = entry.arguments?.getString(ARG_ID).orEmpty()
         val context = LocalContext.current.applicationContext
         val viewModel = viewModel(key = "friend:$id") { FriendProfileViewModel(id, SocialData.repository(context)) }
-        FriendProfileScreen(viewModel = viewModel, onBack = back, onOpenChat = navController::navigateToChat)
+        FriendProfileScreen(viewModel = viewModel, onBack = back)
     }
     composable(MY_PROFILE_ROUTE) {
         val context = LocalContext.current.applicationContext
