@@ -71,7 +71,7 @@ internal fun CollectionsScreen(
     onOpenArtist: (name: String) -> Unit,
     onOpenAlbum: (key: String) -> Unit,
     onOpenPlaylist: (id: Long) -> Unit,
-    onOpenHistory: () -> Unit,
+    onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,7 +93,7 @@ internal fun CollectionsScreen(
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_collections_title),
         modifier = modifier,
-        actions = { BoomTopActions(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings) },
+        actions = { BoomTopActions(onOpenReleases = onOpenReleases, onOpenSettings = onOpenSettings) },
     ) { padding ->
         when (val current = state) {
             CollectionsUiState.Loading -> BoomLoading(Modifier.padding(padding))

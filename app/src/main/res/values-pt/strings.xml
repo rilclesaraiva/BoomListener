@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nav_releases">Lançamentos</string>
     <string name="nav_home">Início</string>
     <string name="nav_collections">Biblioteca</string>
-    <string name="nav_social">Amigos</string>
     <string name="social_reaction_toast">%1$s reagiu %2$s</string>
     <string name="social_reaction_toast_title">%1$s reagiu %2$s a %3$s</string>
+    <string name="nav_profile">Perfil</string>
 </resources>

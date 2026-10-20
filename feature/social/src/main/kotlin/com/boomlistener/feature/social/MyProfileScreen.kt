@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -54,6 +55,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -76,6 +78,8 @@ import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import com.boomlistener.core.designsystem.component.BoomTopActions
+import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.data.wellbeing.HistoryEntry
@@ -101,29 +105,43 @@ private val TileTextInset = 4.dp
 @Composable
 internal fun MyProfileScreen(
     viewModel: MyProfileViewModel,
-    onBack: () -> Unit,
+    friendsViewModel: SocialHomeViewModel,
     onOpenArtist: (String) -> Unit,
     onOpenFriend: (userId: String) -> Unit,
     onOpenHistory: () -> Unit,
-    onCreateProfile: () -> Unit,
+    onOpenReleases: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val saveFailed by viewModel.saveFailed.collectAsStateWithLifecycle()
-    val friends by viewModel.friends.collectAsStateWithLifecycle()
+    val friends by friendsViewModel.friends.collectAsStateWithLifecycle()
+    val requests by friendsViewModel.requests.collectAsStateWithLifecycle()
+    val recommendations by friendsViewModel.recommendations.collectAsStateWithLifecycle()
+    val offline by friendsViewModel.offline.collectAsStateWithLifecycle()
+    val restingUntil by friendsViewModel.restingUntil.collectAsStateWithLifecycle()
     var renaming by remember { mutableStateOf(false) }
     var editingNetworks by remember { mutableStateOf(false) }
+    var creatingProfile by remember { mutableStateOf(false) }
+    var addingFriend by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    ScrollToTopOnReselect(MY_PROFILE_ROUTE, listState)
+    val hasAccount = state?.account != null
+    // Amigos e pedidos: busca ao abrir (com a conexão ao vivo, o resto chega sozinho).
+    if (hasAccount) PollWhileVisible(60_000) { friendsViewModel.refresh() }
+    // Abriu o perfil: as recomendações novas contam como vistas (some o número na aba).
+    LaunchedEffect(recommendations) { if (recommendations.any { !it.seen }) friendsViewModel.markRecommendationsSeen() }
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_social_my_profile),
-        onBack = onBack,
         modifier = modifier,
         actions = {
-            if (state?.account != null) {
+            if (hasAccount) {
                 IconButton(onClick = { renaming = true }) {
                     Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_social_edit_profile))
                 }
             }
+            BoomTopActions(onOpenReleases = onOpenReleases, onOpenSettings = onOpenSettings)
         },
     ) { padding ->
         val current = state
@@ -132,6 +150,7 @@ internal fun MyProfileScreen(
             return@BoomScreenScaffold
         }
         LazyColumn(
+            state = listState,
             contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 32.dp),
             // A cor que a pessoa escolheu tinge o perfil.
             modifier = Modifier.fillMaxSize().profileBackground(current.account?.color),
@@ -140,7 +159,7 @@ internal fun MyProfileScreen(
                 Header(
                     current,
                     viewModel,
-                    onCreateProfile,
+                    onCreateProfile = { creatingProfile = true },
                     onToggleSharing = viewModel::setSharing,
                     onEdit = { renaming = true },
                 )
@@ -174,6 +193,19 @@ internal fun MyProfileScreen(
                         }
                     }
                 }
+            }
+            // Amigos: pedidos, o que estão ouvindo e o que recomendaram (só com perfil criado).
+            if (current.account != null) {
+                friendsSection(
+                    viewModel = friendsViewModel,
+                    friends = friends,
+                    requests = requests,
+                    recommendations = recommendations,
+                    offline = offline,
+                    restingUntil = restingUntil,
+                    onOpenProfile = onOpenFriend,
+                    onAddFriend = { addingFriend = true },
+                )
             }
             item(key = "month") { MonthCard(current) }
 
@@ -227,26 +259,6 @@ internal fun MyProfileScreen(
                     }
                 }
             }
-
-            // Seus amigos (amizade confirmada). Os artistas seguidos já
-            // aparecem na aba Lançamentos.
-            item(key = "friends") {
-                SectionTitle(stringResource(R.string.feature_social_friends_count, friends.size), null)
-                if (friends.isEmpty()) {
-                    Text(
-                        stringResource(R.string.feature_social_friends_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                    )
-                } else {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                        items(friends, key = { it.userId }) { friend ->
-                            FriendChipView(friend, viewModel, onClick = { onOpenFriend(friend.userId) })
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -256,6 +268,19 @@ internal fun MyProfileScreen(
     }
     if (editingNetworks && account != null) {
         NetworksSheet(account = account, viewModel = viewModel, onDismiss = { editingNetworks = false })
+    }
+    if (creatingProfile && account == null) {
+        OnboardingSheet(viewModel = friendsViewModel, onDismiss = { creatingProfile = false })
+    }
+    if (addingFriend && account != null) {
+        AddFriendSheet(
+            viewModel = friendsViewModel,
+            onOpenProfile = { id ->
+                addingFriend = false
+                onOpenFriend(id)
+            },
+            onDismiss = { addingFriend = false },
+        )
     }
 }
 

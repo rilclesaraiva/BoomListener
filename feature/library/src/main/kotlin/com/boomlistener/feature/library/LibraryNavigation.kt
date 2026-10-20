@@ -38,7 +38,7 @@ fun NavGraphBuilder.libraryScreen(
     navController: NavController,
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (Track) -> Unit,
-    onOpenHistory: () -> Unit,
+    onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
     onRecommend: (Track) -> Unit,
 ) {
@@ -57,7 +57,7 @@ fun NavGraphBuilder.libraryScreen(
             },
             onEditTags = onEditTags,
             onRecommend = onRecommend,
-            onOpenHistory = onOpenHistory,
+            onOpenReleases = onOpenReleases,
             onOpenSettings = onOpenSettings,
         )
     }
@@ -73,7 +73,7 @@ fun NavGraphBuilder.libraryScreen(
             onOpenArtist = onOpenArtist,
             onOpenAlbum = { navController.openCollection("album", it) },
             onOpenPlaylist = { navController.openCollection("playlist", it.toString()) },
-            onOpenHistory = onOpenHistory,
+            onOpenReleases = onOpenReleases,
             onOpenSettings = onOpenSettings,
         )
     }

@@ -44,10 +44,10 @@ feature/
   nowplaying/     ← player em tela cheia + mini player
   artist/         ← página do artista: foto, bio, discografia com "tenho / falta"
   tageditor/      ← edição de tags de uma ou várias faixas
-  releases/       ← aba de lançamentos e gerenciamento de quem você segue
+  releases/       ← lançamentos (abre pelo sino no topo das abas) e gerenciamento de quem você segue
   settings/       ← ajustes, tema, sobre, licenças, privacidade
   wellbeing/      ← estatísticas de escuta e configuração dos avisos
-  social/         ← aba Amigos: "o que seus amigos estão ouvindo", pedidos de amizade, recomendações, perfil com redes
+  social/         ← aba Perfil: seu perfil (estatísticas, histórico, redes) com os amigos dentro: o que estão ouvindo, pedidos, recomendações
 
 proxy/            ← Cloudflare Worker que guarda a chave e o segredo do Last.fm (igual ao do BusBus)
 ```

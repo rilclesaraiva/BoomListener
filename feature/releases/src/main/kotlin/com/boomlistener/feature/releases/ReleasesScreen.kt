@@ -47,7 +47,6 @@ import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
-import com.boomlistener.core.designsystem.component.BoomTopActions
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.model.ExternalArtist
 import com.boomlistener.core.model.Release
@@ -63,8 +62,7 @@ internal fun ReleasesScreen(
     viewModel: ReleasesViewModel,
     onOpenAlbum: (albumId: Long, artistName: String) -> Unit,
     onOpenArtist: (artistName: String) -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenSettings: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -73,8 +71,8 @@ internal fun ReleasesScreen(
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_releases_title),
+        onBack = onBack,
         modifier = modifier,
-        actions = { BoomTopActions(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings) },
     ) { padding ->
         when (val current = state) {
             ReleasesUiState.Loading -> BoomLoading(Modifier.padding(padding))

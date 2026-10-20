@@ -78,7 +78,10 @@ tira só o @ dele e monta de novo).
   de cada rede); aí é só trocar os arquivos `ic_network_*.xml` em
   `feature/social/src/main/res/drawable/`.
 
-## "O que seus amigos estão ouvindo" (aba Amigos)
+## "O que seus amigos estão ouvindo" (dentro da aba Perfil)
+
+Desde a 0.31.0 não existe aba Amigos: tudo isto fica na aba **Perfil**.
+
 
 - Pedidos de amizade recebidos no topo (aceitar / recusar).
 - Um cartão por amigo: o que está ouvindo agora, ou o que ouviu por último e

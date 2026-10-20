@@ -106,7 +106,7 @@ internal fun LibraryScreen(
     onSeeAll: (CollectionKind) -> Unit,
     onEditTags: (Track) -> Unit,
     onRecommend: (Track) -> Unit,
-    onOpenHistory: () -> Unit,
+    onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -149,7 +149,7 @@ internal fun LibraryScreen(
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_title),
         modifier = modifier,
-        actions = { BoomTopActions(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings) },
+        actions = { BoomTopActions(onOpenReleases = onOpenReleases, onOpenSettings = onOpenSettings) },
     ) { padding ->
         val contentModifier = Modifier.padding(padding)
         when {

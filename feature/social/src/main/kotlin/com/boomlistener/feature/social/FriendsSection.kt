@@ -22,9 +22,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -71,11 +70,9 @@ import com.boomlistener.core.common.openUrl
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
-import com.boomlistener.core.designsystem.component.BoomScreenScaffold
-import com.boomlistener.core.designsystem.component.BoomTopActions
-import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.data.social.FriendProfile
+import com.boomlistener.data.social.FriendsState
 import com.boomlistener.data.social.HandleCheck
 import com.boomlistener.data.social.ProfileImage
 import com.boomlistener.data.social.REACTION_EMOJIS
@@ -92,168 +89,90 @@ import kotlinx.coroutines.launch
 private const val LIVE_WINDOW_MS = 15 * 60_000L
 
 /**
- * Aba Amigos: "O que seus amigos estão ouvindo". Pedidos de amizade no topo,
- * um cartão por amigo (com reações), e as músicas que eles recomendaram.
- * Não existe chat: a conversa acontece nas redes de cada perfil.
+ * Amigos dentro do seu perfil (não existe mais uma aba só para isso nem chat):
+ * pedidos de amizade, "O que seus amigos estão ouvindo" (com reações) e as
+ * músicas que eles recomendaram. Quem chama já coletou os estados.
  */
-@Composable
-internal fun SocialHomeScreen(
+internal fun LazyListScope.friendsSection(
     viewModel: SocialHomeViewModel,
+    friends: List<FriendProfile>,
+    requests: FriendsState,
+    recommendations: List<Recommendation>,
+    offline: Boolean,
+    restingUntil: Long?,
     onOpenProfile: (userId: String) -> Unit,
-    onOpenMyProfile: () -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenSettings: () -> Unit,
-    modifier: Modifier = Modifier,
+    onAddFriend: () -> Unit,
 ) {
-    val account by viewModel.account.collectAsStateWithLifecycle()
-    val friends by viewModel.friends.collectAsStateWithLifecycle()
-    val requests by viewModel.requests.collectAsStateWithLifecycle()
-    val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
-    val offline by viewModel.offline.collectAsStateWithLifecycle()
-    val restingUntil by viewModel.restingUntil.collectAsStateWithLifecycle()
-    var addingFriend by remember { mutableStateOf(false) }
-    val listState = rememberLazyListState()
-    ScrollToTopOnReselect(SOCIAL_ROUTE, listState)
-    // Com a conexão ao vivo, tudo chega sozinho: refresh() busca amigos e pedidos ao abrir.
-    if (account != null) PollWhileVisible(60_000) { viewModel.refresh() }
-    // Abriu a aba: as recomendações novas contam como vistas (some o número na aba).
-    LaunchedEffect(recommendations) { if (recommendations.any { !it.seen }) viewModel.markRecommendationsSeen() }
-
-    BoomScreenScaffold(
-        title = stringResource(R.string.feature_social_title),
-        modifier = modifier,
-        actions = { BoomTopActions(onOpenHistory = onOpenHistory, onOpenSettings = onOpenSettings) },
-    ) { padding ->
-        val effects = boomEffectsSpec<Float>()
-        AnimatedContent(
-            targetState = account == null,
-            transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
-            label = "onboarding",
-            modifier = Modifier.padding(padding),
-        ) { needsProfile ->
-            if (needsProfile) {
-                Onboarding(viewModel)
-            } else {
-                Box(Modifier.fillMaxSize()) {
-                    LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 96.dp)) {
-                        account?.let { me ->
-                            item(key = "me") {
-                                // Tocar no seu @ abre o seu perfil.
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable(onClick = onOpenMyProfile)
-                                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                                ) {
-                                    Avatar(
-                                        me.name,
-                                        size = 40.dp,
-                                        picture = rememberProfileImage(me.id, ProfileImage.Avatar, me.avatarVersion),
-                                    )
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(me.name, style = MaterialTheme.typography.titleMedium)
-                                        Text(
-                                            text = stringResource(
-                                                if (me.sharing) R.string.feature_social_me_sharing else R.string.feature_social_me_private,
-                                                me.handle,
-                                            ),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                    Text(
-                                        stringResource(R.string.feature_social_see_profile),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
-                        }
-                        restingUntil?.let { until ->
-                            item(key = "resting") { RestingNotice(until) }
-                        }
-                        if (offline && restingUntil == null) {
-                            item(key = "offline") {
-                                Text(
-                                    text = stringResource(R.string.feature_social_offline),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-                                )
-                            }
-                        }
-                        if (requests.incoming.isNotEmpty()) {
-                            item(key = "requests-title") { SectionTitle(stringResource(R.string.feature_social_requests)) }
-                            items(requests.incoming, key = { "in-" + it.id }) { user ->
-                                RequestRow(
-                                    user = user,
-                                    onOpen = { onOpenProfile(user.id) },
-                                    primary = stringResource(R.string.feature_social_accept) to { viewModel.addFriend(user.id) },
-                                    secondary = stringResource(R.string.feature_social_decline) to { viewModel.removeFriend(user.id) },
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                        item(key = "friends-title") { SectionTitle(stringResource(R.string.feature_social_friends_listening)) }
-                        if (friends.isEmpty()) {
-                            item(key = "friends-empty") {
-                                Text(
-                                    text = stringResource(R.string.feature_social_friends_none),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                                )
-                            }
-                        }
-                        items(friends, key = { "f-" + it.user.id }) { friend ->
-                            FriendCard(
-                                friend = friend,
-                                onClick = { onOpenProfile(friend.user.id) },
-                                onReact = { emoji -> viewModel.react(friend, emoji) },
-                                modifier = Modifier.animateItem(),
-                            )
-                        }
-                        if (recommendations.isNotEmpty()) {
-                            item(key = "recs-title") { SectionTitle(stringResource(R.string.feature_social_recommendations)) }
-                            items(recommendations, key = { "r-" + it.id }) { rec ->
-                                RecommendationRow(rec, viewModel, onOpenProfile, Modifier.animateItem())
-                            }
-                        }
-                        if (requests.outgoing.isNotEmpty()) {
-                            item(key = "sent-title") { SectionTitle(stringResource(R.string.feature_social_requests_sent)) }
-                            items(requests.outgoing, key = { "out-" + it.id }) { user ->
-                                RequestRow(
-                                    user = user,
-                                    onOpen = { onOpenProfile(user.id) },
-                                    primary = null,
-                                    secondary = stringResource(R.string.feature_social_cancel_request) to { viewModel.removeFriend(user.id) },
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                    }
-                    ExtendedFloatingActionButton(
-                        onClick = { addingFriend = true },
-                        icon = { Icon(BoomIcons.Add, contentDescription = null) },
-                        text = { Text(stringResource(R.string.feature_social_add_friend)) },
-                        modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-                    )
-                }
+    restingUntil?.let { until ->
+        item(key = "resting") { RestingNotice(until) }
+    }
+    if (offline && restingUntil == null) {
+        item(key = "offline") {
+            Text(
+                text = stringResource(R.string.feature_social_offline),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+            )
+        }
+    }
+    if (requests.incoming.isNotEmpty()) {
+        item(key = "requests-title") { SectionTitle(stringResource(R.string.feature_social_requests)) }
+        items(requests.incoming, key = { "in-" + it.id }) { user ->
+            RequestRow(
+                user = user,
+                onOpen = { onOpenProfile(user.id) },
+                primary = stringResource(R.string.feature_social_accept) to { viewModel.addFriend(user.id) },
+                secondary = stringResource(R.string.feature_social_decline) to { viewModel.removeFriend(user.id) },
+                modifier = Modifier.animateItem(),
+            )
+        }
+    }
+    item(key = "friends-title") {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Box(Modifier.weight(1f)) { SectionTitle(stringResource(R.string.feature_social_friends_listening)) }
+            TextButton(onClick = onAddFriend, modifier = Modifier.padding(end = 8.dp, top = 8.dp)) {
+                Icon(BoomIcons.Add, contentDescription = null)
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.feature_social_add_friend))
             }
         }
     }
-
-    if (addingFriend) {
-        AddFriendSheet(
-            viewModel = viewModel,
-            onOpenProfile = { id ->
-                addingFriend = false
-                onOpenProfile(id)
-            },
-            onDismiss = { addingFriend = false },
+    if (friends.isEmpty()) {
+        item(key = "friends-empty") {
+            Text(
+                text = stringResource(R.string.feature_social_friends_none),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+            )
+        }
+    }
+    items(friends, key = { "f-" + it.user.id }) { friend ->
+        FriendCard(
+            friend = friend,
+            onClick = { onOpenProfile(friend.user.id) },
+            onReact = { emoji -> viewModel.react(friend, emoji) },
+            modifier = Modifier.animateItem(),
         )
+    }
+    if (recommendations.isNotEmpty()) {
+        item(key = "recs-title") { SectionTitle(stringResource(R.string.feature_social_recommendations)) }
+        items(recommendations, key = { "r-" + it.id }) { rec ->
+            RecommendationRow(rec, viewModel, onOpenProfile, Modifier.animateItem())
+        }
+    }
+    if (requests.outgoing.isNotEmpty()) {
+        item(key = "sent-title") { SectionTitle(stringResource(R.string.feature_social_requests_sent)) }
+        items(requests.outgoing, key = { "out-" + it.id }) { user ->
+            RequestRow(
+                user = user,
+                onOpen = { onOpenProfile(user.id) },
+                primary = null,
+                secondary = stringResource(R.string.feature_social_cancel_request) to { viewModel.removeFriend(user.id) },
+                modifier = Modifier.animateItem(),
+            )
+        }
     }
 }
 
@@ -457,7 +376,7 @@ private fun RecommendationRow(
 /** "Adicionar amigo": procura pelo @ e abre o perfil (onde fica o botão de pedir amizade). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddFriendSheet(
+internal fun AddFriendSheet(
     viewModel: SocialHomeViewModel,
     onOpenProfile: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -555,6 +474,19 @@ private fun AddFriendSheet(
     }
 }
 
+/** Criar o perfil de Amigos (o @), numa folha por cima do seu perfil. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun OnboardingSheet(viewModel: SocialHomeViewModel, onDismiss: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val account by viewModel.account.collectAsStateWithLifecycle()
+    // Perfil criado: a folha fecha sozinha.
+    LaunchedEffect(account) { if (account != null) onDismiss() }
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Onboarding(viewModel)
+    }
+}
+
 @Composable
 private fun Onboarding(viewModel: SocialHomeViewModel) {
     var name by remember { mutableStateOf("") }
@@ -578,10 +510,11 @@ private fun Onboarding(viewModel: SocialHomeViewModel) {
 
     Column(
         Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(stringResource(R.string.feature_social_onboarding_title), style = MaterialTheme.typography.headlineSmall)
@@ -673,7 +606,7 @@ internal fun LiveDot() {
 
 /** "O social está descansando": a cota diária do plano gratuito acabou; o player segue normal. */
 @Composable
-private fun RestingNotice(untilMs: Long) {
+internal fun RestingNotice(untilMs: Long) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val time = remember(untilMs) { android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(untilMs)) }
     androidx.compose.material3.Surface(

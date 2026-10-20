@@ -4,6 +4,17 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.31.0] — 2026-10-20
+
+### ✨ New
+- **New tab: Profile.** It replaces Friends. Your stats, history, social networks and friends now live together. Friend requests, what your friends are listening to and the songs they recommend are all on your profile.
+- **Releases moved to the top bar:** tap the bell next to Settings, on any tab.
+
+### 🎨 Visual tweaks
+- The bottom bar is simpler: Home, Library and Profile.
+- The history button left the top bar. Your full history is on your profile, under "History".
+- The top bar now shows Releases first, then Settings.
+
 ## [0.30.0] — 2026-10-20
 
 ### ✨ New

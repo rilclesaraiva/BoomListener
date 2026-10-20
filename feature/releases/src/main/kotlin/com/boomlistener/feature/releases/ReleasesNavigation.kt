@@ -13,13 +13,13 @@ import com.boomlistener.data.releases.ReleasesData
 
 const val RELEASES_ROUTE = "releases"
 
-fun NavController.navigateToReleases() = navigate(RELEASES_ROUTE)
+/** Lançamentos: abre pelo sino no canto superior direito das abas (não é mais uma aba). */
+fun NavController.navigateToReleases() = navigate(RELEASES_ROUTE) { launchSingleTop = true }
 
 fun NavGraphBuilder.releasesScreen(
+    onBack: () -> Unit,
     onOpenAlbum: (albumId: Long, artistName: String) -> Unit,
     onOpenArtist: (artistName: String) -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenSettings: () -> Unit,
 ) {
     composable(RELEASES_ROUTE) {
         val context = LocalContext.current.applicationContext
@@ -28,8 +28,7 @@ fun NavGraphBuilder.releasesScreen(
             viewModel = viewModel,
             onOpenAlbum = onOpenAlbum,
             onOpenArtist = onOpenArtist,
-            onOpenHistory = onOpenHistory,
-            onOpenSettings = onOpenSettings,
+            onBack = onBack,
         )
     }
 }

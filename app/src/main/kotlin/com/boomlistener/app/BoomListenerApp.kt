@@ -3,11 +3,7 @@
 
 package com.boomlistener.app
 
-import android.graphics.BitmapFactory
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import com.boomlistener.data.social.ProfileImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -49,6 +45,7 @@ import com.boomlistener.feature.library.libraryScreen
 import com.boomlistener.feature.nowplaying.MiniPlayer
 import com.boomlistener.feature.nowplaying.PlayerSheet
 import com.boomlistener.feature.nowplaying.rememberPlayerSheetState
+import com.boomlistener.feature.releases.navigateToReleases
 import com.boomlistener.feature.releases.releasesScreen
 import com.boomlistener.feature.settings.SETTINGS_ROUTE
 import com.boomlistener.feature.settings.UpdatePromptHost
@@ -76,12 +73,9 @@ import com.boomlistener.data.social.LinkStatus
 import com.boomlistener.data.social.SocialData
 import com.boomlistener.feature.social.RecommendSheet
 import com.boomlistener.feature.social.socialScreen
-import com.boomlistener.feature.social.navigateToMyProfile
-import com.boomlistener.core.designsystem.component.LocalProfileShortcut
 import com.boomlistener.core.designsystem.component.FavoriteShare
 import com.boomlistener.core.designsystem.component.LocalFavoriteShare
 import com.boomlistener.core.common.ShareTarget
-import com.boomlistener.core.designsystem.component.ProfileShortcut
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
 import com.boomlistener.feature.wellbeing.navigateToHistory
@@ -122,7 +116,7 @@ fun BoomListenerApp() {
     val context = LocalContext.current.applicationContext
     val social = remember { SocialData.repository(context) }
     val socialAccount by social.account.collectAsStateWithLifecycle()
-    // Número na aba Amigos: pedidos de amizade + recomendações ainda não vistas.
+    // Número na aba Perfil: pedidos de amizade + recomendações ainda não vistas.
     val friendsState by social.friends.collectAsStateWithLifecycle()
     val recommendations by social.recommendations.collectAsStateWithLifecycle()
     val unread = friendsState.incoming.size + recommendations.count { !it.seen }
@@ -191,23 +185,6 @@ fun BoomListenerApp() {
         if (isTabSwitch()) fadeOut(fadeSpec) else slideOutHorizontally(slideSpec) { it }
     }
 
-    // Seu perfil no canto superior direito de toda aba (inicial do nome, ou ícone sem perfil).
-    val profilePhoto by produceState<ImageBitmap?>(null, socialAccount?.id, socialAccount?.avatarVersion) {
-        val account = socialAccount
-        value = if (account == null || account.avatarVersion <= 0) {
-            null
-        } else {
-            SocialData.repository(context).profileImage(account.id, ProfileImage.Avatar, account.avatarVersion)
-                ?.let { bytes -> withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() } }
-        }
-    }
-    val profileShortcut = remember(socialAccount?.name, profilePhoto) {
-        ProfileShortcut(
-            initial = socialAccount?.name?.trim()?.firstOrNull()?.uppercase(),
-            onClick = { navController.navigateToMyProfile() },
-            photo = profilePhoto,
-        )
-    }
     // App favorito para compartilhar: aparece como "Compartilhar com…" nos menus.
     val favoriteShareApp by ShareTarget.favorite(context).collectAsStateWithLifecycle()
     val favoriteShare = remember(favoriteShareApp) {
@@ -215,7 +192,6 @@ fun BoomListenerApp() {
     }
     CompositionLocalProvider(
         LocalTabReselect provides reselect,
-        LocalProfileShortcut provides profileShortcut,
         LocalFavoriteShare provides favoriteShare,
     ) {
     Box(Modifier.fillMaxSize()) {
@@ -258,7 +234,7 @@ fun BoomListenerApp() {
                                 icon = {
                                     BadgedBox(
                                         badge = {
-                                            if (destination == TopLevelDestination.Social && unread > 0) {
+                                            if (destination == TopLevelDestination.Profile && unread > 0) {
                                                 Badge { Text(if (unread > 99) "99+" else unread.toString()) }
                                             }
                                         },
@@ -290,12 +266,13 @@ fun BoomListenerApp() {
             ) {
                 val back: () -> Unit = { navController.popBackStack() }
                 val openHistory: () -> Unit = { navController.navigateToHistory() }
+                val openReleases: () -> Unit = { navController.navigateToReleases() }
                 val openSettings: () -> Unit = { navController.navigateToSettings() }
                 libraryScreen(
                     navController = navController,
                     onOpenArtist = navController::navigateToArtist,
                     onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
-                    onOpenHistory = openHistory,
+                    onOpenReleases = openReleases,
                     onOpenSettings = openSettings,
                     onRecommend = { track -> recommendUri = track.uri },
                 )
@@ -303,6 +280,7 @@ fun BoomListenerApp() {
                     navController = navController,
                     onOpenArtist = navController::navigateToArtist,
                     onOpenHistory = openHistory,
+                    onOpenReleases = openReleases,
                     onOpenSettings = openSettings,
                 )
                 artistScreen(
@@ -312,10 +290,9 @@ fun BoomListenerApp() {
                 )
                 tageditorScreen(onBack = back)
                 releasesScreen(
+                    onBack = back,
                     onOpenAlbum = navController::navigateToAlbum,
                     onOpenArtist = navController::navigateToArtist,
-                    onOpenHistory = openHistory,
-                    onOpenSettings = openSettings,
                 )
                 settingsScreen(
                     navController = navController,
