@@ -31,6 +31,40 @@ class PlaybackService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
     private val scope = MainScope()
+    private lateinit var mixer: VolumeMixer
+    private var exo: ExoPlayer? = null
+
+    // Transição entre músicas: o volume acompanha o ponto da música (sobe no
+    // começo e desce no fim) enquanto toca.
+    private val transitionTick = object : Runnable {
+        override fun run() {
+            updateTransition()
+            if (exo?.isPlaying == true) tickHandler.postDelayed(this, TRANSITION_TICK_MS)
+        }
+    }
+
+    private fun updateTransition() {
+        if (!::mixer.isInitialized) return
+        val player = exo ?: return
+        val seconds = PlaybackSettingsData.internalGet(this).prefs.value.transitionSeconds
+        mixer.transition = transitionVolume(player.currentPosition, player.duration, seconds)
+    }
+
+    /**
+     * Timer para dormir: na hora marcada, o som vai sumindo (3 s) e pausa; no
+     * modo "fim da música", pausa quando a música atual acaba.
+     */
+    private suspend fun runSleepTimer(timer: SleepTimer?) {
+        val player = exo ?: return
+        player.pauseAtEndOfMediaItems = timer?.endOfTrack == true
+        val endsAt = timer?.endsAtMs ?: return
+        delay((endsAt - System.currentTimeMillis()).coerceAtLeast(0))
+        mixer.fadeTo(0f, SLEEP_FADE_MS) {
+            player.pause()
+            mixer.setFade(1f)
+        }
+        PlaybackSettingsData.internalGet(this).cancelSleepTimer()
+    }
 
     // "Mais ouvidas": decide o que conta (PlayCountTracker) e avisa o app.
     private val playCounter = PlayCountTracker()
@@ -88,7 +122,16 @@ class PlaybackService : MediaSessionService() {
                 )
             }
 
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                // Timer "fim da música": pausou sozinho no fim da música, missão cumprida.
+                if (!playWhenReady && reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
+                    PlaybackSettingsData.internalGet(this@PlaybackService).cancelSleepTimer()
+                }
+            }
+
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                tickHandler.removeCallbacks(transitionTick)
+                if (isPlaying) tickHandler.post(transitionTick)
                 playCounter.setPlaying(isPlaying, SystemClock.elapsedRealtime())
                 tickHandler.removeCallbacks(tick)
                 if (isPlaying) tickHandler.post(tick) else reportIfCounted()
@@ -113,7 +156,21 @@ class PlaybackService : MediaSessionService() {
         // Abriu o app de novo: volta a fila e o ponto onde parou, pausado.
         snapshots.read()?.let { restore(player, it) }
 
-        val builder = MediaSession.Builder(this, player)
+        // Ajustes de reprodução: fade ao tocar/pausar, transição entre músicas,
+        // velocidade e timer para dormir.
+        val settings = PlaybackSettingsData.internalGet(this)
+        mixer = VolumeMixer(player, tickHandler)
+        val sessionPlayer = FadingPlayer(player, mixer) { settings.prefs.value.fadeOnPlayPause }
+        exo = player
+        scope.launch {
+            settings.prefs.collect { prefs ->
+                player.setPlaybackSpeed(prefs.speed)
+                updateTransition()
+            }
+        }
+        scope.launch { settings.sleepTimer.collectLatest { timer -> runSleepTimer(timer) } }
+
+        val builder = MediaSession.Builder(this, sessionPlayer)
         openAppIntent()?.let { builder.setSessionActivity(it) }
         mediaSession = builder.build()
 
@@ -224,6 +281,7 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         scope.cancel()
+        tickHandler.removeCallbacks(transitionTick)
         tickHandler.removeCallbacks(tick)
         tickHandler.removeCallbacks(saveSoon)
         saveSnapshot()
@@ -249,3 +307,9 @@ class PlaybackService : MediaSessionService() {
 
 /** Espera antes de aplicar a saída escolhida (junta toques seguidos). */
 private const val OUTPUT_SWITCH_DELAY_MS = 250L
+
+/** De quanto em quanto tempo o volume da transição é atualizado. */
+private const val TRANSITION_TICK_MS = 50L
+
+/** O timer para dormir abaixa o som devagar antes de pausar. */
+private const val SLEEP_FADE_MS = 3_000L

@@ -19,10 +19,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import com.boomlistener.core.designsystem.R
+
+/**
+ * O app favorito para compartilhar (Ajustes → Compartilhar). O :app fornece;
+ * [prepare] faz o próximo compartilhamento ir direto para ele.
+ */
+class FavoriteShare(val label: String, val prepare: () -> Unit)
+
+val LocalFavoriteShare = staticCompositionLocalOf<FavoriteShare?> { null }
 
 /** Uma opção do menu de três pontinhos. */
 data class BoomMenuAction(
@@ -67,9 +80,18 @@ fun BoomMenuDropdown(
     onDeezer: (() -> Unit)? = null,
 ) {
     var open by openState
+    val favorite = LocalFavoriteShare.current
     val all = buildList {
         addAll(actions)
         onShare?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_share), onClick = it)) }
+        if (onShare != null && favorite != null) {
+            add(
+                BoomMenuAction(stringResource(R.string.core_designsystem_share_with, favorite.label)) {
+                    favorite.prepare()
+                    onShare()
+                },
+            )
+        }
         onYoutubeMusic?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_youtube_music), onClick = it)) }
         onDeezer?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_open_deezer), onClick = it)) }
     }
@@ -99,13 +121,33 @@ fun BoomMenuDropdown(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Modifier.clickableWithMenu(menuOpen: MutableState<Boolean>, onClick: () -> Unit): Modifier {
+fun Modifier.clickableWithMenu(
+    menuOpen: MutableState<Boolean>,
+    // Falso enquanto o dedo está num puxador de arrastar dentro da linha:
+    // segurar ali é para reordenar, não para abrir o menu.
+    longPressEnabled: () -> Boolean = { true },
+    onClick: () -> Unit,
+): Modifier {
     val haptics = LocalHapticFeedback.current
     return combinedClickable(
         onClick = onClick,
         onLongClick = {
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            menuOpen.value = true
+            if (longPressEnabled()) {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                menuOpen.value = true
+            }
         },
     )
+}
+
+/** Marca [pressed] enquanto houver um dedo neste elemento (ex.: o puxador de arrastar). */
+fun Modifier.trackPress(pressed: MutableState<Boolean>): Modifier = pointerInput(pressed) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        pressed.value = true
+        do {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+        } while (event.changes.any { it.pressed })
+        pressed.value = false
+    }
 }

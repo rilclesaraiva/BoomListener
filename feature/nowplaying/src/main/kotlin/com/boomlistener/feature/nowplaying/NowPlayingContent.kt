@@ -40,6 +40,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -67,6 +70,7 @@ import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
+import com.boomlistener.core.player.PlaybackSettingsData
 import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.RepeatMode
 import kotlinx.coroutines.CancellationException
@@ -101,6 +105,14 @@ internal fun NowPlayingContent(
     val spatial = boomSpatialSpec<Float>()
     val effects = boomEffectsSpec<Float>()
     val deleteSong = rememberSongDeleter()
+    val showDetails = rememberSongDetails()
+    val playbackSettings = remember { PlaybackSettingsData.get(context.applicationContext) }
+    val sleepTimer by playbackSettings.sleepTimer.collectAsStateWithLifecycle()
+    val playbackPrefs by playbackSettings.prefs.collectAsStateWithLifecycle()
+    var showSleep by remember { mutableStateOf(false) }
+    var showSpeed by remember { mutableStateOf(false) }
+    if (showSleep) SleepTimerSheet(playbackSettings, onDismiss = { showSleep = false })
+    if (showSpeed) SpeedSheet(playbackSettings, onDismiss = { showSpeed = false })
 
     // Com a letra aberta, o "voltar" fecha só a letra (a capa volta com a
     // mesma animação), não o player inteiro. A fila, quando aberta, tem prioridade.
@@ -145,12 +157,15 @@ internal fun NowPlayingContent(
                                         else R.string.feature_nowplaying_show_lyrics,
                                     ),
                                 ) { viewModel.toggleLyrics() },
+                                BoomMenuAction(sleepTimerLabel(sleepTimer)) { showSleep = true },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_speed) + " · " + formatSpeed(playbackPrefs.speed)) { showSpeed = true },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist)) { onAddToPlaylist(item.uri) },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_recommend)) { onRecommend(item.uri) },
                                 item.artist?.let { name ->
                                     BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
                                 },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags)) { onEditTags(item.uri) },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_details)) { showDetails(item.uri, item.title) },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song)) { deleteSong(item.uri, item.title) },
                             ),
                             onShare = {

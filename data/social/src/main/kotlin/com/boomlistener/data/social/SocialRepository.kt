@@ -28,6 +28,9 @@ interface SocialRepository {
     /** Muda a descrição do perfil (até 160 letras). */
     suspend fun updateBio(bio: String): SocialResult<SocialAccount> = SocialResult.Invalid
 
+    /** Cor do perfil: "#RRGGBB", ou "" para nenhuma. */
+    suspend fun updateColor(color: String): SocialResult<SocialAccount> = SocialResult.Invalid
+
     /**
      * Troca a foto ou a capa por [uri] (o content:// do seletor de fotos do
      * Android); null tira a imagem. O app reduz e recorta antes de enviar.

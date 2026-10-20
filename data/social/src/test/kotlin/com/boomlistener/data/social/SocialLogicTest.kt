@@ -54,4 +54,13 @@ class SocialLogicTest {
         assertEquals(listOf("a", "b"), merged.getValue("dm:a1").messages.map { it.id })
         assertEquals(listOf("g:x", "dm:a1"), sortConversations(merged.values.map { it.conversation }).map { it.id })
     }
+
+    @Test
+    fun corDoPerfil() {
+        assertEquals("#FF5500", cleanProfileColor("#ff5500"))
+        assertEquals("#FF5500", cleanProfileColor(" FF5500 "))
+        assertEquals("", cleanProfileColor(""))
+        assertEquals(null, cleanProfileColor("red"))
+        assertEquals(null, cleanProfileColor("#FFF"))
+    }
 }

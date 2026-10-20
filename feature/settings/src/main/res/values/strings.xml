@@ -93,4 +93,28 @@
     <string name="feature_settings_about_issues_summary">Found a bug or have an idea? Open an issue</string>
     <string name="feature_settings_about_build_release">Release</string>
     <string name="feature_settings_about_build_debug">Debug</string>
+    <string name="feature_settings_playback">Playback</string>
+    <string name="feature_settings_playback_summary">Transitions, fade, speed</string>
+    <string name="feature_settings_playback_transition">Transition between songs</string>
+    <string name="feature_settings_playback_transition_off">Off</string>
+    <plurals name="feature_settings_playback_transition_on">
+        <item quantity="one">%d second</item>
+        <item quantity="other">%d seconds</item>
+    </plurals>
+    <string name="feature_settings_playback_transition_summary">The ending song fades out and the next one fades in</string>
+    <string name="feature_settings_playback_fade">Fade on play and pause</string>
+    <string name="feature_settings_playback_fade_summary">Volume rises and falls smoothly instead of cutting</string>
+    <string name="feature_settings_playback_gapless">Gapless playback</string>
+    <string name="feature_settings_playback_gapless_summary">Always on: songs from albums without silence between tracks play seamlessly</string>
+    <string name="feature_settings_playback_speed">Speed</string>
+    <string name="feature_settings_playback_speed_summary">Voices keep their pitch</string>
+    <string name="feature_settings_playback_speed_reset">Reset</string>
+    <string name="feature_settings_share">Sharing</string>
+    <string name="feature_settings_share_summary">Favorite app for “Share with…”</string>
+    <string name="feature_settings_share_hint">Pick an app and every song menu gets a “Share with…” option that goes straight to it.</string>
+    <string name="feature_settings_share_by_package">By package name</string>
+    <string name="feature_settings_share_use">Use</string>
+    <string name="feature_settings_share_not_found">No installed app with this package receives links</string>
+    <string name="feature_settings_share_apps">Apps on this phone</string>
+    <string name="feature_settings_share_none">None</string>
 </resources>

@@ -10,4 +10,17 @@
     <string name="core_designsystem_history">Histórico de escuta</string>
     <string name="core_designsystem_settings">Ajustes</string>
     <string name="core_designsystem_profile">Seu perfil</string>
+    <string name="core_designsystem_share_with">Compartilhar com %1$s</string>
+    <string name="core_designsystem_details">Detalhes</string>
+    <string name="core_designsystem_details_path">Local</string>
+    <string name="core_designsystem_details_file">Arquivo</string>
+    <string name="core_designsystem_details_format">Formato</string>
+    <string name="core_designsystem_details_size">Tamanho</string>
+    <string name="core_designsystem_details_duration">Duração</string>
+    <string name="core_designsystem_details_bitrate">Taxa de bits</string>
+    <string name="core_designsystem_details_kbps">%1$d kbps</string>
+    <string name="core_designsystem_details_sample_rate">Taxa de amostragem</string>
+    <string name="core_designsystem_details_hz">%1$d Hz</string>
+    <string name="core_designsystem_details_modified">Modificado em</string>
+    <string name="core_designsystem_details_close">Fechar</string>
 </resources>

@@ -15,6 +15,8 @@ data class SocialAccount(
     /** Versão da foto e da capa no servidor (0 = sem imagem). */
     val avatarVersion: Long = 0,
     val bannerVersion: Long = 0,
+    /** Cor do perfil, "#RRGGBB" ("" = nenhuma). */
+    val color: String = "",
 )
 
 data class SocialUser(val id: String, val handle: String, val name: String)
@@ -35,6 +37,7 @@ data class FriendProfile(
     val bio: String = "",
     val avatarVersion: Long = 0,
     val bannerVersion: Long = 0,
+    val color: String = "",
 )
 
 /** Foto de perfil (quadrada) ou capa (faixa larga no topo do perfil). */

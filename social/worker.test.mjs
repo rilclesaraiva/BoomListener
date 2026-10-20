@@ -146,6 +146,18 @@ test("descrição, foto e capa do perfil", async () => {
   assert.ok(patched.bio.startsWith("Ouço de tudo.\nMenos sertanejo"));
   assert.equal(patched.bio.length, 160);
 
+  // Cor do perfil: só "#RRGGBB" (ou vazio para tirar).
+  const colored = await (await send("PATCH", "/me", ana, {
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ color: "#ff5500" }),
+  })).json();
+  assert.equal(colored.color, "#FF5500");
+  assert.equal(colored.bio, patched.bio);
+  assert.equal((await send("PATCH", "/me", ana, {
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ color: "red" }),
+  })).status, 400);
+
   // Só JPEG.
   assert.equal((await send("PUT", "/me/image/avatar", ana, { body: new Uint8Array([1, 2, 3]) })).status, 400);
   const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 9, 9, 9]);
@@ -157,6 +169,7 @@ test("descrição, foto e capa do perfil", async () => {
   const seen = await (await send("GET", "/users/" + ana.id, beto)).json();
   assert.equal(seen.avatar, withPhoto.avatar);
   assert.equal(seen.bio, patched.bio);
+  assert.equal(seen.color, "#FF5500");
   const image = await send("GET", `/users/${ana.id}/image/avatar`, beto);
   assert.equal(image.status, 200);
   assert.equal(image.headers.get("content-type"), "image/jpeg");

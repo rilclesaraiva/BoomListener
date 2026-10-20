@@ -28,4 +28,22 @@ class MediaStoreMappingTest {
         assertNull(cleanUnknownTag("   "))
         assertEquals("Djavan", cleanUnknownTag("Djavan"))
     }
+
+    @Test
+    fun nomeDoFormato() {
+        assertEquals("AAC", codecName("audio/mp4a-latm"))
+        assertEquals("MP3", codecName("audio/mpeg"))
+        assertEquals("FLAC", codecName("audio/flac"))
+        assertEquals("Opus", codecName("audio/opus"))
+        assertEquals("X-MS-WMA", codecName("audio/x-ms-wma"))
+        assertNull(codecName(null))
+    }
+
+    @Test
+    fun taxaDeBitsEstimada() {
+        // 3 MB em 4:10 dá ~96 kb/s.
+        assertEquals(96, estimateBitrateKbps(3_000_000, 250_000))
+        assertNull(estimateBitrateKbps(null, 250_000))
+        assertNull(estimateBitrateKbps(3_000_000, 0))
+    }
 }

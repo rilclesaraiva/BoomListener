@@ -26,7 +26,13 @@ fun ScrollToTopOnReselect(route: String, state: LazyListState) {
     val events = LocalTabReselect.current
     val topBar = LocalTopBarState.current
     LaunchedEffect(events, state, route) {
-        events.filter { it == route }.collect { state.animateScrollToItem(0) }
+        events.filter { it == route }.collect {
+            // Lá do fim da lista, animar item por item engasga (cada linha é
+            // medida e carrega capa no caminho). Pula para perto do topo sem
+            // animação e anima só o finalzinho, que fica suave.
+            if (state.firstVisibleItemIndex > NEAR_TOP) state.scrollToItem(NEAR_TOP)
+            state.animateScrollToItem(0)
+        }
     }
     // De volta ao topo (por toque na aba ou de qualquer jeito): a barra de cima
     // volta à cor normal, sem ficar com o tom de "rolado".
@@ -37,3 +43,6 @@ fun ScrollToTopOnReselect(route: String, state: LazyListState) {
             .collect { topBar.contentOffset = 0f }
     }
 }
+
+/** Até quantos itens do topo a subida é animada de verdade. */
+private const val NEAR_TOP = 6

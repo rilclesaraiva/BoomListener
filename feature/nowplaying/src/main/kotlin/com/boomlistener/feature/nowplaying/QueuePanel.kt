@@ -57,6 +57,7 @@ import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.clickableWithMenu
+import com.boomlistener.core.designsystem.component.trackPress
 import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.QueueEntry
 import kotlinx.coroutines.CancellationException
@@ -255,13 +256,15 @@ private fun QueueRow(
     menuActions: List<BoomMenuAction>,
 ) {
     val menuOpen = remember { mutableStateOf(false) }
+    // Dedo no puxador = arrastar; aí segurar não abre o menu.
+    val handlePressed = remember { mutableStateOf(false) }
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val artwork = rememberArtwork(viewModel, entry.item.uri, sizePx)
     val unknownArtist = stringResource(R.string.feature_nowplaying_unknown_artist)
 
     ListItem(
         // Segurar abre o mesmo menu dos três pontinhos.
-        modifier = Modifier.clickableWithMenu(menuOpen, onClick),
+        modifier = Modifier.clickableWithMenu(menuOpen, longPressEnabled = { !handlePressed.value }, onClick = onClick),
         colors = ListItemDefaults.colors(
             containerColor = if (isCurrent) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
             headlineColor = if (isCurrent) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
@@ -269,7 +272,7 @@ private fun QueueRow(
         ),
         leadingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                dragHandle()
+                Box(Modifier.trackPress(handlePressed)) { dragHandle() }
                 BoomArtwork(image = artwork, fallbackText = entry.item.title)
             }
         },

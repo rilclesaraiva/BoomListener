@@ -43,7 +43,8 @@ internal class LibraryViewModel(
                     totalCount = tracks.size,
                     query = currentQuery,
                     version = version,
-                    home = sections?.takeIf { currentQuery.isBlank() && !it.isEmpty },
+                    // O topo fica também durante a busca: nada pula enquanto se digita.
+                    home = sections?.takeIf { !it.isEmpty },
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryUiState.Loading)

@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":data:updates"))
     implementation(project(":data:social"))
     implementation(project(":data:library"))
+    implementation(project(":core:player"))
 
     testImplementation(libs.kotlinx.coroutines.test)
 }

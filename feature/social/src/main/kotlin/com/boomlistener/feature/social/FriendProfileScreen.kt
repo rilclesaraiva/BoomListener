@@ -3,6 +3,8 @@
 
 package com.boomlistener.feature.social
 
+import androidx.compose.foundation.layout.fillMaxSize
+import com.boomlistener.core.designsystem.component.profileBackground
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.CircleShape
@@ -68,7 +70,11 @@ internal fun FriendProfileScreen(
                 modifier = Modifier.padding(padding),
                 actions = { TextButton(onClick = viewModel::load) { Text(stringResource(R.string.feature_social_retry)) } },
             )
-            is ProfileUiState.Ready -> LazyColumn(contentPadding = padding) {
+            is ProfileUiState.Ready -> LazyColumn(
+                contentPadding = padding,
+                // A cor que a pessoa escolheu tinge o perfil dela.
+                modifier = Modifier.fillMaxSize().profileBackground(current.profile.color),
+            ) {
                 item(key = "header") {
                     Header(
                         profile = current.profile,

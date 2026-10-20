@@ -77,6 +77,9 @@ import com.boomlistener.feature.social.RecommendSheet
 import com.boomlistener.feature.social.socialScreen
 import com.boomlistener.feature.social.navigateToMyProfile
 import com.boomlistener.core.designsystem.component.LocalProfileShortcut
+import com.boomlistener.core.designsystem.component.FavoriteShare
+import com.boomlistener.core.designsystem.component.LocalFavoriteShare
+import com.boomlistener.core.common.ShareTarget
 import com.boomlistener.core.designsystem.component.ProfileShortcut
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
@@ -179,7 +182,16 @@ fun BoomListenerApp() {
             photo = profilePhoto,
         )
     }
-    CompositionLocalProvider(LocalTabReselect provides reselect, LocalProfileShortcut provides profileShortcut) {
+    // App favorito para compartilhar: aparece como "Compartilhar com…" nos menus.
+    val favoriteShareApp by ShareTarget.favorite(context).collectAsStateWithLifecycle()
+    val favoriteShare = remember(favoriteShareApp) {
+        favoriteShareApp?.let { app -> FavoriteShare(app.label) { ShareTarget.shareNextWith(app.packageName) } }
+    }
+    CompositionLocalProvider(
+        LocalTabReselect provides reselect,
+        LocalProfileShortcut provides profileShortcut,
+        LocalFavoriteShare provides favoriteShare,
+    ) {
     Box(Modifier.fillMaxSize()) {
         Scaffold(
             bottomBar = {

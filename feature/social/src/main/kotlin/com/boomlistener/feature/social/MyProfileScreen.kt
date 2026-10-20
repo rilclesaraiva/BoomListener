@@ -3,6 +3,13 @@
 
 package com.boomlistener.feature.social
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.graphics.Color
+import com.boomlistener.core.designsystem.component.BoomProfilePalette
+import com.boomlistener.core.designsystem.component.parseProfileColor
+import com.boomlistener.core.designsystem.component.profileBackground
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -123,7 +130,11 @@ internal fun MyProfileScreen(
             BoomLoading(Modifier.padding(padding))
             return@BoomScreenScaffold
         }
-        LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 32.dp)) {
+        LazyColumn(
+            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 32.dp),
+            // A cor que a pessoa escolheu tinge o perfil.
+            modifier = Modifier.fillMaxSize().profileBackground(current.account?.color),
+        ) {
             item(key = "header") {
                 Header(
                     current,
@@ -332,6 +343,7 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
     var name by remember { mutableStateOf(account.name) }
     var bio by remember { mutableStateOf(account.bio) }
     var bannerChange by remember { mutableStateOf<ImageChange>(ImageChange.Keep) }
+    var color by remember { mutableStateOf(account.color) }
     var avatarChange by remember { mutableStateOf<ImageChange>(ImageChange.Keep) }
     val savedBanner = rememberProfileImage(account.id, ProfileImage.Banner, account.bannerVersion)
     val savedPhoto = rememberProfileImage(account.id, ProfileImage.Avatar, account.avatarVersion)
@@ -359,7 +371,8 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
     }
     fun pick(kind: ProfileImage) {
         picking = kind
-        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        // Foto, GIF ou vídeo curto (vira GIF). O seletor do Android não pede permissão.
+        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
     }
 
     ModalBottomSheet(
@@ -415,6 +428,8 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
                 }
             }
 
+            ProfileColorPicker(color = color, enabled = !saving, onChange = { color = it })
+
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it.take(40) },
@@ -436,7 +451,7 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
             )
             Button(
                 enabled = name.isNotBlank() && !saving,
-                onClick = { viewModel.saveProfile(name, bio, bannerChange, avatarChange, onDone = onDismiss) },
+                onClick = { viewModel.saveProfile(name, bio, bannerChange, avatarChange, color = color, onDone = onDismiss) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 if (saving) {
@@ -448,6 +463,64 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
                 }
             }
         }
+    }
+}
+
+/**
+ * Cor do perfil: bolinhas com as cores prontas, "sem cor" e um campo para
+ * digitar o hexadecimal (#RRGGBB).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ProfileColorPicker(color: String, enabled: Boolean, onChange: (String) -> Unit) {
+    var hex by remember { mutableStateOf(color.removePrefix("#")) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.feature_social_color), style = MaterialTheme.typography.titleMedium)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Sem cor.
+            ColorDot(selected = color.isEmpty(), fill = null, enabled = enabled) {
+                hex = ""
+                onChange("")
+            }
+            BoomProfilePalette.forEach { option ->
+                ColorDot(selected = color.equals(option, ignoreCase = true), fill = parseProfileColor(option), enabled = enabled) {
+                    hex = option.removePrefix("#")
+                    onChange(option)
+                }
+            }
+        }
+        OutlinedTextField(
+            value = hex,
+            onValueChange = { typed ->
+                hex = typed.removePrefix("#").filter { it.isLetterOrDigit() }.take(6).uppercase()
+                if (hex.length == 6 && parseProfileColor(hex) != null) onChange("#$hex")
+            },
+            enabled = enabled,
+            singleLine = true,
+            prefix = { Text("#") },
+            label = { Text(stringResource(R.string.feature_social_color_hex)) },
+            isError = hex.isNotEmpty() && parseProfileColor(hex) == null,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ColorDot(selected: Boolean, fill: Color?, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(fill ?: MaterialTheme.colorScheme.surfaceContainerHighest)
+            .border(
+                width = if (selected) 3.dp else 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                shape = CircleShape,
+            )
+            .clickable(enabled = enabled, onClick = onClick),
+    ) {
+        if (fill == null) Icon(BoomIcons.Close, contentDescription = stringResource(R.string.feature_social_color_none), modifier = Modifier.size(18.dp))
     }
 }
 

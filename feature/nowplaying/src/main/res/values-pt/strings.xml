@@ -49,4 +49,21 @@
     <string name="feature_nowplaying_delete_failed">Não deu para apagar a música</string>
     <string name="feature_nowplaying_delete">Apagar</string>
     <string name="feature_nowplaying_cancel">Cancelar</string>
+    <string name="feature_nowplaying_sleep">Timer para dormir</string>
+    <plurals name="feature_nowplaying_sleep_active">
+        <item quantity="one">Timer para dormir · falta %d min</item>
+        <item quantity="many">Timer para dormir · faltam %d min</item>
+        <item quantity="other">Timer para dormir · faltam %d min</item>
+    </plurals>
+    <string name="feature_nowplaying_sleep_active_end">Timer para dormir · no fim desta música</string>
+    <plurals name="feature_nowplaying_sleep_minutes">
+        <item quantity="one">%d minuto</item>
+        <item quantity="many">%d minutos</item>
+        <item quantity="other">%d minutos</item>
+    </plurals>
+    <string name="feature_nowplaying_sleep_end_of_track">No fim desta música</string>
+    <string name="feature_nowplaying_sleep_cancel">Desligar timer</string>
+    <string name="feature_nowplaying_speed">Velocidade</string>
+    <string name="feature_nowplaying_speed_reset">Voltar ao normal</string>
+    <string name="feature_nowplaying_details">Detalhes</string>
 </resources>

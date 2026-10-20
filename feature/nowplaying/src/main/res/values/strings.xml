@@ -49,4 +49,19 @@
     <string name="feature_nowplaying_delete_failed">Couldn’t delete the song</string>
     <string name="feature_nowplaying_delete">Delete</string>
     <string name="feature_nowplaying_cancel">Cancel</string>
+    <string name="feature_nowplaying_sleep">Sleep timer</string>
+    <plurals name="feature_nowplaying_sleep_active">
+        <item quantity="one">Sleep timer · %d min left</item>
+        <item quantity="other">Sleep timer · %d min left</item>
+    </plurals>
+    <string name="feature_nowplaying_sleep_active_end">Sleep timer · end of this song</string>
+    <plurals name="feature_nowplaying_sleep_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <string name="feature_nowplaying_sleep_end_of_track">At the end of this song</string>
+    <string name="feature_nowplaying_sleep_cancel">Turn off timer</string>
+    <string name="feature_nowplaying_speed">Speed</string>
+    <string name="feature_nowplaying_speed_reset">Back to normal</string>
+    <string name="feature_nowplaying_details">Details</string>
 </resources>

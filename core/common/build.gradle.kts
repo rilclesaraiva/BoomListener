@@ -8,3 +8,7 @@ plugins {
 android {
     namespace = "com.boomlistener.core.common"
 }
+
+dependencies {
+    implementation(libs.kotlinx.coroutines.android)
+}

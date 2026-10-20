@@ -60,6 +60,7 @@ import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.clickableWithMenu
+import com.boomlistener.core.designsystem.component.trackPress
 import com.boomlistener.core.model.Track
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
@@ -87,6 +88,7 @@ internal fun CollectionDetailScreen(
     var addToPlaylist by remember { mutableStateOf<Track?>(null) }
     var addingSongs by remember { mutableStateOf(false) }
     val deleteSong = rememberSongDeleter()
+    val showDetails = rememberSongDetails()
 
     BoomScreenScaffold(
         title = ready?.name.orEmpty(),
@@ -120,6 +122,7 @@ internal fun CollectionDetailScreen(
                 onRecommend = onRecommend,
                 onAddToPlaylist = { addToPlaylist = it },
                 onDelete = deleteSong,
+                onDetails = { showDetails(it.uri, it.title) },
                 onAddSongs = { addingSongs = true },
             )
         }
@@ -173,6 +176,7 @@ private fun TrackListWithHeader(
     onRecommend: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
     onDelete: (Track) -> Unit,
+    onDetails: (Track) -> Unit,
     onAddSongs: () -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -215,6 +219,7 @@ private fun TrackListWithHeader(
                         onRecommend = onRecommend,
                         onAddToPlaylist = onAddToPlaylist,
                         onDelete = { onDelete(track) },
+                        onDetails = { onDetails(track) },
                         dragHandle = {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -314,9 +319,12 @@ private fun DetailTrackRow(
     onRecommend: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
     onDelete: () -> Unit,
+    onDetails: () -> Unit,
     dragHandle: @Composable () -> Unit,
 ) {
     val menuOpen = remember { mutableStateOf(false) }
+    // Dedo no puxador = arrastar; aí segurar não abre o menu.
+    val handlePressed = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
@@ -325,11 +333,11 @@ private fun DetailTrackRow(
     }
     ListItem(
         // Segurar a música abre o mesmo menu dos três pontinhos.
-        modifier = Modifier.clickableWithMenu(menuOpen, onClick),
+        modifier = Modifier.clickableWithMenu(menuOpen, longPressEnabled = { !handlePressed.value }, onClick = onClick),
         leadingContent = {
             // Na playlist, o puxador de reordenar fica ao lado da capa.
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isPlaylist) dragHandle()
+                if (isPlaylist) Box(Modifier.trackPress(handlePressed)) { dragHandle() }
                 BoomArtwork(image = artwork, fallbackText = track.title)
             }
         },
@@ -356,6 +364,7 @@ private fun DetailTrackRow(
                             BoomMenuAction(stringResource(R.string.feature_library_go_to_artist)) { onOpenArtist(name) }
                         },
                         BoomMenuAction(stringResource(R.string.feature_library_edit_tags)) { onEditTags(track) },
+                        BoomMenuAction(stringResource(R.string.feature_library_details), onClick = onDetails),
                         BoomMenuAction(stringResource(R.string.feature_library_delete_song), onClick = onDelete),
                     ),
                     onShare = {

@@ -23,7 +23,7 @@ internal fun isGif(bytes: ByteArray): Boolean =
     bytes.size >= 6 && String(bytes, 0, 6, Charsets.US_ASCII).let { it == "GIF87a" || it == "GIF89a" }
 
 /**
- * Lê a imagem escolhida (GIF animado pequeno vai como está), recorta no formato certo (quadrada para a foto,
+ * Lê a imagem escolhida (GIF pequeno vai como está; GIF grande e vídeo viram um GIF menor), recorta no formato certo (quadrada para a foto,
  * faixa larga para a capa), reduz e devolve um JPEG pequeno. null se não der
  * para ler.
  */
@@ -31,11 +31,17 @@ internal fun prepareProfileImage(context: Context, uri: String, kind: ProfileIma
     val parsed = Uri.parse(uri)
     // GIF animado pequeno vai inteiro (a animação se perderia se fosse recortado).
     // Grande demais: vira uma imagem parada, como as outras.
-    // Reconhece pelo conteúdo (o tipo informado pelo seletor nem sempre é "image/gif").
+    // Vídeo (até 30 s, sem som) vira GIF animado.
+    if (context.contentResolver.getType(parsed)?.startsWith("video/") == true) {
+        return animatedProfileGif(context, parsed, isVideo = true, gifBytes = null, kind = kind)
+    }
+    // GIF: reconhecido pelo conteúdo (o tipo informado pelo seletor nem sempre é "image/gif").
+    // Pequeno vai como está; grande é refeito menor (sem perder a animação).
     val head = context.contentResolver.openInputStream(parsed)?.use { stream -> ByteArray(6).also { stream.read(it) } }
     if (head != null && isGif(head)) {
         val bytes = context.contentResolver.openInputStream(parsed)?.use { it.readBytes() }
         if (bytes != null && bytes.size <= MAX_GIF_BYTES) return bytes
+        if (bytes != null) animatedProfileGif(context, parsed, isVideo = false, gifBytes = bytes, kind = kind)?.let { return it }
     }
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     context.contentResolver.openInputStream(parsed)?.use { BitmapFactory.decodeStream(it, null, bounds) }

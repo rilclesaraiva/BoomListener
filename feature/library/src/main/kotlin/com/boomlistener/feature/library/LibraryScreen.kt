@@ -1,6 +1,8 @@
 // Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.boomlistener.feature.library
 
 import androidx.activity.compose.BackHandler
@@ -41,6 +43,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -141,6 +144,7 @@ internal fun LibraryScreen(
     val query = (uiState as? LibraryUiState.Success)?.query.orEmpty()
     BackHandler(enabled = query.isNotEmpty()) { viewModel.onQueryChange("") }
     val deleteSong = rememberSongDeleter()
+    val showDetails = rememberSongDetails()
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_title),
@@ -166,6 +170,7 @@ internal fun LibraryScreen(
                     onPlayRecent = viewModel::playRecent,
                     onQueryChange = viewModel::onQueryChange,
                     onDelete = deleteSong,
+                    onDetails = { showDetails(it.uri, it.title) },
                     onOpenAlbum = onOpenAlbum,
                     onSeeAll = onSeeAll,
                     loadArtwork = viewModel::artwork,
@@ -194,6 +199,7 @@ private fun TrackList(
     onPlayRecent: (Int) -> Unit,
     onQueryChange: (String) -> Unit,
     onDelete: (Track) -> Unit,
+    onDetails: (Track) -> Unit,
     onOpenAlbum: (String) -> Unit,
     onSeeAll: (CollectionKind) -> Unit,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
@@ -206,9 +212,10 @@ private fun TrackList(
     contentPadding: PaddingValues,
 ) {
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
-    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onRecommend, onDelete) {
-        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onRecommend, onDelete)
+    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onRecommend, onDelete, onDetails) {
+        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onRecommend, onDelete, onDetails)
     }
     when {
         state.totalCount == 0 -> BoomPlaceholder(
@@ -292,8 +299,14 @@ private fun TrackList(
                 }
             }
             // "Músicas" com a busca ao lado: fica sempre, mesmo buscando.
-            item(key = "songsTitle") {
-                SongsHeader(query = state.query, onQueryChange = onQueryChange)
+            // Fica presa no topo ao rolar: a busca está sempre à mão.
+            stickyHeader(key = "songsTitle") {
+                SongsHeader(
+                    query = state.query,
+                    onQueryChange = onQueryChange,
+                    // Ao tocar na busca, a lista sobe até ela (os resultados aparecem logo abaixo).
+                    onFocused = { scope.launch { listState.animateScrollToItem(headerItems - 1) } },
+                )
             }
             if (state.tracks.isEmpty()) {
                 item(key = "noResults") {
@@ -329,7 +342,8 @@ private fun TrackList(
 
 /** Título "Músicas" com a barra de busca ao lado. */
 @Composable
-private fun SongsHeader(query: String, onQueryChange: (String) -> Unit) {
+private fun SongsHeader(query: String, onQueryChange: (String) -> Unit, onFocused: () -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 40.dp, top = 20.dp, bottom = 8.dp),
@@ -341,7 +355,9 @@ private fun SongsHeader(query: String, onQueryChange: (String) -> Unit) {
             onQueryChange = onQueryChange,
             placeholder = stringResource(R.string.feature_library_search_songs),
             modifier = Modifier.weight(1f),
+            onFocused = onFocused,
         )
+    }
     }
 }
 
@@ -446,23 +462,24 @@ private fun HomeAlbum(
     Column(Modifier.width(HomeTile).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = 8.dp)) {
         BoomArtwork(image = cover, fallbackText = album.name, size = HomeTile)
         Spacer(Modifier.height(8.dp))
+        // Sempre duas linhas de nome e uma de artista (mesmo vazias): todos os
+        // blocos têm a mesma altura e a página não muda de tamanho ao rolar.
         Text(
             album.name,
             style = MaterialTheme.typography.titleSmall,
+            minLines = 2,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 4.dp),
         )
-        album.subtitle?.let {
-            Text(
-                it,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
-        }
+        Text(
+            album.subtitle.orEmpty(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
     }
 }
 
@@ -483,6 +500,7 @@ private fun HomeArtist(
         Text(
             artist.name,
             style = MaterialTheme.typography.titleSmall,
+            minLines = 2,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
@@ -504,6 +522,7 @@ internal class SongMenu(
     val onAddToPlaylist: (Track) -> Unit,
     val onRecommend: (Track) -> Unit,
     val onDelete: (Track) -> Unit,
+    val onDetails: (Track) -> Unit,
 )
 
 /** O menu de uma música, igual em todo lugar: com o botão ⋮ ([withButton]) ou só ao segurar. */
@@ -516,6 +535,7 @@ private fun SongMenuView(track: Track, menu: SongMenu, openState: MutableState<B
         BoomMenuAction(stringResource(R.string.feature_library_recommend)) { menu.onRecommend(track) },
         track.artist?.let { name -> BoomMenuAction(stringResource(R.string.feature_library_go_to_artist)) { menu.onOpenArtist(name) } },
         BoomMenuAction(stringResource(R.string.feature_library_edit_tags)) { menu.onEditTags(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_details)) { menu.onDetails(track) },
         BoomMenuAction(stringResource(R.string.feature_library_delete_song)) { menu.onDelete(track) },
     )
     val onShare: () -> Unit = {
@@ -552,7 +572,7 @@ private fun TrackItem(
 
     ListItem(
         // Segurar a música abre o mesmo menu dos três pontinhos.
-        modifier = Modifier.clickableWithMenu(menuOpen, onClick),
+        modifier = Modifier.clickableWithMenu(menuOpen, onClick = onClick),
         leadingContent = { BoomArtwork(image = artwork, fallbackText = track.title) },
         headlineContent = { Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {

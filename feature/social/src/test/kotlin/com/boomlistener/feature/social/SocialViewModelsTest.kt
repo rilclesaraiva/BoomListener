@@ -67,6 +67,12 @@ internal class FakeSocial : SocialRepository {
         account.value = updated
         return SocialResult.Ok(updated)
     }
+    override suspend fun updateColor(color: String): SocialResult<SocialAccount> {
+        if (!online) return SocialResult.Offline
+        val updated = account.value!!.copy(color = color)
+        account.value = updated
+        return SocialResult.Ok(updated)
+    }
     override suspend fun setProfileImage(kind: ProfileImage, uri: String?): SocialResult<SocialAccount> {
         imageCalls += kind to uri
         if (!online) return SocialResult.Offline

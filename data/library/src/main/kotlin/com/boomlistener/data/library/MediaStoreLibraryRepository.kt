@@ -123,6 +123,75 @@ internal class MediaStoreLibraryRepository(
         }
     }
 
+    @Suppress("DEPRECATION") // DATA: só para mostrar onde o arquivo está.
+    override suspend fun details(uri: String): SongDetails? = withContext(Dispatchers.IO) {
+        val parsed = Uri.parse(uri)
+        val base = runCatching {
+            context.contentResolver.query(
+                parsed,
+                arrayOf(
+                    MediaStore.Audio.Media.DATA,
+                    MediaStore.Audio.Media.DISPLAY_NAME,
+                    MediaStore.Audio.Media.SIZE,
+                    MediaStore.Audio.Media.DATE_MODIFIED,
+                    MediaStore.Audio.Media.DURATION,
+                ),
+                null, null, null,
+            )?.use { c ->
+                if (!c.moveToFirst()) return@use null
+                SongDetails(
+                    path = c.getStringOrNull(MediaStore.Audio.Media.DATA),
+                    fileName = c.getStringOrNull(MediaStore.Audio.Media.DISPLAY_NAME),
+                    sizeBytes = c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)).takeIf { it > 0 },
+                    modifiedMs = c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_MODIFIED)).takeIf { it > 0 }?.times(1000),
+                    format = null,
+                    durationMs = c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)).takeIf { it > 0 },
+                    bitrateKbps = null,
+                    sampleRateHz = null,
+                )
+            }
+        }.getOrNull() ?: return@withContext null
+        // Formato, taxa de bits e de amostragem vêm do próprio áudio.
+        var codec: String? = null
+        var sampleRate: Int? = null
+        var bitrate: Int? = null
+        runCatching {
+            val extractor = android.media.MediaExtractor()
+            try {
+                extractor.setDataSource(context, parsed, null)
+                for (i in 0 until extractor.trackCount) {
+                    val format = extractor.getTrackFormat(i)
+                    val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: continue
+                    if (!mime.startsWith("audio/")) continue
+                    codec = mime
+                    if (format.containsKey(android.media.MediaFormat.KEY_SAMPLE_RATE)) {
+                        sampleRate = format.getInteger(android.media.MediaFormat.KEY_SAMPLE_RATE)
+                    }
+                    if (format.containsKey(android.media.MediaFormat.KEY_BIT_RATE)) {
+                        bitrate = format.getInteger(android.media.MediaFormat.KEY_BIT_RATE) / 1000
+                    }
+                    break
+                }
+            } finally {
+                extractor.release()
+            }
+        }
+        if (bitrate == null) {
+            runCatching {
+                val retriever = MediaMetadataRetriever()
+                try {
+                    retriever.setDataSource(context, parsed)
+                    bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull()?.div(1000)
+                } finally {
+                    retriever.release()
+                }
+            }
+        }
+        // Sem a taxa no arquivo: estima pelo tamanho e pela duração.
+        val estimated = bitrate ?: estimateBitrateKbps(base.sizeBytes, base.durationMs)
+        base.copy(format = codecName(codec), bitrateKbps = estimated, sampleRateHz = sampleRate)
+    }
+
     override suspend fun folders(): List<MusicFolder> =
         groupFolders(queryAll().map { it.folder })
 
@@ -305,6 +374,29 @@ private const val CHANGE_DEBOUNCE_MS = 1_500L
 private const val KEY_MIN_DURATION = "min_duration_s"
 private const val KEY_ONLY_CHOSEN = "only_chosen_folders"
 private const val KEY_FOLDERS = "folders"
+
+/** Tipo do áudio → nome conhecido ("audio/mp4a-latm" → "AAC"). */
+internal fun codecName(mime: String?): String? = when (mime?.lowercase()) {
+    null -> null
+    "audio/mp4a-latm", "audio/aac" -> "AAC"
+    "audio/mpeg", "audio/mpeg-l2" -> "MP3"
+    "audio/flac" -> "FLAC"
+    "audio/opus" -> "Opus"
+    "audio/vorbis" -> "Vorbis"
+    "audio/raw" -> "PCM (WAV)"
+    "audio/alac" -> "ALAC"
+    "audio/ac3" -> "AC-3"
+    "audio/eac3" -> "E-AC-3"
+    "audio/amr-wb" -> "AMR-WB"
+    "audio/3gpp" -> "AMR"
+    else -> mime.removePrefix("audio/").uppercase()
+}
+
+/** Taxa de bits média, pelo tamanho do arquivo e a duração (kb/s). */
+internal fun estimateBitrateKbps(sizeBytes: Long?, durationMs: Long?): Int? {
+    if (sizeBytes == null || durationMs == null || durationMs <= 0) return null
+    return (sizeBytes * 8 / durationMs).toInt().takeIf { it > 0 }
+}
 
 /** O MediaStore guarda o disco junto com a faixa: 1005 = disco 1, faixa 5. */
 internal fun parseTrackNumber(raw: Int?): Int? = raw?.let { it % 1000 }?.takeIf { it > 0 }

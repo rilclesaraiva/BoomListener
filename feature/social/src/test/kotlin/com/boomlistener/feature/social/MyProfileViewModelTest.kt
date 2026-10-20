@@ -102,9 +102,11 @@ class MyProfileViewModelTest {
             bio = "x".repeat(200),
             banner = ImageChange.Set("content://media/picker/2"),
             avatar = ImageChange.Remove,
+            color = "#FF5500",
             onDone = { done = true },
         )
         assertTrue(done)
+        assertEquals("#FF5500", social.account.value?.color)
         assertEquals(MAX_BIO, social.account.value?.bio?.length)
         assertEquals(99L, social.account.value?.bannerVersion)
         assertEquals(listOf(ProfileImage.Banner to "content://media/picker/2", ProfileImage.Avatar to null), social.imageCalls)

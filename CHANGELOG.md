@@ -4,6 +4,28 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.26.0] — 2026-10-20
+
+### ✨ New
+- **Playback settings** (Settings → Playback):
+  - **Crossfade:** the song that's ending fades out while the next one fades in. Pick how many seconds with a slider, or turn it off.
+  - **Fade on play and pause**, so the sound never cuts off abruptly.
+  - **Playback speed**, from 0.5× to 2×, without changing the pitch. Also in the player's ⋮ menu.
+  - Gapless playback is always on: albums that flow from one track into the next play without a pause.
+- **Sleep timer** in the player's ⋮ menu: 15, 30, 45, 60 or 90 minutes, or at the end of the current song. The sound fades out gently before it stops.
+- **Favorite share app** (Settings → Sharing): pick one of your apps, or type its package name. Song menus then show **Share with** that app, one tap away.
+- **Profile color:** choose one from the palette or type any hex code. Your profile, and the way friends see it, takes on that color.
+- **Big GIFs and short videos as your profile photo or cover.** A GIF over the limit is shrunk to fit, and a video of up to 30 seconds becomes a looping GIF (without sound).
+- **Details** in every song's ⋮ menu: where the file is, format, size, length, bitrate and sample rate.
+
+### 🐛 Fixes
+- Jumping back to the top of a long list (tapping the tab again) is now smooth all the way up.
+- Holding the drag handle in the queue or in a playlist no longer opens the song menu.
+- The search bar on Home stays in place while you type, instead of the list jumping up and down. Tap ✕ to clear it.
+
+### 🎨 Visual tweaks
+- Albums and artists on Home keep the same layout even when a name takes two lines.
+
 ## [0.25.0] — 2026-10-19
 
 ### ✨ New

@@ -160,6 +160,7 @@ export class Hub extends DurableObject {
       "bio TEXT NOT NULL DEFAULT ''",
       "avatar_v INTEGER NOT NULL DEFAULT 0",
       "banner_v INTEGER NOT NULL DEFAULT 0",
+      "color TEXT NOT NULL DEFAULT ''",
     ]) {
       try {
         this.sql.exec(`ALTER TABLE users ADD COLUMN ${column}`);
@@ -194,6 +195,7 @@ export class Hub extends DurableObject {
       bio: user.bio ?? "",
       avatar: user.avatar_v ?? 0,
       banner: user.banner_v ?? 0,
+      color: user.color ?? "",
     };
   }
 
@@ -333,13 +335,25 @@ export class Hub extends DurableObject {
       const sharing = body?.sharing === undefined ? me.sharing : body.sharing ? 1 : 0;
       const bio = body?.bio === undefined ? me.bio ?? "" : cleanBio(body.bio);
       if (bio === null) return json({ error: "invalid" }, 400);
-      this.sql.exec("UPDATE users SET name = ?, sharing = ?, bio = ? WHERE id = ?", name, sharing, bio, me.id);
+      // Cor do perfil: "#RRGGBB", ou "" para nenhuma.
+      const color = body?.color === undefined ? me.color ?? "" : body.color;
+      if (typeof color !== "string" || (color !== "" && !/^#[0-9a-fA-F]{6}$/.test(color))) {
+        return json({ error: "invalid" }, 400);
+      }
+      this.sql.exec(
+        "UPDATE users SET name = ?, sharing = ?, bio = ?, color = ? WHERE id = ?",
+        name,
+        sharing,
+        bio,
+        color.toUpperCase(),
+        me.id,
+      );
       if (!sharing) {
         // Parou de compartilhar: apaga o que estava guardado.
         this.sql.exec("DELETE FROM status WHERE user_id = ?", me.id);
         this.sql.exec("DELETE FROM recent WHERE user_id = ?", me.id);
       }
-      return json({ ...this.publicUser({ ...me, name, bio }), sharing: sharing === 1 });
+      return json({ ...this.publicUser({ ...me, name, bio, color: color.toUpperCase() }), sharing: sharing === 1 });
     }
     if (path === "/me" && method === "DELETE") {
       for (const table of ["status", "recent", "images", "image_parts"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);

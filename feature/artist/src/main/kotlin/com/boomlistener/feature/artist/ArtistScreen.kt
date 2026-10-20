@@ -583,7 +583,7 @@ private fun ReleaseRow(
     // Tocar abre o álbum aqui no app (com o que você tem e o que falta); segurar abre o menu.
     val menuOpen = remember { mutableStateOf(false) }
     ListItem(
-        modifier = Modifier.clickableWithMenu(menuOpen, onOpen),
+        modifier = Modifier.clickableWithMenu(menuOpen, onClick = onOpen),
         leadingContent = { BoomArtwork(image = cover, fallbackText = release.title, size = 64.dp) },
         headlineContent = { Text(release.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
         supportingContent = { Text(listOfNotNull(release.year, typeName).joinToString(" • ")) },

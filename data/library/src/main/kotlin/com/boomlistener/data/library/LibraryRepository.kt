@@ -49,7 +49,22 @@ interface LibraryRepository {
      * nenhuma no manifesto, como na gravação de tags.
      */
     suspend fun delete(uris: List<String>): DeleteResult = DeleteResult.Failed
+
+    /** Detalhes do arquivo de [uri]; null se ele não existe mais. */
+    suspend fun details(uri: String): SongDetails? = null
 }
+
+/** "Detalhes" de uma música (arquivo e áudio); campos que o aparelho não informa ficam null. */
+data class SongDetails(
+    val path: String?,
+    val fileName: String?,
+    val sizeBytes: Long?,
+    val modifiedMs: Long?,
+    val format: String?,
+    val durationMs: Long?,
+    val bitrateKbps: Int?,
+    val sampleRateHz: Int?,
+)
 
 sealed interface DeleteResult {
     data object Done : DeleteResult

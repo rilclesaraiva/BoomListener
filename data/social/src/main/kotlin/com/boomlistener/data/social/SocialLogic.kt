@@ -79,3 +79,12 @@ internal fun mergeIncoming(
 /** Conversas na lista: a com mensagem mais recente primeiro. */
 internal fun sortConversations(list: Collection<Conversation>): List<Conversation> =
     list.sortedByDescending { it.updatedMs }
+
+private val PROFILE_COLOR = Regex("^#?([0-9a-fA-F]{6})$")
+
+/** "#ff5500", "FF5500" → "#FF5500"; vazio → "" (sem cor); inválido → null. */
+fun cleanProfileColor(input: String): String? {
+    val trimmed = input.trim()
+    if (trimmed.isEmpty()) return ""
+    return PROFILE_COLOR.find(trimmed)?.let { "#" + it.groupValues[1].uppercase() }
+}

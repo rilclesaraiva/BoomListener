@@ -64,4 +64,5 @@
     <string name="feature_library_add_songs_search">Buscar nas suas músicas</string>
     <string name="feature_library_done">Pronto</string>
     <string name="feature_library_search_songs">Buscar músicas</string>
+    <string name="feature_library_details">Detalhes</string>
 </resources>

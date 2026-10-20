@@ -117,6 +117,16 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
         return SocialResult.Ok(updated)
     }
 
+    override suspend fun updateColor(color: String): SocialResult<SocialAccount> {
+        val current = _account.value ?: return SocialResult.Invalid
+        val clean = cleanProfileColor(color) ?: return SocialResult.Invalid
+        val response = call("PATCH", "/me", JSONObject().put("color", clean)) ?: return SocialResult.Offline
+        if (response.code != 200) return SocialResult.Invalid
+        val updated = current.withServerFields(response.body)
+        saveAccount(updated)
+        return SocialResult.Ok(updated)
+    }
+
     override suspend fun setProfileImage(kind: ProfileImage, uri: String?): SocialResult<SocialAccount> {
         val current = _account.value ?: return SocialResult.Invalid
         val response = if (uri == null) {
@@ -471,6 +481,7 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
             bio = json.optString("bio"),
             avatarVersion = json.optLong("avatar"),
             bannerVersion = json.optLong("banner"),
+            color = json.optString("color"),
         )
     }
 
@@ -485,6 +496,7 @@ internal class HttpSocialRepository(private val context: Context) : SocialReposi
                 .put("bio", account.bio)
                 .put("avatar", account.avatarVersion)
                 .put("banner", account.bannerVersion)
+                .put("color", account.color)
             val temp = File(dir, "account.json.tmp")
             temp.writeText(json.toString())
             temp.renameTo(accountFile)
@@ -569,6 +581,7 @@ private fun SocialAccount.withServerFields(json: JSONObject) = copy(
     bio = if (json.has("bio")) json.optString("bio") else bio,
     avatarVersion = if (json.has("avatar")) json.optLong("avatar") else avatarVersion,
     bannerVersion = if (json.has("banner")) json.optLong("banner") else bannerVersion,
+    color = if (json.has("color")) json.optString("color") else color,
 )
 
 // ---- JSON (formato combinado com social/worker.js) ---------------------
@@ -606,6 +619,7 @@ private fun parseProfile(json: JSONObject): FriendProfile {
         bio = json.optString("bio").takeIf { it != "null" }.orEmpty(),
         avatarVersion = json.optLong("avatar"),
         bannerVersion = json.optLong("banner"),
+        color = json.optString("color").takeIf { it != "null" }.orEmpty(),
     )
 }
 

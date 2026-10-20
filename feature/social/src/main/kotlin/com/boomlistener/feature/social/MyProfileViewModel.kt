@@ -136,6 +136,7 @@ internal class MyProfileViewModel(
         bio: String,
         banner: ImageChange,
         avatar: ImageChange,
+        color: String = social.account.value?.color.orEmpty(),
         onDone: () -> Unit,
     ) {
         val account = social.account.value ?: return
@@ -149,6 +150,7 @@ internal class MyProfileViewModel(
             }
             val cleanBio = bio.trim().take(MAX_BIO)
             if (cleanBio != account.bio) ok = social.updateBio(cleanBio) is SocialResult.Ok && ok
+            if (!color.equals(account.color, ignoreCase = true)) ok = social.updateColor(color) is SocialResult.Ok && ok
             for ((kind, change) in listOf(ProfileImage.Banner to banner, ProfileImage.Avatar to avatar)) {
                 when (change) {
                     ImageChange.Keep -> Unit

@@ -95,4 +95,29 @@
     <string name="feature_settings_about_issues_summary">Achou um erro ou teve uma ideia? Abra uma issue</string>
     <string name="feature_settings_about_build_release">Release</string>
     <string name="feature_settings_about_build_debug">Teste</string>
+    <string name="feature_settings_playback">Reprodução</string>
+    <string name="feature_settings_playback_summary">Transições, fade, velocidade</string>
+    <string name="feature_settings_playback_transition">Transição entre músicas</string>
+    <string name="feature_settings_playback_transition_off">Desligada</string>
+    <plurals name="feature_settings_playback_transition_on">
+        <item quantity="one">%d segundo</item>
+        <item quantity="many">%d segundos</item>
+        <item quantity="other">%d segundos</item>
+    </plurals>
+    <string name="feature_settings_playback_transition_summary">A música que acaba vai sumindo e a próxima vai aparecendo</string>
+    <string name="feature_settings_playback_fade">Fade ao tocar e pausar</string>
+    <string name="feature_settings_playback_fade_summary">O volume sobe e desce suave em vez de cortar</string>
+    <string name="feature_settings_playback_gapless">Sem pausa entre faixas (gapless)</string>
+    <string name="feature_settings_playback_gapless_summary">Sempre ativo: álbuns sem silêncio entre as faixas tocam emendados</string>
+    <string name="feature_settings_playback_speed">Velocidade</string>
+    <string name="feature_settings_playback_speed_summary">A voz mantém o tom</string>
+    <string name="feature_settings_playback_speed_reset">Voltar ao normal</string>
+    <string name="feature_settings_share">Compartilhamento</string>
+    <string name="feature_settings_share_summary">App favorito para “Compartilhar com…”</string>
+    <string name="feature_settings_share_hint">Escolha um app e todo menu de música ganha a opção “Compartilhar com…”, que vai direto para ele.</string>
+    <string name="feature_settings_share_by_package">Pelo nome do pacote</string>
+    <string name="feature_settings_share_use">Usar</string>
+    <string name="feature_settings_share_not_found">Nenhum app instalado com esse pacote recebe links</string>
+    <string name="feature_settings_share_apps">Apps do celular</string>
+    <string name="feature_settings_share_none">Nenhum</string>
 </resources>

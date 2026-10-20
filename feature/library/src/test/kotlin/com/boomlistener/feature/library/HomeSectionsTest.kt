@@ -14,7 +14,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -78,7 +77,7 @@ class HomeSectionsTest {
     }
 
     @Test
-    fun topoSomeNaBuscaETocarRecentesUsaAOrdemDeChegada() = runTest(dispatcher) {
+    fun topoFicaNaBuscaETocarRecentesUsaAOrdemDeChegada() = runTest(dispatcher) {
         val player = FakePlaybackController()
         val viewModel = LibraryViewModel(FakeLibraryRepository(library), player)
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
@@ -94,7 +93,10 @@ class HomeSectionsTest {
         assertEquals(0, player.lastIndex)
         assertEquals(5, player.lastQueue.size)
 
+        // Buscando, o topo continua (a barra de busca não muda de lugar).
         viewModel.onQueryChange("bus")
-        assertNull((viewModel.uiState.value as LibraryUiState.Success).home)
+        val searching = viewModel.uiState.value as LibraryUiState.Success
+        assertEquals(5, searching.home?.recent?.size)
+        assertEquals(listOf(3L), searching.tracks.map { it.id })
     }
 }

@@ -1,0 +1,42 @@
+// Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
+// Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
+
+package com.boomlistener.core.designsystem.component
+
+import androidx.compose.foundation.background
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+
+/**
+ * Cores prontas para o perfil (a pessoa também pode digitar um hexadecimal).
+ * É a cor escolhida pelo usuário, não do tema; mora aqui, no design system.
+ */
+val BoomProfilePalette: List<String> = listOf(
+    "#E53935", "#D81B60", "#8E24AA", "#5E35B1", "#3949AB", "#1E88E5", "#039BE5",
+    "#00897B", "#43A047", "#7CB342", "#FDD835", "#FB8C00", "#F4511E", "#6D4C41",
+    "#546E7A", "#7A0000",
+)
+
+/** "#RRGGBB" → cor; vazio ou inválido → null. */
+fun parseProfileColor(hex: String?): Color? {
+    val clean = hex?.trim()?.removePrefix("#") ?: return null
+    if (clean.length != 6) return null
+    val value = clean.toLongOrNull(16) ?: return null
+    return Color(0xFF000000 or value)
+}
+
+/**
+ * Fundo do perfil na cor escolhida: forte no topo e sumindo para baixo, como
+ * nos perfis do Discord. Sem cor, não muda nada.
+ */
+fun Modifier.profileBackground(hex: String?): Modifier {
+    val color = parseProfileColor(hex) ?: return this
+    return background(
+        Brush.verticalGradient(
+            0f to color.copy(alpha = 0.55f),
+            0.45f to color.copy(alpha = 0.18f),
+            1f to Color.Transparent,
+        ),
+    )
+}

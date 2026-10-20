@@ -22,7 +22,7 @@ internal sealed interface LibraryUiState {
         val query: String,
         /** Sobe quando tags foram editadas (para recarregar as capas). */
         val version: Int = 0,
-        /** Topo do Início (recentes, álbuns, artistas); null durante a busca. */
+        /** Topo do Início (recentes, álbuns, artistas); null com a biblioteca vazia. */
         val home: HomeSections? = null,
     ) : LibraryUiState
 }

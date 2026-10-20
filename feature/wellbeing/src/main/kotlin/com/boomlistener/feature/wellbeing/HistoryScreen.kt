@@ -196,7 +196,7 @@ private fun HistoryRow(
     }
     ListItem(
         // Segurar abre o mesmo menu dos três pontinhos.
-        modifier = modifier.clickableWithMenu(menuOpen, onClick),
+        modifier = modifier.clickableWithMenu(menuOpen, onClick = onClick),
         leadingContent = { BoomArtwork(image = artwork, fallbackText = entry.title) },
         headlineContent = { Text(entry.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {

@@ -4,6 +4,7 @@
 package com.boomlistener.feature.social
 
 import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
@@ -118,6 +119,16 @@ internal fun rememberPickedImage(uri: String?): ProfilePicture? {
         value = uri?.let {
             withContext(Dispatchers.IO) {
                 runCatching {
+                    // Vídeo: a prévia é o primeiro quadro (ao salvar, ele vira GIF).
+                    if (context.contentResolver.getType(Uri.parse(it))?.startsWith("video/") == true) {
+                        val retriever = MediaMetadataRetriever()
+                        return@runCatching try {
+                            retriever.setDataSource(context, Uri.parse(it))
+                            retriever.getFrameAtTime(0)?.asImageBitmap()?.let { still -> ProfilePicture(still, null) }
+                        } finally {
+                            retriever.release()
+                        }
+                    }
                     val bytes = context.contentResolver.openInputStream(Uri.parse(it))?.use { stream -> stream.readBytes() }
                         ?: return@runCatching null
                     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }

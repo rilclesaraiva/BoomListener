@@ -50,6 +50,15 @@ fun Context.shareLink(url: String, title: String) {
         .setType("text/plain")
         .putExtra(Intent.EXTRA_TEXT, url)
         .putExtra(Intent.EXTRA_TITLE, title)
+    // "Compartilhar com <app favorito>": vai direto para ele, sem a lista do Android.
+    ShareTarget.consumeNext()?.let { target ->
+        try {
+            startActivity(Intent(send).setPackage(target).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        } catch (_: ActivityNotFoundException) {
+            // O app saiu do aparelho: cai na lista normal.
+        }
+    }
     try {
         startActivity(Intent.createChooser(send, title).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     } catch (_: ActivityNotFoundException) {
