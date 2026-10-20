@@ -93,7 +93,8 @@ internal fun ChatScreen(
         viewModel.opened()
         onDispose { viewModel.closed() }
     }
-    PollWhileVisible(4_000) { viewModel.sync() }
+    // Mensagens chegam ao vivo pela conexão; sem ela, consulta de vez em quando.
+    PollWhileVisible(30_000) { viewModel.sync() }
     // Mensagem nova: a lista (de baixo para cima) volta para a mais recente.
     LaunchedEffect(messages.size) { if (messages.isNotEmpty()) listState.animateScrollToItem(0) }
 

@@ -72,6 +72,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.boomlistener.data.social.LinkStatus
 import com.boomlistener.data.social.SocialData
 import com.boomlistener.feature.social.RecommendSheet
 import com.boomlistener.feature.social.socialScreen
@@ -114,8 +115,10 @@ fun BoomListenerApp() {
     // Música a recomendar para alguém (folha de Amigos por cima de tudo).
     var recommendUri by remember { mutableStateOf<String?>(null) }
 
-    // Amigos: busca mensagens novas a cada 30 s com o app aberto, para o
-    // número de não lidas na aba ficar em dia. Em segundo plano não consulta.
+    // Amigos: com o app na tela, fica ligado ao servidor por WebSocket (as
+    // mensagens chegam sozinhas). Sem conexão, consulta a cada minuto; em
+    // segundo plano não consulta (só fica ligado se uma música estiver tocando
+    // com o "ouvindo agora" ligado).
     val context = LocalContext.current.applicationContext
     val social = remember { SocialData.repository(context) }
     val socialAccount by social.account.collectAsStateWithLifecycle()
@@ -125,9 +128,20 @@ fun BoomListenerApp() {
     LaunchedEffect(socialAccount?.id) {
         if (socialAccount == null) return@LaunchedEffect
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            while (true) {
-                social.sync()
-                delay(30_000)
+            social.keepConnected("ui", true)
+            try {
+                // Dá um tempinho para a conexão abrir; se não abrir, consulta pelo HTTP.
+                var wait = 5_000L
+                while (true) {
+                    delay(wait)
+                    wait = 60_000L
+                    when (social.live.value.status) {
+                        LinkStatus.Online, is LinkStatus.Resting -> Unit
+                        else -> social.sync()
+                    }
+                }
+            } finally {
+                social.keepConnected("ui", false)
             }
         }
     }

@@ -4,6 +4,17 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.28.0] — 2026-10-20
+
+### ✨ New
+- **Friends is live.** While the app is open, it stays connected to the server instead of asking for news every few seconds. Messages and what your friends are listening to show up right away.
+- **"Listening now" keeps working in the background** while music plays, if you share what you listen to.
+- If the free server runs out of its daily limit, Friends shows **"resting until…"** with the time it comes back. Music is never affected.
+
+### 🐛 Fixes
+- Sending the same message twice after a bad connection no longer creates a duplicate.
+- After losing the connection, the app waits a little longer between retries, so it doesn't drain your battery.
+
 ## [0.27.0] — 2026-10-20
 
 ### ✨ New

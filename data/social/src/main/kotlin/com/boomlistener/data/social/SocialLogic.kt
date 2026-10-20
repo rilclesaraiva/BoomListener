@@ -88,3 +88,41 @@ fun cleanProfileColor(input: String): String? {
     if (trimmed.isEmpty()) return ""
     return PROFILE_COLOR.find(trimmed)?.let { "#" + it.groupValues[1].uppercase() }
 }
+
+/**
+ * Espera antes de tentar conectar de novo: uma tentativa rápida (falha
+ * passageira de rede) e depois 1, 2, 4, 8 minutos, até 15, com um sorteio de
+ * ±20% para os celulares não voltarem todos juntos. [random] vai de 0 a 1.
+ */
+internal fun reconnectDelayMs(attempt: Int, random: Double): Long {
+    val base = when {
+        attempt <= 1 -> 3_000L
+        else -> minOf(60_000L shl (attempt - 2).coerceAtMost(4), 15 * 60_000L)
+    }
+    val jitter = 0.8 + 0.4 * random.coerceIn(0.0, 1.0)
+    return (base * jitter).toLong()
+}
+
+/** Meia-noite UTC seguinte, quando as cotas do plano gratuito zeram. */
+internal fun nextUtcMidnight(nowMs: Long): Long {
+    val day = 86_400_000L
+    return (nowMs / day) * day + day
+}
+
+/**
+ * A resposta diz que o social está "descansando" (cota do dia esgotada)? Devolve
+ * até quando, ou null. O nosso servidor responde 503 com "resting"; o limite
+ * de requisições da própria Cloudflare (erro 1027) vem como 429 sem o nosso JSON.
+ */
+internal fun restingUntil(code: Int, error: String?, until: Long, nowMs: Long): Long? = when {
+    code == 503 && error == "resting" -> until.takeIf { it > nowMs } ?: nextUtcMidnight(nowMs)
+    code == 429 && error == null -> nextUtcMidnight(nowMs)
+    else -> null
+}
+
+/** Atualiza (ou tira) uma pessoa da lista "ouvindo agora". */
+internal fun withPerson(people: List<FriendProfile>, profile: FriendProfile): List<FriendProfile> {
+    if (!profile.sharing) return people.filterNot { it.user.id == profile.user.id }
+    val index = people.indexOfFirst { it.user.id == profile.user.id }
+    return if (index < 0) people + profile else people.toMutableList().also { it[index] = profile }
+}

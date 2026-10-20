@@ -105,3 +105,19 @@ sealed interface SocialResult<out T> {
 }
 
 enum class HandleCheck { Available, Taken, Invalid, Offline }
+
+/** Estado da conexão ao vivo com o servidor social. */
+sealed interface LinkStatus {
+    /** Sem conexão (app fechado, sem internet, ou ainda sem perfil). */
+    data object Offline : LinkStatus
+    data object Connecting : LinkStatus
+    data object Online : LinkStatus
+    /** A cota diária do plano gratuito acabou: o social volta em [untilMs] (meia-noite UTC). */
+    data class Resting(val untilMs: Long) : LinkStatus
+}
+
+/**
+ * O que chega ao vivo pela conexão: o estado dela e quem está ouvindo o quê
+ * ([people] null = ainda não veio nada desde que conectou).
+ */
+data class SocialLive(val status: LinkStatus = LinkStatus.Offline, val people: List<FriendProfile>? = null)

@@ -35,7 +35,7 @@ data/
   musicbrainz/    ← reserva quando o Deezer não acha: MusicBrainz (tags, discografia) + capas do Cover Art Archive
   releases/       ← artistas seguidos, comparação de discografia, WorkManager diário, notificações
   wellbeing/      ← estatísticas de escuta (mais ouvidas) e, depois, tempo de escuta e avisos de tela
-  social/         ← Amigos: perfil (@), conversas e grupos, cartões de música, "ouvindo agora" (servidor em social/)
+  social/         ← Amigos: perfil (@), conversas e grupos, cartões de música, "ouvindo agora" (servidor em social/; conexão ao vivo por WebSocket, ver docs/PLANO-SOCIAL.md)
   lyrics/         ← letras: LRCLIB + cache no aparelho + leitor de LRC
   updates/        ← "Verificar atualizações": compara a versão instalada com a última Release do GitHub
 

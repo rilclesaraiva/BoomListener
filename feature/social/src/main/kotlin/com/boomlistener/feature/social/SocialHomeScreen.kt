@@ -94,7 +94,9 @@ internal fun SocialHomeScreen(
     var newConversation by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(SOCIAL_ROUTE, listState)
-    if (account != null) PollWhileVisible(15_000) { viewModel.refresh() }
+    val restingUntil by viewModel.restingUntil.collectAsStateWithLifecycle()
+    // Com a conexão ao vivo, nada de ficar perguntando: refresh() só consulta sem ela.
+    if (account != null) PollWhileVisible(60_000) { viewModel.refresh() }
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_social_title),
@@ -148,7 +150,10 @@ internal fun SocialHomeScreen(
                                 }
                             }
                         }
-                        if (offline) {
+                        restingUntil?.let { until ->
+                            item(key = "resting") { RestingNotice(until) }
+                        }
+                        if (offline && restingUntil == null) {
                             item(key = "offline") {
                                 Text(
                                     text = stringResource(R.string.feature_social_offline),
@@ -576,4 +581,23 @@ private fun NewConversationSheet(
 @Composable
 internal fun LiveDot() {
     Surface(color = MaterialTheme.colorScheme.primary, shape = CircleShape, modifier = Modifier.size(8.dp)) {}
+}
+
+/** "O social está descansando": a cota diária do plano gratuito acabou; o player segue normal. */
+@Composable
+private fun RestingNotice(untilMs: Long) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val time = remember(untilMs) { android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(untilMs)) }
+    androidx.compose.material3.Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.feature_social_resting_title, time), style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.feature_social_resting_message), style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }

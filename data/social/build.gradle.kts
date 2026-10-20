@@ -12,4 +12,6 @@ android {
 dependencies {
     api(project(":core:model"))
     implementation(libs.kotlinx.coroutines.android)
+    // Conexão ao vivo (WebSocket) com o servidor social.
+    implementation(libs.okhttp)
 }

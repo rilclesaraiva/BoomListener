@@ -63,4 +63,49 @@ class SocialLogicTest {
         assertEquals(null, cleanProfileColor("red"))
         assertEquals(null, cleanProfileColor("#FFF"))
     }
+
+    @Test
+    fun esperaParaReconectar() {
+        assertEquals(3_000L, reconnectDelayMs(1, 0.5))
+        assertEquals(60_000L, reconnectDelayMs(2, 0.5))
+        assertEquals(120_000L, reconnectDelayMs(3, 0.5))
+        assertEquals(480_000L, reconnectDelayMs(5, 0.5))
+        assertEquals(900_000L, reconnectDelayMs(6, 0.5)) // teto de 15 minutos
+        assertEquals(900_000L, reconnectDelayMs(40, 0.5))
+        // Sorteio de ±20%.
+        assertEquals(48_000L, reconnectDelayMs(2, 0.0))
+        assertEquals(72_000L, reconnectDelayMs(2, 1.0))
+    }
+
+    @Test
+    fun socialDescansando() {
+        val now = 1_760_000_000_000L // algum momento do dia
+        val midnight = nextUtcMidnight(now)
+        assertEquals(0L, midnight % 86_400_000L)
+        assertTrue(midnight > now && midnight - now <= 86_400_000L)
+        assertEquals(midnight + 5, restingUntil(503, "resting", midnight + 5, now))
+        assertEquals(midnight, restingUntil(503, "resting", 0, now))
+        assertEquals(midnight, restingUntil(429, null, 0, now)) // limite da própria Cloudflare
+        assertEquals(null, restingUntil(429, "slow_down", 0, now)) // só a cota por minuto
+        assertEquals(null, restingUntil(503, "unavailable", 0, now))
+        assertEquals(null, restingUntil(200, null, 0, now))
+    }
+
+    @Test
+    fun ouvindoAgoraAoVivo() {
+        fun person(id: String, sharing: Boolean, now: String?) = FriendProfile(
+            user = SocialUser(id, id, id),
+            sharing = sharing,
+            now = now?.let { TrackInfo(it, null, null) },
+            updatedMs = null,
+            recent = emptyList(),
+            blockedByMe = false,
+        )
+        val start = listOf(person("a", true, "Oceano"), person("b", true, null))
+        val changed = withPerson(start, person("a", true, "Flor de Lis"))
+        assertEquals(listOf("a", "b"), changed.map { it.user.id }) // mantém a posição
+        assertEquals("Flor de Lis", changed[0].now?.title)
+        assertEquals(listOf("b"), withPerson(start, person("a", false, null)).map { it.user.id })
+        assertEquals(listOf("a", "b", "c"), withPerson(start, person("c", true, "X")).map { it.user.id })
+    }
 }

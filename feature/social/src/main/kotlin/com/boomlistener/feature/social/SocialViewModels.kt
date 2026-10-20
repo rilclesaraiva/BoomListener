@@ -14,6 +14,7 @@ import com.boomlistener.data.social.ChatMessage
 import com.boomlistener.data.social.Conversation
 import com.boomlistener.data.social.FriendProfile
 import com.boomlistener.data.social.HandleCheck
+import com.boomlistener.data.social.LinkStatus
 import com.boomlistener.data.social.MessageBody
 import com.boomlistener.data.social.SocialAccount
 import com.boomlistener.data.social.SocialRepository
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -38,15 +40,31 @@ internal class SocialHomeViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _activity = MutableStateFlow<List<FriendProfile>>(emptyList())
-    val activity: StateFlow<List<FriendProfile>> = _activity.asStateFlow()
+
+    /** Quem está ouvindo o quê: ao vivo pela conexão, ou o da última consulta. */
+    val activity: StateFlow<List<FriendProfile>> = combine(_activity, social.live) { fetched, live -> live.people ?: fetched }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _offline = MutableStateFlow(false)
-    /** A última atualização não conseguiu falar com o servidor. */
-    val offline: StateFlow<Boolean> = _offline.asStateFlow()
+    /** A última atualização não conseguiu falar com o servidor (e não há conexão ao vivo). */
+    val offline: StateFlow<Boolean> = combine(_offline, social.live) { failed, live -> failed && live.status != LinkStatus.Online }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
-    /** Busca mensagens novas e o "ouvindo agora" dos amigos. */
+    /** Até quando o social descansa (cota diária do plano gratuito esgotada); null = funcionando. */
+    val restingUntil: StateFlow<Long?> = social.live
+        .map { (it.status as? LinkStatus.Resting)?.untilMs }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /**
+     * Consulta o servidor só quando não há conexão ao vivo (com ela, tudo chega
+     * sozinho). Descansando, não insiste.
+     */
     suspend fun refresh() {
         if (social.account.value == null) return
+        when (social.live.value.status) {
+            LinkStatus.Online, is LinkStatus.Resting -> return
+            else -> Unit
+        }
         val synced = social.sync()
         val people = social.activity()
         _offline.value = synced is SocialResult.Offline
@@ -112,7 +130,9 @@ internal class ChatViewModel(
         social.setOpenConversation(null)
     }
 
+    /** Sem conexão ao vivo, busca as mensagens novas (com ela, chegam sozinhas). */
     suspend fun sync() {
+        if (social.live.value.status == LinkStatus.Online) return
         social.sync()
         social.markRead(conversationId)
     }

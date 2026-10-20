@@ -202,3 +202,198 @@ test("descrição, foto e capa do perfil", async () => {
   const removed = await (await send("DELETE", "/me/image/avatar", ana)).json();
   assert.equal(removed.avatar, 0);
 });
+
+// ---- Fase 1: WebSocket com hibernação, porteiro e cotas ----
+
+class FakeSocket {
+  constructor() {
+    this.sent = [];
+    this.state = null;
+    this.closed = null;
+  }
+  send(data) {
+    if (this.closed) throw new Error("closed");
+    this.sent.push(typeof data === "string" && data.startsWith("{") ? JSON.parse(data) : data);
+  }
+  serializeAttachment(value) {
+    this.state = structuredClone(value);
+  }
+  deserializeAttachment() {
+    return structuredClone(this.state);
+  }
+  close(code) {
+    this.closed = code ?? 1000;
+  }
+  events(type) {
+    return this.sent.filter((e) => e.t === type);
+  }
+}
+
+function liveServer() {
+  const tagged = [];
+  const ctx = {
+    storage: { sql: fakeSql() },
+    acceptWebSocket(ws, tags) {
+      tagged.push({ ws, tags });
+    },
+    getWebSockets(tag) {
+      return tagged.filter((t) => t.tags.includes(tag) && !t.ws.closed).map((t) => t.ws);
+    },
+  };
+  const hub = new mod.Hub(ctx, {});
+  const call = async (method, path, body, auth) => {
+    const headers = { "content-type": "application/json" };
+    if (auth) headers.authorization = `Bearer ${auth.id}.${auth.token}`;
+    const response = await hub.fetch(
+      new Request("https://x/v1" + path, { method, headers, body: body ? JSON.stringify(body) : undefined }),
+    );
+    return { status: response.status, data: await response.json() };
+  };
+  // Conecta como [auth]: devolve o lado do servidor (o que o Hub manda chega em .sent).
+  const connect = async (auth) => {
+    let server;
+    globalThis.WebSocketPair = class {
+      constructor() {
+        server = new FakeSocket();
+        this[0] = new FakeSocket();
+        this[1] = server;
+      }
+    };
+    const RealResponse = globalThis.Response;
+    globalThis.Response = class extends RealResponse {
+      constructor(body, init) {
+        super(body, init?.status === 101 ? { ...init, status: 200 } : init);
+        if (init?.status === 101) this.upgraded = true;
+      }
+    };
+    try {
+      const response = await hub.fetch(
+        new Request("https://x/v1/ws", {
+          headers: { authorization: `Bearer ${auth.id}.${auth.token}`, upgrade: "websocket" },
+        }),
+      );
+      assert.ok(response.upgraded);
+    } finally {
+      globalThis.Response = RealResponse;
+    }
+    return server;
+  };
+  const say = (ws, event) => hub.webSocketMessage(ws, JSON.stringify(event));
+  return { hub, call, connect, say };
+}
+
+test("ao conectar chega o que estava esperando, e mensagem nova chega na hora", async () => {
+  const { call, connect, say } = liveServer();
+  const ana = (await call("POST", "/register", { name: "Ana", handle: "ana" })).data;
+  const beto = (await call("POST", "/register", { name: "Beto", handle: "beto" })).data;
+  await call("POST", "/messages", { conv: "dm:" + beto.id, body: { type: "text", text: "antes" } }, ana);
+
+  const betoWs = await connect(beto);
+  assert.equal(betoWs.events("hello")[0].me.handle, "beto");
+  assert.equal(betoWs.events("inbox")[0].messages[0].body.text, "antes");
+
+  const anaWs = await connect(ana);
+  const cid = "a".repeat(32);
+  await say(anaWs, { t: "send", cid, conv: "dm:" + beto.id, body: { type: "text", text: "agora" } });
+  assert.deepEqual(
+    { status: anaWs.events("sent")[0].status, id: anaWs.events("sent")[0].id, cid: anaWs.events("sent")[0].cid },
+    { status: 200, id: cid, cid },
+  );
+  const live = betoWs.events("inbox").at(-1).messages[0];
+  assert.equal(live.body.text, "agora");
+  assert.equal(live.id, cid);
+  assert.equal(live.sender.handle, "ana");
+
+  // Reenviar a mesma mensagem (resposta perdida) não duplica.
+  await say(anaWs, { t: "send", cid, conv: "dm:" + beto.id, body: { type: "text", text: "agora" } });
+  assert.equal((await call("GET", "/inbox", null, beto)).data.messages.length, 2);
+
+  // "Recebi" pela conexão apaga do servidor.
+  await say(betoWs, { t: "ack", ids: [cid] });
+  await say(betoWs, { t: "sync" });
+  assert.deepEqual(betoWs.events("inbox").at(-1).messages.map((m) => m.body.text), ["antes"]);
+});
+
+test("ouvindo agora vive na conexão e os recentes são gravados ao fechar", async () => {
+  const { hub, call, connect, say } = liveServer();
+  const ana = (await call("POST", "/register", { name: "Ana", handle: "ana" })).data;
+  const beto = (await call("POST", "/register", { name: "Beto", handle: "beto" })).data;
+  await call("PATCH", "/me", { sharing: true }, ana);
+  await call("POST", "/messages", { conv: "dm:" + ana.id, body: { type: "text", text: "oi" } }, beto);
+
+  const betoWs = await connect(beto);
+  const anaWs = await connect(ana);
+  await say(anaWs, { t: "now", track: { title: "Oceano", artist: "Djavan" } });
+  assert.equal(betoWs.events("person").at(-1).profile.now.title, "Oceano");
+  // Mesma música de novo: ninguém é avisado.
+  const before = betoWs.sent.length;
+  await say(anaWs, { t: "now", track: { title: "Oceano", artist: "Djavan" } });
+  assert.equal(betoWs.sent.length, before);
+
+  await say(anaWs, { t: "listened", track: { title: "Flor de Lis", artist: "Djavan" } });
+  assert.equal((await call("GET", "/users/" + ana.id, null, beto)).data.recent[0].title, "Flor de Lis");
+  // Nada foi gravado ainda (está só na conexão).
+  assert.equal((await call("GET", "/users/" + ana.id, null, beto)).data.now.title, "Oceano");
+
+  await hub.webSocketClose(anaWs, 1000);
+  assert.equal(betoWs.events("person").at(-1).profile.now, null);
+  const after = (await call("GET", "/users/" + ana.id, null, beto)).data;
+  assert.equal(after.now, null);
+  assert.equal(after.recent[0].title, "Flor de Lis");
+
+  // Quem não compartilha não manda "ouvindo agora".
+  const betoNow = betoWs.sent.length;
+  await say(betoWs, { t: "now", track: { title: "Segredo" } });
+  assert.equal(betoWs.sent.length, betoNow);
+});
+
+test("porteiro recusa sem acordar o Hub", () => {
+  const req = (method, path, headers = {}) => mod.gate(new Request("https://x" + path, { method, headers }), new URL("https://x" + path));
+  const auth = { authorization: `Bearer ${"a".repeat(32)}.${"b".repeat(64)}` };
+  assert.equal(req("GET", "/v1/nada", auth).status, 404);
+  assert.equal(req("POST", "/v1/inbox", auth).status, 404); // método errado
+  assert.equal(req("GET", "/v1/inbox").status, 401);
+  assert.equal(req("GET", "/v1/ws", auth).status, 426);
+  assert.equal(req("GET", "/v1/ws", { ...auth, upgrade: "websocket" }), null);
+  assert.equal(req("POST", "/v1/messages", { ...auth, "content-length": "999999" }).status, 413);
+  assert.equal(req("PUT", "/v1/me/image/avatar", { ...auth, "content-length": "3000000" }), null);
+  assert.equal(req("GET", "/v1/handles/ana"), null);
+  assert.equal(mod.nextUtcMidnight(Date.UTC(2026, 9, 20, 23, 59)), Date.UTC(2026, 9, 21));
+});
+
+test("cotas: mensagens por dia, grupo cheio e cadastros por IP", async () => {
+  const { hub, call } = liveServer();
+  const ana = (await call("POST", "/register", { name: "Ana", handle: "ana" })).data;
+  const beto = (await call("POST", "/register", { name: "Beto", handle: "beto" })).data;
+  const realNow = Date.now;
+  try {
+    // 300 mensagens no dia (em minutos diferentes, para não cair no limite por minuto).
+    let fake = Math.floor(realNow() / 86_400_000) * 86_400_000 + 1000;
+    Date.now = () => fake;
+    for (let i = 0; i < 300; i++) {
+      fake += 2_000;
+      const r = await call("POST", "/messages", { conv: "dm:" + beto.id, body: { type: "text", text: "m" + i } }, ana);
+      assert.equal(r.status, 200, "mensagem " + i);
+    }
+    fake += 2_000;
+    const blocked = await call("POST", "/messages", { conv: "dm:" + beto.id, body: { type: "text", text: "demais" } }, ana);
+    assert.equal(blocked.data.error, "daily_limit");
+  } finally {
+    Date.now = realNow;
+  }
+
+  // 5 cadastros por hora por IP (todos vêm do mesmo "IP" no teste): ana e beto + 3.
+  for (let i = 0; i < 3; i++) assert.equal((await call("POST", "/register", { name: "R", handle: "reg" + i })).status, 200);
+  assert.equal((await call("POST", "/register", { name: "X", handle: "xxxx" })).status, 429);
+
+  // Grupo de no máximo 30.
+  const group = (await call("POST", "/groups", { name: "Lotado" }, ana)).data;
+  for (let i = 0; i < 29; i++) {
+    hub.counters.clear(); // libera o limite de cadastros por IP
+    const user = (await call("POST", "/register", { name: "U" + i, handle: "user" + i })).data;
+    assert.equal((await call("POST", "/groups/join", { code: group.code }, user)).status, 200);
+  }
+  hub.counters.clear();
+  const late = (await call("POST", "/register", { name: "Late", handle: "late" })).data;
+  assert.equal((await call("POST", "/groups/join", { code: group.code }, late)).data.error, "group_full");
+});

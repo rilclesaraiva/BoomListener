@@ -9,6 +9,13 @@
 // As mensagens ficam aqui só até o app do destinatário confirmar que recebeu;
 // depois são apagadas. O histórico do chat mora no celular de cada um.
 //
+// Com o app aberto (ou tocando música, para o "ouvindo agora"), o celular
+// fica ligado por um WebSocket com hibernação (/v1/ws): o Hub dorme entre uma
+// mensagem e outra e entrega tudo na hora, sem o app ficar perguntando.
+// O "ouvindo agora" mora na própria conexão (zero escritas no banco), e as
+// músicas recentes são gravadas uma vez só, quando a conexão fecha.
+// Os endereços HTTP antigos continuam valendo para versões antigas do app.
+//
 // Sem login do Google: ao criar o perfil, o app recebe um id e um segredo
 // (token) que guarda no aparelho. O servidor guarda só o hash do segredo.
 //
@@ -21,17 +28,77 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/health") return json({ ok: true });
-    if (!url.pathname.startsWith("/v1/")) return json({ error: "not_found" }, 404);
-    const hub = env.HUB.get(env.HUB.idFromName("hub"));
-    return hub.fetch(request);
+    // Porteiro: pedido inválido é recusado aqui, sem acordar o Hub.
+    const refused = gate(request, url);
+    if (refused) return refused;
+    try {
+      const hub = env.HUB.get(env.HUB.idFromName("hub"));
+      return await hub.fetch(request);
+    } catch (error) {
+      // Cota diária do plano gratuito esgotada: o social descansa até a meia-noite UTC.
+      const resting = /exceed|limit|quota/i.test(String(error?.message ?? error));
+      return json({ error: resting ? "resting" : "unavailable", until: nextUtcMidnight() }, 503);
+    }
   },
 };
+
+/** Meia-noite UTC seguinte (quando os contadores do plano gratuito zeram). */
+export function nextUtcMidnight(now = Date.now()) {
+  const day = 86_400_000;
+  return Math.floor(now / day) * day + day;
+}
+
+const ID = "[0-9a-f]{32}";
+// [métodos, caminho, precisa do segredo]
+const ROUTES = [
+  ["GET", new RegExp("^/v1/handles/[^/]{1,60}$"), false],
+  ["POST", /^\/v1\/register$/, false],
+  ["GET", /^\/v1\/ws$/, true],
+  ["GET PATCH DELETE", /^\/v1\/me$/, true],
+  ["PUT DELETE", /^\/v1\/me\/image\/(avatar|banner)$/, true],
+  ["PUT", /^\/v1\/me\/now$/, true],
+  ["POST", /^\/v1\/me\/recent$/, true],
+  ["GET", new RegExp(`^/v1/users/${ID}(/image/(avatar|banner))?$`), true],
+  ["GET", new RegExp("^/v1/users/by-handle/[^/]{1,60}$"), true],
+  ["GET", /^\/v1\/activity$/, true],
+  ["POST", /^\/v1\/messages$/, true],
+  ["GET", /^\/v1\/inbox$/, true],
+  ["POST", /^\/v1\/inbox\/ack$/, true],
+  ["POST", /^\/v1\/groups(\/join)?$/, true],
+  ["GET", new RegExp(`^/v1/groups/${ID}$`), true],
+  ["POST", new RegExp(`^/v1/groups/${ID}/leave$`), true],
+  ["POST", /^\/v1\/blocks$/, true],
+  ["DELETE", new RegExp(`^/v1/blocks/${ID}$`), true],
+];
+const AUTH = /^Bearer [0-9a-f]{32}\.[0-9a-f]{64}$/;
+const MAX_JSON_REQUEST = 16_384;
+
+/** Recusa (com a resposta pronta) o que nem precisa chegar ao Hub; null = pode passar. */
+export function gate(request, url) {
+  const route = ROUTES.find(([methods, pattern]) => pattern.test(url.pathname) && methods.split(" ").includes(request.method));
+  if (!route) return json({ error: "not_found" }, 404);
+  if (route[2] && !AUTH.test(request.headers.get("authorization") ?? "")) return json({ error: "unauthorized" }, 401);
+  if (url.pathname === "/v1/ws" && (request.headers.get("upgrade") ?? "").toLowerCase() !== "websocket") {
+    return json({ error: "expected_websocket" }, 426);
+  }
+  const length = Number(request.headers.get("content-length") ?? 0);
+  const limit = /\/me\/image\//.test(url.pathname) ? MAX_GIF_BYTES + 1024 : MAX_JSON_REQUEST;
+  if (length > limit) return json({ error: "too_large" }, 413);
+  return null;
+}
 
 const HANDLE = /^[a-z0-9_.]{3,20}$/;
 const MAX_TEXT = 2000;
 const MAX_BODY_BYTES = 4096;
 const RECENT_KEEP = 20;
 const MESSAGES_PER_MINUTE = 40;
+// Cotas por pessoa: um abusador não pode gastar o teto diário de todo mundo.
+const MESSAGES_PER_DAY = 300;
+const IMAGES_PER_DAY = 5;
+const GROUP_MEMBERS = 30;
+const GROUPS_PER_USER = 20;
+const REGISTRATIONS_PER_IP_HOUR = 5;
+const MAX_SOCKET_MESSAGE = 16_384;
 const MAX_BIO = 160;
 const MAX_IMAGE_BYTES = 400_000;
 const MAX_GIF_BYTES = 6_000_000;
@@ -123,11 +190,48 @@ function cleanBody(value) {
   return null;
 }
 
+/** Manda um evento pela conexão; se ela já fechou, deixa para lá. */
+function send(ws, event) {
+  try {
+    ws.send(typeof event === "string" ? event : JSON.stringify(event));
+  } catch {
+    // Conexão fechada.
+  }
+}
+
+function safeAttachment(ws) {
+  try {
+    return ws.deserializeAttachment();
+  } catch {
+    return null;
+  }
+}
+
+/** Recentes da conexão + os guardados, do mais novo para o mais antigo, sem repetir. */
+export function mergeRecent(live, stored) {
+  const seen = new Set();
+  return [...live, ...stored]
+    .sort((a, b) => b.at - a.at)
+    .filter((item) => {
+      const key = `${item.at}|${item.title}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, RECENT_KEEP);
+}
+
 export class Hub extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
     this.rate = new Map();
+    // Contadores das cotas: só na memória (zeram se o Hub reiniciar; o teto real é o da Cloudflare).
+    this.counters = new Map();
+    // "ping" do app responde sozinho, sem acordar o Hub.
+    if (typeof WebSocketRequestResponsePair === "function") {
+      ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
+    }
     this.sql.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY, handle TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
@@ -151,6 +255,7 @@ export class Hub extends DurableObject {
         user_id TEXT NOT NULL, kind TEXT NOT NULL, part INTEGER NOT NULL, data BLOB NOT NULL,
         PRIMARY KEY (user_id, kind, part)
       );
+      CREATE TABLE IF NOT EXISTS recent_log (user_id TEXT PRIMARY KEY, items TEXT NOT NULL, updated INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS images (
         user_id TEXT NOT NULL, kind TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (user_id, kind)
       );
@@ -220,14 +325,17 @@ export class Hub extends DurableObject {
     const canSee =
       user.sharing === 1 && this.related(viewer.id, user.id) && !this.blocked(user.id, viewer.id);
     if (canSee) {
-      const status = this.first("SELECT now, updated FROM status WHERE user_id = ?", user.id);
-      profile.now = status?.now ? JSON.parse(status.now) : null;
-      profile.updated = status?.updated ?? null;
-      profile.recent = this.all(
-        "SELECT at, track FROM recent WHERE user_id = ? ORDER BY at DESC LIMIT ?",
-        user.id,
-        RECENT_KEEP,
-      ).map((row) => ({ at: row.at, ...JSON.parse(row.track) }));
+      // Conectado: o "ouvindo agora" vem da conexão. Senão, do formato antigo (app antigo).
+      const live = this.liveOf(user.id);
+      if (live) {
+        profile.now = live.now ?? null;
+        profile.updated = live.at || null;
+      } else {
+        const status = this.first("SELECT now, updated FROM status WHERE user_id = ?", user.id);
+        profile.now = status?.now ? JSON.parse(status.now) : null;
+        profile.updated = status?.updated ?? null;
+      }
+      profile.recent = mergeRecent(live?.recent ?? [], this.storedRecent(user.id));
     }
     profile.sharing = canSee;
     profile.blockedByMe = this.blocked(viewer.id, user.id);
@@ -241,6 +349,254 @@ export class Hub extends DurableObject {
     recent.push(now);
     this.rate.set(userId, recent);
     return true;
+  }
+
+  /** Cota diária (ou por hora, com [windowMs]) de [kind] para [key]. */
+  allow(kind, key, limit, windowMs = 86_400_000) {
+    const window = Math.floor(Date.now() / windowMs);
+    const id = `${kind}:${key}`;
+    const entry = this.counters.get(id);
+    if (!entry || entry.window !== window) {
+      this.counters.set(id, { window, n: 1 });
+      return true;
+    }
+    if (entry.n >= limit) return false;
+    entry.n++;
+    return true;
+  }
+
+  // ---- Conexões (WebSocket com hibernação) ----
+
+  sockets(userId) {
+    return this.ctx.getWebSockets?.(userId) ?? [];
+  }
+
+  /** O estado ao vivo mais recente da pessoa (de qualquer aparelho conectado); null se offline. */
+  liveOf(userId) {
+    let best = null;
+    for (const ws of this.sockets(userId)) {
+      const state = safeAttachment(ws);
+      if (state && !state.closed && (!best || (state.at ?? 0) >= (best.at ?? 0))) best = state;
+    }
+    return best;
+  }
+
+  storedRecent(userId) {
+    const row = this.first("SELECT items FROM recent_log WHERE user_id = ?", userId);
+    if (row) return JSON.parse(row.items);
+    return this.all("SELECT at, track FROM recent WHERE user_id = ? ORDER BY at DESC LIMIT ?", userId, RECENT_KEEP).map(
+      (r) => ({ at: r.at, ...JSON.parse(r.track) }),
+    );
+  }
+
+  /** Grava de uma vez as músicas ouvidas na conexão (uma escrita por sessão). */
+  flushRecent(ws) {
+    const state = safeAttachment(ws);
+    if (!state?.id || !state.recent?.length || state.flushed) return;
+    const user = this.first("SELECT sharing FROM users WHERE id = ?", state.id);
+    if (user?.sharing === 1) {
+      const items = mergeRecent(state.recent, this.storedRecent(state.id));
+      this.sql.exec(
+        "INSERT INTO recent_log (user_id, items, updated) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET items = excluded.items, updated = excluded.updated",
+        state.id,
+        JSON.stringify(items),
+        Date.now(),
+      );
+      this.sql.exec("DELETE FROM recent WHERE user_id = ?", state.id);
+    }
+    try {
+      ws.serializeAttachment({ ...state, recent: [], flushed: true });
+    } catch {
+      // Conexão já fechada.
+    }
+  }
+
+  /** Quem pode ver o "ouvindo" de [userId]: conversaram ou dividem grupo. */
+  relatedIds(userId) {
+    return this.all(
+      `SELECT b AS id FROM contacts WHERE a = ?
+       UNION SELECT m2.user_id AS id FROM members m1 JOIN members m2 ON m1.group_id = m2.group_id
+       WHERE m1.user_id = ? AND m2.user_id != ?`,
+      userId,
+      userId,
+      userId,
+    ).map((row) => row.id);
+  }
+
+  /** A lista "ouvindo agora" de [me] (a mesma de GET /activity). */
+  activityFor(me) {
+    return this.relatedIds(me.id)
+      .map((id) => this.first("SELECT * FROM users WHERE id = ?", id))
+      .filter((user) => user && user.sharing === 1)
+      .map((user) => this.profileFor(me, user))
+      .filter((profile) => profile.sharing);
+  }
+
+  /** Avisa os amigos conectados que o "ouvindo agora" de [user] mudou. */
+  announce(user) {
+    for (const viewerId of this.relatedIds(user.id)) {
+      const sockets = this.sockets(viewerId);
+      if (sockets.length === 0) continue;
+      const viewer = this.first("SELECT * FROM users WHERE id = ?", viewerId);
+      if (!viewer) continue;
+      const profile = this.profileFor(viewer, user);
+      for (const ws of sockets) send(ws, { t: "person", profile });
+    }
+  }
+
+  /** Entrega ao vivo para quem está conectado (a cópia no inbox continua até o "recebi"). */
+  deliverLive(deliveries) {
+    for (const { to, message } of deliveries) {
+      for (const ws of this.sockets(to)) send(ws, { t: "inbox", messages: [message] });
+    }
+  }
+
+  inboxOf(userId) {
+    const rows = this.all(
+      "SELECT i.id, i.conv, i.body, i.sent, u.id AS sid, u.handle, u.name FROM inbox i LEFT JOIN users u ON u.id = i.sender WHERE i.to_user = ? ORDER BY i.sent LIMIT 200",
+      userId,
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      conv: row.conv,
+      sent: row.sent,
+      body: JSON.parse(row.body),
+      sender: row.sid ? { id: row.sid, handle: row.handle, name: row.name } : null,
+    }));
+  }
+
+  /**
+   * Manda uma mensagem (HTTP ou WebSocket). [cid] é o id gerado no celular:
+   * reenviar a mesma mensagem não duplica. Devolve { status, data, deliveries }.
+   */
+  postMessage(me, conv, rawBody, cid) {
+    const message = cleanBody(rawBody);
+    if (typeof conv !== "string" || !message || JSON.stringify(message).length > MAX_BODY_BYTES) {
+      return { status: 400, data: { error: "invalid" }, deliveries: [] };
+    }
+    if (!this.allowMessage(me.id)) return { status: 429, data: { error: "slow_down" }, deliveries: [] };
+    if (!this.allow("messages", me.id, MESSAGES_PER_DAY)) return { status: 429, data: { error: "daily_limit" }, deliveries: [] };
+    const id = typeof cid === "string" && /^[0-9a-f]{32}$/.test(cid) ? cid : randomHex(16);
+    const sent = Date.now();
+    const payload = JSON.stringify(message);
+    const sender = { id: me.id, handle: me.handle, name: me.name };
+    const deliveries = [];
+    const store = (rowId, to, convForThem) => {
+      this.sql.exec(
+        "INSERT OR IGNORE INTO inbox (id, to_user, conv, sender, body, sent) VALUES (?, ?, ?, ?, ?, ?)",
+        rowId,
+        to,
+        convForThem,
+        me.id,
+        payload,
+        sent,
+      );
+      deliveries.push({ to, message: { id: rowId, conv: convForThem, sent, body: message, sender } });
+    };
+    if (conv.startsWith("dm:")) {
+      const to = this.first("SELECT * FROM users WHERE id = ?", conv.slice(3));
+      if (!to) return { status: 404, data: { error: "not_found" }, deliveries: [] };
+      if (this.blocked(to.id, me.id)) return { status: 200, data: { id, sent }, deliveries: [] }; // bloqueado: some em silêncio
+      this.sql.exec("INSERT OR IGNORE INTO contacts (a, b) VALUES (?, ?)", me.id, to.id);
+      this.sql.exec("INSERT OR IGNORE INTO contacts (a, b) VALUES (?, ?)", to.id, me.id);
+      store(id, to.id, "dm:" + me.id);
+      return { status: 200, data: { id, sent }, deliveries };
+    }
+    if (conv.startsWith("g:")) {
+      const groupId = conv.slice(2);
+      if (!this.first("SELECT 1 AS x FROM members WHERE group_id = ? AND user_id = ?", groupId, me.id)) {
+        return { status: 403, data: { error: "not_member" }, deliveries: [] };
+      }
+      const others = this.all("SELECT user_id FROM members WHERE group_id = ? AND user_id != ?", groupId, me.id);
+      for (const row of others) {
+        if (this.blocked(row.user_id, me.id)) continue;
+        store(id + row.user_id.slice(0, 8), row.user_id, conv);
+      }
+      return { status: 200, data: { id, sent }, deliveries };
+    }
+    return { status: 400, data: { error: "invalid" }, deliveries: [] };
+  }
+
+  async webSocketMessage(ws, raw) {
+    if (typeof raw !== "string" || raw.length > MAX_SOCKET_MESSAGE) return;
+    if (raw === "ping") return send(ws, "pong");
+    let msg;
+    try {
+      msg = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const state = safeAttachment(ws);
+    const me = state?.id ? this.first("SELECT * FROM users WHERE id = ?", state.id) : null;
+    if (!me) {
+      ws.close(4001, "unauthorized");
+      return;
+    }
+    switch (msg?.t) {
+      case "now": {
+        // "Ouvindo agora": guardado na conexão, nunca no banco.
+        if (me.sharing !== 1) return;
+        const track = msg.track === null || msg.track === undefined ? null : cleanTrack(msg.track);
+        if (msg.track && !track) return;
+        if (JSON.stringify(track) === JSON.stringify(state.now ?? null)) return;
+        ws.serializeAttachment({ ...state, now: track, at: Date.now() });
+        this.announce(me);
+        return;
+      }
+      case "listened": {
+        if (me.sharing !== 1) return;
+        const track = cleanTrack(msg.track);
+        if (!track) return;
+        const at = Number.isFinite(msg.at) && msg.at <= Date.now() ? msg.at : Date.now();
+        const recent = [{ at, ...track }, ...(state.recent ?? [])].slice(0, RECENT_KEEP);
+        ws.serializeAttachment({ ...state, recent, flushed: false, at: state.at || Date.now() });
+        this.announce(me);
+        return;
+      }
+      case "send": {
+        const result = this.postMessage(me, msg.conv, msg.body, msg.cid);
+        send(ws, { t: "sent", cid: msg.cid ?? null, status: result.status, ...result.data });
+        this.deliverLive(result.deliveries);
+        return;
+      }
+      case "ack": {
+        const ids = Array.isArray(msg.ids) ? msg.ids.filter((v) => typeof v === "string").slice(0, 500) : [];
+        for (const id of ids) this.sql.exec("DELETE FROM inbox WHERE id = ? AND to_user = ?", id, me.id);
+        return;
+      }
+      case "sync":
+        return send(ws, { t: "inbox", messages: this.inboxOf(me.id) });
+      case "activity":
+        return send(ws, { t: "activity", people: this.activityFor(me) });
+    }
+  }
+
+  async webSocketClose(ws, code) {
+    this.closeSocket(ws, code);
+  }
+
+  async webSocketError(ws) {
+    this.closeSocket(ws, 1011);
+  }
+
+  /** Fechou: grava os recentes da sessão e avisa os amigos que parou de ouvir. */
+  closeSocket(ws, code) {
+    const state = safeAttachment(ws);
+    this.flushRecent(ws);
+    try {
+      ws.serializeAttachment({ ...(safeAttachment(ws) ?? {}), closed: true });
+    } catch {
+      // Já fechada.
+    }
+    try {
+      ws.close(code === 1005 || code === 1006 || !code ? 1000 : code, "bye");
+    } catch {
+      // Já fechada.
+    }
+    if (state?.id && state.now) {
+      const user = this.first("SELECT * FROM users WHERE id = ?", state.id);
+      if (user) this.announce(user);
+    }
   }
 
   /** Guarda a imagem em pedaços de até 1 MB (troca a anterior inteira). */
@@ -283,6 +639,10 @@ export class Hub extends DurableObject {
     return joined;
   }
 
+  groupCount(userId) {
+    return this.first("SELECT COUNT(*) AS n FROM members WHERE user_id = ?", userId).n;
+  }
+
   groupInfo(group) {
     const members = this.all(
       "SELECT u.id, u.handle, u.name FROM members m JOIN users u ON u.id = m.user_id WHERE m.group_id = ? ORDER BY u.name",
@@ -307,6 +667,8 @@ export class Hub extends DurableObject {
       return json({ available: !taken, valid: true });
     }
     if (method === "POST" && path === "/register") {
+      const ip = request.headers.get("cf-connecting-ip") ?? "local";
+      if (!this.allow("register", ip, REGISTRATIONS_PER_IP_HOUR, 3_600_000)) return json({ error: "slow_down" }, 429);
       const handle = typeof body?.handle === "string" ? body.handle.trim().toLowerCase() : "";
       const name = cleanName(body?.name);
       if (!HANDLE.test(handle) || !name) return json({ error: "invalid" }, 400);
@@ -327,6 +689,22 @@ export class Hub extends DurableObject {
     // ---- Daqui para baixo, só com o segredo do aparelho ----
     const me = await this.authenticate(request);
     if (!me) return json({ error: "unauthorized" }, 401);
+
+    // Conexão ao vivo: o Hub dorme entre as mensagens (hibernação) e não cobra enquanto isso.
+    if (path === "/ws" && method === "GET") {
+      if ((request.headers.get("upgrade") ?? "").toLowerCase() !== "websocket") {
+        return json({ error: "expected_websocket" }, 426);
+      }
+      const pair = new WebSocketPair();
+      const [client, server] = Object.values(pair);
+      this.ctx.acceptWebSocket(server, [me.id]);
+      server.serializeAttachment({ id: me.id, now: null, at: 0, recent: [] });
+      // Logo ao conectar: o que chegou enquanto estava fora e quem está ouvindo o quê.
+      send(server, { t: "hello", me: { ...this.publicUser(me), sharing: me.sharing === 1 } });
+      send(server, { t: "inbox", messages: this.inboxOf(me.id) });
+      send(server, { t: "activity", people: this.activityFor(me) });
+      return new Response(null, { status: 101, webSocket: client });
+    }
 
     if (path === "/me" && method === "GET") return json({ ...this.publicUser(me), sharing: me.sharing === 1 });
     if (path === "/me" && method === "PATCH") {
@@ -352,11 +730,17 @@ export class Hub extends DurableObject {
         // Parou de compartilhar: apaga o que estava guardado.
         this.sql.exec("DELETE FROM status WHERE user_id = ?", me.id);
         this.sql.exec("DELETE FROM recent WHERE user_id = ?", me.id);
+        this.sql.exec("DELETE FROM recent_log WHERE user_id = ?", me.id);
+        for (const ws of this.sockets(me.id)) {
+          const state = safeAttachment(ws);
+          if (state) ws.serializeAttachment({ ...state, now: null, recent: [], at: Date.now() });
+        }
       }
       return json({ ...this.publicUser({ ...me, name, bio, color: color.toUpperCase() }), sharing: sharing === 1 });
     }
     if (path === "/me" && method === "DELETE") {
-      for (const table of ["status", "recent", "images", "image_parts"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
+      for (const ws of this.sockets(me.id)) ws.close(4001, "deleted");
+      for (const table of ["status", "recent", "recent_log", "images", "image_parts"]) this.sql.exec(`DELETE FROM ${table} WHERE user_id = ?`, me.id);
       this.sql.exec("DELETE FROM members WHERE user_id = ?", me.id);
       this.sql.exec("DELETE FROM contacts WHERE a = ? OR b = ?", me.id, me.id);
       this.sql.exec("DELETE FROM blocks WHERE user_id = ? OR blocked = ?", me.id, me.id);
@@ -369,6 +753,7 @@ export class Hub extends DurableObject {
     if (imagePath && method === "PUT") {
       const bytes = new Uint8Array(await request.arrayBuffer());
       if (!imageType(bytes)) return json({ error: "invalid" }, 400);
+      if (!this.allow("images", me.id, IMAGES_PER_DAY)) return json({ error: "daily_limit" }, 429);
       const kind = imagePath[1];
       const version = Date.now();
       this.saveImage(me.id, kind, bytes);
@@ -430,85 +815,16 @@ export class Hub extends DurableObject {
 
     if (method === "GET" && path === "/activity") {
       // Todo mundo com quem conversei ou divido grupo, que compartilha o que ouve.
-      const ids = this.all(
-        `SELECT b AS id FROM contacts WHERE a = ?
-         UNION SELECT m2.user_id AS id FROM members m1 JOIN members m2 ON m1.group_id = m2.group_id
-         WHERE m1.user_id = ? AND m2.user_id != ?`,
-        me.id,
-        me.id,
-        me.id,
-      ).map((row) => row.id);
-      const people = ids
-        .map((id) => this.first("SELECT * FROM users WHERE id = ?", id))
-        .filter((user) => user && user.sharing === 1)
-        .map((user) => this.profileFor(me, user))
-        .filter((profile) => profile.sharing);
-      return json({ people });
+      return json({ people: this.activityFor(me) });
     }
 
     if (method === "POST" && path === "/messages") {
-      const message = cleanBody(body?.body);
-      const conv = typeof body?.conv === "string" ? body.conv : "";
-      if (!message || JSON.stringify(message).length > MAX_BODY_BYTES) return json({ error: "invalid" }, 400);
-      if (!this.allowMessage(me.id)) return json({ error: "slow_down" }, 429);
-      const id = randomHex(16);
-      const sent = Date.now();
-      const payload = JSON.stringify(message);
-      if (conv.startsWith("dm:")) {
-        const to = this.first("SELECT * FROM users WHERE id = ?", conv.slice(3));
-        if (!to) return json({ error: "not_found" }, 404);
-        if (this.blocked(to.id, me.id)) return json({ id, sent }); // bloqueado: some em silêncio
-        this.sql.exec("INSERT OR IGNORE INTO contacts (a, b) VALUES (?, ?)", me.id, to.id);
-        this.sql.exec("INSERT OR IGNORE INTO contacts (a, b) VALUES (?, ?)", to.id, me.id);
-        this.sql.exec(
-          "INSERT INTO inbox (id, to_user, conv, sender, body, sent) VALUES (?, ?, ?, ?, ?, ?)",
-          id,
-          to.id,
-          "dm:" + me.id,
-          me.id,
-          payload,
-          sent,
-        );
-        return json({ id, sent });
-      }
-      if (conv.startsWith("g:")) {
-        const groupId = conv.slice(2);
-        if (!this.first("SELECT 1 AS x FROM members WHERE group_id = ? AND user_id = ?", groupId, me.id)) {
-          return json({ error: "not_member" }, 403);
-        }
-        const others = this.all("SELECT user_id FROM members WHERE group_id = ? AND user_id != ?", groupId, me.id);
-        for (const row of others) {
-          if (this.blocked(row.user_id, me.id)) continue;
-          this.sql.exec(
-            "INSERT INTO inbox (id, to_user, conv, sender, body, sent) VALUES (?, ?, ?, ?, ?, ?)",
-            id + row.user_id.slice(0, 8),
-            row.user_id,
-            conv,
-            me.id,
-            payload,
-            sent,
-          );
-        }
-        return json({ id, sent });
-      }
-      return json({ error: "invalid" }, 400);
+      const result = this.postMessage(me, body?.conv, body?.body, body?.cid);
+      this.deliverLive(result.deliveries);
+      return json(result.data, result.status);
     }
 
-    if (method === "GET" && path === "/inbox") {
-      const rows = this.all(
-        "SELECT i.id, i.conv, i.body, i.sent, u.id AS sid, u.handle, u.name FROM inbox i LEFT JOIN users u ON u.id = i.sender WHERE i.to_user = ? ORDER BY i.sent LIMIT 200",
-        me.id,
-      );
-      return json({
-        messages: rows.map((row) => ({
-          id: row.id,
-          conv: row.conv,
-          sent: row.sent,
-          body: JSON.parse(row.body),
-          sender: row.sid ? { id: row.sid, handle: row.handle, name: row.name } : null,
-        })),
-      });
-    }
+    if (method === "GET" && path === "/inbox") return json({ messages: this.inboxOf(me.id) });
     if (method === "POST" && path === "/inbox/ack") {
       const ids = Array.isArray(body?.ids) ? body.ids.filter((v) => typeof v === "string").slice(0, 500) : [];
       for (const id of ids) this.sql.exec("DELETE FROM inbox WHERE id = ? AND to_user = ?", id, me.id);
@@ -518,6 +834,7 @@ export class Hub extends DurableObject {
     if (method === "POST" && path === "/groups") {
       const name = cleanName(body?.name);
       if (!name) return json({ error: "invalid" }, 400);
+      if (this.groupCount(me.id) >= GROUPS_PER_USER) return json({ error: "too_many_groups" }, 409);
       const id = randomHex(16);
       let code = groupCode();
       while (this.first("SELECT 1 AS x FROM groups WHERE code = ?", code)) code = groupCode();
@@ -529,6 +846,13 @@ export class Hub extends DurableObject {
       const code = typeof body?.code === "string" ? body.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") : "";
       const group = this.first("SELECT * FROM groups WHERE code = ?", code);
       if (!group) return json({ error: "not_found" }, 404);
+      const already = this.first("SELECT 1 AS x FROM members WHERE group_id = ? AND user_id = ?", group.id, me.id);
+      if (!already) {
+        if (this.first("SELECT COUNT(*) AS n FROM members WHERE group_id = ?", group.id).n >= GROUP_MEMBERS) {
+          return json({ error: "group_full" }, 409);
+        }
+        if (this.groupCount(me.id) >= GROUPS_PER_USER) return json({ error: "too_many_groups" }, 409);
+      }
       this.sql.exec("INSERT OR IGNORE INTO members (group_id, user_id) VALUES (?, ?)", group.id, me.id);
       return json(this.groupInfo(group));
     }

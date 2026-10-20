@@ -15,6 +15,8 @@ import com.boomlistener.data.social.ChatMessage
 import com.boomlistener.data.social.Conversation
 import com.boomlistener.data.social.FriendProfile
 import com.boomlistener.data.social.HandleCheck
+import com.boomlistener.data.social.LinkStatus
+import com.boomlistener.data.social.SocialLive
 import com.boomlistener.data.social.MessageBody
 import com.boomlistener.data.social.MusicKind
 import com.boomlistener.data.social.ProfileImage
@@ -26,6 +28,7 @@ import com.boomlistener.data.social.TrackInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -88,13 +91,19 @@ internal class FakeSocial : SocialRepository {
     override suspend fun findByHandle(handle: String): SocialResult<FriendProfile> = SocialResult.NotFound
     override suspend fun profile(userId: String): SocialResult<FriendProfile> =
         SocialResult.Ok(FriendProfile(ana, sharing = true, now = TrackInfo("Oceano", "Djavan", null), updatedMs = 1, recent = emptyList(), blockedByMe = blocked))
-    override suspend fun activity(): SocialResult<List<FriendProfile>> = SocialResult.Ok(emptyList())
+    var fetchedPeople: List<FriendProfile> = emptyList()
+    var syncs = 0
+    override val live = MutableStateFlow(SocialLive())
+    override suspend fun activity(): SocialResult<List<FriendProfile>> = SocialResult.Ok(fetchedPeople)
     override suspend fun openDirect(user: SocialUser) = "dm:" + user.id
     override suspend fun send(conversationId: String, body: MessageBody): SocialResult<Unit> {
         sent += conversationId to body
         return SocialResult.Ok(Unit)
     }
-    override suspend fun sync(): SocialResult<Int> = SocialResult.Ok(0)
+    override suspend fun sync(): SocialResult<Int> {
+        syncs++
+        return SocialResult.Ok(0)
+    }
     override suspend fun createGroup(name: String): SocialResult<Conversation> = SocialResult.Invalid
     override suspend fun joinGroup(code: String): SocialResult<Conversation> = SocialResult.NotFound
     override suspend fun groupMembers(conversationId: String): SocialResult<List<SocialUser>> = SocialResult.Ok(listOf(ana))
@@ -193,5 +202,47 @@ class SocialViewModelsTest {
         vm.toggleBlock()
         assertTrue((vm.state.value as ProfileUiState.Ready).profile.blockedByMe)
         assertEquals("dm:a1", vm.openChat())
+    }
+
+    private fun listener(id: String, song: String) = FriendProfile(
+        user = SocialUser(id, id, id),
+        sharing = true,
+        now = TrackInfo(song, null, null),
+        updatedMs = null,
+        recent = emptyList(),
+        blockedByMe = false,
+    )
+
+    @Test
+    fun conectadoNaoFicaPerguntandoEUsaListaAoVivo() = runTest {
+        val social = FakeSocial().apply { account.value = SocialAccount("me", "eu", "Eu", "t", sharing = true) }
+        val vm = SocialHomeViewModel(social)
+        val seen = mutableListOf<List<FriendProfile>>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.activity.collect { seen += it } }
+
+        // Sem conexão: consulta pelo HTTP.
+        social.fetchedPeople = listOf(listener("b", "Antiga"))
+        vm.refresh()
+        assertEquals(1, social.syncs)
+        assertEquals("Antiga", vm.activity.value.single().now?.title)
+
+        // Conectado: a lista vem ao vivo e refresh() não consulta.
+        social.live.value = SocialLive(LinkStatus.Online, listOf(listener("b", "Ao vivo")))
+        vm.refresh()
+        assertEquals(1, social.syncs)
+        assertEquals("Ao vivo", vm.activity.value.single().now?.title)
+    }
+
+    @Test
+    fun descansandoMostraAteQuandoENaoInsiste() = runTest {
+        val social = FakeSocial().apply { account.value = SocialAccount("me", "eu", "Eu", "t", sharing = false) }
+        val vm = SocialHomeViewModel(social)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.restingUntil.collect {} }
+        social.live.value = SocialLive(LinkStatus.Resting(1_000L))
+        assertEquals(1_000L, vm.restingUntil.value)
+        vm.refresh()
+        assertEquals(0, social.syncs)
+        social.live.value = SocialLive(LinkStatus.Online)
+        assertNull(vm.restingUntil.value)
     }
 }

@@ -70,12 +70,27 @@ interface SocialRepository {
     suspend fun markRead(conversationId: String)
     suspend fun deleteConversation(conversationId: String)
 
+    /**
+     * A conexão ao vivo: estado e quem está ouvindo o quê. Com ela aberta,
+     * mensagens chegam sozinhas (sem ficar perguntando ao servidor).
+     */
+    val live: StateFlow<SocialLive> get() = NO_LIVE
+
+    /**
+     * Pede (ou dispensa) a conexão ao vivo por um motivo: "ui" (app na tela),
+     * "playing" (música tocando com o "ouvindo agora" ligado). Fica conectado
+     * enquanto houver algum motivo.
+     */
+    fun keepConnected(reason: String, wanted: Boolean) {}
+
     /** "Ouvindo agora" (só vai se o compartilhamento estiver ligado). */
     suspend fun publishNowPlaying(track: TrackInfo?)
 
     /** Música ouvida (entra nos "recentes" que os amigos veem, se compartilhar). */
     suspend fun publishListened(track: TrackInfo)
 }
+
+private val NO_LIVE: StateFlow<SocialLive> = kotlinx.coroutines.flow.MutableStateFlow(SocialLive())
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */
 object SocialData {

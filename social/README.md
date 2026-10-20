@@ -4,6 +4,15 @@ Guarda os perfis (@nome), entrega as mensagens das conversas e grupos e o
 "ouvindo agora" de quem escolheu compartilhar. Nunca passa áudio. As mensagens
 ficam aqui só até o app de quem recebe confirmar; o histórico mora no celular.
 
+Com o app aberto, o celular fica ligado por WebSocket com hibernação
+(`/v1/ws`): o Hub dorme entre as mensagens e não gasta duração. O plano para
+caber no gratuito está em `docs/PLANO-SOCIAL.md`.
+
+## Alerta de uso (recomendado)
+
+Cloudflare → **Notifications → Add → Workers / Durable Objects usage**: avise
+quando passar de 70% de qualquer limite diário.
+
 ## Publicar (uma vez)
 
 Igual ao Worker do Last.fm, importando do GitHub:

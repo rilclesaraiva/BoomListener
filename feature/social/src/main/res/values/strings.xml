@@ -122,4 +122,6 @@
     <string name="feature_social_color">Profile color</string>
     <string name="feature_social_color_hex">Or type a color (hex)</string>
     <string name="feature_social_color_none">No color</string>
+    <string name="feature_social_resting_title">The social side is resting until %1$s</string>
+    <string name="feature_social_resting_message">Today’s free server limit ran out. Music keeps playing as usual, and messages go out when it’s back.</string>
 </resources>

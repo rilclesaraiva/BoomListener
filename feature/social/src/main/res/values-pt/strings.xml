@@ -122,4 +122,6 @@
     <string name="feature_social_color">Cor do perfil</string>
     <string name="feature_social_color_hex">Ou digite uma cor (hexadecimal)</string>
     <string name="feature_social_color_none">Sem cor</string>
+    <string name="feature_social_resting_title">O social está descansando até %1$s</string>
+    <string name="feature_social_resting_message">O limite gratuito do servidor acabou por hoje. As músicas continuam tocando normalmente, e as mensagens saem quando ele voltar.</string>
 </resources>
