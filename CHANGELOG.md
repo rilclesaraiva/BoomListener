@@ -4,6 +4,12 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.35.1] — 2026-10-21
+
+### 🐛 Fixes
+- Going back from an album, artist or any other screen now always slides the right way. Sometimes the screen slid off the wrong way and stayed faded on top of the previous one.
+- Swiping between songs in the full player no longer flashes the previous cover for a moment.
+
 ## [0.35.0] — 2026-10-20
 
 ### ✨ New

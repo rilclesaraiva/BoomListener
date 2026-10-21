@@ -93,6 +93,16 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch(): Boo
     initialState.destination.route in topLevelRoutes && targetState.destination.route in topLevelRoutes
 
 /**
+ * Voltar (e não abrir): a tela de destino está abaixo da atual na pilha, ou a
+ * atual já saiu dela (voltar concluído).
+ */
+internal fun isBackNavigation(stack: List<NavBackStackEntry>, from: NavBackStackEntry, to: NavBackStackEntry): Boolean {
+    val fromIndex = stack.indexOfFirst { it.id == from.id }
+    val toIndex = stack.indexOfFirst { it.id == to.id }
+    return fromIndex == -1 || (toIndex != -1 && toIndex < fromIndex)
+}
+
+/**
  * Esqueleto do app: mini player + barra de navegação + o grafo de telas, e o
  * player em tela cheia como painel por cima de tudo. É o ÚNICO lugar que
  * conhece todas as features e liga uma à outra (ver CLAUDE.md).
@@ -125,20 +135,32 @@ fun BoomListenerApp() {
     // a tela acompanha o dedo e termina o movimento ao soltar, sem salto.
     val slideSpec: FiniteAnimationSpec<IntOffset> = boomScreenSpec()
     val fadeSpec: FiniteAnimationSpec<Float> = boomEffectsSpec()
+    // A direção (abrir ou voltar) é decidida aqui, pela pilha de telas, e não
+    // pelo NavHost: no voltar preditivo ele às vezes usava as animações de
+    // "abrir" (a tela de cima saía para a esquerda, transparente, por cima da
+    // de baixo). Assim as quatro animações sempre concordam com o movimento.
+    val forwardEnter = slideInHorizontally(slideSpec) { it }
+    val forwardExit = slideOutHorizontally(slideSpec) { -it / 4 } + fadeOut(fadeSpec, targetAlpha = 0.4f)
+    val backEnter = slideInHorizontally(slideSpec) { -it / 4 } + fadeIn(fadeSpec, initialAlpha = 0.4f)
+    val backExit = slideOutHorizontally(slideSpec) { it }
+    fun AnimatedContentTransitionScope<NavBackStackEntry>.goingBack(): Boolean =
+        isBackNavigation(navController.currentBackStack.value, initialState, targetState)
     val enter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        if (isTabSwitch()) fadeIn(fadeSpec) else slideInHorizontally(slideSpec) { it }
+        when {
+            isTabSwitch() -> fadeIn(fadeSpec)
+            goingBack() -> backEnter
+            else -> forwardEnter
+        }
     }
     val exit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-        if (isTabSwitch()) fadeOut(fadeSpec)
-        else slideOutHorizontally(slideSpec) { -it / 4 } + fadeOut(fadeSpec, targetAlpha = 0.4f)
+        when {
+            isTabSwitch() -> fadeOut(fadeSpec)
+            goingBack() -> backExit
+            else -> forwardExit
+        }
     }
-    val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        if (isTabSwitch()) fadeIn(fadeSpec)
-        else slideInHorizontally(slideSpec) { -it / 4 } + fadeIn(fadeSpec, initialAlpha = 0.4f)
-    }
-    val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-        if (isTabSwitch()) fadeOut(fadeSpec) else slideOutHorizontally(slideSpec) { it }
-    }
+    val popEnter = enter
+    val popExit = exit
 
     // App favorito para compartilhar: aparece como "Compartilhar com…" nos menus.
     val favoriteShareApp by ShareTarget.favorite(context).collectAsStateWithLifecycle()

@@ -219,7 +219,9 @@ internal fun NowPlayingContent(
                             pageSpacing = 24.dp,
                             modifier = Modifier.fillMaxSize(),
                         ) { song ->
-                            val cover = if (song.uri == item.uri) artwork else rememberArtwork(viewModel, song.uri, sizePx)
+                            // Cada página carrega a própria capa (usar a da música atual
+                            // fazia a capa anterior piscar na página nova ao trocar).
+                            val cover = rememberArtwork(viewModel, song.uri, sizePx)
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 BoomArtwork(
                                     image = cover,
