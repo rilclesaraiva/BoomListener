@@ -10,8 +10,10 @@ import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.StatsData
 import com.boomlistener.data.social.SocialData
 import com.boomlistener.data.social.TrackInfo
+import com.boomlistener.feature.social.NowPlayingCovers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
@@ -32,18 +34,35 @@ class BoomApplication : Application() {
             appScope.launch {
                 history.record(HistoryEntry(play.uri, play.title, play.artist, play.album, play.timestampMs))
                 // Amigos: só vai se a pessoa ligou "compartilhar o que estou ouvindo".
-                social.publishListened(TrackInfo(play.title, play.artist, play.album))
+                if (social.account.value?.sharing == true) {
+                    val cover = NowPlayingCovers.find(this@BoomApplication, play.title, play.artist, play.album)
+                    social.publishListened(TrackInfo(play.title, play.artist, play.album, cover))
+                }
             }
         }
         // "Ouvindo agora": manda só quando muda (tocar, trocar de música, pausar).
+        // Vai primeiro sem capa (rápido) e de novo com a capa do Deezer, quando
+        // achar: os amigos não têm o arquivo, então precisam de uma capa de fora.
         var lastNow: TrackInfo? = null
         var sentOnce = false
+        var coverJob: Job? = null
         PlaybackHooks.onNowPlaying = { play ->
             val track = play?.let { TrackInfo(it.title, it.artist, it.album) }
-            if (!sentOnce || track != lastNow) {
+            if (!sentOnce || track != lastNow?.copy(coverUrl = null)) {
                 sentOnce = true
                 lastNow = track
-                appScope.launch { social.publishNowPlaying(track) }
+                coverJob?.cancel()
+                coverJob = appScope.launch {
+                    social.publishNowPlaying(track)
+                    if (track != null && social.account.value?.sharing == true) {
+                        val cover = NowPlayingCovers.find(this@BoomApplication, track.title, track.artist, track.album)
+                        if (cover != null && lastNow == track) {
+                            val withCover = track.copy(coverUrl = cover)
+                            lastNow = withCover
+                            social.publishNowPlaying(withCover)
+                        }
+                    }
+                }
             }
         }
         PlaybackHooks.onPlayCounted = { play ->

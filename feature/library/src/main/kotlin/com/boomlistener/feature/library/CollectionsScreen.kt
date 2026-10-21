@@ -16,10 +16,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -55,9 +57,11 @@ import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import com.boomlistener.core.designsystem.component.BoomSearchField
 import com.boomlistener.core.designsystem.component.BoomTopActions
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import androidx.compose.foundation.lazy.rememberLazyListState
+import com.boomlistener.core.model.ExternalArtist
 import com.boomlistener.core.model.Track
 
 /**
@@ -76,6 +80,7 @@ internal fun CollectionsScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val artistSearch by viewModel.artistSearch.collectAsStateWithLifecycle()
     var creating by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(COLLECTIONS_ROUTE, listState)
@@ -118,8 +123,21 @@ internal fun CollectionsScreen(
                         }
                     }
                     CollectionKind.Artists -> {
-                        if (current.artists.isEmpty()) item(key = "empty") { EmptySection(R.string.feature_library_artists_empty) }
-                        items(current.artists, key = { "a:" + it.key }) { group ->
+                        // Busca em pílula: os seus artistas e, do Deezer, os que você não tem.
+                        item(key = "artistSearch") {
+                            BoomSearchField(
+                                query = artistSearch.query,
+                                onQueryChange = viewModel::onArtistQueryChange,
+                                placeholder = stringResource(R.string.feature_library_search_artists),
+                                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
+                            )
+                        }
+                        val searching = artistSearch.query.isNotBlank()
+                        val local = if (searching) matchingLocalArtists(current.artists, artistSearch.query) else current.artists
+                        if (current.artists.isEmpty() && !searching) {
+                            item(key = "empty") { EmptySection(R.string.feature_library_artists_empty) }
+                        }
+                        items(local, key = { "a:" + it.key }) { group ->
                             GroupRow(
                                 name = group.name,
                                 count = group.tracks.size,
@@ -129,6 +147,17 @@ internal fun CollectionsScreen(
                                 onClick = { onOpenArtist(group.name) },
                                 modifier = Modifier.animateItem(),
                             )
+                        }
+                        if (searching) {
+                            onlineArtists(
+                                search = artistSearch,
+                                online = onlineArtistsNotOwned(artistSearch.online, current.artists),
+                                viewModel = viewModel,
+                                onOpenArtist = onOpenArtist,
+                            )
+                            // Sem este espaço, poucos resultados deixariam a lista mais curta
+                            // que a tela e ela desceria a cada letra (a busca pularia de lugar).
+                            item(key = "searchRoom") { Spacer(Modifier.fillParentMaxHeight()) }
                         }
                     }
                     CollectionKind.Playlists -> {
@@ -180,7 +209,7 @@ internal fun CollectionsScreen(
                 }
               }
                 // Letra de cada linha da lista, na mesma ordem dos itens acima.
-                val labels = remember(current) { collectionLabels(current) }
+                val labels = remember(current, artistSearch) { collectionLabels(current, artistSearch) }
                 BoomFastScroller(
                     state = listState,
                     label = { index -> labels.getOrNull(index) ?: labels.firstOrNull { it != null } },
@@ -336,7 +365,7 @@ private fun EmptySection(message: Int) {
 }
 
 /** O rótulo do índice de cada item da lista (null nos que não são grupo). */
-private fun collectionLabels(state: CollectionsUiState.Ready): List<String?> = buildList {
+private fun collectionLabels(state: CollectionsUiState.Ready, search: ArtistSearch): List<String?> = buildList {
     add(null) // pílulas
     when (state.selected) {
         CollectionKind.Genres -> {
@@ -344,8 +373,19 @@ private fun collectionLabels(state: CollectionsUiState.Ready): List<String?> = b
             state.genres.forEach { add(boomIndexLabel(it.name)) }
         }
         CollectionKind.Artists -> {
-            if (state.artists.isEmpty()) add(null)
-            state.artists.forEach { add(boomIndexLabel(it.name)) }
+            add(null) // busca
+            val searching = search.query.isNotBlank()
+            if (!searching) {
+                if (state.artists.isEmpty()) add(null)
+                state.artists.forEach { add(boomIndexLabel(it.name)) }
+            } else {
+                matchingLocalArtists(state.artists, search.query).forEach { add(boomIndexLabel(it.name)) }
+                add(null) // título "No Deezer"
+                val online = onlineArtistsNotOwned(search.online, state.artists)
+                if (online.isEmpty()) add(null) // carregando / nada / falhou
+                online.forEach { add(boomIndexLabel(it.name)) }
+                add(null) // espaço do fim
+            }
         }
         CollectionKind.Playlists -> {
             add(null) // botão de nova playlist
@@ -358,3 +398,71 @@ private fun collectionLabels(state: CollectionsUiState.Ready): List<String?> = b
         }
     }
 }
+
+/**
+ * Artistas do Deezer que você não tem no aparelho, abaixo dos seus. Tocar
+ * abre a página do artista, como os do aparelho.
+ */
+private fun LazyListScope.onlineArtists(
+    search: ArtistSearch,
+    online: List<ExternalArtist>,
+    viewModel: CollectionsViewModel,
+    onOpenArtist: (String) -> Unit,
+) {
+    item(key = "onlineTitle") {
+        Text(
+            stringResource(R.string.feature_library_artists_online),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp),
+        )
+    }
+    if (online.isEmpty()) {
+        item(key = "onlineState") {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+                when {
+                    search.loading -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                    search.failed -> Text(
+                        stringResource(R.string.feature_library_artists_online_failed),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    else -> Text(
+                        stringResource(R.string.feature_library_artists_online_none),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+    items(online, key = { "dz:" + it.id }) { artist ->
+        OnlineArtistRow(artist, viewModel, onClick = { onOpenArtist(artist.name) }, modifier = Modifier.animateItem())
+    }
+}
+
+@Composable
+private fun OnlineArtistRow(
+    artist: ExternalArtist,
+    viewModel: CollectionsViewModel,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
+    val image by produceState<ImageBitmap?>(initialValue = null, artist.pictureUrl) {
+        value = artist.pictureUrl?.let { viewModel.artistPicture(it, px)?.asImageBitmap() }
+    }
+    ListItem(
+        modifier = modifier.clickable(onClick = onClick),
+        leadingContent = { BoomArtwork(image = image, fallbackText = artist.name, modifier = Modifier.clip(CircleShape)) },
+        headlineContent = { Text(artist.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        supportingContent = {
+            if (artist.fans > 0) {
+                Text(pluralStringResource(R.plurals.feature_library_fans, artist.fans.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), formatFans(artist.fans)))
+            }
+        },
+    )
+}
+
+/** Número de fãs com a separação de milhar do idioma (1.234.567). */
+private fun formatFans(fans: Long): String = java.text.NumberFormat.getIntegerInstance().format(fans)

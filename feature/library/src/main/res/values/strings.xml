@@ -65,4 +65,12 @@
     <string name="feature_library_done">Done</string>
     <string name="feature_library_search_songs">Search songs</string>
     <string name="feature_library_details">Details</string>
+    <string name="feature_library_search_artists">Search artists</string>
+    <string name="feature_library_artists_online">More artists</string>
+    <string name="feature_library_artists_online_failed">Couldn’t search online. Check your connection.</string>
+    <string name="feature_library_artists_online_none">No other artists found.</string>
+    <plurals name="feature_library_fans">
+        <item quantity="one">%1$s fan</item>
+        <item quantity="other">%1$s fans</item>
+    </plurals>
 </resources>

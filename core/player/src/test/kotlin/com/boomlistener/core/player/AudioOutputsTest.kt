@@ -63,4 +63,12 @@ class AudioOutputsTest {
         val outputs = buildOutputs(listOf(phone), preferredId = 10, systemRouteId = null)
         assertEquals(2, outputs.single { it.active }.id)
     }
+
+    @Test
+    fun voltarAoFoneMarcaOFoneMesmoComARotaAtrasada() {
+        // Estava no celular; tocou no fone (a saída automática). O sistema ainda
+        // informa o celular por um instante: vale o que foi tocado.
+        val outputs = buildOutputs(listOf(phone, wired), preferredId = 5, systemRouteId = 2)
+        assertEquals(listOf(5), outputs.filter { it.active }.map { it.id })
+    }
 }

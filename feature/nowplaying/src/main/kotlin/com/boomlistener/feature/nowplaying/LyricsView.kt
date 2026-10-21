@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,6 +63,7 @@ internal fun LyricsView(
     onSeek: (Long) -> Unit,
     onRetry: () -> Unit,
     onTap: () -> Unit,
+    scroll: LyricsScroll,
     modifier: Modifier = Modifier,
 ) {
     // Toques que nenhuma linha usou (espaço vazio, mensagens) voltam para a capa.
@@ -77,8 +78,17 @@ internal fun LyricsView(
                 TextButton(onClick = onRetry) { Text(stringResource(R.string.feature_nowplaying_lyrics_retry)) }
             },
         )
-        is LyricsUiState.Ready -> LyricsList(state.lyrics, positionMs, onSeek, onTap, tapModifier)
+        is LyricsUiState.Ready -> LyricsList(state.lyrics, positionMs, onSeek, onTap, scroll, tapModifier)
     }
+}
+
+/**
+ * Onde a letra estava: fica fora da tela da letra, então ir à capa e voltar
+ * mantém o ponto da leitura (só recomeça do topo quando a música muda).
+ */
+internal class LyricsScroll {
+    val list = LazyListState()
+    val lastUserScroll = mutableLongStateOf(0L)
 }
 
 @Composable
@@ -87,11 +97,12 @@ private fun LyricsList(
     positionMs: Long,
     onSeek: (Long) -> Unit,
     onTap: () -> Unit,
+    scroll: LyricsScroll,
     modifier: Modifier,
 ) {
-    val listState = rememberLazyListState()
+    val listState = scroll.list
     val current = if (lyrics.synced) currentLyricIndex(lyrics.lines, positionMs) else -1
-    var lastUserScroll by remember { mutableLongStateOf(0L) }
+    var lastUserScroll by scroll.lastUserScroll
     val userScrollDetector = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {

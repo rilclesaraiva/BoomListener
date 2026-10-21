@@ -50,6 +50,12 @@ interface DeezerRepository {
      */
     suspend fun artistReleases(artistId: Long): ArtistReleasesResult = ArtistReleasesResult.Failed
 
+    /**
+     * Procura artistas pelo nome (busca da Biblioteca → Artistas, para achar
+     * quem não está no aparelho). null = sem internet ou o Deezer falhou.
+     */
+    suspend fun searchArtists(query: String): List<ExternalArtist>? = null
+
     /** Um álbum do Deezer com a lista de músicas. */
     suspend fun album(albumId: Long): AlbumResult
 

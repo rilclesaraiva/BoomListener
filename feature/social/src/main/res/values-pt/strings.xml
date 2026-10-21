@@ -144,8 +144,6 @@
     <string name="feature_social_friends_listening">O que seus amigos estão ouvindo</string>
     <string name="feature_social_friends_none">Adicione amigos pelo @ para ver o que eles estão ouvindo.</string>
     <string name="feature_social_last_heard_at">Ouviu %1$s</string>
-    <string name="feature_social_networks_add">Adicionar suas redes</string>
-    <string name="feature_social_networks_edit">Editar redes</string>
     <string name="feature_social_networks_hint">Digite só o seu @ ou o número. O app monta os links, então ninguém cai numa página falsa.</string>
     <string name="feature_social_networks_invalid">Só letras, números, ponto, traço e sublinhado.</string>
     <string name="feature_social_networks_title">Suas redes</string>
@@ -153,7 +151,6 @@
     <string name="feature_social_numbers_invalid">Não parece um número de telefone.</string>
     <string name="feature_social_numbers_share">Mostrar meu número aos amigos</string>
     <string name="feature_social_numbers_warning">Seu número fica visível para os seus amigos no app. Ninguém mais vê.</string>
-    <string name="feature_social_numbers_title">Números (só para amigos)</string>
     <string name="feature_social_open_link">Abrir link</string>
     <string name="feature_social_react_offline">Sem conexão agora</string>
     <string name="feature_social_recommend_no_friends">Adicione amigos na aba Amigos para recomendar músicas a eles.</string>
@@ -168,4 +165,9 @@
     <string name="feature_social_unfriend_message">Vocês param de ver o que o outro está ouvindo, e o número.</string>
     <string name="feature_social_unfriend_title">Desfazer a amizade com %1$s?</string>
     <string name="feature_social_you_have_it">Você tem esta música</string>
+    <string name="feature_social_network_add">Adicionar rede</string>
+    <string name="feature_social_network_by_number">%1$s (número)</string>
+    <string name="feature_social_done">Pronto</string>
+    <string name="feature_social_close">Fechar</string>
+    <string name="feature_social_settings">Ajustes</string>
 </resources>

@@ -35,7 +35,6 @@ fun NavGraphBuilder.socialScreen(
     navController: NavController,
     onOpenArtist: (artistName: String) -> Unit,
     onOpenHistory: () -> Unit,
-    onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val back: () -> Unit = { navController.popBackStack() }
@@ -73,7 +72,6 @@ fun NavGraphBuilder.socialScreen(
             onOpenFriend = { navController.navigateToFriend(it) },
             onOpenArtist = onOpenArtist,
             onOpenHistory = onOpenHistory,
-            onOpenReleases = onOpenReleases,
             onOpenSettings = onOpenSettings,
         )
     }

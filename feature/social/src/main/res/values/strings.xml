@@ -144,8 +144,6 @@
     <string name="feature_social_friends_listening">What your friends are listening to</string>
     <string name="feature_social_friends_none">Add friends by their @ to see what they’re listening to.</string>
     <string name="feature_social_last_heard_at">Last heard %1$s</string>
-    <string name="feature_social_networks_add">Add your social networks</string>
-    <string name="feature_social_networks_edit">Edit social networks</string>
     <string name="feature_social_networks_hint">Type only your @ or number. The app builds the links, so nobody gets sent to a fake page.</string>
     <string name="feature_social_networks_invalid">Only letters, numbers, dots, dashes and underscores.</string>
     <string name="feature_social_networks_title">Your social networks</string>
@@ -153,7 +151,6 @@
     <string name="feature_social_numbers_invalid">Doesn’t look like a phone number.</string>
     <string name="feature_social_numbers_share">Show my number to my friends</string>
     <string name="feature_social_numbers_warning">Your number is visible to your friends in the app. It’s never shown to anyone else.</string>
-    <string name="feature_social_numbers_title">Phone numbers (friends only)</string>
     <string name="feature_social_open_link">Open link</string>
     <string name="feature_social_react_offline">Not connected right now</string>
     <string name="feature_social_recommend_no_friends">Add friends in the Friends tab to recommend songs to them.</string>
@@ -168,4 +165,9 @@
     <string name="feature_social_unfriend_message">You’ll stop seeing what each other is listening to, and their number.</string>
     <string name="feature_social_unfriend_title">Remove %1$s from your friends?</string>
     <string name="feature_social_you_have_it">You have this song</string>
+    <string name="feature_social_network_add">Add network</string>
+    <string name="feature_social_network_by_number">%1$s (number)</string>
+    <string name="feature_social_done">Done</string>
+    <string name="feature_social_close">Close</string>
+    <string name="feature_social_settings">Settings</string>
 </resources>

@@ -3,7 +3,10 @@
 
 package com.boomlistener.core.designsystem.component
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
+import com.boomlistener.core.designsystem.theme.boomScreenSpec
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -25,14 +28,9 @@ val LocalTabReselect = staticCompositionLocalOf<Flow<String>> { emptyFlow() }
 fun ScrollToTopOnReselect(route: String, state: LazyListState) {
     val events = LocalTabReselect.current
     val topBar = LocalTopBarState.current
+    val spec = boomScreenSpec<Float>()
     LaunchedEffect(events, state, route) {
-        events.filter { it == route }.collect {
-            // Lá do fim da lista, animar item por item engasga (cada linha é
-            // medida e carrega capa no caminho). Pula para perto do topo sem
-            // animação e anima só o finalzinho, que fica suave.
-            if (state.firstVisibleItemIndex > NEAR_TOP) state.scrollToItem(NEAR_TOP)
-            state.animateScrollToItem(0)
-        }
+        events.filter { it == route }.collect { state.scrollToTopSmoothly(spec) }
     }
     // De volta ao topo (por toque na aba ou de qualquer jeito): a barra de cima
     // volta à cor normal, sem ficar com o tom de "rolado".
@@ -44,5 +42,38 @@ fun ScrollToTopOnReselect(route: String, state: LazyListState) {
     }
 }
 
-/** Até quantos itens do topo a subida é animada de verdade. */
-private const val NEAR_TOP = 6
+/**
+ * Sobe até o topo num movimento só, sem paradas no caminho.
+ *
+ * `animateScrollToItem` com o alvo fora da tela anda em etapas (chuta uma
+ * distância, mede, corrige), e cada etapa vira uma travadinha, ainda mais
+ * passando por seções grandes como as do Início. Aqui a distância é conhecida
+ * de antemão: se o topo está à vista, é a posição dele; se não, a lista pula
+ * (sem animação) para exatamente uma tela abaixo do topo e anima esses pixels
+ * de uma vez, com uma mola só.
+ */
+suspend fun LazyListState.scrollToTopSmoothly(spec: AnimationSpec<Float>) {
+    val viewport = layoutInfo.viewportSize.height
+    val firstVisible = layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }
+    if (firstVisible != null) {
+        val distance = -firstVisible.offset
+        if (distance > 0) animateScrollBy(-distance.toFloat(), spec)
+        scrollToItem(0)
+        return
+    }
+    if (viewport <= 0) {
+        scrollToItem(0)
+        return
+    }
+    scrollToItem(0, viewport)
+    // A lista acaba antes (pouco conteúdo): o pulo foi encurtado. Mede de novo.
+    val item0 = layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }
+    val distance = when {
+        item0 != null -> -item0.offset
+        firstVisibleItemIndex == 0 -> firstVisibleItemScrollOffset
+        else -> viewport
+    }
+    if (distance > 0) animateScrollBy(-distance.toFloat(), spec)
+    // Garante o topo exato (arredondamentos da mola).
+    scrollToItem(0)
+}

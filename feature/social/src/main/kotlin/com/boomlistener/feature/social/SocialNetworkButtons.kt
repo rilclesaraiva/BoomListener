@@ -5,8 +5,9 @@ package com.boomlistener.feature.social
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -59,10 +60,10 @@ internal fun NetworkIcon(@DrawableRes icon: Int, modifier: Modifier = Modifier) 
 }
 
 /**
- * Os botões das redes de um perfil: só as que a pessoa preencheu. O link é
- * montado pelo app a partir do @ ou do número (nunca um link de fora).
+ * Os botões das redes de um perfil: só as que a pessoa preencheu, como
+ * pílulas numa fila que desliza para o lado. O link é montado pelo app a
+ * partir do @ ou do número (nunca um link de fora).
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun NetworkButtons(
     links: Map<SocialNetwork, String>,
@@ -71,10 +72,12 @@ internal fun NetworkButtons(
 ) {
     if (links.isEmpty() && numbers.isEmpty()) return
     val context = LocalContext.current
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp, androidx.compose.ui.Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
     ) {
         numbers.forEach { (network, digits) ->
             FilledTonalButton(onClick = { context.openUrl(numberUrl(network, digits)) }) {

@@ -674,13 +674,19 @@ private fun JSONObject.str(name: String): String? = optString(name).takeIf { it.
 
 private fun parseTrack(json: JSONObject?): TrackInfo? {
     val title = json?.str("title") ?: return null
-    return TrackInfo(title, json.str("artist"), json.str("album"))
+    return TrackInfo(title, json.str("artist"), json.str("album"), json.str("coverUrl")?.takeIf(::isDeezerCover))
 }
 
 private fun trackToJson(track: TrackInfo) = JSONObject()
     .put("title", track.title)
     .put("artist", track.artist ?: JSONObject.NULL)
     .put("album", track.album ?: JSONObject.NULL)
+    .apply { track.coverUrl?.takeIf(::isDeezerCover)?.let { put("coverUrl", it) } }
+
+/** Só capas do CDN do Deezer (o mesmo filtro do servidor). */
+internal fun isDeezerCover(url: String): Boolean = DEEZER_COVER.matches(url)
+
+private val DEEZER_COVER = Regex("""^https://([a-z0-9-]+\.)*dzcdn\.net/[^\s"<>]*$""")
 
 private fun parseProfile(json: JSONObject): FriendProfile {
     val recent = json.optJSONArray("recent") ?: JSONArray()

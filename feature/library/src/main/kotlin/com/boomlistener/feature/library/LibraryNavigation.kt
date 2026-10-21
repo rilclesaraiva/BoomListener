@@ -65,7 +65,13 @@ fun NavGraphBuilder.libraryScreen(
     composable(COLLECTIONS_ROUTE) {
         val context = LocalContext.current.applicationContext
         val viewModel = viewModel {
-            CollectionsViewModel(LibraryData.repository(context), PlaylistData.repository(context))
+            val deezer = DeezerData.repository(context)
+            CollectionsViewModel(
+                library = LibraryData.repository(context),
+                playlistRepository = PlaylistData.repository(context),
+                searchArtistsOnline = deezer::searchArtists,
+                remoteImage = deezer::image,
+            )
         }
         CollectionsScreen(
             viewModel = viewModel,

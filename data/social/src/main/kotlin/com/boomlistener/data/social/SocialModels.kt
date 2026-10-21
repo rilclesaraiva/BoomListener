@@ -27,7 +27,13 @@ data class SocialAccount(
 data class SocialUser(val id: String, val handle: String, val name: String)
 
 /** Só informação da música (nunca o arquivo). */
-data class TrackInfo(val title: String, val artist: String?, val album: String?)
+data class TrackInfo(
+    val title: String,
+    val artist: String?,
+    val album: String?,
+    /** Capa (imagem do Deezer), para os amigos verem; null se não achou. */
+    val coverUrl: String? = null,
+)
 
 data class ListenedTrack(val track: TrackInfo, val atMs: Long)
 

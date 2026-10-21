@@ -4,6 +4,28 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.32.0] — 2026-10-20
+
+### ✨ New
+- **Swipe to change songs.** On the mini player or on the cover in the player, swipe left for the next song and right for the previous one.
+- **Find artists you don't have yet.** Library → Artists now has a search field. It shows your own artists and, below them, more artists from the internet. Tap one to open their page.
+- **Friends see your song's cover.** When you share what you're listening to, your friends now see the album cover too.
+- **Social networks moved into "Edit profile".** Your networks show up as buttons in a row you can swipe. Tap "Add network", pick the network and type your @ or number.
+
+### 🐛 Fixes
+- Tapping Home to go back to the top now scrolls all the way up in one smooth move, with no stops along the way.
+- Typing in the Home search no longer makes the screen jump.
+- The scroll bar on the right of long lists now moves smoothly instead of jumping song by song.
+- Going back from the cover to the lyrics keeps your place in the lyrics.
+- In Devices, the device you pick is the one that gets marked. Switching to headphones no longer left the phone marked.
+- "Edit profile" no longer closes when you swipe it down by accident. Close it with the X, or by tapping outside it.
+
+### 🎨 Visual tweaks
+- What your friends are listening to now shows one card per friend, in a row you can swipe.
+- The bell for Releases is hidden on your profile.
+- Menu options are in alphabetical order.
+- In Portuguese, the playlist menu now says "Remover da playlist".
+
 ## [0.31.0] — 2026-10-20
 
 ### ✨ New

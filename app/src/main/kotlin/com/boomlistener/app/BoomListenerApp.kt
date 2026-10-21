@@ -280,7 +280,6 @@ fun BoomListenerApp() {
                     navController = navController,
                     onOpenArtist = navController::navigateToArtist,
                     onOpenHistory = openHistory,
-                    onOpenReleases = openReleases,
                     onOpenSettings = openSettings,
                 )
                 artistScreen(

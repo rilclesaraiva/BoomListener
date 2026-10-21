@@ -155,6 +155,7 @@ internal class MyProfileViewModel(
         banner: ImageChange,
         avatar: ImageChange,
         color: String = social.account.value?.color.orEmpty(),
+        networks: NetworksChange? = null,
         onDone: () -> Unit,
     ) {
         val account = social.account.value ?: return
@@ -169,6 +170,9 @@ internal class MyProfileViewModel(
             val cleanBio = bio.trim().take(MAX_BIO)
             if (cleanBio != account.bio) ok = social.updateBio(cleanBio) is SocialResult.Ok && ok
             if (!color.equals(account.color, ignoreCase = true)) ok = social.updateColor(color) is SocialResult.Ok && ok
+            if (networks != null) {
+                ok = social.updateLinks(networks.links, networks.numbers, networks.shareNumbers) is SocialResult.Ok && ok
+            }
             for ((kind, change) in listOf(ProfileImage.Banner to banner, ProfileImage.Avatar to avatar)) {
                 when (change) {
                     ImageChange.Keep -> Unit
@@ -231,3 +235,10 @@ internal class MyProfileViewModel(
         const val RECENT = 15
     }
 }
+
+/** Redes mexidas no "Editar perfil" (os @ limpos e os números com código do país). */
+internal data class NetworksChange(
+    val links: Map<SocialNetwork, String>,
+    val numbers: Map<NumberNetwork, String>,
+    val shareNumbers: Boolean,
+)

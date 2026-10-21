@@ -3,9 +3,11 @@
 
 package com.boomlistener.feature.social
 
+import android.content.Context
 import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.normalizedForSearch
 import com.boomlistener.core.model.Track
+import com.boomlistener.data.deezer.DeezerData
 import com.boomlistener.data.deezer.DeezerRepository
 import com.boomlistener.data.deezer.LocalTrackInfo
 import com.boomlistener.data.deezer.TrackSearchResult
@@ -48,5 +50,33 @@ internal fun findLocalMatch(card: MusicCard, library: List<Track>): Track? {
     return library.firstOrNull { track ->
         track.title.normalizedForSearch() == title &&
             (artist == null || track.artist?.normalizedForSearch()?.startsWith(artist) == true)
+    }
+}
+
+/**
+ * A capa (do Deezer) da música que está tocando, para o "ouvindo agora" dos
+ * amigos: eles não têm o arquivo, então a capa de dentro dele não serve. Uma
+ * busca por música, guardada na memória (tocar de novo não pergunta outra vez).
+ */
+object NowPlayingCovers {
+    private const val KEEP = 200
+    private val cache = object : LinkedHashMap<String, String>(KEEP, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?) = size > KEEP
+    }
+
+    /** "" no cache = já procurou e não achou. */
+    suspend fun find(context: Context, title: String, artist: String?, album: String?): String? {
+        val key = listOf(title, artist.orEmpty(), album.orEmpty()).joinToString("\u0000") { it.normalizedForSearch() }
+        synchronized(cache) { cache[key] }?.let { return it.ifEmpty { null } }
+        val found = runCatching {
+            DeezerData.repository(context).searchTrack(LocalTrackInfo(title, artist, album, 0))
+        }.getOrNull() ?: return null
+        val cover = (found as? TrackSearchResult.Found)?.candidates?.firstOrNull()
+            ?.takeIf { it.confidence >= CARD_CONFIDENCE }?.coverUrl
+        // Falha de rede não fica guardada (tenta de novo na próxima).
+        if (found is TrackSearchResult.Found || found is TrackSearchResult.NotFound) {
+            synchronized(cache) { cache[key] = cover.orEmpty() }
+        }
+        return cover
     }
 }

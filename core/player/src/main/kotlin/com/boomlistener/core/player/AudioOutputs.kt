@@ -74,14 +74,28 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
     /** A saída escolhida na tela (o [PlaybackService] aplica no player). */
     val preferred = MutableStateFlow<Int?>(null)
 
+    /**
+     * A última saída tocada na lista, mesmo quando ela é a "automática" (e por
+     * isso não vai como preferida para o player). É ela que fica marcada: o
+     * sistema demora a informar a rota nova e, sem isto, a marca ficava na
+     * saída anterior (escolhia o fone e o celular continuava marcado).
+     */
+    private var chosen: Int? = null
+
     init {
         audioManager?.registerAudioDeviceCallback(
             object : AudioDeviceCallback() {
-                override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) = refresh()
-                override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) = refresh()
+                override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) = devicesChanged()
+                override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) = devicesChanged()
             },
             handler,
         )
+        refresh()
+    }
+
+    /** Ligou ou desligou algo: o automático volta a valer (o sistema decide de novo). */
+    private fun devicesChanged() {
+        chosen = preferred.value
         refresh()
     }
 
@@ -91,6 +105,7 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
             .mapNotNull { device -> outputKind(device.type)?.let { Candidate(device.id, device.productName?.toString(), it) } }
         // A saída escolhida sumiu (fone desligado): volta ao automático.
         if (preferred.value != null && devices.none { it.id == preferred.value }) preferred.value = null
+        if (chosen != null && devices.none { it.id == chosen }) chosen = null
         val systemRoute = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             runCatching {
                 manager.getAudioDevicesForAttributes(
@@ -100,7 +115,7 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
         } else {
             null
         }
-        list.value = buildOutputs(devices, preferred.value, systemRoute)
+        list.value = buildOutputs(devices, chosen ?: preferred.value, systemRoute)
     }
 
     override fun choose(id: Int?) {
@@ -108,6 +123,7 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
         // ligado) volta ao automático: assim o Android segue cuidando da troca.
         val natural = list.value.minByOrNull { priorityOf(it.kind) }?.id
         preferred.value = if (id == natural) null else id
+        chosen = id
         refresh()
     }
 

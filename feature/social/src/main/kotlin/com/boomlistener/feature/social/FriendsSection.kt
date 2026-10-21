@@ -7,7 +7,11 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -148,13 +152,25 @@ internal fun LazyListScope.friendsSection(
             )
         }
     }
-    items(friends, key = { "f-" + it.user.id }) { friend ->
-        FriendCard(
-            friend = friend,
-            onClick = { onOpenProfile(friend.user.id) },
-            onReact = { emoji -> viewModel.react(friend, emoji) },
-            modifier = Modifier.animateItem(),
-        )
+    if (friends.isNotEmpty()) {
+        // Um cartão por amigo, numa fila que desliza para o lado.
+        item(key = "friends-row") {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            ) {
+                items(friends, key = { "f-" + it.user.id }) { friend ->
+                    FriendCard(
+                        friend = friend,
+                        loadImage = viewModel::image,
+                        onClick = { onOpenProfile(friend.user.id) },
+                        onReact = { emoji -> viewModel.react(friend, emoji) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+        }
     }
     if (recommendations.isNotEmpty()) {
         item(key = "recs-title") { SectionTitle(stringResource(R.string.feature_social_recommendations)) }
@@ -211,73 +227,104 @@ private fun RequestRow(
 }
 
 /**
- * Cartão de um amigo: o que está ouvindo agora (ou ouviu por último, e quando)
- * e as reações com emoji, quando ele está ouvindo.
+ * Cartão de um amigo: a capa do que está ouvindo agora (ou ouviu por último,
+ * e quando) e as reações com emoji, quando ele está ouvindo. A capa vem do
+ * Deezer (o amigo manda o endereço junto com a música).
  */
 @Composable
 internal fun FriendCard(
     friend: FriendProfile,
+    loadImage: suspend (String, Int) -> Bitmap?,
     onClick: () -> Unit,
     onReact: suspend (String) -> Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val track = friend.lastTrack
+    val track = friend.lastTrack.takeIf { friend.sharing }
     val live = friend.now != null && (friend.updatedMs ?: 0) > System.currentTimeMillis() - LIVE_WINDOW_MS
+    val px = with(LocalDensity.current) { FriendCardWidth.roundToPx() }
+    val cover by produceState<ImageBitmap?>(null, track?.coverUrl) {
+        value = track?.coverUrl?.let { url -> loadImage(url, px)?.asImageBitmap() }
+    }
     Surface(
         color = if (live) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = if (live) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
         shape = MaterialTheme.shapes.large,
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).clip(MaterialTheme.shapes.large).clickable(onClick = onClick),
+        modifier = modifier.width(FriendCardWidth).clip(MaterialTheme.shapes.large).clickable(onClick = onClick),
     ) {
-        Column(Modifier.padding(14.dp)) {
+        Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Avatar(
                     friend.user.name,
-                    size = 40.dp,
+                    size = 32.dp,
                     picture = rememberProfileImage(friend.user.id, ProfileImage.Avatar, friend.avatarVersion),
                 )
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(friend.user.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    val caption = when {
-                        !friend.sharing -> stringResource(R.string.feature_social_not_sharing_short)
-                        live -> stringResource(R.string.feature_social_now)
-                        track != null -> stringResource(
-                            R.string.feature_social_last_heard_at,
-                            relativeTime(friend.recent.firstOrNull()?.atMs ?: friend.updatedMs ?: System.currentTimeMillis()),
-                        )
-                        else -> stringResource(R.string.feature_social_not_playing)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (live) {
-                            LiveDot()
-                            Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(friend.user.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium)) {
+                val image = cover
+                if (image != null) {
+                    Image(image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                } else {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(BoomIcons.MusicNote, contentDescription = null, modifier = Modifier.size(40.dp))
                         }
-                        Text(caption, style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
-            if (friend.sharing && track != null) {
-                Spacer(Modifier.height(10.dp))
-                Text(track.title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                track.artist?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+            Spacer(Modifier.height(10.dp))
+            val caption = when {
+                !friend.sharing -> stringResource(R.string.feature_social_not_sharing_short)
+                live -> stringResource(R.string.feature_social_now)
+                track != null -> stringResource(
+                    R.string.feature_social_last_heard_at,
+                    relativeTime(friend.recent.firstOrNull()?.atMs ?: friend.updatedMs ?: System.currentTimeMillis()),
+                )
+                else -> stringResource(R.string.feature_social_not_playing)
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (live) {
+                    LiveDot()
+                    Spacer(Modifier.width(6.dp))
+                }
+                Text(caption, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text(
+                track?.title.orEmpty(),
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                track?.artist.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             if (live) {
                 Spacer(Modifier.height(6.dp))
-                ReactionRow(onReact)
+                // Seis emojis não cabem na largura do cartão: a fila desliza.
+                ReactionRow(onReact, Modifier.horizontalScroll(rememberScrollState()))
             }
         }
     }
 }
+
+/** Largura de um cartão de amigo na fila. */
+private val FriendCardWidth = 200.dp
 
 /**
  * Reações com emoji ao que o amigo está ouvindo (só ao vivo, nada guardado).
  * O emoji escolhido fica marcado por um instante.
  */
 @Composable
-internal fun ReactionRow(onReact: suspend (String) -> Boolean) {
+internal fun ReactionRow(onReact: suspend (String) -> Boolean, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     var sent by remember { mutableStateOf<String?>(null) }
     var failed by remember { mutableStateOf(false) }
@@ -288,7 +335,7 @@ internal fun ReactionRow(onReact: suspend (String) -> Boolean) {
             failed = false
         }
     }
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         REACTION_EMOJIS.forEach { emoji ->
             val chosen = sent == emoji
             Surface(

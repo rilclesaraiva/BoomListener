@@ -3,6 +3,8 @@
 
 package com.boomlistener.core.designsystem.component
 
+import java.text.Collator
+import java.util.Locale
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -94,7 +96,7 @@ fun BoomMenuDropdown(
         }
         onYoutubeMusic?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_youtube_music), onClick = it)) }
         onDeezer?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_open_deezer), onClick = it)) }
-    }
+    }.sortedAlphabetically()
     // Cantos bem arredondados, no mesmo estilo dos cartões do app.
     DropdownMenu(
         expanded = open,
@@ -150,4 +152,10 @@ fun Modifier.trackPress(pressed: MutableState<Boolean>): Modifier = pointerInput
         } while (event.changes.any { it.pressed })
         pressed.value = false
     }
+}
+
+/** Opções em ordem alfabética, no idioma do aparelho (sem diferença de acento ou maiúscula). */
+internal fun List<BoomMenuAction>.sortedAlphabetically(locale: Locale = Locale.getDefault()): List<BoomMenuAction> {
+    val collator = Collator.getInstance(locale).apply { strength = Collator.PRIMARY }
+    return sortedWith { a, b -> collator.compare(a.label, b.label) }
 }

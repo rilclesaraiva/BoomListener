@@ -327,6 +327,12 @@ private fun TrackList(
                     onClick = { onOpenTrack(track) },
                 )
             }
+            // Buscando, os resultados podem ser poucos: sem este espaço no fim, a
+            // lista ficaria mais curta que a tela e desceria sozinha (a busca
+            // pularia de lugar a cada letra). Com ele, a busca fica onde está.
+            if (state.query.isNotEmpty()) {
+                item(key = "searchRoom") { Spacer(Modifier.fillParentMaxHeight()) }
+            }
           }
             // Arrastar pela direita pula pela lista, mostrando a letra.
             BoomFastScroller(

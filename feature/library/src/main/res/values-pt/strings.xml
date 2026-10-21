@@ -45,7 +45,7 @@
     <string name="feature_library_playlist_name">Nome</string>
     <string name="feature_library_playlists">Playlists</string>
     <string name="feature_library_playlists_empty">Crie uma playlist e depois adicione músicas pelo menu ⋮ de qualquer música.</string>
-    <string name="feature_library_remove_from_playlist">Tirar da playlist</string>
+    <string name="feature_library_remove_from_playlist">Remover da playlist</string>
     <string name="feature_library_rename_playlist">Renomear</string>
     <string name="feature_library_reorder">Segure e arraste para mudar a ordem</string>
     <string name="feature_library_save">Salvar</string>
@@ -65,4 +65,12 @@
     <string name="feature_library_done">Pronto</string>
     <string name="feature_library_search_songs">Buscar músicas</string>
     <string name="feature_library_details">Detalhes</string>
+    <string name="feature_library_search_artists">Pesquisar artistas</string>
+    <string name="feature_library_artists_online">Mais artistas</string>
+    <string name="feature_library_artists_online_failed">Não deu para pesquisar na internet. Confira a conexão.</string>
+    <string name="feature_library_artists_online_none">Nenhum outro artista encontrado.</string>
+    <plurals name="feature_library_fans">
+        <item quantity="one">%1$s fã</item>
+        <item quantity="other">%1$s fãs</item>
+    </plurals>
 </resources>

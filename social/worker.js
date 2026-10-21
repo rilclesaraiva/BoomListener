@@ -167,13 +167,21 @@ function imageType(bytes) {
   return null;
 }
 
-function cleanTrack(value) {
+export function cleanTrack(value) {
   if (!value || typeof value !== "object") return null;
   const str = (v, max) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
   const title = str(value.title, 200);
   if (!title) return null;
-  return { title, artist: str(value.artist, 200), album: str(value.album, 200) };
+  // Capa: só do CDN do Deezer (quem vê baixa a imagem; um endereço qualquer
+  // revelaria o IP dos amigos a um site de fora).
+  const coverUrl = typeof value.coverUrl === "string" && COVER_HOST.test(value.coverUrl) ? value.coverUrl.slice(0, 300) : null;
+  const track = { title, artist: str(value.artist, 200), album: str(value.album, 200) };
+  if (coverUrl) track.coverUrl = coverUrl;
+  return track;
 }
+
+/** Capas aceitas no "ouvindo agora": imagens do Deezer. */
+const COVER_HOST = /^https:\/\/([a-z0-9-]+\.)*dzcdn\.net\/[^\s"<>]*$/;
 
 
 /** Só informações de música (cartão de recomendação), com tamanho limitado. */

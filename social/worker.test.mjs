@@ -416,3 +416,12 @@ test("WebP aceito, versão pelo conteúdo e perfil com número de versão", asyn
   assert.equal((await call("PATCH", "/me", { sharing: true }, ana)).data.v, 3);
   assert.equal((await call("GET", "/users/" + ana.id, null, beto)).data.v, 3);
 });
+
+test("ouvindo agora aceita capa só do Deezer", () => {
+  const ok = mod.cleanTrack({ title: "Oceano", artist: "Djavan", coverUrl: "https://cdn-images.dzcdn.net/images/cover/abc/250x250-000000-80-0-0.jpg" });
+  assert.equal(ok.coverUrl, "https://cdn-images.dzcdn.net/images/cover/abc/250x250-000000-80-0-0.jpg");
+  assert.equal(mod.cleanTrack({ title: "Oceano", coverUrl: "https://example.com/x.jpg" }).coverUrl, undefined);
+  assert.equal(mod.cleanTrack({ title: "Oceano", coverUrl: "http://cdn-images.dzcdn.net/x.jpg" }).coverUrl, undefined);
+  assert.equal(mod.cleanTrack({ title: "Oceano", coverUrl: "https://dzcdn.net.evil.com/x.jpg" }).coverUrl, undefined);
+  assert.equal(mod.cleanTrack({ title: "Oceano" }).coverUrl, undefined);
+});

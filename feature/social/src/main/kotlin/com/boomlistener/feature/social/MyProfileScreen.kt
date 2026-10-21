@@ -78,7 +78,6 @@ import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
-import com.boomlistener.core.designsystem.component.BoomTopActions
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
@@ -109,7 +108,6 @@ internal fun MyProfileScreen(
     onOpenArtist: (String) -> Unit,
     onOpenFriend: (userId: String) -> Unit,
     onOpenHistory: () -> Unit,
-    onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -121,7 +119,6 @@ internal fun MyProfileScreen(
     val offline by friendsViewModel.offline.collectAsStateWithLifecycle()
     val restingUntil by friendsViewModel.restingUntil.collectAsStateWithLifecycle()
     var renaming by remember { mutableStateOf(false) }
-    var editingNetworks by remember { mutableStateOf(false) }
     var creatingProfile by remember { mutableStateOf(false) }
     var addingFriend by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -141,7 +138,10 @@ internal fun MyProfileScreen(
                     Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_social_edit_profile))
                 }
             }
-            BoomTopActions(onOpenReleases = onOpenReleases, onOpenSettings = onOpenSettings)
+            // No perfil, só Ajustes: o sino de Lançamentos fica nas outras abas.
+            IconButton(onClick = onOpenSettings) {
+                Icon(BoomIcons.Settings, contentDescription = stringResource(R.string.feature_social_settings))
+            }
         },
     ) { padding ->
         val current = state
@@ -180,17 +180,6 @@ internal fun MyProfileScreen(
                             links = account.links,
                             numbers = if (account.shareNumbers) account.numbers else emptyMap(),
                         )
-                        TextButton(onClick = { editingNetworks = true }) {
-                            Text(
-                                stringResource(
-                                    if (account.links.isEmpty() && account.numbers.isEmpty()) {
-                                        R.string.feature_social_networks_add
-                                    } else {
-                                        R.string.feature_social_networks_edit
-                                    },
-                                ),
-                            )
-                        }
                     }
                 }
             }
@@ -265,9 +254,6 @@ internal fun MyProfileScreen(
     val account = state?.account
     if (renaming && account != null) {
         EditProfileSheet(account = account, viewModel = viewModel, onDismiss = { renaming = false })
-    }
-    if (editingNetworks && account != null) {
-        NetworksSheet(account = account, viewModel = viewModel, onDismiss = { editingNetworks = false })
     }
     if (creatingProfile && account == null) {
         OnboardingSheet(viewModel = friendsViewModel, onDismiss = { creatingProfile = false })
@@ -396,6 +382,7 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
     var bannerChange by remember { mutableStateOf<ImageChange>(ImageChange.Keep) }
     var color by remember { mutableStateOf(account.color) }
     var avatarChange by remember { mutableStateOf<ImageChange>(ImageChange.Keep) }
+    val networks = remember { NetworksDraft(account) }
     val savedBanner = rememberProfileImage(account.id, ProfileImage.Banner, account.bannerVersion)
     val savedPhoto = rememberProfileImage(account.id, ProfileImage.Avatar, account.avatarVersion)
     val pickedBanner = rememberPickedImage((bannerChange as? ImageChange.Set)?.uri)
@@ -429,6 +416,9 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
     ModalBottomSheet(
         onDismissRequest = { if (!saving) onDismiss() },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        // Puxar para baixo não fecha (fechava sem querer, perdendo o que foi
+        // mexido): fecha pelo X, pelo voltar ou tocando fora.
+        sheetGesturesEnabled = false,
     ) {
         Column(
             Modifier
@@ -438,7 +428,16 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(stringResource(R.string.feature_social_edit_profile), style = MaterialTheme.typography.headlineSmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.feature_social_edit_profile),
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onDismiss, enabled = !saving) {
+                    Icon(BoomIcons.Close, contentDescription = stringResource(R.string.feature_social_close))
+                }
+            }
 
             // Capa: tocar troca; "Tirar capa" tira.
             Box(contentAlignment = Alignment.Center) {
@@ -500,9 +499,18 @@ private fun EditProfileSheet(account: SocialAccount, viewModel: MyProfileViewMod
                 supportingText = { Text("${bio.length}/$MAX_BIO") },
                 modifier = Modifier.fillMaxWidth(),
             )
+            NetworksEditor(draft = networks, enabled = !saving)
             Button(
                 enabled = name.isNotBlank() && !saving,
-                onClick = { viewModel.saveProfile(name, bio, bannerChange, avatarChange, color = color, onDone = onDismiss) },
+                onClick = { viewModel.saveProfile(
+                        name,
+                        bio,
+                        bannerChange,
+                        avatarChange,
+                        color = color,
+                        networks = networks.takeIf { it.changed }?.let { NetworksChange(it.links.toMap(), it.numbers.toMap(), it.shareNumbers) },
+                        onDone = onDismiss,
+                    ) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 if (saving) {

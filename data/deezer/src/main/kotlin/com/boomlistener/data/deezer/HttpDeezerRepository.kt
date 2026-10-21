@@ -73,6 +73,19 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         }
     }
 
+    override suspend fun searchArtists(query: String): List<ExternalArtist>? = withContext(Dispatchers.IO) {
+        val clean = query.trim()
+        if (clean.isEmpty()) return@withContext emptyList()
+        try {
+            val encoded = URLEncoder.encode(clean, "UTF-8")
+            getJson("$API/search/artist?q=$encoded&limit=25").optJSONArray("data").objects()
+                .map { it.toArtist() }
+                .filter { it.id > 0 && it.name.isNotBlank() }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     override suspend fun artistReleases(artistId: Long): ArtistReleasesResult = withContext(Dispatchers.IO) {
         try {
             coroutineScope {

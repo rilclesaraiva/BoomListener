@@ -84,8 +84,10 @@ Desde a 0.31.0 não existe aba Amigos: tudo isto fica na aba **Perfil**.
 
 
 - Pedidos de amizade recebidos no topo (aceitar / recusar).
-- Um cartão por amigo: o que está ouvindo agora, ou o que ouviu por último e
-  quando. Quem não compartilha aparece só com o nome.
+- Um cartão por amigo, numa fila que desliza para o lado: a capa e o que está
+  ouvindo agora, ou o que ouviu por último e quando. Quem não compartilha
+  aparece só com o nome. A capa é o endereço de uma imagem do Deezer que o
+  celular de quem ouve acha e manda junto (só `*.dzcdn.net` é aceito).
 - Tocar no cartão abre o perfil (estatísticas, redes, recentes).
 - **Reações com emoji** ao que o amigo está ouvindo: 🔥 ❤️ 😂 😮 👏 🎧. Sem texto
   livre, nada para moderar. Vão **só ao vivo** (o amigo precisa estar com o app

@@ -57,7 +57,8 @@ import com.boomlistener.core.designsystem.theme.boomSpatialSpec
  * Mini player acima da barra de navegação. Só aparece quando há música na fila.
  *
  * Gestos: tocar ou puxar para cima abre o player em tela cheia; puxar para
- * baixo encerra a reprodução (a música para e o mini player some).
+ * baixo encerra a reprodução (a música para e o mini player some); deslizar
+ * para os lados troca de música.
  */
 @Composable
 fun MiniPlayer(
@@ -145,9 +146,12 @@ fun MiniPlayer(
                 .clickable(onClick = sheetState::expand),
         ) {
             Column {
+                // Deslizar para os lados troca de música.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 8.dp, end = 4.dp, top = 8.dp, bottom = 6.dp),
+                    modifier = Modifier
+                        .swipeToSkip(onPrevious = viewModel::previous, onNext = viewModel::next)
+                        .padding(start = 8.dp, end = 4.dp, top = 8.dp, bottom = 6.dp),
                 ) {
                     BoomArtwork(image = artwork, fallbackText = item?.title.orEmpty(), size = 48.dp)
                     Spacer(Modifier.width(12.dp))

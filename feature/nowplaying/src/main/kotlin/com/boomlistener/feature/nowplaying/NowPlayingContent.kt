@@ -102,6 +102,8 @@ internal fun NowPlayingContent(
     val artworkColor = rememberArtworkColor(artwork)
     val showLyrics by viewModel.showLyrics.collectAsStateWithLifecycle()
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
+    // A posição da letra sobrevive a ir para a capa e voltar; música nova, do topo.
+    val lyricsScroll = remember(item?.uri) { LyricsScroll() }
     val spatial = boomSpatialSpec<Float>()
     val effects = boomEffectsSpec<Float>()
     val deleteSong = rememberSongDeleter()
@@ -208,9 +210,14 @@ internal fun NowPlayingContent(
                             onRetry = viewModel::retryLyrics,
                             // Tocar na letra volta para a capa, como tocar na capa abriu a letra.
                             onTap = viewModel::toggleLyrics,
+                            scroll = lyricsScroll,
                         )
                     } else {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        // Deslizar a capa para os lados troca de música.
+                        Box(
+                            Modifier.fillMaxSize().swipeToSkip(onPrevious = viewModel::previous, onNext = viewModel::next),
+                            contentAlignment = Alignment.Center,
+                        ) {
                             BoomArtwork(
                                 image = artwork,
                                 fallbackText = item.title,
