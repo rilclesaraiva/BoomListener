@@ -24,6 +24,7 @@ Reprodutor de música **local** para Android, em Material 3, com edição comple
 
 - **Nunca publique uma Release no GitHub por conta própria.** Todo push gera o APK assinado só como **artefato** da Action (aba Actions → build → Artifacts). É assim que o rilclesaraiva testa.
 - Release só quando ele disser explicitamente que pode ("pode lançar", "pode ser release"). Aí dispare: `gh workflow run android.yml -R rilclesaraiva/BoomListener --ref main -f publish_release=true`.
+- A primeira Release pública foi a **0.36.2 (beta)**, autorizada em 21/10/2026. A nota dela avisa que celular deitado e tablet ainda têm telas quebradas; o README explica o uso de IA (feito com IA, sob direção, teste e revisão do autor). Mantenha esse tom honesto nas próximas notas.
 - Esta sessão **não consegue apagar** Releases nem tags (403). Se uma sair por engano, peça para ele apagar pelo GitHub.
 
 ## Regra fixa: modularidade

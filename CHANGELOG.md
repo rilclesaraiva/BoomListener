@@ -4,6 +4,25 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.36.2] — 2026-10-21
+
+**First public beta of Boom, listener!** 🎧 A local music player for Android: free, open source, no ads, no account, and your data never leaves your phone.
+
+> 🧪 **This is a beta.** Day-to-day use on a phone in portrait works well, and that's where most of the polish went. **We know some layouts are still broken in other modes, mainly landscape and tablets.** We're working on them, and the next versions will fix them. If you find a problem, please report it in Issues.
+
+### ✨ What's in it
+- **Player:** mini player and full-screen player with a wavy progress bar, queue you can reorder, shuffle and repeat, synced lyrics, sleep timer, speed and crossfade. Swipe the cover or the mini player to change songs.
+- **Your library:** Home with recently added songs, albums and artists, plus Library with genres, artists, playlists and albums. Search, fast scroll and Favorites.
+- **Tag editor:** fix titles, artists, albums, years, genres, covers and lyrics, with suggestions from Deezer and MusicBrainz.
+- **Artist pages:** photo, biography, popular songs and the full discography, showing what you have.
+- **Releases:** follow artists and see their new albums, EPs and singles.
+- **Your profile:** name, photo, cover and color, just for you, with your listening stats and history.
+- **Wide screens (beta):** a side bar, plus a panel with the artist that's playing.
+- Light, dark and AMOLED themes, wallpaper colors, English and Portuguese.
+
+### 📝 Also in this version
+- The README now explains how the app is made: with AI assistance, under the author's direction, testing and review.
+
 ## [0.36.1] — 2026-10-21
 
 ### 🐛 Fixes
