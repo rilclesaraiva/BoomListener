@@ -281,6 +281,7 @@ fun BoomListenerApp() {
     ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
       val wide = isWideWindow(maxWidth, maxHeight)
+      val roomy = maxWidth >= 1000.dp
       // Na primeira vez numa tela larga: tablet abre tudo; celular deitado
       // (pouca largura) começa com a barra e o painel recolhidos.
       var sidebarExpanded by rememberSaveable { mutableStateOf(maxWidth >= 840.dp) }
@@ -326,7 +327,7 @@ fun BoomListenerApp() {
                                 onOpenArtist = navController::navigateToArtist,
                                 onCollapse = { artistPanelOpen = false },
                                 modifier = Modifier
-                                    .width(if (maxWidth >= 1000.dp) 340.dp else 300.dp)
+                                    .width(if (roomy) 340.dp else 300.dp)
                                     .fillMaxHeight()
                                     .windowInsetsPadding(panelInsets)
                                     .padding(top = 8.dp, end = 8.dp, bottom = 8.dp),
