@@ -21,7 +21,6 @@
     <string name="feature_wellbeing_history_clear_message">This removes the list of songs you listened to. Most played isn’t affected.</string>
     <string name="feature_wellbeing_cancel">Cancel</string>
     <string name="feature_wellbeing_add_to_playlist">Add to playlist</string>
-    <string name="feature_wellbeing_recommend">Recommend to a friend</string>
     <string name="feature_wellbeing_go_to_artist">Go to artist</string>
     <string name="feature_wellbeing_edit_tags">Edit tags</string>
 </resources>

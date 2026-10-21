@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
@@ -71,28 +70,70 @@ fun BoomFastScroller(
     label: (index: Int) -> String?,
     modifier: Modifier = Modifier,
 ) {
+    val metrics = remember(state) { ListScrollMetrics(state) }
     FastScrollerImpl(
         total = { state.layoutInfo.totalItemsCount },
         visible = { state.layoutInfo.visibleItemsInfo.size },
-        position = {
-            // Posição contínua (item + quanto dele já passou): a bolinha anda
-            // junto com a lista, sem degraus a cada linha.
-            val firstItem = state.layoutInfo.visibleItemsInfo.firstOrNull()
-            val size = firstItem?.size?.takeIf { it > 0 }
-            state.firstVisibleItemIndex + if (size == null) 0f else (state.firstVisibleItemScrollOffset.toFloat() / size).coerceIn(0f, 1f)
-        },
+        fraction = metrics::fraction,
+        topIndex = metrics::topIndex,
         scrolling = { state.isScrollInProgress },
-        scrollTo = { position ->
-            val index = position.toInt()
-            val items = state.layoutInfo.visibleItemsInfo
-            val size = items.firstOrNull { it.index == index }?.size
-                ?: items.takeIf { it.isNotEmpty() }?.let { list -> list.sumOf { it.size } / list.size }
-                ?: 0
-            state.scrollToItem(index, ((position - index) * size).roundToInt())
-        },
+        scrollToFraction = metrics::scrollTo,
         label = label,
         modifier = modifier,
     )
+}
+
+/**
+ * Onde a lista está, em pixels: a altura de uma linha comum (a do meio das
+ * que estão na tela) vezes o número de itens. Assim a bolinha anda contínua,
+ * chega ao fim junto com a lista, e arrastar até embaixo leva ao último item.
+ */
+private class ListScrollMetrics(private val state: LazyListState) {
+    /** Altura de uma linha comum (com o espaço entre linhas); 0 = ainda não mediu. */
+    private var rowPx = 0f
+
+    private fun row(): Float {
+        val info = state.layoutInfo
+        val sizes = info.visibleItemsInfo.map { it.size }.sorted()
+        // Com poucos itens na tela (seções altas do topo), fica a medida de antes.
+        if (sizes.size >= 3 || rowPx == 0f) {
+            sizes.getOrNull(sizes.size / 2)?.let { rowPx = (it + info.mainAxisItemSpacing).toFloat() }
+        }
+        return rowPx.coerceAtLeast(1f)
+    }
+
+    private fun maxScroll(row: Float): Float {
+        val info = state.layoutInfo
+        val viewport = info.viewportSize.height - info.beforeContentPadding - info.afterContentPadding
+        return info.totalItemsCount * row - viewport
+    }
+
+    fun fraction(): Float {
+        val row = row()
+        val max = maxScroll(row)
+        if (max <= 0f) return 0f
+        if (!state.canScrollForward) return 1f
+        val scrolled = state.firstVisibleItemIndex * row + state.firstVisibleItemScrollOffset
+        return (scrolled / max).coerceIn(0f, 1f)
+    }
+
+    suspend fun scrollTo(fraction: Float) {
+        val row = row()
+        val target = (fraction * maxScroll(row)).coerceAtLeast(0f)
+        val index = (target / row).toInt().coerceIn(0, (state.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
+        state.scrollToItem(index, (target - index * row).roundToInt())
+    }
+
+    /**
+     * O item que está mesmo no topo: o primeiro com mais da metade à mostra
+     * (ignora o cabeçalho preso, que tem índice menor). É o do balão.
+     */
+    fun topIndex(): Int {
+        val first = state.firstVisibleItemIndex
+        return state.layoutInfo.visibleItemsInfo
+            .firstOrNull { it.index >= first && it.offset + it.size / 2 >= 0 }
+            ?.index ?: first
+    }
 }
 
 /** O mesmo, para grades (álbuns, artistas). */
@@ -105,13 +146,16 @@ fun BoomFastScroller(
     FastScrollerImpl(
         total = { state.layoutInfo.totalItemsCount },
         visible = { state.layoutInfo.visibleItemsInfo.size },
-        position = {
-            val firstItem = state.layoutInfo.visibleItemsInfo.firstOrNull()
-            val height = firstItem?.size?.height?.takeIf { it > 0 }
-            state.firstVisibleItemIndex + if (height == null) 0f else (state.firstVisibleItemScrollOffset.toFloat() / height).coerceIn(0f, 1f)
+        fraction = {
+            val range = (state.layoutInfo.totalItemsCount - state.layoutInfo.visibleItemsInfo.size).coerceAtLeast(1)
+            if (!state.canScrollForward) 1f else (state.firstVisibleItemIndex.toFloat() / range).coerceIn(0f, 1f)
         },
+        topIndex = { state.firstVisibleItemIndex },
         scrolling = { state.isScrollInProgress },
-        scrollTo = { position -> state.scrollToItem(position.toInt()) },
+        scrollToFraction = { fraction ->
+            val range = (state.layoutInfo.totalItemsCount - state.layoutInfo.visibleItemsInfo.size).coerceAtLeast(0)
+            state.scrollToItem((fraction * range).roundToInt())
+        },
         label = label,
         modifier = modifier,
     )
@@ -121,9 +165,10 @@ fun BoomFastScroller(
 private fun FastScrollerImpl(
     total: () -> Int,
     visible: () -> Int,
-    position: () -> Float,
+    fraction: () -> Float,
+    topIndex: () -> Int,
     scrolling: () -> Boolean,
-    scrollTo: suspend (Float) -> Unit,
+    scrollToFraction: suspend (Float) -> Unit,
     label: (Int) -> String?,
     modifier: Modifier,
 ) {
@@ -132,21 +177,15 @@ private fun FastScrollerImpl(
 
     var dragging by remember { mutableStateOf(false) }
     var dragFraction by remember { mutableStateOf(0f) }
-    var targetIndex by remember { mutableIntStateOf(0) }
     // Só a última posição pedida importa: rola até ela e descarta as que
     // ficaram para trás (senão a lista vai aos trancos atrás do dedo).
     var target by remember { mutableStateOf<Float?>(null) }
     LaunchedEffect(Unit) {
-        snapshotFlow { target }.filterNotNull().collectLatest { scrollTo(it) }
+        snapshotFlow { target }.filterNotNull().collectLatest { scrollToFraction(it) }
     }
     val isScrolling by remember { derivedStateOf(scrolling) }
-    // Quantas linhas cabem na tela: o maior valor visto. Contar a cada quadro
-    // mudaria ao passar por seções altas (o topo do Início) e a bolinha pularia.
-    var screenItems by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        snapshotFlow { visible() }.collect { if (it > screenItems) screenItems = it }
-    }
-    val range = { (total() - maxOf(screenItems, visible())).coerceAtLeast(1) }
+    // O balão mostra o rótulo do item que está de fato no topo da lista.
+    val shownIndex by remember { derivedStateOf(topIndex) }
 
     // Aparece ao rolar ou arrastar; some um pouco depois de parar.
     var shown by remember { mutableStateOf(false) }
@@ -161,30 +200,24 @@ private fun FastScrollerImpl(
     val alpha by animateFloatAsState(if (shown) 1f else 0f, boomEffectsSpec(), label = "fastScrollAlpha")
     val thumbWidth by animateDpAsState(if (dragging) ThumbWidthDragging else ThumbWidth, boomFastSpatialSpec(), label = "thumbWidth")
 
-    val listFraction by remember {
-        derivedStateOf {
-            (position() / range()).coerceIn(0f, 1f)
-        }
-    }
-    val fraction = if (dragging) dragFraction else listFraction
+    val listFraction by remember { derivedStateOf(fraction) }
+    val currentFraction = if (dragging) dragFraction else listFraction
 
     BoxWithConstraints(modifier.fillMaxHeight().padding(vertical = 8.dp)) {
         val density = LocalDensity.current
         val trackPx = with(density) { maxHeight.toPx() }
         val thumbPx = with(density) { ThumbHeight.toPx() }
-        val thumbY = ((trackPx - thumbPx) * fraction).roundToInt()
+        val thumbY = ((trackPx - thumbPx) * currentFraction).roundToInt()
 
         fun jump(y: Float) {
-            dragFraction = (y / trackPx).coerceIn(0f, 1f)
-            // A mesma conta da bolinha ao contrário: o dedo e a lista andam juntos.
-            val position = dragFraction * range()
-            targetIndex = position.toInt().coerceIn(0, (total() - 1).coerceAtLeast(0))
-            target = position
+            // O centro da bolinha fica sob o dedo; o topo e o fim do trilho são o começo e o fim da lista.
+            dragFraction = ((y - thumbPx / 2) / (trackPx - thumbPx)).coerceIn(0f, 1f)
+            target = dragFraction
         }
 
         // Balão com a letra, ao lado da bolinha, enquanto arrasta.
         if (dragging) {
-            label(targetIndex)?.let { text ->
+            label(shownIndex)?.let { text ->
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,

@@ -61,18 +61,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.delay
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.boomlistener.data.social.LinkStatus
-import com.boomlistener.data.social.SocialData
-import com.boomlistener.feature.social.RecommendSheet
-import com.boomlistener.feature.social.socialScreen
+import com.boomlistener.feature.profile.profileScreen
 import com.boomlistener.core.designsystem.component.FavoriteShare
 import com.boomlistener.core.designsystem.component.LocalFavoriteShare
 import com.boomlistener.core.common.ShareTarget
@@ -106,51 +101,7 @@ fun BoomListenerApp() {
     val playerSheet = rememberPlayerSheetState()
     // Música do player a adicionar numa playlist (a folha aparece por cima de tudo).
     var addToPlaylistUri by remember { mutableStateOf<String?>(null) }
-    // Música a recomendar para alguém (folha de Amigos por cima de tudo).
-    var recommendUri by remember { mutableStateOf<String?>(null) }
-
-    // Amigos: com o app na tela, fica ligado ao servidor por WebSocket (o
-    // "ouvindo agora" e as recomendações chegam sozinhos). Sem conexão, consulta a cada minuto; em
-    // segundo plano não consulta (só fica ligado se uma música estiver tocando
-    // com o "ouvindo agora" ligado).
     val context = LocalContext.current.applicationContext
-    val social = remember { SocialData.repository(context) }
-    val socialAccount by social.account.collectAsStateWithLifecycle()
-    // Número na aba Perfil: pedidos de amizade + recomendações ainda não vistas.
-    val friendsState by social.friends.collectAsStateWithLifecycle()
-    val recommendations by social.recommendations.collectAsStateWithLifecycle()
-    val unread = friendsState.incoming.size + recommendations.count { !it.seen }
-    // Reação de um amigo ao que você está ouvindo: aparece por um instante, com o app na tela.
-    val reactionText = stringResource(R.string.social_reaction_toast)
-    val reactionWithTitle = stringResource(R.string.social_reaction_toast_title)
-    LaunchedEffect(social) {
-        social.reactions.collect { reaction ->
-            val text = reaction.title?.let { String.format(reactionWithTitle, reaction.from.name, reaction.emoji, it) }
-                ?: String.format(reactionText, reaction.from.name, reaction.emoji)
-            android.widget.Toast.makeText(context, text, android.widget.Toast.LENGTH_SHORT).show()
-        }
-    }
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(socialAccount?.id) {
-        if (socialAccount == null) return@LaunchedEffect
-        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            social.keepConnected("ui", true)
-            try {
-                // Dá um tempinho para a conexão abrir; se não abrir, consulta pelo HTTP.
-                var wait = 5_000L
-                while (true) {
-                    delay(wait)
-                    wait = 60_000L
-                    when (social.live.value.status) {
-                        LinkStatus.Online, is LinkStatus.Resting -> Unit
-                        else -> social.refreshFriends()
-                    }
-                }
-            } finally {
-                social.keepConnected("ui", false)
-            }
-        }
-    }
     // Tocar de novo na aba aberta: a lista dela sobe até o topo.
     val reselect = remember { MutableSharedFlow<String>(extraBufferCapacity = 1) }
 
@@ -231,17 +182,7 @@ fun BoomListenerApp() {
                                         }
                                     }
                                 },
-                                icon = {
-                                    BadgedBox(
-                                        badge = {
-                                            if (destination == TopLevelDestination.Profile && unread > 0) {
-                                                Badge { Text(if (unread > 99) "99+" else unread.toString()) }
-                                            }
-                                        },
-                                    ) {
-                                        Icon(destination.icon, contentDescription = null)
-                                    }
-                                },
+                                icon = { Icon(destination.icon, contentDescription = null) },
                                 label = { Text(stringResource(destination.label)) },
                             )
                         }
@@ -274,10 +215,8 @@ fun BoomListenerApp() {
                     onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
                     onOpenReleases = openReleases,
                     onOpenSettings = openSettings,
-                    onRecommend = { track -> recommendUri = track.uri },
                 )
-                socialScreen(
-                    navController = navController,
+                profileScreen(
                     onOpenArtist = navController::navigateToArtist,
                     onOpenHistory = openHistory,
                     onOpenSettings = openSettings,
@@ -303,7 +242,6 @@ fun BoomListenerApp() {
                         onOpenArtist = navController::navigateToArtist,
                         onEditTags = { uri -> navController.navigateToTagEditor(uri) },
                         onAddToPlaylist = { uri -> addToPlaylistUri = uri },
-                        onRecommend = { uri -> recommendUri = uri },
                     ),
                 )
             }
@@ -323,14 +261,10 @@ fun BoomListenerApp() {
                 navController.navigateToTagEditor(uri)
             },
             onAddToPlaylist = { uri -> addToPlaylistUri = uri },
-            onRecommend = { uri -> recommendUri = uri },
         )
 
         addToPlaylistUri?.let { uri ->
             AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
-        }
-        recommendUri?.let { uri ->
-            RecommendSheet(trackUri = uri, onDismiss = { recommendUri = null })
         }
 
         // Versão nova no GitHub: aviso em tela cheia (no máximo uma consulta a cada 6 h).

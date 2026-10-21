@@ -31,7 +31,6 @@
     <string name="feature_nowplaying_lyrics_hint">Tap to go back to the cover · hold a line to jump to it</string>
     <string name="feature_nowplaying_lyrics_from_file">Lyrics saved in the file</string>
     <string name="feature_nowplaying_add_to_playlist">Add to playlist</string>
-    <string name="feature_nowplaying_recommend">Recommend to a friend</string>
     <string name="feature_nowplaying_devices">Connected devices</string>
     <string name="feature_nowplaying_devices_hint">Tap one to play the music there</string>
     <string name="feature_nowplaying_devices_more">More devices</string>

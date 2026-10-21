@@ -47,5 +47,4 @@ class HistorySongMenu(
     val onOpenArtist: (String) -> Unit = {},
     val onEditTags: (uri: String) -> Unit = {},
     val onAddToPlaylist: (uri: String) -> Unit = {},
-    val onRecommend: (uri: String) -> Unit = {},
 )

@@ -31,7 +31,6 @@
     <string name="feature_nowplaying_lyrics_hint">Toque para voltar à capa · segure uma linha para pular até ela</string>
     <string name="feature_nowplaying_lyrics_from_file">Letra salva no arquivo</string>
     <string name="feature_nowplaying_add_to_playlist">Adicionar à playlist</string>
-    <string name="feature_nowplaying_recommend">Recomendar para alguém</string>
     <string name="feature_nowplaying_devices">Dispositivos conectados</string>
     <string name="feature_nowplaying_devices_hint">Toque em um para tocar a música nele</string>
     <string name="feature_nowplaying_devices_more">Mais dispositivos</string>

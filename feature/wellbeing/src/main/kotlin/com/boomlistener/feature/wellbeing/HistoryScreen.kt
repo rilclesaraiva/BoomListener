@@ -210,7 +210,6 @@ private fun HistoryRow(
             BoomMoreMenu(
                 actions = listOfNotNull(
                     BoomMenuAction(stringResource(R.string.feature_wellbeing_add_to_playlist)) { songMenu.onAddToPlaylist(entry.uri) },
-                    BoomMenuAction(stringResource(R.string.feature_wellbeing_recommend)) { songMenu.onRecommend(entry.uri) },
                     entry.artist?.let { name ->
                         BoomMenuAction(stringResource(R.string.feature_wellbeing_go_to_artist)) { songMenu.onOpenArtist(name) }
                     },

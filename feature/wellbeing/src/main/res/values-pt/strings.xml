@@ -21,7 +21,6 @@
     <string name="feature_wellbeing_history_clear_message">Isso apaga a lista de músicas que você ouviu. As mais ouvidas não mudam.</string>
     <string name="feature_wellbeing_cancel">Cancelar</string>
     <string name="feature_wellbeing_add_to_playlist">Adicionar à playlist</string>
-    <string name="feature_wellbeing_recommend">Recomendar para alguém</string>
     <string name="feature_wellbeing_go_to_artist">Ir para o artista</string>
     <string name="feature_wellbeing_edit_tags">Editar tags</string>
 </resources>

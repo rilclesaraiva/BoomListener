@@ -12,7 +12,6 @@ android {
 dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":data:updates"))
-    implementation(project(":data:social"))
     implementation(project(":data:library"))
     implementation(project(":core:player"))
 

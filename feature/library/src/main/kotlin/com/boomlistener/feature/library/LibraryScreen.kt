@@ -105,7 +105,6 @@ internal fun LibraryScreen(
     onOpenAlbum: (albumKey: String) -> Unit,
     onSeeAll: (CollectionKind) -> Unit,
     onEditTags: (Track) -> Unit,
-    onRecommend: (Track) -> Unit,
     onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -179,7 +178,6 @@ internal fun LibraryScreen(
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
                     onAddToPlaylist = { addToPlaylist = it },
-                    onRecommend = onRecommend,
                     contentPadding = padding,
                 )
             }
@@ -208,14 +206,13 @@ private fun TrackList(
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
-    onRecommend: (Track) -> Unit,
     contentPadding: PaddingValues,
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
-    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onRecommend, onDelete, onDetails) {
-        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onRecommend, onDelete, onDetails)
+    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails) {
+        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails)
     }
     when {
         state.totalCount == 0 -> BoomPlaceholder(
@@ -526,7 +523,6 @@ internal class SongMenu(
     val onOpenArtist: (String) -> Unit,
     val onEditTags: (Track) -> Unit,
     val onAddToPlaylist: (Track) -> Unit,
-    val onRecommend: (Track) -> Unit,
     val onDelete: (Track) -> Unit,
     val onDetails: (Track) -> Unit,
 )
@@ -538,7 +534,6 @@ private fun SongMenuView(track: Track, menu: SongMenu, openState: MutableState<B
     val scope = rememberCoroutineScope()
     val actions = listOfNotNull(
         BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist)) { menu.onAddToPlaylist(track) },
-        BoomMenuAction(stringResource(R.string.feature_library_recommend)) { menu.onRecommend(track) },
         track.artist?.let { name -> BoomMenuAction(stringResource(R.string.feature_library_go_to_artist)) { menu.onOpenArtist(name) } },
         BoomMenuAction(stringResource(R.string.feature_library_edit_tags)) { menu.onEditTags(track) },
         BoomMenuAction(stringResource(R.string.feature_library_details)) { menu.onDetails(track) },

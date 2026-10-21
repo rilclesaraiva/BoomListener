@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.boomlistener.app.R
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.feature.library.COLLECTIONS_ROUTE
-import com.boomlistener.feature.social.MY_PROFILE_ROUTE
+import com.boomlistener.feature.profile.MY_PROFILE_ROUTE
 import com.boomlistener.feature.library.LIBRARY_ROUTE
 
 /**

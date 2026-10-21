@@ -90,7 +90,6 @@ internal fun NowPlayingContent(
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (trackUri: String) -> Unit,
     onAddToPlaylist: (trackUri: String) -> Unit,
-    onRecommend: (trackUri: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -162,7 +161,6 @@ internal fun NowPlayingContent(
                                 BoomMenuAction(sleepTimerLabel(sleepTimer)) { showSleep = true },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_speed) + " · " + formatSpeed(playbackPrefs.speed)) { showSpeed = true },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist)) { onAddToPlaylist(item.uri) },
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_recommend)) { onRecommend(item.uri) },
                                 item.artist?.let { name ->
                                     BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
                                 },
@@ -292,7 +290,6 @@ internal fun NowPlayingContent(
             onOpenArtist = onOpenArtist,
             onEditTags = onEditTags,
             onAddToPlaylist = onAddToPlaylist,
-            onRecommend = onRecommend,
             onDelete = deleteSong,
         )
     }

@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.33.0] — 2026-10-20
+
+### ✨ New
+- **Your profile is just for you now.** Name, description, color, photo and cover make the app feel like yours. Everything stays on your phone and nothing is sent anywhere. Your current name, description, color, photo and cover carry over.
+- Tap your photo, your cover or your name to edit your profile.
+
+### 🐛 Fixes
+- The scroll bar on the right now matches the list. The letter in the bubble is the song at the top of the screen, and dragging to the bottom reaches the last song.
+
+### 🎨 Visual tweaks
+- Friends and everything social are gone: friends, what friends are listening to, recommendations, reactions, sharing what you listen to and social networks on the profile. "Friends and sharing" is gone from Settings too.
+
 ## [0.32.0] — 2026-10-20
 
 ### ✨ New

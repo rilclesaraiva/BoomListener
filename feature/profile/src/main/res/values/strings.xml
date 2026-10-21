@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_profile_name">Your name</string>
+    <string name="feature_profile_my_profile">Your profile</string>
+    <string name="feature_profile_save">Save</string>
+    <string name="feature_profile_most_played">Most played</string>
+    <string name="feature_profile_most_played_sub">All time</string>
+    <string name="feature_profile_listening_time">Listening time</string>
+    <string name="feature_profile_last_7_days">Last 7 days</string>
+    <string name="feature_profile_top_artists">Your artists</string>
+    <string name="feature_profile_last_30_days">Last 30 days</string>
+    <string name="feature_profile_history">History</string>
+    <string name="feature_profile_see_all">See all</string>
+    <string name="feature_profile_this_month">This month</string>
+    <string name="feature_profile_hours_minutes">%1$dh %2$02dm</string>
+    <string name="feature_profile_minutes">%1$d min</string>
+    <string name="feature_profile_listened">listening</string>
+    <string name="feature_profile_daily">Daily</string>
+    <string name="feature_profile_today_short">Today</string>
+    <string name="feature_profile_hours_short">%1$dh%2$02d</string>
+    <string name="feature_profile_peak_hours">Peak hours</string>
+    <string name="feature_profile_morning">Morning</string>
+    <string name="feature_profile_afternoon">Afternoon</string>
+    <string name="feature_profile_night">Night</string>
+    <string name="feature_profile_dawn">Late night</string>
+    <string name="feature_profile_today">Today</string>
+    <string name="feature_profile_yesterday">Yesterday</string>
+    <plurals name="feature_profile_plays">
+        <item quantity="one">%1$d play</item>
+        <item quantity="other">%1$d plays</item>
+    </plurals>
+    <plurals name="feature_profile_songs">
+        <item quantity="one">song</item>
+        <item quantity="other">songs</item>
+    </plurals>
+    <plurals name="feature_profile_artists">
+        <item quantity="one">artist</item>
+        <item quantity="other">artists</item>
+    </plurals>
+    <string name="feature_profile_edit_profile">Edit profile</string>
+    <string name="feature_profile_bio">Description</string>
+    <string name="feature_profile_bio_hint">What do you like to listen to?</string>
+    <string name="feature_profile_bio_add">+ Add a description</string>
+    <string name="feature_profile_banner_change">Change cover</string>
+    <string name="feature_profile_banner_remove">Remove cover</string>
+    <string name="feature_profile_photo_change">Change photo</string>
+    <string name="feature_profile_photo_remove">Remove photo</string>
+    <string name="feature_profile_gif_hint">GIFs work too and keep playing. Big or long GIFs are shrunk, and a short video (up to 15 s, no sound) becomes a GIF.</string>
+    <string name="feature_profile_saving">Saving…</string>
+    <string name="feature_profile_color">Profile color</string>
+    <string name="feature_profile_color_hex">Or type a color (hex)</string>
+    <string name="feature_profile_color_none">No color</string>
+    <string name="feature_profile_close">Close</string>
+    <string name="feature_profile_settings">Settings</string>
+    <string name="feature_profile_make_it_yours">Make it yours</string>
+    <string name="feature_profile_save_failed">Couldn’t save. Try another image.</string>
+</resources>

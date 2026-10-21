@@ -77,7 +77,6 @@ internal fun QueuePanel(
     onOpenArtist: (String) -> Unit,
     onEditTags: (String) -> Unit,
     onAddToPlaylist: (String) -> Unit,
-    onRecommend: (String) -> Unit,
     onDelete: (uri: String, title: String) -> Unit,
 ) {
     PredictiveBackHandler(enabled = queueState.isExpanded) { backEvents ->
@@ -218,7 +217,6 @@ internal fun QueuePanel(
                                         null
                                     },
                                     BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist)) { onAddToPlaylist(entry.item.uri) },
-                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_recommend)) { onRecommend(entry.item.uri) },
                                     entry.item.artist?.let { name ->
                                         BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
                                     },

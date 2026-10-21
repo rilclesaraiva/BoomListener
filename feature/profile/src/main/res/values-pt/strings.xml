@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_profile_name">Seu nome</string>
+    <string name="feature_profile_my_profile">Seu perfil</string>
+    <string name="feature_profile_save">Salvar</string>
+    <string name="feature_profile_most_played">Mais ouvidas</string>
+    <string name="feature_profile_most_played_sub">Desde sempre</string>
+    <string name="feature_profile_listening_time">Tempo de escuta</string>
+    <string name="feature_profile_last_7_days">Últimos 7 dias</string>
+    <string name="feature_profile_top_artists">Seus artistas</string>
+    <string name="feature_profile_last_30_days">Últimos 30 dias</string>
+    <string name="feature_profile_history">Histórico</string>
+    <string name="feature_profile_see_all">Ver tudo</string>
+    <string name="feature_profile_this_month">Este mês</string>
+    <string name="feature_profile_hours_minutes">%1$dh %2$02dm</string>
+    <string name="feature_profile_minutes">%1$d min</string>
+    <string name="feature_profile_listened">de escuta</string>
+    <string name="feature_profile_daily">Por dia</string>
+    <string name="feature_profile_today_short">Hoje</string>
+    <string name="feature_profile_hours_short">%1$dh%2$02d</string>
+    <string name="feature_profile_peak_hours">Horários de pico</string>
+    <string name="feature_profile_morning">Manhã</string>
+    <string name="feature_profile_afternoon">Tarde</string>
+    <string name="feature_profile_night">Noite</string>
+    <string name="feature_profile_dawn">Madrugada</string>
+    <string name="feature_profile_today">Hoje</string>
+    <string name="feature_profile_yesterday">Ontem</string>
+    <plurals name="feature_profile_plays">
+        <item quantity="one">%1$d vez</item>
+        <item quantity="other">%1$d vezes</item>
+    </plurals>
+    <plurals name="feature_profile_songs">
+        <item quantity="one">música</item>
+        <item quantity="other">músicas</item>
+    </plurals>
+    <plurals name="feature_profile_artists">
+        <item quantity="one">artista</item>
+        <item quantity="other">artistas</item>
+    </plurals>
+    <string name="feature_profile_edit_profile">Editar perfil</string>
+    <string name="feature_profile_bio">Descrição</string>
+    <string name="feature_profile_bio_hint">O que você gosta de ouvir?</string>
+    <string name="feature_profile_bio_add">+ Adicionar uma descrição</string>
+    <string name="feature_profile_banner_change">Trocar capa</string>
+    <string name="feature_profile_banner_remove">Tirar capa</string>
+    <string name="feature_profile_photo_change">Trocar foto</string>
+    <string name="feature_profile_photo_remove">Tirar foto</string>
+    <string name="feature_profile_gif_hint">GIF também vale e fica rodando. GIF grande ou longo é diminuído, e um vídeo curto (até 15 s, sem som) vira GIF.</string>
+    <string name="feature_profile_saving">Salvando…</string>
+    <string name="feature_profile_color">Cor do perfil</string>
+    <string name="feature_profile_color_hex">Ou digite uma cor (hexadecimal)</string>
+    <string name="feature_profile_color_none">Sem cor</string>
+    <string name="feature_profile_close">Fechar</string>
+    <string name="feature_profile_settings">Ajustes</string>
+    <string name="feature_profile_make_it_yours">Deixe do seu jeito</string>
+    <string name="feature_profile_save_failed">Não deu para salvar. Tente outra imagem.</string>
+</resources>
