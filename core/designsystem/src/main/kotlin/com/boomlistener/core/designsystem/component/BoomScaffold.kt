@@ -3,6 +3,8 @@
 
 package com.boomlistener.core.designsystem.component
 
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -76,6 +78,16 @@ fun BoomScreenScaffold(
     } else {
         TopAppBarDefaults.pinnedScrollBehavior(topBarState)
     }
+    // Tela larga: a barra não muda de cor ao rolar (a faixa colorida só no
+    // meio, entre as barras laterais, ficava estranha) e as margens dos lados
+    // já ficam com as barras laterais.
+    val wide = LocalWideLayout.current
+    val barColors = if (wide) {
+        TopAppBarDefaults.topAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface)
+    } else {
+        TopAppBarDefaults.topAppBarColors()
+    }
+    val barInsets = if (wide) TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Top) else TopAppBarDefaults.windowInsets
     val navigationIcon: @Composable () -> Unit = {
         if (onBack != null) {
             IconButton(onClick = onBack) { Icon(BoomIcons.Back, contentDescription = stringResource(R.string.core_designsystem_back)) }
@@ -104,6 +116,8 @@ fun BoomScreenScaffold(
                     title = { Text(title) },
                     navigationIcon = navigationIcon,
                     actions = actions,
+                    windowInsets = barInsets,
+                    colors = if (wide) TopAppBarDefaults.largeTopAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface) else TopAppBarDefaults.largeTopAppBarColors(),
                     scrollBehavior = scrollBehavior,
                 )
             } else {
@@ -111,6 +125,8 @@ fun BoomScreenScaffold(
                     title = { Text(title, style = MaterialTheme.typography.titleLarge) },
                     navigationIcon = navigationIcon,
                     actions = actions,
+                    windowInsets = barInsets,
+                    colors = barColors,
                     scrollBehavior = scrollBehavior,
                 )
               }

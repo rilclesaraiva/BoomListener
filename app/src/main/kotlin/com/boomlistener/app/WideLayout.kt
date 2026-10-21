@@ -38,7 +38,10 @@ import androidx.compose.ui.unit.dp
 import com.boomlistener.app.navigation.TopLevelDestination
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
-import com.boomlistener.feature.releases.FollowedArtistsList
+import com.boomlistener.feature.releases.followedArtistItems
+import com.boomlistener.feature.releases.rememberFollowedArtists
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
 
 /** Tela larga: tablet, ou celular deitado com largura de sobra. */
 internal fun isWideWindow(width: Dp, height: Dp): Boolean =
@@ -50,7 +53,8 @@ private val SidebarCollapsed = 80.dp
 /**
  * Barra lateral das telas largas (no lugar da barra de abas): Lançamentos,
  * Início e Biblioteca, "Nova playlist", Favoritos e os artistas que você
- * segue. [expanded] falso recolhe para só os ícones e as fotos.
+ * segue. Ela rola inteira. [expanded] falso recolhe para só os ícones e as
+ * fotos, com a mesma ordem e os mesmos botões.
  */
 @Composable
 internal fun WideSidebar(
@@ -65,62 +69,76 @@ internal fun WideSidebar(
     modifier: Modifier = Modifier,
 ) {
     val width by animateDpAsState(if (expanded) SidebarExpanded else SidebarCollapsed, boomSpatialSpec(), label = "sidebarWidth")
-    Column(
+    val followed = rememberFollowedArtists()
+    val align = if (expanded) Alignment.Start else Alignment.CenterHorizontally
+    LazyColumn(
+        horizontalAlignment = align,
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        horizontalAlignment = if (expanded) Alignment.Start else Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+        // As margens do sistema (câmera, barra de navegação de lado) ficam por
+        // fora: a largura é toda para a barra.
         modifier = modifier
-            .width(width)
             .fillMaxHeight()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .width(width),
     ) {
-        // Lançamentos no topo, em destaque.
-        if (expanded) {
-            FilledTonalButton(onClick = onOpenReleases, modifier = Modifier.fillMaxWidth()) {
-                Icon(BoomIcons.Releases, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.wide_releases))
-            }
-        } else {
-            IconButton(onClick = onToggle) {
-                Icon(BoomIcons.ChevronRight, contentDescription = stringResource(R.string.wide_expand))
-            }
-            FilledTonalIconButton(onClick = onOpenReleases) {
-                Icon(BoomIcons.Releases, contentDescription = stringResource(R.string.wide_releases))
-            }
-        }
-        Spacer(Modifier.size(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SidebarItem(
-                destination = TopLevelDestination.Home,
-                selected = selected == TopLevelDestination.Home,
-                expanded = expanded,
-                onClick = { onOpenTab(TopLevelDestination.Home) },
-                modifier = if (expanded) Modifier.weight(1f) else Modifier,
-            )
-            // Recolher fica ao lado de Início (como no rascunho).
+        item(key = "top") {
             if (expanded) {
-                IconButton(onClick = onToggle) {
-                    Icon(BoomIcons.ChevronLeft, contentDescription = stringResource(R.string.wide_collapse))
+                FilledTonalButton(onClick = onOpenReleases, modifier = Modifier.fillMaxWidth()) {
+                    Icon(BoomIcons.Releases, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.wide_releases))
+                }
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onToggle) {
+                        Icon(BoomIcons.ChevronRight, contentDescription = stringResource(R.string.wide_expand))
+                    }
+                    FilledTonalIconButton(onClick = onOpenReleases) {
+                        Icon(BoomIcons.Releases, contentDescription = stringResource(R.string.wide_releases))
+                    }
                 }
             }
         }
-        SidebarItem(
-            destination = TopLevelDestination.Collections,
-            selected = selected == TopLevelDestination.Collections,
-            expanded = expanded,
-            onClick = { onOpenTab(TopLevelDestination.Collections) },
-        )
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        SidebarPill(BoomIcons.Add, stringResource(R.string.wide_new_playlist), expanded, outlined = true, onClick = onNewPlaylist)
-        SidebarPill(BoomIcons.Favorite, stringResource(R.string.wide_favorites), expanded, outlined = false, onClick = onOpenFavorites)
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        // Os artistas que você segue, numa lista que rola.
-        FollowedArtistsList(
-            collapsed = !expanded,
-            onOpenArtist = onOpenArtist,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-        )
+        item(key = "home") {
+            if (expanded) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                    SidebarItem(
+                        destination = TopLevelDestination.Home,
+                        selected = selected == TopLevelDestination.Home,
+                        onClick = { onOpenTab(TopLevelDestination.Home) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    // Recolher fica ao lado de Início (como no rascunho).
+                    IconButton(onClick = onToggle) {
+                        Icon(BoomIcons.ChevronLeft, contentDescription = stringResource(R.string.wide_collapse))
+                    }
+                }
+            } else {
+                SidebarIcon(TopLevelDestination.Home, selected == TopLevelDestination.Home) { onOpenTab(TopLevelDestination.Home) }
+            }
+        }
+        item(key = "library") {
+            if (expanded) {
+                SidebarItem(
+                    destination = TopLevelDestination.Collections,
+                    selected = selected == TopLevelDestination.Collections,
+                    onClick = { onOpenTab(TopLevelDestination.Collections) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                SidebarIcon(TopLevelDestination.Collections, selected == TopLevelDestination.Collections) {
+                    onOpenTab(TopLevelDestination.Collections)
+                }
+            }
+        }
+        item(key = "divider1") { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
+        item(key = "new") { SidebarPill(BoomIcons.Add, stringResource(R.string.wide_new_playlist), expanded, outlined = true, onClick = onNewPlaylist) }
+        item(key = "favorites") { SidebarPill(BoomIcons.Favorite, stringResource(R.string.wide_favorites), expanded, outlined = false, onClick = onOpenFavorites) }
+        if (followed.isNotEmpty()) {
+            item(key = "divider2") { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
+        }
+        followedArtistItems(followed, collapsed = !expanded, onOpenArtist = onOpenArtist)
     }
 }
 
@@ -128,18 +146,31 @@ internal fun WideSidebar(
 private fun SidebarItem(
     destination: TopLevelDestination,
     selected: Boolean,
-    expanded: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val label = stringResource(destination.label)
     NavigationDrawerItem(
         selected = selected,
         onClick = onClick,
-        icon = { Icon(destination.icon, contentDescription = if (expanded) null else label) },
-        label = { if (expanded) Text(label) },
-        modifier = if (expanded) modifier.fillMaxWidth() else modifier.width(56.dp),
+        icon = { Icon(destination.icon, contentDescription = null) },
+        label = { Text(stringResource(destination.label)) },
+        modifier = modifier,
     )
+}
+
+/** Início e Biblioteca com a barra recolhida: o ícone, preenchido quando é a aba aberta. */
+@Composable
+private fun SidebarIcon(destination: TopLevelDestination, selected: Boolean, onClick: () -> Unit) {
+    val label = stringResource(destination.label)
+    if (selected) {
+        FilledTonalIconButton(onClick = onClick, modifier = Modifier.size(56.dp)) {
+            Icon(destination.icon, contentDescription = label)
+        }
+    } else {
+        IconButton(onClick = onClick, modifier = Modifier.size(56.dp)) {
+            Icon(destination.icon, contentDescription = label)
+        }
+    }
 }
 
 /** "Nova playlist" e "Favoritos": pílulas (ou só o ícone, recolhida). */
@@ -157,8 +188,8 @@ private fun SidebarPill(icon: ImageVector, label: String, expanded: Boolean, out
             FilledTonalButton(onClick = onClick) { content() }
         }
     } else if (outlined) {
-        OutlinedIconButton(onClick = onClick) { Icon(icon, contentDescription = label) }
+        OutlinedIconButton(onClick = onClick, modifier = Modifier.size(48.dp)) { Icon(icon, contentDescription = label) }
     } else {
-        FilledTonalIconButton(onClick = onClick) { Icon(icon, contentDescription = label) }
+        FilledTonalIconButton(onClick = onClick, modifier = Modifier.size(48.dp)) { Icon(icon, contentDescription = label) }
     }
 }

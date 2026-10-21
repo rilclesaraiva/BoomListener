@@ -3,6 +3,8 @@
 
 package com.boomlistener.app
 
+import com.boomlistener.feature.artist.ARTIST_NAME_ARG
+import com.boomlistener.feature.artist.ARTIST_ROUTE
 import com.boomlistener.feature.profile.ProfileAvatarButton
 import com.boomlistener.feature.library.navigateToPlaylist
 import com.boomlistener.feature.library.navigateToFavorites
@@ -218,6 +220,15 @@ fun BoomListenerApp() {
         } == true
     }
     var creatingPlaylist by remember { mutableStateOf(false) }
+    // Abrir um artista que já está aberto não empilha outra página igual.
+    val openArtist: (String) -> Unit = { name ->
+        val current = navController.currentBackStackEntry
+        val same = current?.destination?.route == ARTIST_ROUTE && current.arguments?.getString(ARTIST_NAME_ARG) == name
+        if (!same) navController.navigateToArtist(name)
+    }
+    // Na página de um artista (ou num álbum dele), a tela larga dá o espaço
+    // todo para ela: a barra lateral recolhe e o painel do artista some.
+    val onArtistPage = route == ARTIST_ROUTE || route.startsWith("album/")
 
     val navGraph: @Composable (Modifier) -> Unit = { navModifier ->
         NavHost(
@@ -239,26 +250,26 @@ fun BoomListenerApp() {
             val openSettings: () -> Unit = { navController.navigateToSettings() }
             libraryScreen(
                 navController = navController,
-                onOpenArtist = navController::navigateToArtist,
+                onOpenArtist = openArtist,
                 onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
                 onOpenReleases = openReleases,
                 onOpenSettings = openSettings,
             )
             profileScreen(
-                onOpenArtist = navController::navigateToArtist,
+                onOpenArtist = openArtist,
                 onOpenHistory = openHistory,
                 onOpenSettings = openSettings,
             )
             artistScreen(
                 navController = navController,
                 onBack = back,
-                onOpenArtist = navController::navigateToArtist,
+                onOpenArtist = openArtist,
             )
             tageditorScreen(onBack = back)
             releasesScreen(
                 onBack = back,
                 onOpenAlbum = navController::navigateToAlbum,
-                onOpenArtist = navController::navigateToArtist,
+                onOpenArtist = openArtist,
             )
             settingsScreen(
                 navController = navController,
@@ -267,7 +278,7 @@ fun BoomListenerApp() {
             wellbeingScreen(
                 onBack = back,
                 songMenu = HistorySongMenu(
-                    onOpenArtist = navController::navigateToArtist,
+                    onOpenArtist = openArtist,
                     onEditTags = { uri -> navController.navigateToTagEditor(uri) },
                     onAddToPlaylist = { uri -> addToPlaylistUri = uri },
                 ),
@@ -295,16 +306,22 @@ fun BoomListenerApp() {
             Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
                 Row(Modifier.fillMaxSize()) {
                     WideSidebar(
-                        expanded = sidebarExpanded,
-                        onToggle = { sidebarExpanded = !sidebarExpanded },
+                        expanded = sidebarExpanded && !onArtistPage,
+                        onToggle = { sidebarExpanded = !(sidebarExpanded && !onArtistPage) },
                         selected = selectedTab,
                         onOpenTab = ::openTab,
                         onOpenReleases = { navController.navigateToReleases() },
                         onNewPlaylist = { creatingPlaylist = true },
                         onOpenFavorites = { navController.navigateToFavorites() },
-                        onOpenArtist = navController::navigateToArtist,
+                        onOpenArtist = openArtist,
                     )
-                    Column(Modifier.weight(1f).fillMaxHeight()) {
+                    // Sem o painel à direita, a margem do sistema daquele lado fica com as telas.
+                    val centerInsets = if (playback.item?.artist.isNullOrBlank() || onArtistPage) {
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.End)
+                    } else {
+                        WindowInsets(0, 0, 0, 0)
+                    }
+                    Column(Modifier.weight(1f).fillMaxHeight().windowInsetsPadding(centerInsets)) {
                         navGraph(Modifier.weight(1f).fillMaxWidth())
                         AnimatedVisibility(
                             visible = !inSettings && !inTagEditor,
@@ -318,13 +335,13 @@ fun BoomListenerApp() {
                         }
                     }
                     // Só com música tocando: o artista dela (recolhível).
-                    val playingArtist = playback.item?.artist?.takeIf { it.isNotBlank() }
+                    val playingArtist = playback.item?.artist?.takeIf { it.isNotBlank() && !onArtistPage }
                     if (playingArtist != null) {
                         val panelInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.End + WindowInsetsSides.Vertical)
                         if (artistPanelOpen) {
                             ArtistSidePanel(
                                 artistName = playingArtist,
-                                onOpenArtist = navController::navigateToArtist,
+                                onOpenArtist = openArtist,
                                 onCollapse = { artistPanelOpen = false },
                                 modifier = Modifier
                                     .width(if (roomy) 340.dp else 300.dp)
@@ -393,7 +410,7 @@ fun BoomListenerApp() {
             // Tocar no artista dentro do player: fecha o player e abre o perfil.
             onOpenArtist = { name ->
                 playerSheet.collapse()
-                navController.navigateToArtist(name)
+                openArtist(name)
             },
             // Editar tags da música que está tocando: fecha o player e abre o editor.
             onEditTags = { uri ->

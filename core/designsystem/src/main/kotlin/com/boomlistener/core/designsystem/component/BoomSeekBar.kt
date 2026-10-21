@@ -3,6 +3,18 @@
 
 package com.boomlistener.core.designsystem.component
 
+import kotlin.math.roundToInt
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.Alignment
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -61,9 +73,16 @@ fun BoomSeekBar(
     isPlaying: Boolean,
     onSeek: (Float) -> Unit,
     modifier: Modifier = Modifier,
+    /** Texto do balão sobre a bolinha enquanto arrasta (ex.: "2:54"); null = sem balão. */
+    dragLabel: ((Float) -> String)? = null,
+    /** Avisa onde o dedo está enquanto arrasta (null ao soltar), para a tela mostrar o tempo. */
+    onDragPosition: (Float?) -> Unit = {},
 ) {
     // Enquanto o dedo está na barra, ela segue o dedo e não o player.
     var dragging by remember { mutableStateOf<Float?>(null) }
+    val dragReport by rememberUpdatedState(onDragPosition)
+    LaunchedEffect(Unit) { snapshotFlow { dragging }.collect { dragReport(it) } }
+    var widthPx by remember { mutableIntStateOf(0) }
     val shown = (dragging ?: progress).coerceIn(0f, 1f)
     val seek by rememberUpdatedState(onSeek)
 
@@ -93,10 +112,12 @@ fun BoomSeekBar(
     val active = MaterialTheme.colorScheme.primary
     val inactive = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
 
+    Box(modifier.fillMaxWidth()) {
     Canvas(
-        modifier
+        Modifier
             .fillMaxWidth()
             .height(TouchHeight)
+            .onSizeChanged { widthPx = it.width }
             .pointerInput(Unit) {
                 detectTapGestures { offset -> seek((offset.x / size.width).coerceIn(0f, 1f)) }
             }
@@ -150,6 +171,33 @@ fun BoomSeekBar(
 
         // Bolinha no ponto atual.
         drawCircle(active, thumbRadius, Offset(thumbX, cy))
+    }
+    // Balão com o tempo sobre a bolinha, enquanto arrasta.
+    val position = dragging
+    if (dragLabel != null && position != null) {
+        val gap = with(LocalDensity.current) { 6.dp.roundToPx() }
+        Surface(
+            color = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            shape = CircleShape,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+                    layout(0, 0) {
+                        val x = (position * widthPx - placeable.width / 2f).roundToInt()
+                            .coerceIn(0, (widthPx - placeable.width).coerceAtLeast(0))
+                        placeable.place(x, -placeable.height - gap)
+                    }
+                },
+        ) {
+            Text(
+                dragLabel(position),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+    }
     }
 }
 

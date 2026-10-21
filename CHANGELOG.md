@@ -4,6 +4,17 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.36.1] — 2026-10-21
+
+### 🐛 Fixes
+- Dragging the progress dot in the player shows the time you're on, in a bubble above the dot and in the time on the left.
+- Wide screens: opening an artist's page hides the artist panel and shrinks the side bar, so the page gets the whole space. Tapping the same artist again no longer opens a second copy.
+- Wide screens: the whole side bar scrolls now, not just the list of artists you follow.
+- Wide screens: the shrunk side bar is wider and keeps all its buttons, including Home and Library.
+
+### 🎨 Visual tweaks
+- Wide screens: the top bar keeps its color when you scroll. Before, only the middle strip changed color.
+
 ## [0.36.0] — 2026-10-21
 
 ### ✨ New

@@ -13,7 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -41,33 +42,37 @@ import com.boomlistener.data.releases.ReleasesData
 
 private val FollowedAvatar = 40.dp
 
-/**
- * Os artistas que você segue, um embaixo do outro (barra lateral em telas
- * largas). [collapsed] mostra só as fotos. Tocar abre a página do artista.
- */
+/** Os artistas que você segue, em ordem alfabética (para a barra lateral). */
 @Composable
-fun FollowedArtistsList(
-    collapsed: Boolean,
-    onOpenArtist: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun rememberFollowedArtists(): List<FollowedArtist> {
     val context = LocalContext.current.applicationContext
     val follows = remember { ReleasesData.follows(context) }
     val artists by follows.followed.collectAsStateWithLifecycle(emptyList())
-    LazyColumn(modifier = modifier) {
-        if (!collapsed && artists.isNotEmpty()) {
-            item(key = "title") {
-                Text(
-                    stringResource(R.string.feature_releases_following),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
+    return remember(artists) { artists.sortedBy { it.name.lowercase() } }
+}
+
+/**
+ * Os artistas que você segue, um embaixo do outro, dentro da lista da barra
+ * lateral (ela rola inteira, não só esta parte). [collapsed] mostra só as
+ * fotos. Tocar abre a página do artista.
+ */
+fun LazyListScope.followedArtistItems(
+    artists: List<FollowedArtist>,
+    collapsed: Boolean,
+    onOpenArtist: (String) -> Unit,
+) {
+    if (!collapsed && artists.isNotEmpty()) {
+        item(key = "followed-title") {
+            Text(
+                stringResource(R.string.feature_releases_following),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         }
-        items(artists.sortedBy { it.name.lowercase() }, key = { it.deezerId }) { artist ->
-            FollowedArtistRow(artist, collapsed, onClick = { onOpenArtist(artist.name) })
-        }
+    }
+    items(artists, key = { "followed-" + it.deezerId }) { artist ->
+        FollowedArtistRow(artist, collapsed, onClick = { onOpenArtist(artist.name) })
     }
 }
 
@@ -82,6 +87,7 @@ private fun FollowedArtistRow(artist: FollowedArtist, collapsed: Boolean, onClic
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (collapsed) Arrangement.Center else Arrangement.Start,
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
