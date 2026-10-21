@@ -20,10 +20,7 @@
     <string name="feature_settings_updates_no_releases">No version has been published yet</string>
     <string name="feature_settings_updates_failed">Couldn’t check. Are you online?</string>
     <string name="feature_settings_updates_available">Version %1$s is available</string>
-    <string name="feature_settings_updates_dialog_title">Update available</string>
-    <string name="feature_settings_updates_dialog_text">Version %1$s is out (you have %2$s). Download and install it to update; your library and settings are kept.</string>
     <string name="feature_settings_updates_download">Download</string>
-    <string name="feature_settings_updates_later">Later</string>
     <string name="feature_settings_theme">Theme</string>
     <string name="feature_settings_theme_system">Follow system</string>
     <string name="feature_settings_theme_system_summary">Light or dark, same as your phone</string>
@@ -35,7 +32,6 @@
     <string name="feature_settings_dynamic_color">Wallpaper colors</string>
     <string name="feature_settings_dynamic_color_summary">The app uses the colors of your wallpaper</string>
     <string name="feature_settings_dynamic_color_unavailable">Available on Android 12 and newer</string>
-    <string name="feature_settings_version">Version</string>
     <string name="feature_settings_source">Source code</string>
     <string name="feature_settings_source_summary">github.com/rilclesaraiva/BoomListener</string>
     <string name="feature_settings_license">License</string>

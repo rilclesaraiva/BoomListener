@@ -14,18 +14,14 @@ import android.net.Uri
 import android.os.Build
 import java.io.ByteArrayOutputStream
 
-/** Tamanho máximo da imagem enviada (o servidor aceita até 400 KB). */
+/** Tamanho máximo da imagem guardada (foto e capa ficam leves). */
 private const val MAX_BYTES = 380_000
 
-/** GIF animado vai como está até este tamanho (o servidor aceita até 3 MB, guardado em pedaços). */
+/** GIF animado é guardado como está até este tamanho; maior, é refeito menor. */
 internal const val MAX_GIF_BYTES = 2_900_000
 
 /** GIF mais longo que isto é refeito (menor e mais curto). */
 internal const val MAX_GIF_DURATION_MS = 15_000L
-
-/** O arquivo é WebP? (pelos primeiros bytes) */
-internal fun isWebp(bytes: ByteArray): Boolean =
-    bytes.size >= 12 && String(bytes, 0, 4, Charsets.US_ASCII) == "RIFF" && String(bytes, 8, 4, Charsets.US_ASCII) == "WEBP"
 
 /** Largura e altura de um GIF (do cabeçalho); null se não for GIF. */
 internal fun gifSize(bytes: ByteArray): Pair<Int, Int>? {
@@ -89,7 +85,7 @@ internal fun prepareProfileImage(context: Context, uri: String, kind: ProfileIma
         Paint(Paint.FILTER_BITMAP_FLAG),
     )
     source.recycle()
-    // WebP: bem menor que o JPEG com a mesma qualidade (cabem muito mais perfis no servidor gratuito).
+    // WebP: bem menor que o JPEG com a mesma qualidade.
     @Suppress("DEPRECATION")
     val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Bitmap.CompressFormat.WEBP_LOSSY else Bitmap.CompressFormat.WEBP
     var quality = 82

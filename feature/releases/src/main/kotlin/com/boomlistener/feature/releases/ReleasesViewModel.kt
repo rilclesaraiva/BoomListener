@@ -3,6 +3,9 @@
 
 package com.boomlistener.feature.releases
 
+import com.boomlistener.data.releases.MemoryReleasesChoices
+import com.boomlistener.data.releases.ReleasesChoices
+import com.boomlistener.data.releases.ReleasesChoicesRepository
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -55,13 +58,17 @@ internal sealed interface ReleasesUiState {
 internal class ReleasesViewModel(
     private val follows: FollowRepository,
     private val deezer: DeezerRepository,
+    /** Filtro, modo e janela escolhidos da última vez (a tela abre como ficou). */
+    private val choices: ReleasesChoicesRepository = MemoryReleasesChoices(),
     private val today: () -> LocalDate = { LocalDate.now() },
 ) : ViewModel() {
 
+    private val saved = choices.load()
+
     private val loaded = MutableStateFlow<Loaded>(Loaded.Loading)
-    private val view = MutableStateFlow(ReleasesView.Latest)
-    private val filter = MutableStateFlow(ReleaseFilter.All)
-    private val period = MutableStateFlow(ReleasePeriod.HalfYear)
+    private val view = MutableStateFlow(enumOrDefault(saved.view, ReleasesView.Latest))
+    private val filter = MutableStateFlow(enumOrDefault(saved.filter, ReleaseFilter.All))
+    private val period = MutableStateFlow(enumOrDefault(saved.period, ReleasePeriod.HalfYear))
     private val refreshes = MutableStateFlow(0)
 
     val state: StateFlow<ReleasesUiState> = combine(loaded, view, filter, period) { result, currentView, currentFilter, currentPeriod ->
@@ -111,14 +118,21 @@ internal class ReleasesViewModel(
 
     fun setView(newView: ReleasesView) {
         view.value = newView
+        remember()
     }
 
     fun setFilter(newFilter: ReleaseFilter) {
         filter.value = newFilter
+        remember()
     }
 
     fun setPeriod(newPeriod: ReleasePeriod) {
         period.value = newPeriod
+        remember()
+    }
+
+    private fun remember() {
+        choices.save(ReleasesChoices(view.value.name, filter.value.name, period.value.name))
     }
 
     fun refresh() {
@@ -127,3 +141,7 @@ internal class ReleasesViewModel(
 
     suspend fun image(url: String, sizePx: Int): Bitmap? = deezer.image(url, sizePx)
 }
+
+/** A opção guardada pelo nome, ou [default] (nunca escolheu, ou a opção deixou de existir). */
+internal inline fun <reified T : Enum<T>> enumOrDefault(name: String?, default: T): T =
+    enumValues<T>().firstOrNull { it.name == name } ?: default

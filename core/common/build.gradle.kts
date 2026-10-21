@@ -11,4 +11,6 @@ android {
 
 dependencies {
     implementation(libs.kotlinx.coroutines.android)
+    // Navegação sem toque repetido (navigateOnce).
+    implementation(libs.androidx.navigation.runtime)
 }

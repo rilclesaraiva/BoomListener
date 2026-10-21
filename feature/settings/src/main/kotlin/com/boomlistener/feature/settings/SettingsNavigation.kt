@@ -3,6 +3,8 @@
 
 package com.boomlistener.feature.settings
 
+import com.boomlistener.core.common.popBackStackOnce
+import com.boomlistener.core.common.navigateOnce
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
@@ -18,7 +20,7 @@ internal const val LIBRARY_SETTINGS_ROUTE = "settings/library"
 internal const val PLAYBACK_SETTINGS_ROUTE = "settings/playback"
 internal const val SHARE_SETTINGS_ROUTE = "settings/share"
 
-fun NavController.navigateToSettings() = navigate(SETTINGS_ROUTE) { launchSingleTop = true }
+fun NavController.navigateToSettings() = navigateOnce(SETTINGS_ROUTE) { launchSingleTop = true }
 
 /**
  * Ajustes e suas telas internas. [onOpenWellbeing] é ligado pelo :app (uma
@@ -28,17 +30,17 @@ fun NavGraphBuilder.settingsScreen(
     navController: NavController,
     onOpenWellbeing: () -> Unit,
 ) {
-    val back: () -> Unit = { navController.popBackStack() }
+    val back: () -> Unit = { navController.popBackStackOnce() }
     composable(SETTINGS_ROUTE) {
         SettingsScreen(
-            onOpenAppearance = { navController.navigate(APPEARANCE_ROUTE) },
+            onOpenAppearance = { navController.navigateOnce(APPEARANCE_ROUTE) },
             onOpenWellbeing = onOpenWellbeing,
-            onOpenAbout = { navController.navigate(ABOUT_ROUTE) },
-            onOpenPrivacy = { navController.navigate(PRIVACY_ROUTE) },
-            onOpenLicenses = { navController.navigate(LICENSES_ROUTE) },
-            onOpenLibrary = { navController.navigate(LIBRARY_SETTINGS_ROUTE) },
-            onOpenPlayback = { navController.navigate(PLAYBACK_SETTINGS_ROUTE) },
-            onOpenShare = { navController.navigate(SHARE_SETTINGS_ROUTE) },
+            onOpenAbout = { navController.navigateOnce(ABOUT_ROUTE) },
+            onOpenPrivacy = { navController.navigateOnce(PRIVACY_ROUTE) },
+            onOpenLicenses = { navController.navigateOnce(LICENSES_ROUTE) },
+            onOpenLibrary = { navController.navigateOnce(LIBRARY_SETTINGS_ROUTE) },
+            onOpenPlayback = { navController.navigateOnce(PLAYBACK_SETTINGS_ROUTE) },
+            onOpenShare = { navController.navigateOnce(SHARE_SETTINGS_ROUTE) },
             onBack = back,
         )
     }

@@ -75,7 +75,6 @@ fun BoomFastScroller(
         total = { state.layoutInfo.totalItemsCount },
         visible = { state.layoutInfo.visibleItemsInfo.size },
         fraction = metrics::fraction,
-        topIndex = metrics::topIndex,
         scrolling = { state.isScrollInProgress },
         scrollToFraction = metrics::scrollTo,
         label = label,
@@ -123,17 +122,6 @@ private class ListScrollMetrics(private val state: LazyListState) {
         val index = (target / row).toInt().coerceIn(0, (state.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
         state.scrollToItem(index, (target - index * row).roundToInt())
     }
-
-    /**
-     * O item que está mesmo no topo: o primeiro com mais da metade à mostra
-     * (ignora o cabeçalho preso, que tem índice menor). É o do balão.
-     */
-    fun topIndex(): Int {
-        val first = state.firstVisibleItemIndex
-        return state.layoutInfo.visibleItemsInfo
-            .firstOrNull { it.index >= first && it.offset + it.size / 2 >= 0 }
-            ?.index ?: first
-    }
 }
 
 /** O mesmo, para grades (álbuns, artistas). */
@@ -150,7 +138,6 @@ fun BoomFastScroller(
             val range = (state.layoutInfo.totalItemsCount - state.layoutInfo.visibleItemsInfo.size).coerceAtLeast(1)
             if (!state.canScrollForward) 1f else (state.firstVisibleItemIndex.toFloat() / range).coerceIn(0f, 1f)
         },
-        topIndex = { state.firstVisibleItemIndex },
         scrolling = { state.isScrollInProgress },
         scrollToFraction = { fraction ->
             val range = (state.layoutInfo.totalItemsCount - state.layoutInfo.visibleItemsInfo.size).coerceAtLeast(0)
@@ -166,7 +153,6 @@ private fun FastScrollerImpl(
     total: () -> Int,
     visible: () -> Int,
     fraction: () -> Float,
-    topIndex: () -> Int,
     scrolling: () -> Boolean,
     scrollToFraction: suspend (Float) -> Unit,
     label: (Int) -> String?,
@@ -184,8 +170,6 @@ private fun FastScrollerImpl(
         snapshotFlow { target }.filterNotNull().collectLatest { scrollToFraction(it) }
     }
     val isScrolling by remember { derivedStateOf(scrolling) }
-    // O balão mostra o rótulo do item que está de fato no topo da lista.
-    val shownIndex by remember { derivedStateOf(topIndex) }
 
     // Aparece ao rolar ou arrastar; some um pouco depois de parar.
     var shown by remember { mutableStateOf(false) }
@@ -202,6 +186,11 @@ private fun FastScrollerImpl(
 
     val listFraction by remember { derivedStateOf(fraction) }
     val currentFraction = if (dragging) dragFraction else listFraction
+    // O balão segue a bolinha: no topo do trilho, o primeiro item; no fim, o
+    // último; no meio, o item proporcional (o que está perto da bolinha na tela).
+    // Antes era o item do topo da tela, e com a bolinha lá embaixo o balão
+    // mostrava uma letra lá de cima.
+    val shownIndex = (currentFraction * (total() - 1).coerceAtLeast(0)).roundToInt()
 
     BoxWithConstraints(modifier.fillMaxHeight().padding(vertical = 8.dp)) {
         val density = LocalDensity.current

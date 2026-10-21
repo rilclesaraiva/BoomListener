@@ -13,7 +13,7 @@ import com.boomlistener.feature.library.LIBRARY_ROUTE
 
 /**
  * As abas da barra de navegação inferior (máximo de 5, regra do M3): Início,
- * Biblioteca e Perfil (com os amigos dentro). Lançamentos (o sino) e Ajustes
+ * Biblioteca e Perfil. Lançamentos (o sino) e Ajustes
  * não são abas: ficam no canto superior direito de cada aba. O histórico fica
  * dentro do Perfil; Bem-estar, dentro de Ajustes.
  */

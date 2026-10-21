@@ -68,4 +68,12 @@ object ReleasesData {
         instance ?: synchronized(this) {
             instance ?: DataStoreFollowRepository(context.applicationContext).also { instance = it }
         }
+
+    @Volatile
+    private var choices: ReleasesChoicesRepository? = null
+
+    fun choices(context: Context): ReleasesChoicesRepository =
+        choices ?: synchronized(this) {
+            choices ?: PrefsReleasesChoices(context.applicationContext).also { choices = it }
+        }
 }

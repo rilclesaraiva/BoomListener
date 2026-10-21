@@ -87,11 +87,6 @@ internal class LibraryViewModel(
         if (index in recent.indices) player.play(recent, index)
     }
 
-    fun shuffleRecent() {
-        val recent = (uiState.value as? LibraryUiState.Success)?.home?.recent ?: return
-        if (recent.isNotEmpty()) player.playShuffled(recent)
-    }
-
     /** "Tocar aleatório": embaralha o que está na tela (toda a lista ou a busca). */
     fun shuffleAll() {
         val visible = (uiState.value as? LibraryUiState.Success)?.tracks ?: return

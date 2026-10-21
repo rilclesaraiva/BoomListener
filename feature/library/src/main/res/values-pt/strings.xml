@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_library_title">Início</string>
-    <string name="feature_library_search">Buscar</string>
-    <string name="feature_library_search_hint">Buscar músicas, artistas, álbuns</string>
-    <string name="feature_library_more">Mais opções</string>
     <string name="feature_library_go_to_artist">Ir para o artista</string>
     <string name="feature_library_edit_tags">Editar tags</string>
-    <string name="feature_library_duration">Duração: %1$s</string>
     <string name="feature_library_unknown_artist">Artista desconhecido</string>
     <string name="feature_library_empty_title">Nenhuma música por aqui</string>
     <string name="feature_library_empty_message">Não encontramos músicas no seu aparelho. Coloque arquivos de música no celular e eles aparecem aqui sozinhos.</string>
-    <string name="feature_library_no_results_title">Nada encontrado</string>
     <string name="feature_library_no_results_message">Nenhuma música combina com “%1$s”.</string>
     <string name="feature_library_permission_title">Suas músicas moram aqui</string>
     <string name="feature_library_permission_message">Para mostrar e tocar as músicas do seu aparelho, o Boom, listener! precisa de acesso a música e áudio. Nada sai do seu celular.</string>
@@ -52,7 +47,6 @@
     <string name="feature_library_total_hours">%1$d h %2$02d min</string>
     <string name="feature_library_total_minutes">%d min</string>
     <string name="feature_library_recently_added">Adicionadas recentemente</string>
-    <string name="feature_library_shuffle_recent">Aleatório das adicionadas recentemente</string>
     <string name="feature_library_songs">Músicas</string>
     <string name="feature_library_see_all">Ver todos</string>
     <string name="feature_library_delete_song">Apagar do aparelho</string>

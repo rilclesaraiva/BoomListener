@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_artist_title">Artist</string>
-    <string name="feature_artist_message">Photo, biography and discography, showing what you have and what you’re missing.</string>
     <string name="feature_artist_back">Back</string>
     <string name="feature_artist_tab_songs">Songs</string>
     <string name="feature_artist_tab_discography">Discography</string>

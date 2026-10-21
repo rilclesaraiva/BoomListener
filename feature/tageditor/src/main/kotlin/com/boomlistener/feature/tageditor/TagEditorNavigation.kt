@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.tageditor
 
+import com.boomlistener.core.common.navigateOnce
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,7 +28,7 @@ const val TAGEDITOR_ROUTE = "tageditor?$ARG_URI={$ARG_URI}"
  * ele é trocado pelo novo em vez de empilhar.
  */
 fun NavController.navigateToTagEditor(trackUri: String) =
-    navigate("tageditor?$ARG_URI=" + Uri.encode(trackUri)) {
+    navigateOnce("tageditor?$ARG_URI=" + Uri.encode(trackUri)) {
         popUpTo(TAGEDITOR_ROUTE) { inclusive = true }
         launchSingleTop = true
     }

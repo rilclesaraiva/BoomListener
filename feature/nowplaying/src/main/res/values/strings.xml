@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_nowplaying_title">Now playing</string>
     <string name="feature_nowplaying_message">Pick a song in your Library to start.</string>
     <string name="feature_nowplaying_empty_title">Nothing playing</string>
     <string name="feature_nowplaying_queue_position">%1$d of %2$d</string>

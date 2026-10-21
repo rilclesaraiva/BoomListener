@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.artist
 
+import com.boomlistener.core.common.navigateOnce
 import android.net.Uri
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -14,14 +15,14 @@ const val ARTIST_NAME_ARG = "artistName"
 const val ARTIST_ROUTE = "artist/{$ARTIST_NAME_ARG}"
 
 // O nome vai codificado na rota ("AC/DC" tem barra, por exemplo).
-fun NavController.navigateToArtist(artistName: String) = navigate("artist/${Uri.encode(artistName)}")
+fun NavController.navigateToArtist(artistName: String) = navigateOnce("artist/${Uri.encode(artistName)}")
 
 private const val ALBUM_ID_ARG = "albumId"
 private const val ALBUM_ROUTE = "album/{$ALBUM_ID_ARG}?$ARTIST_NAME_ARG={$ARTIST_NAME_ARG}"
 
 /** Abre um álbum do Deezer; [artistName] serve para achar as suas músicas dele. */
 fun NavController.navigateToAlbum(albumId: Long, artistName: String) =
-    navigate("album/$albumId?$ARTIST_NAME_ARG=${Uri.encode(artistName)}")
+    navigateOnce("album/$albumId?$ARTIST_NAME_ARG=${Uri.encode(artistName)}")
 
 /** Perfil do artista e as telas de álbum que se abrem a partir dele. */
 fun NavGraphBuilder.artistScreen(

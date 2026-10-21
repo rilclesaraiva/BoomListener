@@ -10,7 +10,7 @@ import java.time.ZoneId
 
 /*
  * Os números do seu perfil, calculados no aparelho a partir do histórico de
- * escuta (puro e testado). Nada disso vai para o servidor.
+ * escuta (puro e testado). Nada disso sai do aparelho.
  */
 
 /** Parte do dia em que você mais ouve. */

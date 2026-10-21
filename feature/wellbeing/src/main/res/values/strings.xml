@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_wellbeing_title">Wellbeing</string>
-    <string name="feature_wellbeing_message">Your listening time and break reminders.</string>
     <string name="feature_wellbeing_most_played">Most played</string>
     <string name="feature_wellbeing_most_played_empty">Your most played songs will show up here. A song counts after 30 seconds of listening, when you picked it or it played in order (songs that come up on their own in shuffle don’t count).</string>
     <string name="feature_wellbeing_most_played_rule">Counts after 30 s of listening, when you picked the song or it played in order.</string>

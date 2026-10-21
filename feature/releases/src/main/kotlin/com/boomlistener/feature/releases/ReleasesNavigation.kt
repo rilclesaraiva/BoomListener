@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.releases
 
+import com.boomlistener.core.common.navigateOnce
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -14,7 +15,7 @@ import com.boomlistener.data.releases.ReleasesData
 const val RELEASES_ROUTE = "releases"
 
 /** Lançamentos: abre pelo sino no canto superior direito das abas (não é mais uma aba). */
-fun NavController.navigateToReleases() = navigate(RELEASES_ROUTE) { launchSingleTop = true }
+fun NavController.navigateToReleases() = navigateOnce(RELEASES_ROUTE) { launchSingleTop = true }
 
 fun NavGraphBuilder.releasesScreen(
     onBack: () -> Unit,
@@ -23,7 +24,7 @@ fun NavGraphBuilder.releasesScreen(
 ) {
     composable(RELEASES_ROUTE) {
         val context = LocalContext.current.applicationContext
-        val viewModel = viewModel { ReleasesViewModel(ReleasesData.follows(context), DeezerData.repository(context)) }
+        val viewModel = viewModel { ReleasesViewModel(ReleasesData.follows(context), DeezerData.repository(context), ReleasesData.choices(context)) }
         ReleasesScreen(
             viewModel = viewModel,
             onOpenAlbum = onOpenAlbum,

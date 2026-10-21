@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.34.0] — 2026-10-20
+
+### ✨ New
+- **Releases remember your choices.** Filter (albums, EPs, singles), view and time range stay as you left them.
+
+### 🐛 Fixes
+- The letter in the scroll bar bubble now follows the handle: at the bottom of the bar it shows the end of the list, not a song from the top of the screen.
+- Tapping fast no longer opens the same album, artist or screen twice, one on top of the other. Tapping back twice quickly no longer closes two screens.
+
+### 🎨 Visual tweaks
+- Cleanup: removed leftover pieces of old features that no longer did anything. The app is a little smaller.
+
 ## [0.33.0] — 2026-10-20
 
 ### ✨ New

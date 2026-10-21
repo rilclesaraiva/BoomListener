@@ -41,13 +41,6 @@ class ProfileImagesTest {
     }
 
     @Test
-    fun reconheceWebp() {
-        assertEquals(true, isWebp("RIFF\u0000\u0000\u0000\u0000WEBPVP8 ".toByteArray()))
-        assertEquals(false, isWebp("RIFF\u0000\u0000\u0000\u0000WAVEfmt ".toByteArray()))
-        assertEquals(false, isWebp("GIF89a".toByteArray()))
-    }
-
-    @Test
     fun tamanhoDoGifPeloCabecalho() {
         // 0x01E0 = 480, 0x0168 = 360 (little endian).
         val header = "GIF89a".toByteArray() + byteArrayOf(0xE0.toByte(), 0x01, 0x68, 0x01)

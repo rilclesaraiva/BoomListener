@@ -3,6 +3,7 @@
 
 package com.boomlistener.app
 
+import com.boomlistener.core.common.popBackStackOnce
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -205,7 +206,7 @@ fun BoomListenerApp() {
                 predictivePopEnterTransition = { popEnter(this) },
                 predictivePopExitTransition = { popExit(this) },
             ) {
-                val back: () -> Unit = { navController.popBackStack() }
+                val back: () -> Unit = { navController.popBackStackOnce() }
                 val openHistory: () -> Unit = { navController.navigateToHistory() }
                 val openReleases: () -> Unit = { navController.navigateToReleases() }
                 val openSettings: () -> Unit = { navController.navigateToSettings() }

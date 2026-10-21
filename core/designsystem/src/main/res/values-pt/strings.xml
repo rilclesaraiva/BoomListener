@@ -1,17 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="core_designsystem_back">Voltar</string>
-    <string name="core_designsystem_close_search">Fechar busca</string>
     <string name="core_designsystem_clear">Limpar</string>
     <string name="core_designsystem_more">Mais opções</string>
     <string name="core_designsystem_share">Compartilhar</string>
     <string name="core_designsystem_youtube_music">Ouvir no YouTube Music</string>
     <string name="core_designsystem_open_deezer">Abrir no Deezer</string>
-    <string name="core_designsystem_history">Histórico de escuta</string>
     <string name="core_designsystem_settings">Ajustes</string>
-    <string name="core_designsystem_profile">Seu perfil</string>
     <string name="core_designsystem_share_with">Compartilhar com %1$s</string>
-    <string name="core_designsystem_details">Detalhes</string>
     <string name="core_designsystem_details_path">Local</string>
     <string name="core_designsystem_details_file">Arquivo</string>
     <string name="core_designsystem_details_format">Formato</string>

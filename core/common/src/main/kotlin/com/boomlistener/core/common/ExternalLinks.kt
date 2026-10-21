@@ -30,16 +30,6 @@ fun Context.openUrl(url: String) {
     }
 }
 
-/** Abre a folha de compartilhar do Android com [text]. */
-fun Context.shareText(text: String) {
-    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
-    try {
-        startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    } catch (_: ActivityNotFoundException) {
-        // Sem nenhum app para compartilhar.
-    }
-}
-
 /**
  * Compartilha um link (e não um texto solto): o app de destino mostra a
  * prévia da página e quem recebe abre direto. [title] aparece na folha de

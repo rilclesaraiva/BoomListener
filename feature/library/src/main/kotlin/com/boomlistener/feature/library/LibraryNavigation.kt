@@ -3,6 +3,8 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.common.popBackStackOnce
+import com.boomlistener.core.common.navigateOnce
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -29,10 +31,8 @@ private const val GENRE_ROUTE = "collections/genre?$ARG_KEY={$ARG_KEY}"
 private const val ALBUM_ROUTE = "collections/album?$ARG_KEY={$ARG_KEY}"
 private const val PLAYLIST_ROUTE = "collections/playlist?$ARG_KEY={$ARG_KEY}"
 
-fun NavController.navigateToLibrary() = navigate(LIBRARY_ROUTE)
-
 private fun NavController.openCollection(base: String, key: String) =
-    navigate("collections/$base?$ARG_KEY=" + Uri.encode(key))
+    navigateOnce("collections/$base?$ARG_KEY=" + Uri.encode(key))
 
 fun NavGraphBuilder.libraryScreen(
     navController: NavController,
@@ -48,7 +48,7 @@ fun NavGraphBuilder.libraryScreen(
             onSeeAll = { kind ->
                 // Vai para a aba Biblioteca já na pílula escolhida (como tocar na aba).
                 CollectionsRequest.kind.value = kind
-                navController.navigate(COLLECTIONS_ROUTE) {
+                navController.navigateOnce(COLLECTIONS_ROUTE) {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
@@ -82,7 +82,7 @@ fun NavGraphBuilder.libraryScreen(
         )
     }
 
-    val back: () -> Unit = { navController.popBackStack() }
+    val back: () -> Unit = { navController.popBackStackOnce() }
     listOf(GENRE_ROUTE, ALBUM_ROUTE, PLAYLIST_ROUTE).forEach { route ->
         composable(route, arguments = listOf(navArgument(ARG_KEY) { type = NavType.StringType })) { entry ->
             val key = entry.arguments?.getString(ARG_KEY).orEmpty()

@@ -22,13 +22,11 @@ core/
   model/          ← classes de dados puras (Track, Album, Artist, Release…). Sem nenhum import android.*
   common/         ← utilidades: Result, dispatchers, log, formatação de tempo
   designsystem/   ← tema M3, cor dinâmica, cor extraída da capa, componentes visuais reutilizáveis
-  database/       ← Room: tabelas, DAOs, migrações
   datastore/      ← preferências do usuário (DataStore)
-  network/        ← cliente HTTP (OkHttp + Retrofit/kotlinx.serialization), cache e limite de requisições
   player/         ← Media3 (ExoPlayer) + MediaSessionService: fila, notificação, tela de bloqueio, Bluetooth
 
 data/
-  library/        ← varre o MediaStore, sincroniza com o Room, expõe faixas, álbuns e artistas
+  library/        ← lê o MediaStore (com o filtro de pastas e duração), expõe faixas, álbuns, artistas e playlists
   tags/           ← lê e grava tags nos arquivos (TagLib nativo) + pedido de permissão de escrita
   deezer/         ← API do Deezer: foto do artista, discografia, lançamentos, faixas
   lastfm/         ← API do Last.fm (via proxy): biografia, tags de gênero, similares, scrobble
@@ -84,18 +82,18 @@ A tela nunca chama repositório nem API direto; tudo passa pelo ViewModel.
 | Fonte | Uso | Chave | Observação |
 |---|---|---|---|
 | MediaStore | arquivos de música do aparelho | — | fonte da biblioteca |
-| Deezer API | foto do artista, discografia, lançamentos | não precisa | ~50 req / 5 s por IP; o `core/network` limita |
+| Deezer API | foto do artista, discografia, lançamentos | não precisa | ~50 req / 5 s por IP; respostas em cache |
 | Last.fm API | bio, tags, similares, scrobble | sim | chamado **só via `proxy/`**, a chave nunca vai no APK |
 | song.link | links "abrir em…" para outros serviços | não precisa | o app **nunca reproduz** nada de fora |
 
-Tudo que vem de fora é salvo no Room com data de atualização, para o app funcionar offline e não repetir consultas.
+O que vem de fora fica em cache em arquivo (JSON e imagens, no `cacheDir` de cada módulo `data`), para não repetir consultas. Não existe banco Room: os dados do usuário ficam em DataStore e arquivos.
 
 ## Fluxos principais
 
-- **Biblioteca:** `data/library` escuta mudanças do MediaStore → atualiza o Room → as telas observam via `Flow`.
+- **Biblioteca:** `data/library` escuta mudanças do MediaStore → sobe `version` → as telas recarregam.
 - **Edição de tags:** `feature/tageditor` → `data/tags` pede permissão de escrita (Android 11+ usa `MediaStore.createWriteRequest`) → grava → pede reescaneamento do arquivo → `LibraryRepository.notifyChanged` (lista e capas recarregam) e `PlaybackController.updateTrackInfo` (fila e notificação sem parar a música).
 - **Tags automáticas:** o ViewModel do editor junta `data/deezer` (`searchTrack` + `rankCandidates`, testado com acentos, "feat." e homônimos; depois `trackTags` com faixa, disco, ano, capa) e `data/lastfm` (`trackTags` + `pickGenre`, gênero mais preciso). Resultado claro (≥ 0,8 e 0,1 à frente do segundo) preenche sozinho; senão o usuário escolhe. Nada é gravado sem tocar em Salvar. Se o Deezer não achar (ou estiver fora do ar), a busca vai ao `data/musicbrainz` com as mesmas regras de comparação (`rankCandidates`), e a capa vem do Cover Art Archive.
-- **Página do artista:** primeiro mostra o cache do Room, depois atualiza em segundo plano com Deezer e Last.fm.
+- **Página do artista:** Deezer e Last.fm (com cache em arquivo); MusicBrainz quando o Deezer não acha.
 - **Radar de lançamentos:** `data/releases` associa os artistas locais a IDs do Deezer; um WorkManager diário compara a discografia com a última checagem e notifica o que é novo.
 - **Avisos de tela:** `data/wellbeing` soma o tempo de reprodução vindo do `core/player`; ao passar do limite configurado, mostra um aviso leve (nunca bloqueia).
 

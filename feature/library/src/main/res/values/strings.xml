@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_library_title">Home</string>
-    <string name="feature_library_search">Search</string>
-    <string name="feature_library_search_hint">Search songs, artists, albums</string>
-    <string name="feature_library_more">More options</string>
     <string name="feature_library_go_to_artist">Go to artist</string>
     <string name="feature_library_edit_tags">Edit tags</string>
-    <string name="feature_library_duration">Duration: %1$s</string>
     <string name="feature_library_unknown_artist">Unknown artist</string>
     <string name="feature_library_empty_title">No music here yet</string>
     <string name="feature_library_empty_message">We couldn’t find any music on your device. Copy music files to your phone and they’ll show up here automatically.</string>
-    <string name="feature_library_no_results_title">Nothing found</string>
     <string name="feature_library_no_results_message">No songs match “%1$s”.</string>
     <string name="feature_library_permission_title">Your music lives here</string>
     <string name="feature_library_permission_message">To show and play the music on your device, Boom, listener! needs access to music and audio. Nothing leaves your phone.</string>
@@ -52,7 +47,6 @@
     <string name="feature_library_total_hours">%1$d h %2$02d min</string>
     <string name="feature_library_total_minutes">%d min</string>
     <string name="feature_library_recently_added">Recently added</string>
-    <string name="feature_library_shuffle_recent">Shuffle recently added</string>
     <string name="feature_library_songs">Songs</string>
     <string name="feature_library_see_all">See all</string>
     <string name="feature_library_delete_song">Delete from device</string>

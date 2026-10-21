@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.wellbeing
 
+import com.boomlistener.core.common.navigateOnce
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -17,9 +18,9 @@ import java.util.Locale
 const val WELLBEING_ROUTE = "wellbeing"
 const val HISTORY_ROUTE = "history"
 
-fun NavController.navigateToWellbeing() = navigate(WELLBEING_ROUTE)
+fun NavController.navigateToWellbeing() = navigateOnce(WELLBEING_ROUTE)
 
-fun NavController.navigateToHistory() = navigate(HISTORY_ROUTE) { launchSingleTop = true }
+fun NavController.navigateToHistory() = navigateOnce(HISTORY_ROUTE) { launchSingleTop = true }
 
 /**
  * [songMenu] liga o menu das músicas do histórico ao resto do app (o :app

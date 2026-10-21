@@ -13,6 +13,8 @@ import com.boomlistener.data.deezer.DeezerRepository
 import com.boomlistener.data.deezer.ProfileResult
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
+import com.boomlistener.data.releases.MemoryReleasesChoices
+import com.boomlistener.data.releases.ReleasesChoices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -129,5 +131,32 @@ class ReleasesViewModelTest {
         assertTrue(isNewRelease(release(1, ReleaseType.Single, "2026-11-20"), today)) // pré-lançamento
         assertFalse(isNewRelease(release(1, ReleaseType.Single, "2026-08-01"), today))
         assertFalse(isNewRelease(Release(1, "x", ReleaseType.Album, null, null, null), today))
+    }
+
+    @Test
+    fun lembraOFiltroModoEJanelaEscolhidos() = runTest(dispatcher) {
+        val choices = MemoryReleasesChoices()
+        val follows = FakeFollows(listOf(FollowedArtist(1, "Chikoi")))
+        val first = ReleasesViewModel(follows, deezer, choices, today = { today })
+        backgroundScope.launch(dispatcher) { first.state.collect {} }
+        first.setFilter(ReleaseFilter.Singles)
+        first.setView(ReleasesView.ByArtist)
+        first.setPeriod(ReleasePeriod.Year)
+
+        // Abrir de novo: volta como ficou.
+        val again = ReleasesViewModel(follows, deezer, choices, today = { today })
+        backgroundScope.launch(dispatcher) { again.state.collect {} }
+        val ready = again.state.value as ReleasesUiState.Ready
+        assertEquals(ReleaseFilter.Singles, ready.filter)
+        assertEquals(ReleasesView.ByArtist, ready.view)
+        assertEquals(ReleasePeriod.Year, ready.period)
+
+        // Opção guardada que não existe mais: vale o padrão.
+        val odd = ReleasesViewModel(follows, deezer, MemoryReleasesChoices(ReleasesChoices("Grid", "Mixtapes", null)), today = { today })
+        backgroundScope.launch(dispatcher) { odd.state.collect {} }
+        val defaults = odd.state.value as ReleasesUiState.Ready
+        assertEquals(ReleaseFilter.All, defaults.filter)
+        assertEquals(ReleasesView.Latest, defaults.view)
+        assertEquals(ReleasePeriod.HalfYear, defaults.period)
     }
 }

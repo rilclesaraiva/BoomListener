@@ -1,17 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="core_designsystem_back">Back</string>
-    <string name="core_designsystem_close_search">Close search</string>
     <string name="core_designsystem_clear">Clear</string>
     <string name="core_designsystem_more">More options</string>
     <string name="core_designsystem_share">Share</string>
     <string name="core_designsystem_youtube_music">Listen on YouTube Music</string>
     <string name="core_designsystem_open_deezer">Open in Deezer</string>
-    <string name="core_designsystem_history">Listening history</string>
     <string name="core_designsystem_settings">Settings</string>
-    <string name="core_designsystem_profile">Your profile</string>
     <string name="core_designsystem_share_with">Share with %1$s</string>
-    <string name="core_designsystem_details">Details</string>
     <string name="core_designsystem_details_path">Location</string>
     <string name="core_designsystem_details_file">File</string>
     <string name="core_designsystem_details_format">Format</string>
