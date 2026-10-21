@@ -335,6 +335,8 @@ private fun TrackList(
             BoomFastScroller(
                 state = listState,
                 label = { index -> boomIndexLabel(state.tracks.getOrNull((index - headerItems).coerceAtLeast(0))?.title) },
+                // Só na seção "Músicas": o topo (recentes, álbuns, artistas) fica de fora.
+                startIndex = headerItems - 1,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding()),

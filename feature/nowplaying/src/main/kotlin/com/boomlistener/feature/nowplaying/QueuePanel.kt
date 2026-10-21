@@ -51,7 +51,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomFastScroller
-import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomMenuAction
@@ -234,7 +233,8 @@ internal fun QueuePanel(
             // Arrastar pela direita pula pela fila, mostrando a letra.
             BoomFastScroller(
                 state = listState,
-                label = { index -> localQueue.getOrNull(index)?.let { boomIndexLabel(it.item.title) } },
+                // Sem balão de letra: a fila tem a ordem de tocar (e dá para mudar), não a alfabética.
+                label = { null },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),

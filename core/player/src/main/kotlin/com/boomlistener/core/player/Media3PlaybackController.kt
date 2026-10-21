@@ -128,6 +128,12 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         }
     }
 
+    override fun skipToQueueItem(index: Int) = withController { player ->
+        if (index in 0 until player.mediaItemCount && index != player.currentMediaItemIndex) {
+            player.seekToDefaultPosition(index)
+        }
+    }
+
     override fun moveQueueItem(from: Int, to: Int) = withController { player ->
         val count = player.mediaItemCount
         if (from != to && from in 0 until count && to in 0 until count) player.moveMediaItem(from, to)

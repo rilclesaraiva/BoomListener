@@ -26,6 +26,13 @@ interface PlaybackController {
     /** Pula para a música da fila de posição original [index] e toca. */
     fun playQueueItem(index: Int)
 
+    /**
+     * Vai para a música da fila de posição original [index] como o botão de
+     * próxima/anterior faria (deslizar a capa): não conta como "escolhida" e
+     * mantém tocando ou pausado como estava.
+     */
+    fun skipToQueueItem(index: Int) = playQueueItem(index)
+
     /** Move a música da posição [from] para [to] (posições da lista original). */
     fun moveQueueItem(from: Int, to: Int)
 

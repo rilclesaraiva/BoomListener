@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.35.0] — 2026-10-20
+
+### ✨ New
+- **Swiping to change songs feels instant.** While you drag the cover, in the player or on the mini player, the next or previous song's cover already shows next to it. Let go and the song changes right away, with no empty screen in between.
+
+### 🐛 Fixes
+- Going back no longer leaves two screens on top of each other, half transparent. If a screen is still sliding in or out, a second "back" waits for it to finish.
+- On Home, the scroll bar now only covers the Songs section. It no longer goes up over Recently added, Albums and Artists.
+
+### 🎨 Visual tweaks
+- The Up next list no longer shows a letter bubble when you drag its scroll bar, since it isn't in alphabetical order.
+
 ## [0.34.0] — 2026-10-20
 
 ### ✨ New

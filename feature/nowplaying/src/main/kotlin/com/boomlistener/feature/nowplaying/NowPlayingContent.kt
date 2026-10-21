@@ -211,20 +211,26 @@ internal fun NowPlayingContent(
                             scroll = lyricsScroll,
                         )
                     } else {
-                        // Deslizar a capa para os lados troca de música.
-                        Box(
-                            Modifier.fillMaxSize().swipeToSkip(onPrevious = viewModel::previous, onNext = viewModel::next),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            BoomArtwork(
-                                image = artwork,
-                                fallbackText = item.title,
-                                size = null,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .aspectRatio(1f)
-                                    .clickable(onClick = viewModel::toggleLyrics),
-                            )
+                        // Deslizar a capa para os lados troca de música: a próxima
+                        // (ou a anterior) já aparece ao lado enquanto o dedo puxa.
+                        QueuePager(
+                            state = state,
+                            onSkipTo = viewModel::skipToQueueItem,
+                            pageSpacing = 24.dp,
+                            modifier = Modifier.fillMaxSize(),
+                        ) { song ->
+                            val cover = if (song.uri == item.uri) artwork else rememberArtwork(viewModel, song.uri, sizePx)
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                BoomArtwork(
+                                    image = cover,
+                                    fallbackText = song.title,
+                                    size = null,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f)
+                                        .clickable(onClick = viewModel::toggleLyrics),
+                                )
+                            }
                         }
                     }
                 }

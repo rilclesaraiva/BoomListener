@@ -63,16 +63,21 @@ private const val MIN_ITEMS = 25
  *
  * @param label rótulo do item de posição (na lista inteira, contando
  *   cabeçalhos) — normalmente [boomIndexLabel] do título; null não mostra balão.
+ * @param startIndex a barra só cobre a lista a partir deste item (ex.: a seção
+ *   "Músicas" do Início): só aparece com ele no topo, e o começo do trilho é ele.
  */
 @Composable
 fun BoomFastScroller(
     state: LazyListState,
     label: (index: Int) -> String?,
     modifier: Modifier = Modifier,
+    startIndex: Int = 0,
 ) {
-    val metrics = remember(state) { ListScrollMetrics(state) }
+    val metrics = remember(state, startIndex) { ListScrollMetrics(state, startIndex) }
     FastScrollerImpl(
         total = { state.layoutInfo.totalItemsCount },
+        startIndex = startIndex,
+        inSection = { state.firstVisibleItemIndex >= startIndex },
         visible = { state.layoutInfo.visibleItemsInfo.size },
         fraction = metrics::fraction,
         scrolling = { state.isScrollInProgress },
@@ -87,7 +92,7 @@ fun BoomFastScroller(
  * que estão na tela) vezes o número de itens. Assim a bolinha anda contínua,
  * chega ao fim junto com a lista, e arrastar até embaixo leva ao último item.
  */
-private class ListScrollMetrics(private val state: LazyListState) {
+private class ListScrollMetrics(private val state: LazyListState, private val start: Int) {
     /** Altura de uma linha comum (com o espaço entre linhas); 0 = ainda não mediu. */
     private var rowPx = 0f
 
@@ -104,7 +109,7 @@ private class ListScrollMetrics(private val state: LazyListState) {
     private fun maxScroll(row: Float): Float {
         val info = state.layoutInfo
         val viewport = info.viewportSize.height - info.beforeContentPadding - info.afterContentPadding
-        return info.totalItemsCount * row - viewport
+        return (info.totalItemsCount - start) * row - viewport
     }
 
     fun fraction(): Float {
@@ -112,15 +117,17 @@ private class ListScrollMetrics(private val state: LazyListState) {
         val max = maxScroll(row)
         if (max <= 0f) return 0f
         if (!state.canScrollForward) return 1f
-        val scrolled = state.firstVisibleItemIndex * row + state.firstVisibleItemScrollOffset
+        if (state.firstVisibleItemIndex < start) return 0f
+        val scrolled = (state.firstVisibleItemIndex - start) * row + state.firstVisibleItemScrollOffset
         return (scrolled / max).coerceIn(0f, 1f)
     }
 
     suspend fun scrollTo(fraction: Float) {
         val row = row()
         val target = (fraction * maxScroll(row)).coerceAtLeast(0f)
-        val index = (target / row).toInt().coerceIn(0, (state.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
-        state.scrollToItem(index, (target - index * row).roundToInt())
+        val last = (state.layoutInfo.totalItemsCount - 1).coerceAtLeast(start)
+        val index = (start + (target / row).toInt()).coerceIn(start, last)
+        state.scrollToItem(index, (target - (index - start) * row).roundToInt().coerceAtLeast(0))
     }
 }
 
@@ -151,6 +158,8 @@ fun BoomFastScroller(
 @Composable
 private fun FastScrollerImpl(
     total: () -> Int,
+    startIndex: Int = 0,
+    inSection: () -> Boolean = { true },
     visible: () -> Int,
     fraction: () -> Float,
     scrolling: () -> Boolean,
@@ -158,8 +167,10 @@ private fun FastScrollerImpl(
     label: (Int) -> String?,
     modifier: Modifier,
 ) {
-    val enoughItems by remember { derivedStateOf { total() >= MIN_ITEMS && total() > visible() } }
+    val enoughItems by remember { derivedStateOf { total() - startIndex >= MIN_ITEMS && total() > visible() } }
     if (!enoughItems) return
+    // Fora da seção (ex.: o topo do Início, acima de "Músicas"), a barra some.
+    val active by remember { derivedStateOf(inSection) }
 
     var dragging by remember { mutableStateOf(false) }
     var dragFraction by remember { mutableStateOf(0f) }
@@ -173,9 +184,11 @@ private fun FastScrollerImpl(
 
     // Aparece ao rolar ou arrastar; some um pouco depois de parar.
     var shown by remember { mutableStateOf(false) }
-    LaunchedEffect(isScrolling, dragging) {
-        if (isScrolling || dragging) {
+    LaunchedEffect(isScrolling, dragging, active) {
+        if (dragging || (isScrolling && active)) {
             shown = true
+        } else if (!active) {
+            shown = false
         } else {
             delay(HIDE_AFTER_MS)
             shown = false
@@ -190,7 +203,7 @@ private fun FastScrollerImpl(
     // último; no meio, o item proporcional (o que está perto da bolinha na tela).
     // Antes era o item do topo da tela, e com a bolinha lá embaixo o balão
     // mostrava uma letra lá de cima.
-    val shownIndex = (currentFraction * (total() - 1).coerceAtLeast(0)).roundToInt()
+    val shownIndex = startIndex + (currentFraction * (total() - 1 - startIndex).coerceAtLeast(0)).roundToInt()
 
     BoxWithConstraints(modifier.fillMaxHeight().padding(vertical = 8.dp)) {
         val density = LocalDensity.current

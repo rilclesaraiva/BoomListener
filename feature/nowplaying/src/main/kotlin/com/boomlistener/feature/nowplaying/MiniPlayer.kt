@@ -52,6 +52,7 @@ import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomFastSpatialSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
+import com.boomlistener.core.player.NowPlayingItem
 
 /**
  * Mini player acima da barra de navegação. Só aparece quando há música na fila.
@@ -146,28 +147,19 @@ fun MiniPlayer(
                 .clickable(onClick = sheetState::expand),
         ) {
             Column {
-                // Deslizar para os lados troca de música.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .swipeToSkip(onPrevious = viewModel::previous, onNext = viewModel::next)
-                        .padding(start = 8.dp, end = 4.dp, top = 8.dp, bottom = 6.dp),
+                    modifier = Modifier.padding(start = 8.dp, end = 4.dp, top = 8.dp, bottom = 6.dp),
                 ) {
-                    BoomArtwork(image = artwork, fallbackText = item?.title.orEmpty(), size = 48.dp)
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-                        Text(
-                            text = item?.title.orEmpty(),
-                            style = MaterialTheme.typography.titleSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = item?.artist ?: stringResource(R.string.feature_nowplaying_unknown_artist),
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    // Capa e nome deslizam para os lados (a próxima ou a anterior
+                    // já aparece ao puxar); os botões ficam parados.
+                    QueuePager(
+                        state = state,
+                        onSkipTo = viewModel::skipToQueueItem,
+                        pageSpacing = 16.dp,
+                        modifier = Modifier.weight(1f),
+                    ) { song ->
+                        MiniPlayerSong(song, viewModel, sizePx)
                     }
                     IconButton(onClick = viewModel::previous) {
                         Icon(BoomIcons.SkipPrevious, stringResource(R.string.feature_nowplaying_previous))
@@ -190,6 +182,30 @@ fun MiniPlayer(
                     modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 6.dp),
                 )
             }
+        }
+    }
+}
+
+/** Capa e nome de uma música no mini player (uma página do carrossel). */
+@Composable
+private fun MiniPlayerSong(song: NowPlayingItem, viewModel: NowPlayingViewModel, sizePx: Int) {
+    val artwork = rememberArtwork(viewModel, song.uri, sizePx)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        BoomArtwork(image = artwork, fallbackText = song.title, size = 48.dp)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+            Text(
+                text = song.title,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = song.artist ?: stringResource(R.string.feature_nowplaying_unknown_artist),
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

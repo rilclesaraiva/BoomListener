@@ -3,6 +3,9 @@
 
 package com.boomlistener.app
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.runtime.collectAsState
+import androidx.activity.compose.BackHandler
 import com.boomlistener.core.common.popBackStackOnce
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.Dispatchers
@@ -247,6 +250,16 @@ fun BoomListenerApp() {
                 )
             }
         }
+
+        // Enquanto uma tela ainda está entrando ou saindo, o "voltar" espera:
+        // um segundo voltar no meio da animação deixava as duas telas
+        // sobrepostas e transparentes. Vem depois do NavHost, então tem
+        // prioridade sobre ele (o gesto já começado continua com o NavHost).
+        val entryLifecycle = remember(backStackEntry) {
+            backStackEntry?.lifecycle?.currentStateFlow ?: MutableStateFlow(Lifecycle.State.RESUMED)
+        }
+        val entryState by entryLifecycle.collectAsState()
+        BackHandler(enabled = !entryState.isAtLeast(Lifecycle.State.RESUMED)) { }
 
         // Por último: fica por cima de tudo e tem prioridade no "voltar".
         PlayerSheet(
