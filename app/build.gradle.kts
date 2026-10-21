@@ -74,6 +74,8 @@ dependencies {
     implementation(project(":core:player"))
     implementation(project(":data:wellbeing"))
     implementation(project(":data:profile"))
+    // Tipo dos artistas seguidos na barra lateral (tela larga).
+    implementation(project(":data:releases"))
 
     implementation(project(":feature:library"))
     implementation(project(":feature:nowplaying"))
