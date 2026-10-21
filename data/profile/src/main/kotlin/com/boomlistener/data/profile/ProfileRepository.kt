@@ -139,7 +139,7 @@ internal class LocalProfileRepository(private val context: Context) : ProfileRep
             val imported = account.takeIf { it.exists() }?.let { runCatching { profileFromOldSocialAccount(it.readText()) }.getOrNull() }
             if (imported != null) {
                 val id = runCatching { JSONObject(account.readText()).optString("id") }.getOrNull().orEmpty()
-                var profile = imported
+                var profile: MyProfile = imported
                 // A sua foto e a sua capa já estavam guardadas no aparelho.
                 if (id.isNotEmpty()) {
                     ProfileImage.entries.forEach { kind ->
