@@ -62,4 +62,6 @@
     <string name="feature_nowplaying_speed">Speed</string>
     <string name="feature_nowplaying_speed_reset">Back to normal</string>
     <string name="feature_nowplaying_details">Details</string>
+    <string name="feature_nowplaying_favorite">Add to favorites</string>
+    <string name="feature_nowplaying_unfavorite">Remove from favorites</string>
 </resources>

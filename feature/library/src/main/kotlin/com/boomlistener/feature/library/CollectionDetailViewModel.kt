@@ -13,6 +13,7 @@ import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.library.PlaylistRepository
 import com.boomlistener.data.library.groupByAlbum
 import com.boomlistener.data.library.groupByGenre
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +30,8 @@ internal sealed interface CollectionRef {
     data class Genre(val key: String) : CollectionRef
     data class Album(val key: String) : CollectionRef
     data class Playlist(val id: Long) : CollectionRef
+    /** As músicas favoritas (o coração), a favoritada por último primeiro. */
+    data object Favorites : CollectionRef
 }
 
 internal sealed interface CollectionDetailUiState {
@@ -41,7 +44,15 @@ internal sealed interface CollectionDetailUiState {
         val year: Int?,
         val tracks: List<Track>,
         val isPlaylist: Boolean,
+        /** É a lista de favoritas (o nome vem do texto da tela, no idioma do celular). */
+        val isFavorites: Boolean = false,
     ) : CollectionDetailUiState
+}
+
+/** As favoritas que ainda estão no aparelho, na ordem dos favoritos. */
+internal fun favoriteTracks(uris: List<String>, library: List<Track>): List<Track> {
+    val byUri = library.associateBy { it.uri }
+    return uris.mapNotNull { byUri[it] }
 }
 
 /** Um gênero, álbum ou playlist aberto: ouvir, embaralhar e (na playlist) editar. */
@@ -51,14 +62,28 @@ internal class CollectionDetailViewModel(
     private val playlists: PlaylistRepository,
     private val player: PlaybackController,
     private val songLink: suspend (title: String, artist: String?, durationMs: Long) -> String? = { _, _, _ -> null },
+    /** Endereços das favoritas (só usados na lista de favoritas). */
+    private val favorites: Flow<List<String>> = flowOf(emptyList()),
 ) : ViewModel() {
 
     private val tracks = MutableStateFlow<List<Track>?>(null)
 
     val state: StateFlow<CollectionDetailUiState> =
-        combine(tracks, if (ref is CollectionRef.Playlist) playlists.playlists else flowOf(emptyList())) { all, lists ->
+        combine(
+            tracks,
+            if (ref is CollectionRef.Playlist) playlists.playlists else flowOf(emptyList()),
+            if (ref is CollectionRef.Favorites) favorites else flowOf(emptyList()),
+        ) { all, lists, favoriteUris ->
             when {
                 all == null -> CollectionDetailUiState.Loading
+                ref is CollectionRef.Favorites -> CollectionDetailUiState.Ready(
+                    name = "",
+                    subtitle = null,
+                    year = null,
+                    tracks = favoriteTracks(favoriteUris, all),
+                    isPlaylist = false,
+                    isFavorites = true,
+                )
                 ref is CollectionRef.Playlist -> lists.firstOrNull { it.id == ref.id }
                     ?.let { summarize(it, all) }
                     ?.let { CollectionDetailUiState.Ready(it.playlist.name, null, null, it.tracks, isPlaylist = true) }

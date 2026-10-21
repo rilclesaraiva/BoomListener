@@ -5,4 +5,10 @@
     <string name="nav_home">Home</string>
     <string name="nav_collections">Library</string>
     <string name="nav_profile">Profile</string>
+    <string name="wide_releases">Releases</string>
+    <string name="wide_new_playlist">New playlist</string>
+    <string name="wide_favorites">Favorites</string>
+    <string name="wide_collapse">Collapse</string>
+    <string name="wide_expand">Expand</string>
+    <string name="wide_show_artist">Show artist</string>
 </resources>

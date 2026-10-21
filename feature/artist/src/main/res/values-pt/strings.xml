@@ -46,4 +46,7 @@
     <string name="feature_artist_biography_source">Biografia do Last.fm</string>
     <string name="feature_artist_listeners">%1$s ouvintes no Last.fm</string>
     <string name="feature_artist_source_musicbrainz">Informações do artista: MusicBrainz · capas: Cover Art Archive</string>
+    <string name="feature_artist_panel_title">Sobre o artista</string>
+    <string name="feature_artist_panel_hide">Esconder painel</string>
+    <string name="feature_artist_panel_open">Ver página do artista</string>
 </resources>

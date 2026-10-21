@@ -80,7 +80,10 @@ internal fun CollectionDetailScreen(
     onEditTags: (Track) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val rawState by viewModel.state.collectAsStateWithLifecycle()
+    // Favoritas: o nome vem do texto da tela (no idioma do celular).
+    val favoritesName = stringResource(R.string.feature_library_favorites)
+    val state = (rawState as? CollectionDetailUiState.Ready)?.takeIf { it.isFavorites }?.copy(name = favoritesName) ?: rawState
     val ready = state as? CollectionDetailUiState.Ready
     var renaming by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -349,6 +352,7 @@ private fun DetailTrackRow(
                 BoomMoreMenu(
                     actions = listOfNotNull(
                         BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist)) { onAddToPlaylist(track) },
+                        favoriteAction(track.uri),
                         if (isPlaylist) {
                             BoomMenuAction(stringResource(R.string.feature_library_remove_from_playlist)) { viewModel.remove(track) }
                         } else {

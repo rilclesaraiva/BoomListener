@@ -66,4 +66,7 @@
         <item quantity="one">%1$s fan</item>
         <item quantity="other">%1$s fans</item>
     </plurals>
+    <string name="feature_library_favorite">Add to favorites</string>
+    <string name="feature_library_unfavorite">Remove from favorites</string>
+    <string name="feature_library_favorites">Favorites</string>
 </resources>

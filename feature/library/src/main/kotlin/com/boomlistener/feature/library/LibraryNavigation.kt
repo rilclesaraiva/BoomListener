@@ -17,6 +17,7 @@ import androidx.navigation.navArgument
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
+import com.boomlistener.data.library.FavoritesData
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.library.PlaylistData
 
@@ -30,6 +31,13 @@ private const val ARG_KEY = "key"
 private const val GENRE_ROUTE = "collections/genre?$ARG_KEY={$ARG_KEY}"
 private const val ALBUM_ROUTE = "collections/album?$ARG_KEY={$ARG_KEY}"
 private const val PLAYLIST_ROUTE = "collections/playlist?$ARG_KEY={$ARG_KEY}"
+private const val FAVORITES_ROUTE = "collections/favorites?$ARG_KEY={$ARG_KEY}"
+
+/** Abre uma playlist pelo id (ex.: logo depois de criar pela barra lateral). */
+fun NavController.navigateToPlaylist(id: Long) = openCollection("playlist", id.toString())
+
+/** Abre a lista de favoritas (Biblioteca → Playlists, ou a barra lateral em tela larga). */
+fun NavController.navigateToFavorites() = openCollection("favorites", "all")
 
 private fun NavController.openCollection(base: String, key: String) =
     navigateOnce("collections/$base?$ARG_KEY=" + Uri.encode(key))
@@ -69,6 +77,7 @@ fun NavGraphBuilder.libraryScreen(
                 playlistRepository = PlaylistData.repository(context),
                 searchArtistsOnline = deezer::searchArtists,
                 remoteImage = deezer::image,
+                favoriteUris = FavoritesData.repository(context).favorites,
             )
         }
         CollectionsScreen(
@@ -77,18 +86,20 @@ fun NavGraphBuilder.libraryScreen(
             onOpenArtist = onOpenArtist,
             onOpenAlbum = { navController.openCollection("album", it) },
             onOpenPlaylist = { navController.openCollection("playlist", it.toString()) },
+            onOpenFavorites = { navController.navigateToFavorites() },
             onOpenReleases = onOpenReleases,
             onOpenSettings = onOpenSettings,
         )
     }
 
     val back: () -> Unit = { navController.popBackStackOnce() }
-    listOf(GENRE_ROUTE, ALBUM_ROUTE, PLAYLIST_ROUTE).forEach { route ->
+    listOf(GENRE_ROUTE, ALBUM_ROUTE, PLAYLIST_ROUTE, FAVORITES_ROUTE).forEach { route ->
         composable(route, arguments = listOf(navArgument(ARG_KEY) { type = NavType.StringType })) { entry ->
             val key = entry.arguments?.getString(ARG_KEY).orEmpty()
             val ref = when (route) {
                 GENRE_ROUTE -> CollectionRef.Genre(key)
                 ALBUM_ROUTE -> CollectionRef.Album(key)
+                FAVORITES_ROUTE -> CollectionRef.Favorites
                 else -> CollectionRef.Playlist(key.toLongOrNull() ?: -1)
             }
             val context = LocalContext.current.applicationContext
@@ -99,6 +110,7 @@ fun NavGraphBuilder.libraryScreen(
                     playlists = PlaylistData.repository(context),
                     player = PlayerConnection.controller(context),
                     songLink = DeezerData.repository(context)::youtubeMusicLinkForSong,
+                    favorites = FavoritesData.repository(context).favorites,
                 )
             }
             CollectionDetailScreen(

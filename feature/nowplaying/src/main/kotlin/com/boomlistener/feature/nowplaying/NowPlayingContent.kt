@@ -3,6 +3,9 @@
 
 package com.boomlistener.feature.nowplaying
 
+import com.boomlistener.data.library.FavoritesData
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -189,104 +192,130 @@ internal fun NowPlayingContent(
                     return@Column
                 }
 
-                // Capa ⇄ letra: tocar na capa abre a letra, com a capa
-                // encolhendo e esmaecendo enquanto a letra entra.
-                AnimatedContent(
-                    targetState = showLyrics,
-                    transitionSpec = {
-                        (fadeIn(effects) + scaleIn(spatial, initialScale = 0.92f)) togetherWith
-                            (fadeOut(effects) + scaleOut(spatial, targetScale = 0.92f))
-                    },
-                    label = "artworkOrLyrics",
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                ) { lyricsOn ->
-                    if (lyricsOn) {
-                        LyricsView(
-                            state = lyrics,
-                            positionMs = state.positionMs,
-                            onSeek = viewModel::seekTo,
-                            onRetry = viewModel::retryLyrics,
-                            // Tocar na letra volta para a capa, como tocar na capa abriu a letra.
-                            onTap = viewModel::toggleLyrics,
-                            scroll = lyricsScroll,
-                        )
-                    } else {
-                        // Deslizar a capa para os lados troca de música: a próxima
-                        // (ou a anterior) já aparece ao lado enquanto o dedo puxa.
-                        QueuePager(
-                            state = state,
-                            onSkipTo = viewModel::skipToQueueItem,
-                            pageSpacing = 24.dp,
-                            modifier = Modifier.fillMaxSize(),
-                        ) { song ->
-                            // Cada página carrega a própria capa (usar a da música atual
-                            // fazia a capa anterior piscar na página nova ao trocar).
-                            val cover = rememberArtwork(viewModel, song.uri, sizePx)
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                BoomArtwork(
-                                    image = cover,
-                                    fallbackText = song.title,
-                                    size = null,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(1f)
-                                        .clickable(onClick = viewModel::toggleLyrics),
-                                )
+                // Capa ⇄ letra: tocar na capa abre a letra, com a capa encolhendo
+                // e esmaecendo enquanto a letra entra.
+                val artworkArea: @Composable (Modifier) -> Unit = { areaModifier ->
+                    AnimatedContent(
+                        targetState = showLyrics,
+                        transitionSpec = {
+                            (fadeIn(effects) + scaleIn(spatial, initialScale = 0.92f)) togetherWith
+                                (fadeOut(effects) + scaleOut(spatial, targetScale = 0.92f))
+                        },
+                        label = "artworkOrLyrics",
+                        modifier = areaModifier,
+                    ) { lyricsOn ->
+                        if (lyricsOn) {
+                            LyricsView(
+                                state = lyrics,
+                                positionMs = state.positionMs,
+                                onSeek = viewModel::seekTo,
+                                onRetry = viewModel::retryLyrics,
+                                // Tocar na letra volta para a capa, como tocar na capa abriu a letra.
+                                onTap = viewModel::toggleLyrics,
+                                scroll = lyricsScroll,
+                            )
+                        } else {
+                            // Deslizar a capa para os lados troca de música: a próxima
+                            // (ou a anterior) já aparece ao lado enquanto o dedo puxa.
+                            QueuePager(
+                                state = state,
+                                onSkipTo = viewModel::skipToQueueItem,
+                                pageSpacing = 24.dp,
+                                modifier = Modifier.fillMaxSize(),
+                            ) { song ->
+                                // Cada página carrega a própria capa (usar a da música atual
+                                // fazia a capa anterior piscar na página nova ao trocar).
+                                val cover = rememberArtwork(viewModel, song.uri, sizePx)
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    BoomArtwork(
+                                        image = cover,
+                                        fallbackText = song.title,
+                                        size = null,
+                                        // Quadrada no maior tamanho que cabe (em pé, a largura;
+                                        // deitado, a altura).
+                                        modifier = Modifier
+                                            .aspectRatio(1f, matchHeightConstraintsFirst = true)
+                                            .clickable(onClick = viewModel::toggleLyrics),
+                                    )
+                                }
                             }
                         }
                     }
                 }
-                Spacer(Modifier.height(16.dp))
+                val details: @Composable () -> Unit = {
+                    Spacer(Modifier.height(16.dp))
 
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                // Tocar no nome do artista abre o perfil dele.
-                Text(
-                    text = listOfNotNull(
-                        item.artist ?: stringResource(R.string.feature_nowplaying_unknown_artist),
-                        item.album,
-                    ).joinToString(" • "),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.then(
-                        item.artist?.let { name -> Modifier.clickable { onOpenArtist(name) } } ?: Modifier,
-                    ),
-                )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                    Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    // Tocar no nome do artista abre o perfil dele.
+                    Text(
+                        text = listOfNotNull(
+                            item.artist ?: stringResource(R.string.feature_nowplaying_unknown_artist),
+                            item.album,
+                        ).joinToString(" • "),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.then(
+                            item.artist?.let { name -> Modifier.clickable { onOpenArtist(name) } } ?: Modifier,
+                        ),
+                    )
+                    }
+                    FavoriteButton(item.uri)
+                    }
 
-                Spacer(Modifier.height(24.dp))
-                BoomSeekBar(
-                    progress = state.progress,
-                    isPlaying = state.isPlaying,
-                    onSeek = viewModel::seekToFraction,
-                )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelMedium)
-                    Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.height(24.dp))
+                    BoomSeekBar(
+                        progress = state.progress,
+                        isPlaying = state.isPlaying,
+                        onSeek = viewModel::seekToFraction,
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelMedium)
+                        Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelMedium)
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    Controls(
+                        isPlaying = state.isPlaying,
+                        shuffle = state.shuffle,
+                        repeatMode = state.repeatMode,
+                        onShuffle = viewModel::toggleShuffle,
+                        onPrevious = viewModel::previous,
+                        onPlayPause = viewModel::togglePlayPause,
+                        onNext = viewModel::next,
+                        onRepeat = viewModel::cycleRepeatMode,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    UpNextHandle(state = state, queueState = queueState)
+                    // Folga para o puxador da fila não ficar colado no gesto de
+                    // "ir para a tela inicial" do Android, que fica logo abaixo.
+                    Spacer(Modifier.height(20.dp))
                 }
-
-                Spacer(Modifier.height(16.dp))
-                Controls(
-                    isPlaying = state.isPlaying,
-                    shuffle = state.shuffle,
-                    repeatMode = state.repeatMode,
-                    onShuffle = viewModel::toggleShuffle,
-                    onPrevious = viewModel::previous,
-                    onPlayPause = viewModel::togglePlayPause,
-                    onNext = viewModel::next,
-                    onRepeat = viewModel::cycleRepeatMode,
-                )
-                Spacer(Modifier.height(4.dp))
-                UpNextHandle(state = state, queueState = queueState)
-                // Folga para o puxador da fila não ficar colado no gesto de
-                // "ir para a tela inicial" do Android, que fica logo abaixo.
-                Spacer(Modifier.height(20.dp))
+                // Na horizontal (celular deitado, tablet): capa à esquerda, o resto à direita.
+                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                    val wide = maxWidth > maxHeight && maxWidth >= 560.dp
+                    if (wide) {
+                        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                            artworkArea(Modifier.weight(1f).fillMaxHeight())
+                            Spacer(Modifier.width(32.dp))
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) { details() }
+                        }
+                    } else {
+                        Column(Modifier.fillMaxSize()) {
+                            artworkArea(Modifier.weight(1f).fillMaxWidth())
+                            details()
+                        }
+                    }
+                }
             }
           }
         }
@@ -422,4 +451,21 @@ internal fun formatTime(ms: Long): String {
     val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
     return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds) else "%d:%02d".format(minutes, seconds)
+}
+
+/** Coração da música que está tocando: favoritar ou tirar dos favoritos. */
+@Composable
+private fun FavoriteButton(uri: String) {
+    val context = LocalContext.current.applicationContext
+    val repository = remember { FavoritesData.repository(context) }
+    val favorites by repository.favorites.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val favorite = uri in favorites
+    IconButton(onClick = { scope.launch { repository.toggle(uri) } }) {
+        Icon(
+            imageVector = if (favorite) BoomIcons.Favorite else BoomIcons.FavoriteBorder,
+            contentDescription = stringResource(if (favorite) R.string.feature_nowplaying_unfavorite else R.string.feature_nowplaying_favorite),
+            tint = if (favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }

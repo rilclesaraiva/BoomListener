@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.36.0] — 2026-10-21
+
+### ✨ New
+- **A new layout for tablets and landscape.** With a wide screen, the bottom bar becomes a side bar with Releases, Home, Library, New playlist, Favorites and the artists you follow. The side bar can shrink to just icons.
+- **Artist panel while a song plays.** On a wide screen, the right side shows the artist that's playing: photo, Follow, biography and popular songs. Hide it with the arrow, and bring it back the same way.
+- Your profile photo and Settings sit at the top right on wide screens.
+- **Favorites.** Tap the heart in the player, or "Add to favorites" in any song menu. Your favorites are the first item under Library → Playlists.
+- **Player in landscape:** the cover goes on the left, and the song info and controls on the right.
+
 ## [0.35.2] — 2026-10-21
 
 ### 🐛 Fixes

@@ -75,6 +75,7 @@ internal fun CollectionsScreen(
     onOpenArtist: (name: String) -> Unit,
     onOpenAlbum: (key: String) -> Unit,
     onOpenPlaylist: (id: Long) -> Unit,
+    onOpenFavorites: () -> Unit,
     onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -170,6 +171,18 @@ internal fun CollectionsScreen(
                                 Spacer(Modifier.size(8.dp))
                                 Text(stringResource(R.string.feature_library_new_playlist))
                             }
+                        }
+                        // Favoritas: sempre a primeira (o coração no player e nos menus).
+                        item(key = "favorites") {
+                            GroupRow(
+                                name = stringResource(R.string.feature_library_favorites),
+                                count = current.favorites.size,
+                                cover = current.favorites.firstOrNull(),
+                                viewModel = viewModel,
+                                fallbackIcon = BoomIcons.Favorite,
+                                onClick = onOpenFavorites,
+                                modifier = Modifier.animateItem(),
+                            )
                         }
                         if (current.playlists.isEmpty()) item(key = "empty") { EmptySection(R.string.feature_library_playlists_empty) }
                         items(current.playlists, key = { "p:" + it.playlist.id }) { summary ->
@@ -389,6 +402,7 @@ private fun collectionLabels(state: CollectionsUiState.Ready, search: ArtistSear
         }
         CollectionKind.Playlists -> {
             add(null) // botão de nova playlist
+            add(null) // favoritas
             if (state.playlists.isEmpty()) add(null)
             state.playlists.forEach { add(boomIndexLabel(it.playlist.name)) }
         }

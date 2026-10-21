@@ -64,4 +64,6 @@
     <string name="feature_nowplaying_speed">Velocidade</string>
     <string name="feature_nowplaying_speed_reset">Voltar ao normal</string>
     <string name="feature_nowplaying_details">Detalhes</string>
+    <string name="feature_nowplaying_favorite">Favoritar</string>
+    <string name="feature_nowplaying_unfavorite">Tirar dos favoritos</string>
 </resources>

@@ -536,6 +536,7 @@ private fun SongMenuView(track: Track, menu: SongMenu, openState: MutableState<B
     val scope = rememberCoroutineScope()
     val actions = listOfNotNull(
         BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist)) { menu.onAddToPlaylist(track) },
+        favoriteAction(track.uri),
         track.artist?.let { name -> BoomMenuAction(stringResource(R.string.feature_library_go_to_artist)) { menu.onOpenArtist(name) } },
         BoomMenuAction(stringResource(R.string.feature_library_edit_tags)) { menu.onEditTags(track) },
         BoomMenuAction(stringResource(R.string.feature_library_details)) { menu.onDetails(track) },

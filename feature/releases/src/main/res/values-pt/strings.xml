@@ -22,4 +22,5 @@
     <string name="feature_releases_period_month">Último mês</string>
     <string name="feature_releases_period_half_year">Últimos 6 meses</string>
     <string name="feature_releases_period_year">Último ano</string>
+    <string name="feature_releases_following">Artistas que você segue</string>
 </resources>

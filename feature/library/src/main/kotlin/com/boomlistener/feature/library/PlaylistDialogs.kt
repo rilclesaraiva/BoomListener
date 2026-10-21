@@ -232,3 +232,28 @@ internal fun PlaylistNameDialog(
         },
     )
 }
+
+/**
+ * "Nova playlist" fora da Biblioteca (barra lateral em telas largas): pede o
+ * nome, cria e devolve o id em [onCreated] para abrir a playlist.
+ */
+@Composable
+fun NewPlaylistDialog(onCreated: (id: Long) -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current.applicationContext
+    val repository = remember { PlaylistData.repository(context) }
+    val playlists by repository.playlists.collectAsStateWithLifecycle(emptyList())
+    val scope = rememberCoroutineScope()
+    PlaylistNameDialog(
+        title = stringResource(R.string.feature_library_new_playlist),
+        initialName = stringResource(R.string.feature_library_playlist_default_name, playlists.size + 1),
+        confirmLabel = stringResource(R.string.feature_library_create),
+        onConfirm = { name ->
+            scope.launch {
+                val id = repository.create(name)
+                onDismiss()
+                onCreated(id)
+            }
+        },
+        onDismiss = onDismiss,
+    )
+}

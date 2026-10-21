@@ -3,6 +3,31 @@
 
 package com.boomlistener.app
 
+import com.boomlistener.feature.profile.ProfileAvatarButton
+import com.boomlistener.feature.library.navigateToPlaylist
+import com.boomlistener.feature.library.navigateToFavorites
+import com.boomlistener.feature.library.NewPlaylistDialog
+import com.boomlistener.feature.artist.ArtistSidePanel
+import com.boomlistener.core.player.PlayerConnection
+import com.boomlistener.core.designsystem.component.LocalWideLayout
+import com.boomlistener.core.designsystem.component.LocalProfileButton
+import com.boomlistener.core.designsystem.component.BoomIcons
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxWithConstraints
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.runtime.collectAsState
 import androidx.activity.compose.BackHandler
@@ -116,6 +141,8 @@ fun BoomListenerApp() {
     // Música do player a adicionar numa playlist (a folha aparece por cima de tudo).
     var addToPlaylistUri by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current.applicationContext
+    // O que está tocando (o painel do artista, na tela larga, depende disso).
+    val playback by remember { PlayerConnection.controller(context) }.state.collectAsStateWithLifecycle()
     // Tocar de novo na aba aberta: a lista dela sobe até o topo.
     val reselect = remember { MutableSharedFlow<String>(extraBufferCapacity = 1) }
 
@@ -167,11 +194,154 @@ fun BoomListenerApp() {
     val favoriteShare = remember(favoriteShareApp) {
         favoriteShareApp?.let { app -> FavoriteShare(app.label) { ShareTarget.shareNextWith(app.packageName) } }
     }
+    // Ir para uma aba (barra de baixo no celular, barra lateral na tela larga).
+    fun openTab(destination: TopLevelDestination) {
+        val selected = currentDestination?.hierarchy?.any { node ->
+            node.route == destination.route || node.route?.startsWith(destination.route + "/") == true
+        } == true
+        when {
+            // Já está nela: sobe a lista até o topo.
+            route == destination.route -> reselect.tryEmit(destination.route)
+            // Numa tela de dentro dela (ex.: um álbum): volta para o começo da aba.
+            selected -> navController.popBackStack(destination.route, inclusive = false)
+            else -> navController.navigate(destination.route) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+    // A aba marcada (também nas telas de dentro dela, ex.: um álbum da Biblioteca).
+    val selectedTab = TopLevelDestination.entries.firstOrNull { destination ->
+        currentDestination?.hierarchy?.any { node ->
+            node.route == destination.route || node.route?.startsWith(destination.route + "/") == true
+        } == true
+    }
+    var creatingPlaylist by remember { mutableStateOf(false) }
+
+    val navGraph: @Composable (Modifier) -> Unit = { navModifier ->
+        NavHost(
+            navController = navController,
+            startDestination = LIBRARY_ROUTE,
+            modifier = navModifier,
+            enterTransition = enter,
+            exitTransition = exit,
+            popEnterTransition = popEnter,
+            popExitTransition = popExit,
+            // Sem isto o Android usa a animação padrão (a tela encolhe num
+            // cartão e some de uma vez ao soltar o dedo).
+            predictivePopEnterTransition = { popEnter(this) },
+            predictivePopExitTransition = { popExit(this) },
+        ) {
+            val back: () -> Unit = { navController.popBackStackOnce() }
+            val openHistory: () -> Unit = { navController.navigateToHistory() }
+            val openReleases: () -> Unit = { navController.navigateToReleases() }
+            val openSettings: () -> Unit = { navController.navigateToSettings() }
+            libraryScreen(
+                navController = navController,
+                onOpenArtist = navController::navigateToArtist,
+                onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
+                onOpenReleases = openReleases,
+                onOpenSettings = openSettings,
+            )
+            profileScreen(
+                onOpenArtist = navController::navigateToArtist,
+                onOpenHistory = openHistory,
+                onOpenSettings = openSettings,
+            )
+            artistScreen(
+                navController = navController,
+                onBack = back,
+                onOpenArtist = navController::navigateToArtist,
+            )
+            tageditorScreen(onBack = back)
+            releasesScreen(
+                onBack = back,
+                onOpenAlbum = navController::navigateToAlbum,
+                onOpenArtist = navController::navigateToArtist,
+            )
+            settingsScreen(
+                navController = navController,
+                onOpenWellbeing = navController::navigateToWellbeing,
+            )
+            wellbeingScreen(
+                onBack = back,
+                songMenu = HistorySongMenu(
+                    onOpenArtist = navController::navigateToArtist,
+                    onEditTags = { uri -> navController.navigateToTagEditor(uri) },
+                    onAddToPlaylist = { uri -> addToPlaylistUri = uri },
+                ),
+            )
+        }
+    }
+
     CompositionLocalProvider(
         LocalTabReselect provides reselect,
         LocalFavoriteShare provides favoriteShare,
     ) {
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+      val wide = isWideWindow(maxWidth, maxHeight)
+      // Na primeira vez numa tela larga: tablet abre tudo; celular deitado
+      // (pouca largura) começa com a barra e o painel recolhidos.
+      var sidebarExpanded by rememberSaveable { mutableStateOf(maxWidth >= 840.dp) }
+      var artistPanelOpen by rememberSaveable { mutableStateOf(maxWidth >= 1000.dp) }
+      CompositionLocalProvider(
+          LocalWideLayout provides wide,
+          LocalProfileButton provides { ProfileAvatarButton(onClick = { openTab(TopLevelDestination.Profile) }) },
+      ) {
+        if (wide) {
+            // Tela larga: barra lateral | telas + mini player | artista tocando.
+            Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
+                Row(Modifier.fillMaxSize()) {
+                    WideSidebar(
+                        expanded = sidebarExpanded,
+                        onToggle = { sidebarExpanded = !sidebarExpanded },
+                        selected = selectedTab,
+                        onOpenTab = ::openTab,
+                        onOpenReleases = { navController.navigateToReleases() },
+                        onNewPlaylist = { creatingPlaylist = true },
+                        onOpenFavorites = { navController.navigateToFavorites() },
+                        onOpenArtist = navController::navigateToArtist,
+                    )
+                    Column(Modifier.weight(1f).fillMaxHeight()) {
+                        navGraph(Modifier.weight(1f).fillMaxWidth())
+                        AnimatedVisibility(
+                            visible = !inSettings && !inTagEditor,
+                            enter = expandVertically(barSpec) + fadeIn(barFade),
+                            exit = shrinkVertically(barSpec) + fadeOut(barFade),
+                        ) {
+                            MiniPlayer(
+                                sheetState = playerSheet,
+                                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
+                            )
+                        }
+                    }
+                    // Só com música tocando: o artista dela (recolhível).
+                    val playingArtist = playback.item?.artist?.takeIf { it.isNotBlank() }
+                    if (playingArtist != null) {
+                        val panelInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.End + WindowInsetsSides.Vertical)
+                        if (artistPanelOpen) {
+                            ArtistSidePanel(
+                                artistName = playingArtist,
+                                onOpenArtist = navController::navigateToArtist,
+                                onCollapse = { artistPanelOpen = false },
+                                modifier = Modifier
+                                    .width(if (maxWidth >= 1000.dp) 340.dp else 300.dp)
+                                    .fillMaxHeight()
+                                    .windowInsetsPadding(panelInsets)
+                                    .padding(top = 8.dp, end = 8.dp, bottom = 8.dp),
+                            )
+                        } else {
+                            Column(Modifier.fillMaxHeight().windowInsetsPadding(panelInsets).padding(top = 8.dp, end = 4.dp)) {
+                                IconButton(onClick = { artistPanelOpen = true }) {
+                                    Icon(BoomIcons.ChevronLeft, contentDescription = stringResource(R.string.wide_show_artist))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
         Scaffold(
             bottomBar = {
                 Column {
@@ -189,25 +359,9 @@ fun BoomListenerApp() {
                     ) {
                     NavigationBar {
                         TopLevelDestination.entries.forEach { destination ->
-                            // A aba fica marcada também nas telas de dentro dela (ex.: um álbum da Biblioteca).
-                            val selected = currentDestination?.hierarchy?.any { node ->
-                                node.route == destination.route || node.route?.startsWith(destination.route + "/") == true
-                            } == true
                             NavigationBarItem(
-                                selected = selected,
-                                onClick = {
-                                    when {
-                                        // Já está nela: sobe a lista até o topo.
-                                        route == destination.route -> reselect.tryEmit(destination.route)
-                                        // Numa tela de dentro dela (ex.: um álbum): volta para o começo da aba.
-                                        selected -> navController.popBackStack(destination.route, inclusive = false)
-                                        else -> navController.navigate(destination.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    }
-                                },
+                                selected = destination == selectedTab,
+                                onClick = { openTab(destination) },
                                 icon = { Icon(destination.icon, contentDescription = null) },
                                 label = { Text(stringResource(destination.label)) },
                             )
@@ -217,60 +371,9 @@ fun BoomListenerApp() {
                 }
             },
         ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = LIBRARY_ROUTE,
-                // Cada tela cuida do próprio topo; daqui só a folga das barras de baixo.
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-                enterTransition = enter,
-                exitTransition = exit,
-                popEnterTransition = popEnter,
-                popExitTransition = popExit,
-                // Sem isto o Android usa a animação padrão (a tela encolhe num
-                // cartão e some de uma vez ao soltar o dedo).
-                predictivePopEnterTransition = { popEnter(this) },
-                predictivePopExitTransition = { popExit(this) },
-            ) {
-                val back: () -> Unit = { navController.popBackStackOnce() }
-                val openHistory: () -> Unit = { navController.navigateToHistory() }
-                val openReleases: () -> Unit = { navController.navigateToReleases() }
-                val openSettings: () -> Unit = { navController.navigateToSettings() }
-                libraryScreen(
-                    navController = navController,
-                    onOpenArtist = navController::navigateToArtist,
-                    onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
-                    onOpenReleases = openReleases,
-                    onOpenSettings = openSettings,
-                )
-                profileScreen(
-                    onOpenArtist = navController::navigateToArtist,
-                    onOpenHistory = openHistory,
-                    onOpenSettings = openSettings,
-                )
-                artistScreen(
-                    navController = navController,
-                    onBack = back,
-                    onOpenArtist = navController::navigateToArtist,
-                )
-                tageditorScreen(onBack = back)
-                releasesScreen(
-                    onBack = back,
-                    onOpenAlbum = navController::navigateToAlbum,
-                    onOpenArtist = navController::navigateToArtist,
-                )
-                settingsScreen(
-                    navController = navController,
-                    onOpenWellbeing = navController::navigateToWellbeing,
-                )
-                wellbeingScreen(
-                    onBack = back,
-                    songMenu = HistorySongMenu(
-                        onOpenArtist = navController::navigateToArtist,
-                        onEditTags = { uri -> navController.navigateToTagEditor(uri) },
-                        onAddToPlaylist = { uri -> addToPlaylistUri = uri },
-                    ),
-                )
-            }
+            // Cada tela cuida do próprio topo; daqui só a folga das barras de baixo.
+            navGraph(Modifier.padding(bottom = innerPadding.calculateBottomPadding()))
+        }
         }
 
         // Enquanto uma tela ainda está entrando ou saindo, o "voltar" espera:
@@ -303,8 +406,16 @@ fun BoomListenerApp() {
             AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
         }
 
+        if (creatingPlaylist) {
+            NewPlaylistDialog(
+                onCreated = { id -> navController.navigateToPlaylist(id) },
+                onDismiss = { creatingPlaylist = false },
+            )
+        }
+
         // Versão nova no GitHub: aviso em tela cheia (no máximo uma consulta a cada 6 h).
         UpdatePromptHost()
+      }
     }
 }
 }

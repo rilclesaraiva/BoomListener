@@ -46,4 +46,7 @@
     <string name="feature_artist_biography_source">Biography from Last.fm</string>
     <string name="feature_artist_listeners">%1$s listeners on Last.fm</string>
     <string name="feature_artist_source_musicbrainz">Artist info from MusicBrainz · covers from the Cover Art Archive</string>
+    <string name="feature_artist_panel_title">About the artist</string>
+    <string name="feature_artist_panel_hide">Hide panel</string>
+    <string name="feature_artist_panel_open">See artist page</string>
 </resources>

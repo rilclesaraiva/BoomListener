@@ -3,6 +3,11 @@
 
 package com.boomlistener.feature.profile
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material3.IconButton
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -197,3 +202,19 @@ internal fun ProfileBanner(image: ProfilePicture?, modifier: Modifier = Modifier
 
 /** "Repetir para sempre" do AnimatedImageDrawable (REPETITION_INFINITE = -1). */
 private const val REPEAT_FOREVER = -1
+
+/**
+ * A sua foto num botão redondo (topo à direita em telas largas): abre o
+ * perfil. Sem foto, a inicial do nome (ou o ícone de pessoa).
+ */
+@Composable
+fun ProfileAvatarButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val context = LocalContext.current.applicationContext
+    val repository = remember { ProfileData.repository(context) }
+    val profile by repository.profile.collectAsStateWithLifecycle()
+    val photo = rememberProfileImage(ProfileImage.Avatar, profile.avatarVersion)
+    val label = stringResource(R.string.feature_profile_my_profile)
+    IconButton(onClick = onClick, modifier = modifier.semantics { contentDescription = label }) {
+        Avatar(profile.name, size = 32.dp, picture = photo)
+    }
+}

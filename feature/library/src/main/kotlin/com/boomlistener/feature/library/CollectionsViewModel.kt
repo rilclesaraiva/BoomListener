@@ -18,7 +18,9 @@ import com.boomlistener.data.library.groupByArtist
 import com.boomlistener.data.library.groupByGenre
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -49,6 +51,8 @@ internal sealed interface CollectionsUiState {
         val artists: List<TrackGroup>,
         val albums: List<TrackGroup>,
         val playlists: List<PlaylistSummary>,
+        /** As favoritas que estão no aparelho (a primeira linha da pílula Playlists). */
+        val favorites: List<Track> = emptyList(),
     ) : CollectionsUiState
 }
 
@@ -59,6 +63,7 @@ internal class CollectionsViewModel(
     /** Busca de artistas no Deezer (null = falhou). */
     private val searchArtistsOnline: suspend (String) -> List<ExternalArtist>? = { emptyList() },
     private val remoteImage: suspend (String, Int) -> Bitmap? = { _, _ -> null },
+    favoriteUris: Flow<List<String>> = flowOf(emptyList()),
 ) : ViewModel() {
 
     private val _artistSearch = MutableStateFlow(ArtistSearch())
@@ -71,7 +76,7 @@ internal class CollectionsViewModel(
     private val selected = MutableStateFlow(CollectionKind.Genres)
 
     val state: StateFlow<CollectionsUiState> =
-        combine(tracks, playlistRepository.playlists, selected) { all, playlists, kind ->
+        combine(tracks, playlistRepository.playlists, selected, favoriteUris) { all, playlists, kind, favorites ->
             if (all == null) {
                 CollectionsUiState.Loading
             } else {
@@ -81,6 +86,7 @@ internal class CollectionsViewModel(
                     artists = groupByArtist(all),
                     albums = groupByAlbum(all),
                     playlists = playlists.map { summarize(it, all) },
+                    favorites = favoriteTracks(favorites, all),
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CollectionsUiState.Loading)
