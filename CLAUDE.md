@@ -155,7 +155,7 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 - Imagens vêm do Photo Picker (sem permissão), recortadas e reduzidas no aparelho (`prepareProfileImage`: foto 512×512, capa 1080×405, WebP); GIF curto vai como está, GIF grande ou vídeo de até 15 s vira GIF menor (`animatedProfileGif` + `GifEncoder`). A versão da imagem é a hora em que foi trocada (a tela relê quando muda).
 - "Editar perfil" (lápis, ou tocar na foto, na capa ou no nome) só grava ao tocar em Salvar e não fecha ao puxar para baixo (`sheetGesturesEnabled = false`; fecha pelo X, voltar ou tocando fora). A cor tinge o perfil (`Modifier.profileBackground`).
 - Estatísticas calculadas no aparelho (`ProfileStats.kt`, testado): números do mês, mais ouvidas, tempo por dia, horários de pico, seus artistas e histórico.
-- **Migração da 0.32:** na primeira abertura, `LocalProfileRepository` traz nome, descrição, cor, foto e capa de `filesDir/social` e apaga essa pasta inteira (o @, o segredo e o resto do social). O código do servidor (`boomlistener-social` na Cloudflare) saiu do repositório; o Worker em si é apagado pelo rilclesaraiva no painel da Cloudflare (esta sessão não tem acesso).
+- **Migração da 0.32:** na primeira abertura, `LocalProfileRepository` traz nome, descrição, cor, foto e capa de `filesDir/social` e apaga essa pasta inteira (o @, o segredo e o resto do social). O servidor (`boomlistener-social` na Cloudflare) foi apagado pelo rilclesaraiva em 20/10/2026 e o código dele saiu do repositório. O único Worker que resta é o proxy do Last.fm.
 
 ## Proxy do Last.fm
 
