@@ -3,7 +3,7 @@
 
 package com.boomlistener.core.designsystem.component
 
-import androidx.activity.compose.PredictiveBackHandler
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,7 +18,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /**
@@ -54,14 +53,9 @@ fun BoomModalSheet(
         // Sem o voltar do M3 (e a animação de encolher do sistema).
         properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
     ) {
-        PredictiveBackHandler(enabled = dismissEnabled) { progress ->
-            try {
-                progress.collect { }
-                scope.launch { sheetState.hide() }.invokeOnCompletion { dismiss() }
-            } catch (cancelled: CancellationException) {
-                // Gesto desistido: o painel continua aberto.
-                throw cancelled
-            }
+        // Voltar (botão ou gesto concluído): desce o painel e só então fecha.
+        BackHandler(enabled = dismissEnabled) {
+            scope.launch { sheetState.hide() }.invokeOnCompletion { dismiss() }
         }
         content()
     }
