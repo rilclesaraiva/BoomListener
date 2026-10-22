@@ -139,9 +139,16 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
                 ranked = rankCandidates(local, candidates)
                 if (ranked.isNotEmpty()) break
             }
-            // Nada na busca: procura nas músicas da página do artista, como a
-            // página do artista faz (lá ela aparecia, aqui "nada encontrado").
-            if (ranked.isEmpty() && artist != null) ranked = searchInArtistTracks(local, artist)
+            // Sem uma resposta segura na busca: procura também nas músicas da
+            // página do artista (populares e os álbuns que batem), como a página
+            // do artista faz para marcar o que você tem.
+            if ((ranked.firstOrNull()?.confidence ?: 0f) < AUTO_PICK_CONFIDENCE && artist != null) {
+                val fromArtist = runCatching { searchInArtistTracks(local, artist) }.getOrDefault(emptyList())
+                ranked = (fromArtist + ranked)
+                    .sortedByDescending { it.confidence }
+                    .distinctBy { it.trackId }
+                    .take(6)
+            }
             if (ranked.isEmpty()) TrackSearchResult.NotFound else TrackSearchResult.Found(ranked)
         } catch (_: Exception) {
             TrackSearchResult.Failed
@@ -152,8 +159,17 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
     private fun searchInArtistTracks(local: LocalTrackInfo, artistName: String): List<TrackCandidate> {
         val search = getJson("$API/search/artist?q=" + URLEncoder.encode(artistName, "UTF-8") + "&limit=10")
         val found = pickArtist(artistName, search.optJSONArray("data").objects().map { it.toArtist() }) ?: return emptyList()
-        val top = getJson("$API/artist/${found.id}/top?limit=100")
-        return rankArtistTracks(local, found.name, top.optJSONArray("data").objects().map { it.toCandidate() })
+        val top = getJson("$API/artist/${found.id}/top?limit=100").optJSONArray("data").objects().map { it.toCandidate() }
+        val releases = getJson("$API/artist/${found.id}/albums?limit=200").optJSONArray("data").objects().map { it.toRelease() }
+        val fromAlbums = albumsForTrack(local, releases).flatMap { release ->
+            val album = getJson("$API/album/${release.id}")
+            val cover = album.str("cover_xl") ?: album.str("cover_big") ?: album.str("cover_medium")
+            // As músicas do álbum vêm sem o álbum dentro: completa com o do próprio álbum.
+            album.optJSONObject("tracks")?.optJSONArray("data").objects().map { track ->
+                track.toCandidate().copy(albumId = release.id, album = release.title, coverUrl = cover)
+            }
+        }
+        return rankArtistTracks(local, found.name, fromAlbums + top)
     }
 
     override suspend fun trackTags(candidate: TrackCandidate): TrackTagsResult = withContext(Dispatchers.IO) {

@@ -7,7 +7,6 @@ import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.graphics.Color
 import com.boomlistener.core.designsystem.component.BoomProfilePalette
 import com.boomlistener.core.designsystem.component.parseProfileColor
 import com.boomlistener.core.designsystem.component.profileBackground
@@ -65,6 +64,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -121,20 +124,11 @@ internal fun MyProfileScreen(
     BoomScreenScaffold(
         title = stringResource(R.string.feature_profile_my_profile),
         modifier = modifier,
-        actions = {
-            IconButton(onClick = { editing = true }) {
-                Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_profile_edit_profile))
-            }
-            IconButton(onClick = onOpenSettings) {
-                Icon(BoomIcons.Settings, contentDescription = stringResource(R.string.feature_profile_settings))
-            }
-        },
-        // A cor que você escolheu tinge o perfil inteiro, a barra de cima junto.
+        // O título faz parte da página (primeira linha da lista): fica no topo
+        // dela e sobe junto ao rolar, sem barra presa na tela.
+        topBar = {},
+        // A cor que você escolheu tinge o perfil inteiro, o título junto.
         pageBackground = { profileBackground(state?.profile?.color) },
-        // Barra transparente e fixa: não some ao rolar, e a lista começa embaixo
-        // dela (padding), então nada passa por trás do título.
-        topBarColor = Color.Transparent,
-        pinnedTopBar = true,
     ) { padding ->
         val current = state
         if (current == null) {
@@ -144,8 +138,11 @@ internal fun MyProfileScreen(
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(bottom = 32.dp),
-            modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
+            modifier = Modifier.fillMaxSize(),
         ) {
+            item(key = "title") {
+                ProfileTitleBar(onEdit = { editing = true }, onOpenSettings = onOpenSettings)
+            }
             item(key = "header") {
                 Header(current, viewModel, onEdit = { editing = true })
                 if (saveFailed) {
@@ -217,6 +214,31 @@ internal fun MyProfileScreen(
     val profile = state?.profile
     if (editing && profile != null) {
         EditProfileSheet(profile = profile, viewModel = viewModel, onDismiss = { editing = false })
+    }
+}
+
+/** Título "Seu perfil" com editar e Ajustes: o topo da página, não uma barra presa na tela. */
+@Composable
+private fun ProfileTitleBar(onEdit: () -> Unit, onOpenSettings: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .height(64.dp)
+            .padding(start = 16.dp, end = 4.dp),
+    ) {
+        Text(
+            stringResource(R.string.feature_profile_my_profile),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = onEdit) {
+            Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_profile_edit_profile))
+        }
+        IconButton(onClick = onOpenSettings) {
+            Icon(BoomIcons.Settings, contentDescription = stringResource(R.string.feature_profile_settings))
+        }
     }
 }
 

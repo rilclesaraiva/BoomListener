@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.39.1] — 2026-10-22
+
+### 🐛 Fixes
+- Automatic tag fixing now also looks inside the artist's albums on Deezer, the same way the artist page marks what you have. A song like "SKY.exe (Slowed)" is found in its EP instead of suggesting other songs of the artist.
+- Suggestions that only share a loose word with your song (like "Slowed") no longer show up as options.
+
+### 🎨 Visual tweaks
+- Profile: the "Your profile" title is now part of the page. It sits at the top and scrolls away with everything else, instead of staying pinned on the screen.
+
 ## [0.39.0] — 2026-10-22
 
 ### ✨ New

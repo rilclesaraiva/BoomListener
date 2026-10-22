@@ -4,6 +4,7 @@
 package com.boomlistener.data.deezer
 
 import com.boomlistener.core.common.normalizedForSearch
+import com.boomlistener.core.model.Release
 import kotlin.math.abs
 
 /*
@@ -105,8 +106,14 @@ fun matchConfidence(local: LocalTrackInfo, candidate: TrackCandidate): Float {
     ) 0.05f else 0f
     // Artista diferente quase nunca é a mesma música (homônimos de título).
     if (!local.artist.isNullOrBlank() && artist == 0f) return (0.2f * title).coerceAtMost(0.2f)
+    // Título com quase nada em comum ("SKY.exe (Slowed)" x "MONTAGEM DEMORA
+    // (Slowed)") não é a música, mesmo sendo do mesmo artista e com duração parecida.
+    if (title < MIN_TITLE_SIMILARITY) return (0.3f * title).coerceAtMost(0.3f)
     return (0.45f * title + 0.35f * artist + 0.2f * duration + albumBonus).coerceIn(0f, 1f)
 }
+
+/** Abaixo disso o título é outro (só uma palavra solta em comum, como "Slowed"). */
+internal const val MIN_TITLE_SIMILARITY = 0.4f
 
 /** Confiança mínima para aparecer na lista de opções. */
 const val MIN_CONFIDENCE = 0.45f
@@ -134,3 +141,18 @@ fun rankCandidates(local: LocalTrackInfo, candidates: List<TrackCandidate>, limi
  */
 fun rankArtistTracks(local: LocalTrackInfo, artistName: String, tracks: List<TrackCandidate>, limit: Int = 6): List<TrackCandidate> =
     rankCandidates(local, tracks.map { it.copy(artist = artistName) }, limit)
+
+/**
+ * Álbuns do artista onde vale procurar a música: o do arquivo (pelo nome) e
+ * os com o nome da própria música ("SKY.exe" para "SKY.exe (Slowed)"). É
+ * como a página do artista marca o que você tem.
+ */
+fun albumsForTrack(local: LocalTrackInfo, releases: List<Release>, limit: Int = 3): List<Release> {
+    val album = local.album?.takeIf { it.isNotBlank() }?.let(::comparableTitle)
+    val song = comparableSongTitle(local.title)
+    return releases.filter { release ->
+        val title = comparableTitle(release.title)
+        val asSong = comparableSongTitle(release.title)
+        (album != null && title == album) || (asSong.isNotEmpty() && (song == asSong || song.startsWith("$asSong ")))
+    }.take(limit)
+}

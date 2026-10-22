@@ -88,4 +88,32 @@ class TagMatchingTest {
         assertEquals(1L, ranked.first().trackId)
         assertTrue(ranked.first().confidence >= AUTO_PICK_CONFIDENCE)
     }
+
+    @Test
+    fun soPalavraSoltaEmComumNaoContaComoAMesmaMusica() {
+        // "SKY.exe (Slowed)" do Alucard não é "MONTAGEM DEMORA (Slowed)" dele.
+        val local = LocalTrackInfo("SKY.exe (Slowed)", "Alucard", "SKY.exe", 78_000)
+        val ranked = rankCandidates(
+            local,
+            listOf(
+                candidate(1, "MONTAGEM DEMORA (Slowed)", "Alucard", durationMs = 79_000),
+                candidate(2, "MTG ROSA (Slowed)", "Alucard", durationMs = 80_000),
+                candidate(3, "SKY.exe (Slowed)", "Alucard", album = "SKY.exe", durationMs = 78_000),
+            ),
+        )
+        assertEquals(listOf(3L), ranked.map { it.trackId })
+    }
+
+    @Test
+    fun albunsOndeProcurarAMusica() {
+        val local = LocalTrackInfo("SKY.exe (Slowed)", "Alucard", null, 78_000)
+        fun release(id: Long, title: String) =
+            com.boomlistener.core.model.Release(id, title, com.boomlistener.core.model.ReleaseType.EP, null, null, null)
+        val releases = listOf(release(1, "SUCKERPUNCH"), release(2, "SKY.exe"), release(3, "MONTAGEM DELIRANTE"), release(4, "SKY Remixes"))
+        // Pelo nome da música (sem álbum no arquivo): o "SKY.exe", não outros que só começam com "SKY".
+        assertEquals(listOf(2L), albumsForTrack(local, releases).map { it.id })
+        // Pelo álbum do arquivo, ignorando "- EP" e maiúsculas.
+        val withAlbum = local.copy(title = "Outra", album = "Montagem Delirante - EP")
+        assertEquals(listOf(3L), albumsForTrack(withAlbum, releases).map { it.id })
+    }
 }
