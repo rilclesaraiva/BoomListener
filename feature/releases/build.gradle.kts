@@ -12,6 +12,10 @@ android {
 dependencies {
     implementation(project(":data:releases"))
     implementation(project(":data:deezer"))
+    // Conferência de lançamentos em segundo plano.
+    implementation(libs.androidx.work.runtime)
+    // Notificações (NotificationCompat).
+    implementation(libs.androidx.core)
 
     testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.common.ShareTarget
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
@@ -50,8 +51,13 @@ internal fun ShareSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifi
         title = stringResource(R.string.feature_settings_share),
         onBack = onBack,
         modifier = modifier,
+        // Sem barra presa na tela: o título é o topo da página.
+        topBar = {},
     ) { padding ->
         LazyColumn(contentPadding = padding) {
+            item(key = "pageTitle") {
+                BoomPageTitle(stringResource(R.string.feature_settings_share), onBack = onBack, large = true)
+            }
             item(key = "hint") {
                 Text(
                     stringResource(R.string.feature_settings_share_hint),

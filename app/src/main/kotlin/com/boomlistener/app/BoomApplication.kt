@@ -9,6 +9,7 @@ import com.boomlistener.data.wellbeing.HistoryData
 import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.StatsData
 import com.boomlistener.data.profile.ProfileData
+import com.boomlistener.feature.releases.ReleaseAlerts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +30,8 @@ class BoomApplication : Application() {
         // Abre o perfil já no início: na primeira vez depois da versão com
         // amigos, traz nome, foto, capa e cor e apaga o que era do social.
         ProfileData.repository(this)
+        // Confere lançamentos dos artistas seguidos a cada ~12 h (avisos no celular).
+        ReleaseAlerts.schedule(this)
         PlaybackHooks.onListened = { play ->
             appScope.launch {
                 history.record(HistoryEntry(play.uri, play.title, play.artist, play.album, play.timestampMs))

@@ -103,4 +103,15 @@ class CollectionsViewModelTest {
         vm.createPlaylist("Correr")
         assertEquals(2, (vm.state.value as CollectionsUiState.Ready).playlists.size)
     }
+
+    @Test
+    fun gradeOuListaLembradaPorPilula() = runTest(dispatcher) {
+        val layout = com.boomlistener.data.library.MemoryCollectionsLayout()
+        val vm = CollectionsViewModel(FakeLibraryRepository(sampleTracks), FakePlaylists(emptyList()), layout = layout)
+        // Padrão: só os álbuns em grade.
+        assertEquals(setOf("albums"), vm.gridKinds.value)
+        vm.setGrid(CollectionKind.Artists, true)
+        vm.setGrid(CollectionKind.Albums, false)
+        assertEquals(setOf("artists"), layout.gridKinds.value)
+    }
 }

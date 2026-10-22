@@ -11,6 +11,7 @@ import com.boomlistener.core.designsystem.component.BoomProfilePalette
 import com.boomlistener.core.designsystem.component.parseProfileColor
 import com.boomlistener.core.designsystem.component.profileBackground
 import com.boomlistener.core.designsystem.component.clickableWithMenu
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -220,19 +221,7 @@ internal fun MyProfileScreen(
 /** Título "Seu perfil" com editar e Ajustes: o topo da página, não uma barra presa na tela. */
 @Composable
 private fun ProfileTitleBar(onEdit: () -> Unit, onOpenSettings: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .height(64.dp)
-            .padding(start = 16.dp, end = 4.dp),
-    ) {
-        Text(
-            stringResource(R.string.feature_profile_my_profile),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.weight(1f),
-        )
+    BoomPageTitle(stringResource(R.string.feature_profile_my_profile)) {
         IconButton(onClick = onEdit) {
             Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_profile_edit_profile))
         }

@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
@@ -62,8 +63,13 @@ internal fun LibrarySettingsScreen(
         title = stringResource(R.string.feature_settings_library),
         onBack = onBack,
         modifier = modifier,
+        // Sem barra presa na tela: o título é o topo da página.
+        topBar = {},
     ) { padding ->
         LazyColumn(contentPadding = padding) {
+            item(key = "pageTitle") {
+                BoomPageTitle(stringResource(R.string.feature_settings_library), onBack = onBack, large = true)
+            }
             item(key = "duration") {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_library_duration)) {
                     DurationSlider(

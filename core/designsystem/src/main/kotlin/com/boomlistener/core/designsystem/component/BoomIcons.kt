@@ -5,6 +5,7 @@ package com.boomlistener.core.designsystem.component
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -158,6 +159,13 @@ object BoomIcons {
         "Image",
         "M21,19V5c0,-1.1 -0.9,-2 -2,-2H5c-1.1,0 -2,0.9 -2,2v14c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2zM8.5,13.5l2.5,3.01L14.5,12l4.5,6H5l3.5,-4.5z",
     )
+
+    // Grade / lista (Biblioteca).
+    val GridView: ImageVector = materialIcon(
+        "GridView",
+        "M3,3v8h8V3H3zM9,9H5V5h4V9zM3,13v8h8v-8H3zM9,19H5v-4h4V19zM13,3v8h8V3H13zM19,9h-4V5h4V9zM13,13v8h8v-8H13zM19,19h-4v-4h4V19z",
+    )
+    val ListView: ImageVector = Icons.AutoMirrored.Filled.List
 
     // Ícones do menu das músicas (caminhos dos Material Icons).
     val Share: ImageVector = Icons.Filled.Share

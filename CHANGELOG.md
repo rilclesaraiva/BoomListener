@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.40.0] — 2026-10-22
+
+### ✨ New
+- **Release alerts:** your phone now tells you when an artist you follow releases a new album, EP or single. The app checks about twice a day, and tapping the alert opens Releases. Turn alerts on or off with the bell on the Releases screen. On Android 13 and newer, the app asks for permission to show notifications.
+- **Grid or list in Library:** a new button next to the tabs switches genres, artists, playlists and albums between a grid of big covers and a list. The app remembers your choice for each tab.
+
+### 🎨 Visual tweaks
+- Library and Settings no longer have a bar pinned to the top of the screen. The title is part of the page and scrolls away with it, like on your profile.
+
 ## [0.39.2] — 2026-10-22
 
 ### 🐛 Fixes

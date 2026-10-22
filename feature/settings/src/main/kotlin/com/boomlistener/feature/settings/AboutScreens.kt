@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.boomlistener.core.designsystem.component.BoomAccent
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
@@ -54,8 +55,13 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         title = stringResource(R.string.feature_settings_about_short),
         onBack = onBack,
         modifier = modifier,
+        // Sem barra presa na tela: o título é o topo da página.
+        topBar = {},
     ) { padding ->
         LazyColumn(contentPadding = padding) {
+            item(key = "pageTitle") {
+                BoomPageTitle(stringResource(R.string.feature_settings_about_short), onBack = onBack, large = true)
+            }
             item(key = "hero") { AboutHero() }
             item(key = "text") {
                 Text(
@@ -177,8 +183,13 @@ internal fun PrivacyScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         title = stringResource(R.string.feature_settings_privacy),
         onBack = onBack,
         modifier = modifier,
+        // Sem barra presa na tela: o título é o topo da página.
+        topBar = {},
     ) { padding ->
         LazyColumn(contentPadding = padding) {
+            item(key = "pageTitle") {
+                BoomPageTitle(stringResource(R.string.feature_settings_privacy), onBack = onBack, large = true)
+            }
             item {
                 Text(
                     text = stringResource(R.string.feature_settings_privacy_text),
@@ -218,8 +229,13 @@ internal fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         title = stringResource(R.string.feature_settings_licenses),
         onBack = onBack,
         modifier = modifier,
+        // Sem barra presa na tela: o título é o topo da página.
+        topBar = {},
     ) { padding ->
         LazyColumn(contentPadding = padding) {
+            item(key = "pageTitle") {
+                BoomPageTitle(stringResource(R.string.feature_settings_licenses), onBack = onBack, large = true)
+            }
             item {
                 BoomSettingsSection(title = null) {
                     attributions.forEach { BoomSettingsItem(icon = null, title = it.name, subtitle = it.detail) }

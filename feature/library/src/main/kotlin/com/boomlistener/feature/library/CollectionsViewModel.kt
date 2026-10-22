@@ -12,6 +12,8 @@ import com.boomlistener.core.model.ExternalArtist
 import com.boomlistener.core.model.Playlist
 import com.boomlistener.core.model.Track
 import com.boomlistener.data.library.LibraryRepository
+import com.boomlistener.data.library.MemoryCollectionsLayout
+import com.boomlistener.data.library.CollectionsLayoutRepository
 import com.boomlistener.data.library.PlaylistRepository
 import com.boomlistener.data.library.TrackGroup
 import com.boomlistener.data.library.groupByAlbum
@@ -32,6 +34,15 @@ import kotlinx.coroutines.launch
 
 /** As seções do carrossel da Biblioteca, na ordem em que aparecem. */
 internal enum class CollectionKind { Genres, Artists, Playlists, Albums }
+
+/** Nome guardado da pílula (grade/lista): fixo, não muda se o enum for renomeado. */
+internal val CollectionKind.storageKey: String
+    get() = when (this) {
+        CollectionKind.Genres -> "genres"
+        CollectionKind.Artists -> "artists"
+        CollectionKind.Playlists -> "playlists"
+        CollectionKind.Albums -> "albums"
+    }
 
 /**
  * "Ver todos" do Início: qual pílula abrir quando a aba Biblioteca aparecer.
@@ -67,7 +78,14 @@ internal class CollectionsViewModel(
     favoriteUris: Flow<List<String>> = flowOf(emptyList()),
     /** Para tocar um álbum direto do menu dele (null nos testes). */
     private val player: PlaybackController? = null,
+    /** Grade ou lista em cada pílula (lembrado). */
+    private val layout: CollectionsLayoutRepository = MemoryCollectionsLayout(),
 ) : ViewModel() {
+
+    /** Pílulas mostradas em grade. */
+    val gridKinds: StateFlow<Set<String>> = layout.gridKinds
+
+    fun setGrid(kind: CollectionKind, grid: Boolean) = layout.setGrid(kind.storageKey, grid)
 
     fun playTracks(tracks: List<Track>) {
         if (tracks.isNotEmpty()) player?.play(tracks, 0)

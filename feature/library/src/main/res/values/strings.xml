@@ -70,4 +70,6 @@
     <string name="feature_library_favorite">Add to favorites</string>
     <string name="feature_library_unfavorite">Remove from favorites</string>
     <string name="feature_library_favorites">Favorites</string>
+    <string name="feature_library_show_grid">Show as grid</string>
+    <string name="feature_library_show_list">Show as list</string>
 </resources>

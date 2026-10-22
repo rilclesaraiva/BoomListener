@@ -18,6 +18,7 @@ import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
 import com.boomlistener.data.library.FavoritesData
+import com.boomlistener.data.library.CollectionsLayoutData
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.library.PlaylistData
 
@@ -79,6 +80,7 @@ fun NavGraphBuilder.libraryScreen(
                 remoteImage = deezer::image,
                 favoriteUris = FavoritesData.repository(context).favorites,
                 player = PlayerConnection.controller(context),
+                layout = CollectionsLayoutData.repository(context),
             )
         }
         CollectionsScreen(

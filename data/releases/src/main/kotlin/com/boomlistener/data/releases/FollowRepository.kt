@@ -76,4 +76,13 @@ object ReleasesData {
         choices ?: synchronized(this) {
             choices ?: PrefsReleasesChoices(context.applicationContext).also { choices = it }
         }
+
+    @Volatile
+    private var alerts: ReleaseAlertsRepository? = null
+
+    /** Avisos de lançamentos no celular. */
+    fun alerts(context: Context): ReleaseAlertsRepository =
+        alerts ?: synchronized(this) {
+            alerts ?: PrefsReleaseAlerts(context.applicationContext).also { alerts = it }
+        }
 }

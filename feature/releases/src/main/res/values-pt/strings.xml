@@ -23,4 +23,13 @@
     <string name="feature_releases_period_half_year">Últimos 6 meses</string>
     <string name="feature_releases_period_year">Último ano</string>
     <string name="feature_releases_following">Artistas que você segue</string>
+    <string name="feature_releases_channel_name">Lançamentos novos</string>
+    <string name="feature_releases_channel_description">Álbuns, EPs e singles novos dos artistas que você segue</string>
+    <string name="feature_releases_notification_title">Novidade de %1$s</string>
+    <string name="feature_releases_notification_summary">%1$d lançamentos novos dos artistas que você segue</string>
+    <string name="feature_releases_alerts_on">Desligar avisos de lançamentos</string>
+    <string name="feature_releases_alerts_off">Ligar avisos de lançamentos</string>
+    <string name="feature_releases_alerts_turned_on">Você vai ser avisado quando um artista que você segue lançar algo</string>
+    <string name="feature_releases_alerts_turned_off">Avisos de lançamentos desligados</string>
+    <string name="feature_releases_alerts_denied">As notificações estão bloqueadas para o app. Libere nos ajustes do sistema.</string>
 </resources>

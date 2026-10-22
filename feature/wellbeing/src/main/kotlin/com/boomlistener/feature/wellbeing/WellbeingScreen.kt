@@ -11,6 +11,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -28,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.wellbeing.SongStat
@@ -53,15 +55,23 @@ internal fun WellbeingScreen(
         title = stringResource(R.string.feature_wellbeing_title),
         onBack = onBack,
         modifier = modifier,
+        // Sem barra presa na tela (área dos Ajustes): o título é o topo da página.
+        topBar = {},
     ) { padding ->
+        val pageTitle: @Composable () -> Unit = {
+            BoomPageTitle(stringResource(R.string.feature_wellbeing_title), onBack = onBack, large = true)
+        }
         if (top.isEmpty()) {
-            BoomPlaceholder(
-                title = stringResource(R.string.feature_wellbeing_most_played),
-                message = stringResource(R.string.feature_wellbeing_most_played_empty),
-                modifier = Modifier.padding(padding),
-            )
+            Column(Modifier.padding(padding)) {
+                pageTitle()
+                BoomPlaceholder(
+                    title = stringResource(R.string.feature_wellbeing_most_played),
+                    message = stringResource(R.string.feature_wellbeing_most_played_empty),
+                )
+            }
         } else {
             LazyColumn(contentPadding = padding) {
+                item(key = "pageTitle") { pageTitle() }
                 item {
                     Text(
                         text = stringResource(R.string.feature_wellbeing_most_played),

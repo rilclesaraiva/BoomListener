@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.datastore.PreferencesData
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
@@ -43,8 +44,13 @@ internal fun AppearanceScreen(
         title = stringResource(R.string.feature_settings_appearance),
         onBack = onBack,
         modifier = modifier,
+        // Sem barra presa na tela: o título é o topo da página.
+        topBar = {},
     ) { padding ->
         LazyColumn(contentPadding = padding) {
+            item(key = "pageTitle") {
+                BoomPageTitle(stringResource(R.string.feature_settings_appearance), onBack = onBack, large = true)
+            }
             item {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_theme)) {
                     themes.forEach { (mode, title, summary) ->

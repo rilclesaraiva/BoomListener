@@ -93,6 +93,7 @@ import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -226,6 +227,17 @@ fun BoomListenerApp() {
         val current = navController.currentBackStackEntry
         val same = current?.destination?.route == ARTIST_ROUTE && current.arguments?.getString(ARTIST_NAME_ARG) == name
         if (!same) navController.navigateToArtist(name)
+    }
+    // Tocou no aviso de lançamento: abre a tela de Lançamentos (player fechado).
+    val openReleasesRequest by AppRequests.openReleases.collectAsState()
+    LaunchedEffect(openReleasesRequest) {
+        if (openReleasesRequest) {
+            AppRequests.openReleases.value = false
+            // Abrindo o app pelo aviso: espera a navegação estar pronta.
+            navController.currentBackStackEntryFlow.first()
+            playerSheet.collapse()
+            navController.navigateToReleases()
+        }
     }
     // Saiu do player aberto para outra tela (artista, editor): ao voltar até a
     // tela de onde saiu, o player abre de novo, como estava.

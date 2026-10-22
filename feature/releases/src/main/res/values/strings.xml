@@ -23,4 +23,13 @@
     <string name="feature_releases_period_half_year">Last 6 months</string>
     <string name="feature_releases_period_year">Last year</string>
     <string name="feature_releases_following">Artists you follow</string>
+    <string name="feature_releases_channel_name">New releases</string>
+    <string name="feature_releases_channel_description">New albums, EPs and singles from artists you follow</string>
+    <string name="feature_releases_notification_title">New from %1$s</string>
+    <string name="feature_releases_notification_summary">%1$d new releases from artists you follow</string>
+    <string name="feature_releases_alerts_on">Turn off release alerts</string>
+    <string name="feature_releases_alerts_off">Turn on release alerts</string>
+    <string name="feature_releases_alerts_turned_on">You\'ll be told when an artist you follow releases something</string>
+    <string name="feature_releases_alerts_turned_off">Release alerts are off</string>
+    <string name="feature_releases_alerts_denied">Notifications are blocked for the app. Allow them in the system settings.</string>
 </resources>

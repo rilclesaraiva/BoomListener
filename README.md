@@ -10,7 +10,7 @@ A **local** music player for Android. Free, open source, no ads, no account.
 - **Swipe to change songs** on the mini player or on the cover
 - **Edit tags**: title, artist, album, year, genre, cover and lyrics, with automatic suggestions from Deezer and MusicBrainz
 - **Artist pages** with photo, biography (Last.fm), popular songs and the full discography, marking what you have and what you're missing
-- **Releases**: follow artists and see their new albums, EPs and singles in one place
+- **Releases**: follow artists and see their new albums, EPs and singles in one place, with an alert on your phone when something new comes out
 - **Favorites and playlists**
 - **Your profile**, just for you: name, photo, cover (GIFs too) and color, with your listening stats, most played songs, top artists and history. It never leaves your phone.
 - Background playback with notification, lock screen and headphone controls; choose the audio output from the player
@@ -27,7 +27,7 @@ Your library, playlists, favorites, profile, followed artists and stats stay **o
 - matching YouTube Music links when you share a song (song.link)
 - checking GitHub for a new version
 
-The only permission it asks for is access to your music and audio.
+It asks for access to your music and audio, and (on Android 13 and newer) for permission to show release alerts, which you can turn off.
 
 ## Download
 

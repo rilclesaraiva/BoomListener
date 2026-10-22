@@ -29,6 +29,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -68,11 +72,23 @@ internal fun ReleasesScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(RELEASES_ROUTE, listState)
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_releases_title),
         onBack = onBack,
         modifier = modifier,
+        // Sino: liga e desliga os avisos de lançamentos no celular.
+        actions = {
+            ReleaseAlertsButton(onMessage = { text ->
+                scope.launch {
+                    snackbar.currentSnackbarData?.dismiss()
+                    snackbar.showSnackbar(text)
+                }
+            })
+        },
+        snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         when (val current = state) {
             ReleasesUiState.Loading -> BoomLoading(Modifier.padding(padding))
