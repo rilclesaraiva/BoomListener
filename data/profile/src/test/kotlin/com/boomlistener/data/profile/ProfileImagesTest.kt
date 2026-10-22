@@ -52,7 +52,7 @@ class ProfileImagesTest {
     fun gifSoVaiComoEstaSePequenoECurto() {
         val avatar = ProfileImage.Avatar
         assertEquals(true, gifFitsAsIs(1_000_000, 480, 480, 4_000, avatar))
-        assertEquals(false, gifFitsAsIs(3_500_000, 480, 480, 4_000, avatar)) // grande demais
+        assertEquals(false, gifFitsAsIs(MAX_GIF_BYTES + 1, 480, 480, 4_000, avatar)) // grande demais
         assertEquals(false, gifFitsAsIs(1_000_000, 1920, 1080, 4_000, avatar)) // resolução maior que o necessário
         assertEquals(false, gifFitsAsIs(1_000_000, 480, 480, 40_000, avatar)) // longo demais
         assertEquals(true, gifFitsAsIs(2_000_000, 1080, 405, 10_000, ProfileImage.Banner))
