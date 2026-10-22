@@ -355,9 +355,7 @@ private fun EditProfileSheet(profile: MyProfile, viewModel: MyProfileViewModel, 
         onDismissRequest = onDismiss,
         dismissEnabled = !saving,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        // Puxar para baixo não fecha (fechava sem querer, perdendo o que foi
-        // mexido): fecha pelo X, pelo voltar ou tocando fora.
-        sheetGesturesEnabled = false,
+        // Puxar para baixo fecha (sem botão de X), como os outros painéis.
     ) {
         Column(
             Modifier
@@ -367,16 +365,10 @@ private fun EditProfileSheet(profile: MyProfile, viewModel: MyProfileViewModel, 
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(R.string.feature_profile_edit_profile),
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = onDismiss, enabled = !saving) {
-                    Icon(BoomIcons.Close, contentDescription = stringResource(R.string.feature_profile_close))
-                }
-            }
+            Text(
+                stringResource(R.string.feature_profile_edit_profile),
+                style = MaterialTheme.typography.headlineSmall,
+            )
 
             // Capa: tocar troca; "Tirar capa" tira.
             Box(contentAlignment = Alignment.Center) {

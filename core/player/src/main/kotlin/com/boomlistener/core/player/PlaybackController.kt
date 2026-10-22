@@ -5,13 +5,25 @@ package com.boomlistener.core.player
 
 import android.content.Context
 import com.boomlistener.core.model.Track
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
 
 /**
  * Controle do player para as telas. A reprodução de verdade acontece no
  * [PlaybackService], que continua tocando com o app fechado; isto aqui é só o
  * "controle remoto" dele.
  */
+/** Erros de "formato que este aparelho não toca". */
+internal val UNSUPPORTED_FORMAT_ERRORS = setOf(
+    androidx.media3.common.PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
+    androidx.media3.common.PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES,
+    androidx.media3.common.PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+    androidx.media3.common.PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED,
+    androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
+    androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+)
+
 interface PlaybackController {
     val state: StateFlow<PlaybackState>
 
@@ -38,6 +50,12 @@ interface PlaybackController {
      * tudo o que vem depois por [tracks], já na ordem em que devem tocar.
      */
     fun replaceUpNext(tracks: List<Track>) {}
+
+    /**
+     * Título de cada música que não tocou porque o aparelho não tem como ler
+     * o formato dela (o player já pulou para a próxima). Para avisar na tela.
+     */
+    val unsupported: Flow<String> get() = emptyFlow()
 
     /** Move a música da posição [from] para [to] (posições da lista original). */
     fun moveQueueItem(from: Int, to: Int)

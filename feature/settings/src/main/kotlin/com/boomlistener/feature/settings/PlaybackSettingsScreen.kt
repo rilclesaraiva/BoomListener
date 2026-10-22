@@ -53,7 +53,7 @@ internal fun PlaybackSettingsScreen(onBack: () -> Unit, modifier: Modifier = Mod
     ) { padding ->
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_playback), onBack = onBack, large = true)
+                BoomPageTitle(stringResource(R.string.feature_settings_playback), hasBack = true, large = true)
             }
             item(key = "transition") {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_playback_transition)) {

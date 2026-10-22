@@ -36,7 +36,7 @@
     <string name="feature_settings_source_summary">github.com/rilclesaraiva/BoomListener</string>
     <string name="feature_settings_license">License</string>
     <string name="feature_settings_license_summary">GNU GPL v3: free to use, study, change and share</string>
-    <string name="feature_settings_about_text">A local music player. Free, no ads, no account. Made in Belém, Brazil, with AI assistance under the author’s direction and review.</string>
+    <string name="feature_settings_about_text">A local music player. Free, no ads, no account. Made in Brazil, with AI assistance under the author’s direction and review.</string>
     <string name="feature_settings_privacy_text">Your library, your settings, your profile (name, photo, cover, description) and your listening stats stay on your device only. The app has no account, no ads and sends nothing about you anywhere.\n\nWhen you open an artist, the app asks Deezer for public information about them (photo, popular songs, discography) using only the artist’s name; if Deezer doesn’t know them, it asks MusicBrainz and the Cover Art Archive instead. For the biography, it asks Last.fm (through our own server, which only adds the access key) using the artist’s name. Scrobbling to Last.fm, when it arrives, only happens if you turn it on.\n\nLyrics are looked up on LRCLIB only when you open them, using the song title, artist, album and length. When you share a song, the app looks it up on Deezer and asks song.link for the matching YouTube Music link. Fixing tags automatically asks Deezer (or, if it finds nothing, MusicBrainz and the Cover Art Archive) and Last.fm using the song’s title, artist and length, only when you tap Search. “Check for updates” only contacts GitHub when you tap it.\n\nThe only permission requested is music and audio, to read the songs on your phone. When you save tags, Android asks you to allow changing that file. The app doesn’t ask for photos, videos, contacts or location.</string>
     <string name="feature_settings_library">Library</string>
     <string name="feature_settings_library_summary">Music folders and minimum length</string>
@@ -69,7 +69,7 @@
     <string name="feature_settings_update_prompt_no_notes">Bug fixes and improvements.</string>
     <string name="feature_settings_about_short">About</string>
     <string name="feature_settings_about_developer">Developer</string>
-    <string name="feature_settings_about_developer_summary">Made in Belém, Brazil · github.com/rilclesaraiva</string>
+    <string name="feature_settings_about_developer_summary">Made in Brazil · github.com/rilclesaraiva</string>
     <string name="feature_settings_about_project">Project</string>
     <string name="feature_settings_about_changelog">What’s new</string>
     <string name="feature_settings_about_changelog_summary">Every version and what changed in it</string>

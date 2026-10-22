@@ -191,7 +191,10 @@ fun BoomSeekBar(
         val waveEnd = if (dragging != null) playedX else thumbX
 
         // Resto da trilha, reto (do fim do tocado até o fim), sem passar pela bolinha.
-        val restFrom = maxOf(waveEnd, startX)
+        // Arrastando, também há uma folga entre a parte tocada e o resto (a mesma
+        // folga que existe ao lado da bolinha), descontando as pontas redondas.
+        val playedGap = if (dragging != null) gap + (WaveStroke.toPx() + TrackStroke.toPx()) / 2 else 0f
+        val restFrom = maxOf(waveEnd + playedGap, startX)
         fun rest(from: Float, to: Float) {
             if (to - from > 0.5f) drawLine(inactive, Offset(from, cy), Offset(to, cy), TrackStroke.toPx(), StrokeCap.Round)
         }

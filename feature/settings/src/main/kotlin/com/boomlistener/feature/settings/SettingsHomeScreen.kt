@@ -70,7 +70,7 @@ internal fun SettingsScreen(
     ) { padding ->
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_title), onBack = onBack, large = true)
+                BoomPageTitle(stringResource(R.string.feature_settings_title), hasBack = true, large = true)
             }
             item {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_section_general)) {

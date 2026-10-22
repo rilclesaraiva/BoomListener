@@ -13,7 +13,10 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.exoplayer.source.ShuffleOrder
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -90,7 +93,11 @@ class PlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         snapshots = PlaybackSnapshotStore(this)
+        // MP3 e AAC (.aac) sem índice: pular para um ponto da música usa a taxa
+        // de bits constante (sem isso, arrastar a barra caía no lugar errado ou nem ia).
+        val extractors = DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
         val player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(this, extractors))
             // "true": pausa quando outro app toca som (ligação, vídeo…) e volta depois.
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -109,6 +116,16 @@ class PlaybackService : MediaSessionService() {
             }
 
         player.addListener(object : Player.Listener {
+            // Arquivo que o aparelho não toca (WMA, AIFF, DSD, ALAC…): pula para a
+            // próxima, em vez de parar tudo. O aviso na tela vem do controller.
+            override fun onPlayerError(error: PlaybackException) {
+                if (error.errorCode !in UNSUPPORTED_FORMAT_ERRORS) return
+                if (player.hasNextMediaItem()) {
+                    player.seekToNextMediaItem()
+                    player.prepare()
+                }
+            }
+
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 val item = mediaItem ?: return
                 playCounter.start(

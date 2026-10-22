@@ -9,4 +9,5 @@
     <string name="wide_collapse">Recolher</string>
     <string name="wide_expand">Expandir</string>
     <string name="wide_show_artist">Mostrar artista</string>
+    <string name="app_unsupported_format">Não deu para tocar “%1$s”: o aparelho não lê esse formato. Pulei para a próxima.</string>
 </resources>

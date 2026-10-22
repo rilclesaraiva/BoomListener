@@ -11,6 +11,7 @@ import android.os.Looper
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -21,6 +22,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
@@ -51,7 +55,16 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     private val shuffle = ShuffleState<MediaItem>(keyOf = { it.mediaId })
     private var lastIndex = C.INDEX_UNSET
 
+    private val _unsupported = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    override val unsupported: Flow<String> = _unsupported.asSharedFlow()
+
     private val listener = object : Player.Listener {
+        override fun onPlayerError(error: PlaybackException) {
+            if (error.errorCode !in UNSUPPORTED_FORMAT_ERRORS) return
+            val player = controller ?: return
+            _unsupported.tryEmit(player.currentMediaItem?.mediaMetadata?.title?.toString().orEmpty())
+        }
+
         override fun onEvents(player: Player, events: Player.Events) {
             if (events.containsAny(
                     Player.EVENT_TIMELINE_CHANGED,

@@ -12,6 +12,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -106,7 +110,7 @@ fun BoomScreenScaffold(
     val barInsets = if (wide) TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Top) else TopAppBarDefaults.windowInsets
     val navigationIcon: @Composable () -> Unit = {
         if (onBack != null) {
-            IconButton(onClick = onBack) { Icon(BoomIcons.Back, contentDescription = stringResource(R.string.core_designsystem_back)) }
+            BoomBackButton(onClick = onBack, modifier = Modifier.padding(start = 4.dp))
         }
     }
     val pageColor = MaterialTheme.colorScheme.background
@@ -167,7 +171,14 @@ fun BoomScreenScaffold(
         content = { padding ->
             // As listas da tela enxergam o estado da barra (para zerar a cor de
             // "rolado" quando sobem até o topo por código).
-            CompositionLocalProvider(LocalTopBarState provides topBarState) { content(padding) }
+            CompositionLocalProvider(LocalTopBarState provides topBarState) {
+                Box(Modifier.fillMaxSize()) {
+                    content(padding)
+                    // Tela sem barra presa (título na página): o voltar fica parado
+                    // no canto, por cima da página, e não sobe junto ao rolar.
+                    if (topBar != null && onBack != null) BoomFloatingBackButton(onClick = onBack)
+                }
+            }
         },
     )
 }

@@ -4,6 +4,19 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.40.1] — 2026-10-22
+
+### 🐛 Fixes
+- Seeking in MP3 and AAC files without an index now lands where you drag, instead of the wrong spot or nowhere.
+- A song in a format your phone can't play (like WMA, AIFF, DSD or, on most phones, ALAC) no longer stops everything: the app tells you and skips to the next song.
+- Edit profile closes by swiping it down, like the other panels, and the X button is gone.
+
+### 🎨 Visual tweaks
+- Panels that slide up no longer reach the top of the screen, so it's clear you can pull them down.
+- Progress bar: while you drag the dot, there's now a small gap between the played part and the rest, like the one around the dot.
+- Back buttons are now an arrow inside a circle on every screen. In Settings it stays fixed in the corner while the page scrolls, and titles start further right so the button never covers them.
+- About now says the app is made in Brazil.
+
 ## [0.40.0] — 2026-10-22
 
 ### ✨ New

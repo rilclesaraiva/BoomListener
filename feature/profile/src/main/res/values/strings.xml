@@ -50,7 +50,6 @@
     <string name="feature_profile_color">Profile color</string>
     <string name="feature_profile_color_hex">Or type a color (hex)</string>
     <string name="feature_profile_color_none">No color</string>
-    <string name="feature_profile_close">Close</string>
     <string name="feature_profile_settings">Settings</string>
     <string name="feature_profile_make_it_yours">Make it yours</string>
     <string name="feature_profile_save_failed">Couldn’t save. Try another image.</string>

@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.core.designsystem.component.BoomFloatingBackButton
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomMenuHeader
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
@@ -101,13 +102,7 @@ internal fun AlbumScreen(
             }
             is AlbumUiState.Ready -> AlbumContent(current, viewModel)
         }
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
-            modifier = Modifier.statusBarsPadding().padding(8.dp),
-        ) {
-            IconButton(onClick = onBack) { Icon(BoomIcons.Back, stringResource(R.string.feature_artist_back)) }
-        }
+        BoomFloatingBackButton(onClick = onBack)
     }
 }
 

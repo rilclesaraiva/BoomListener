@@ -3,6 +3,7 @@
 
 package com.boomlistener.app
 
+import android.widget.Toast
 import com.boomlistener.feature.artist.ARTIST_NAME_ARG
 import com.boomlistener.feature.artist.ARTIST_ROUTE
 import com.boomlistener.feature.profile.ProfileAvatarButton
@@ -227,6 +228,12 @@ fun BoomListenerApp() {
         val current = navController.currentBackStackEntry
         val same = current?.destination?.route == ARTIST_ROUTE && current.arguments?.getString(ARTIST_NAME_ARG) == name
         if (!same) navController.navigateToArtist(name)
+    }
+    // Música num formato que o aparelho não lê: avisa (o player já pulou para a próxima).
+    LaunchedEffect(Unit) {
+        PlayerConnection.controller(context).unsupported.collect { title ->
+            Toast.makeText(context, context.getString(R.string.app_unsupported_format, title), Toast.LENGTH_LONG).show()
+        }
     }
     // Tocou no aviso de lançamento: abre a tela de Lançamentos (player fechado).
     val openReleasesRequest by AppRequests.openReleases.collectAsState()

@@ -56,7 +56,7 @@ internal fun ShareSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifi
     ) { padding ->
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_share), onBack = onBack, large = true)
+                BoomPageTitle(stringResource(R.string.feature_settings_share), hasBack = true, large = true)
             }
             item(key = "hint") {
                 Text(

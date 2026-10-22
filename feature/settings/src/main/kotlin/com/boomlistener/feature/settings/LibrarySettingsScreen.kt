@@ -68,7 +68,7 @@ internal fun LibrarySettingsScreen(
     ) { padding ->
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_library), onBack = onBack, large = true)
+                BoomPageTitle(stringResource(R.string.feature_settings_library), hasBack = true, large = true)
             }
             item(key = "duration") {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_library_duration)) {

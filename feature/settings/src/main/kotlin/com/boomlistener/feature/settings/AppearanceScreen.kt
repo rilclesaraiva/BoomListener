@@ -49,7 +49,7 @@ internal fun AppearanceScreen(
     ) { padding ->
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_appearance), onBack = onBack, large = true)
+                BoomPageTitle(stringResource(R.string.feature_settings_appearance), hasBack = true, large = true)
             }
             item {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_theme)) {

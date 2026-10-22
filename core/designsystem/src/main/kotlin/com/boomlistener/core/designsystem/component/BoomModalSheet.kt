@@ -4,7 +4,11 @@
 package com.boomlistener.core.designsystem.component
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -19,6 +23,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
+
+/** Altura máxima do painel, em fração da tela. */
+private const val MAX_SHEET_FRACTION = 0.88f
 
 /**
  * Painel que sobe de baixo, usado no app inteiro no lugar do
@@ -57,6 +64,9 @@ fun BoomModalSheet(
         BackHandler(enabled = dismissEnabled) {
             scope.launch { sheetState.hide() }.invokeOnCompletion { dismiss() }
         }
-        content()
+        // Nunca chega ao topo da tela: a faixa de cima que sobra mostra que o
+        // painel é de puxar (para baixo, fecha).
+        val maxHeight = LocalConfiguration.current.screenHeightDp.dp * MAX_SHEET_FRACTION
+        Column(Modifier.heightIn(max = maxHeight)) { content() }
     }
 }

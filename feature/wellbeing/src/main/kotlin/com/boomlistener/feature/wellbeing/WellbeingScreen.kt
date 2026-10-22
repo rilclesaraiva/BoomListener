@@ -59,7 +59,7 @@ internal fun WellbeingScreen(
         topBar = {},
     ) { padding ->
         val pageTitle: @Composable () -> Unit = {
-            BoomPageTitle(stringResource(R.string.feature_wellbeing_title), onBack = onBack, large = true)
+            BoomPageTitle(stringResource(R.string.feature_wellbeing_title), hasBack = true, large = true)
         }
         if (top.isEmpty()) {
             Column(Modifier.padding(padding)) {

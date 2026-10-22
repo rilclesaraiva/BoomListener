@@ -60,7 +60,7 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) { padding ->
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_about_short), onBack = onBack, large = true)
+                BoomPageTitle(stringResource(R.string.feature_settings_about_short), hasBack = true, large = true)
             }
             item(key = "hero") { AboutHero() }
             item(key = "text") {
@@ -188,7 +188,7 @@ internal fun PrivacyScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) { padding ->
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_privacy), onBack = onBack, large = true)
+                BoomPageTitle(stringResource(R.string.feature_settings_privacy), hasBack = true, large = true)
             }
             item {
                 Text(
@@ -234,7 +234,7 @@ internal fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) { padding ->
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_licenses), onBack = onBack, large = true)
+                BoomPageTitle(stringResource(R.string.feature_settings_licenses), hasBack = true, large = true)
             }
             item {
                 BoomSettingsSection(title = null) {
