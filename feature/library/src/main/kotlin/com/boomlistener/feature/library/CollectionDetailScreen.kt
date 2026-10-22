@@ -140,6 +140,7 @@ internal fun CollectionDetailScreen(
                 onDelete = deleteSong,
                 onDetails = { showDetails(it.uri, it.title) },
                 onAddSongs = { addingSongs = true },
+                onOpenAlbum = onOpenAlbum,
             )
         }
     }
@@ -193,6 +194,7 @@ private fun TrackListWithHeader(
     onDelete: (Track) -> Unit,
     onDetails: (Track) -> Unit,
     onAddSongs: () -> Unit,
+    onOpenAlbum: ((String) -> Unit)?,
 ) {
     val listState = rememberLazyListState()
     // Reordenar mexe na lista da tela na hora; a playlist só é gravada ao soltar.
