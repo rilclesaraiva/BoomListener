@@ -127,6 +127,8 @@ internal fun MyProfileScreen(
                 Icon(BoomIcons.Settings, contentDescription = stringResource(R.string.feature_profile_settings))
             }
         },
+        // A cor que você escolheu tinge o perfil inteiro, a barra de cima junto.
+        pageBackground = { profileBackground(state?.profile?.color) },
     ) { padding ->
         val current = state
         if (current == null) {
@@ -136,8 +138,7 @@ internal fun MyProfileScreen(
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 32.dp),
-            // A cor que você escolheu tinge o perfil.
-            modifier = Modifier.fillMaxSize().profileBackground(current.profile.color),
+            modifier = Modifier.fillMaxSize(),
         ) {
             item(key = "header") {
                 Header(current, viewModel, onEdit = { editing = true })

@@ -56,6 +56,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
+import com.boomlistener.core.designsystem.component.BoomMenuHeader
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.model.ReleaseType
@@ -174,6 +175,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
                     onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.link, release.title, album.artistName), release.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, album.artistName)) },
                     onDeezer = release.link?.let { link -> { context.openUrl(link) } },
+                    header = BoomMenuHeader(release.title, album.artistName, cover),
                 )
             }
         }
@@ -222,6 +224,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
                             onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.link, track.title, album.artistName), track.title) } },
                             onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, album.artistName)) },
                             onDeezer = track.link?.let { link -> { context.openUrl(link) } },
+                            header = BoomMenuHeader(track.title, album.artistName, cover),
                             openState = menuOpen,
                         )
                     }

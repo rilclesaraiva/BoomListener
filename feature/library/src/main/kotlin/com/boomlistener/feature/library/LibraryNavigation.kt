@@ -118,6 +118,7 @@ fun NavGraphBuilder.libraryScreen(
                 onBack = back,
                 onOpenArtist = onOpenArtist,
                 onEditTags = onEditTags,
+                onOpenAlbum = if (route == ALBUM_ROUTE) null else { key -> navController.openCollection("album", key) },
             )
         }
     }

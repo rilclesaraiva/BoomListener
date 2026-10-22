@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -56,6 +57,7 @@ import com.boomlistener.core.designsystem.R
  *
  * @param onBack mostra a seta de voltar quando não é null.
  * @param largeTitle título grande que encolhe ao rolar (telas principais, como Ajustes).
+ *   Sem ele, a barra some ao rolar para baixo e volta ao rolar para cima.
  * @param topBar barra própria, que substitui a barra padrão (ex.: modo busca).
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,6 +70,11 @@ fun BoomScreenScaffold(
     actions: @Composable RowScope.() -> Unit = {},
     topBar: (@Composable () -> Unit)? = null,
     snackbarHost: @Composable () -> Unit = {},
+    /**
+     * Fundo próprio da página inteira, barra de cima inclusive (ex.: a cor do
+     * perfil). Com ele, a barra fica transparente e mostra esse fundo.
+     */
+    pageBackground: (Modifier.() -> Modifier)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val effects = boomEffectsSpec<Float>()
@@ -76,16 +83,21 @@ fun BoomScreenScaffold(
     val scrollBehavior = if (largeTitle) {
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topBarState)
     } else {
-        TopAppBarDefaults.pinnedScrollBehavior(topBarState)
+        // Rolar para baixo esconde a barra; qualquer subida a traz de volta
+        // (e no topo da página ela sempre aparece).
+        TopAppBarDefaults.enterAlwaysScrollBehavior(topBarState)
     }
     // Tela larga: a barra não muda de cor ao rolar (a faixa colorida só no
     // meio, entre as barras laterais, ficava estranha) e as margens dos lados
     // já ficam com as barras laterais.
     val wide = LocalWideLayout.current
-    val barColors = if (wide) {
-        TopAppBarDefaults.topAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface)
-    } else {
-        TopAppBarDefaults.topAppBarColors()
+    val barColors = when {
+        pageBackground != null -> TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent,
+        )
+        wide -> TopAppBarDefaults.topAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface)
+        else -> TopAppBarDefaults.topAppBarColors()
     }
     val barInsets = if (wide) TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Top) else TopAppBarDefaults.windowInsets
     val navigationIcon: @Composable () -> Unit = {
@@ -93,8 +105,15 @@ fun BoomScreenScaffold(
             IconButton(onClick = onBack) { Icon(BoomIcons.Back, contentDescription = stringResource(R.string.core_designsystem_back)) }
         }
     }
+    val pageColor = MaterialTheme.colorScheme.background
+    val pageModifier = if (pageBackground != null) {
+        modifier.background(pageColor).pageBackground()
+    } else {
+        modifier
+    }
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = pageModifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = if (pageBackground != null) Color.Transparent else pageColor,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = snackbarHost,
         topBar = {

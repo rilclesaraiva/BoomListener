@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_library_title">Home</string>
+    <string name="feature_library_go_to_album">Go to album</string>
     <string name="feature_library_go_to_artist">Go to artist</string>
     <string name="feature_library_edit_tags">Edit tags</string>
     <string name="feature_library_unknown_artist">Unknown artist</string>

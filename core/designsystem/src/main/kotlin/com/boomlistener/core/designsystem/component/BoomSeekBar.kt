@@ -9,6 +9,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
@@ -40,6 +41,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlin.math.abs
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import kotlin.math.PI
 import kotlin.math.sin
@@ -54,6 +58,8 @@ private val ThumbRadius = 10.dp
 private val ThumbRadiusDragging = 12.dp
 private val ThumbGap = 6.dp
 private val StopDotRadius = 2.5.dp
+/** Distância em que a bolinha arrastada gruda no ponto que está tocando (ímã). */
+private val SnapDistance = 14.dp
 
 /** Uma volta da onda a cada ~2 s enquanto toca. */
 private const val WAVE_RADIANS_PER_SECOND = 3.1415927f
@@ -63,6 +69,10 @@ private const val WAVE_RADIANS_PER_SECOND = 3.1415927f
  * corre enquanto toca (e fica reta ao pausar), com uma bolinha redonda no
  * ponto atual (a onda chega grudada nela), uma folga antes do resto da trilha, reto e com um
  * pontinho no fim. Tocar ou arrastar muda o ponto da música.
+ *
+ * Enquanto arrasta, a onda continua mostrando o que está tocando de verdade
+ * e só a bolinha segue o dedo. Perto do ponto que está tocando, a bolinha
+ * gruda nele (ímã): soltar ali não muda nada, o jeito fácil de desistir.
  *
  * @param progress de 0 a 1.
  * @param onSeek chamado ao soltar o dedo, com a nova posição de 0 a 1.
@@ -78,17 +88,31 @@ fun BoomSeekBar(
     /** Avisa onde o dedo está enquanto arrasta (null ao soltar), para a tela mostrar o tempo. */
     onDragPosition: (Float?) -> Unit = {},
 ) {
-    // Enquanto o dedo está na barra, ela segue o dedo e não o player.
-    var dragging by remember { mutableStateOf<Float?>(null) }
+    // Onde o dedo está (null = sem arrastar). A bolinha mostra isso, ou o
+    // ponto que está tocando quando o dedo está perto dele (ímã).
+    var finger by remember { mutableStateOf<Float?>(null) }
+    var widthPx by remember { mutableIntStateOf(0) }
+    val snapPx = with(LocalDensity.current) { SnapDistance.toPx() }
+    val current by rememberUpdatedState(progress.coerceIn(0f, 1f))
+    val snappedState = remember(snapPx) {
+        derivedStateOf { finger?.let { widthPx > 0 && abs(it - current) * widthPx <= snapPx } ?: false }
+    }
+    val snapped by snappedState
+    val draggingState = remember { derivedStateOf { finger?.let { if (snappedState.value) current else it } } }
+    val dragging: Float? by draggingState
     val dragReport by rememberUpdatedState(onDragPosition)
     LaunchedEffect(Unit) { snapshotFlow { dragging }.collect { dragReport(it) } }
-    var widthPx by remember { mutableIntStateOf(0) }
-    val shown = (dragging ?: progress).coerceIn(0f, 1f)
+    // Um toquinho de vibração ao grudar no ponto atual.
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(snapped) { if (snapped) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove) }
+    val played = current
+    val shown = (dragging ?: played).coerceIn(0f, 1f)
     val seek by rememberUpdatedState(onSeek)
 
-    // A onda achata ao pausar e ao arrastar, e volta ao tocar.
+    // A onda achata ao pausar e volta ao tocar.
     val amplitudeScale by animateFloatAsState(
-        targetValue = if (isPlaying && dragging == null) 1f else 0f,
+        // Arrastando, a onda continua correndo: a música não parou.
+        targetValue = if (isPlaying) 1f else 0f,
         animationSpec = boomSpatialSpec(),
         label = "waveAmplitude",
     )
@@ -123,15 +147,18 @@ fun BoomSeekBar(
             }
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
-                    onDragStart = { offset -> dragging = (offset.x / size.width).coerceIn(0f, 1f) },
+                    onDragStart = { offset -> finger = (offset.x / size.width).coerceIn(0f, 1f) },
                     onDragEnd = {
-                        dragging?.let { seek(it) }
-                        dragging = null
+                        val at = finger
+                        // Grudado no ponto atual: fica onde está, sem pular.
+                        val stuck = at != null && abs(at - current) * size.width <= snapPx
+                        if (at != null && !stuck) seek(at)
+                        finger = null
                     },
-                    onDragCancel = { dragging = null },
+                    onDragCancel = { finger = null },
                     onHorizontalDrag = { change, _ ->
                         change.consume()
-                        dragging = (change.position.x / size.width).coerceIn(0f, 1f)
+                        finger = (change.position.x / size.width).coerceIn(0f, 1f)
                     },
                 )
             },
@@ -143,30 +170,45 @@ fun BoomSeekBar(
         val thumbX = startX + (endX - startX) * shown
         val gap = ThumbGap.toPx()
 
-        // Resto da trilha, reto, com o pontinho de fim.
-        val restStart = thumbX + thumbRadius + gap
-        if (restStart < endX) {
-            drawLine(inactive, Offset(restStart, cy), Offset(endX, cy), TrackStroke.toPx(), StrokeCap.Round)
+        val playedX = startX + (endX - startX) * played
+        // Arrastando, a bolinha abre um buraco na trilha; fora disso a onda
+        // chega grudada nela.
+        val holeStart = if (dragging != null) thumbX - thumbRadius - gap else thumbX
+        val holeEnd = thumbX + thumbRadius + gap
+        val waveEnd = if (dragging != null) playedX else thumbX
+
+        // Resto da trilha, reto (do fim do tocado até o fim), sem passar pela bolinha.
+        val restFrom = maxOf(waveEnd, startX)
+        fun rest(from: Float, to: Float) {
+            if (to - from > 0.5f) drawLine(inactive, Offset(from, cy), Offset(to, cy), TrackStroke.toPx(), StrokeCap.Round)
         }
+        if (restFrom < holeStart) rest(restFrom, minOf(holeStart, endX))
+        rest(maxOf(restFrom, holeEnd), endX)
         // O pontinho do fim some aos poucos quando a bolinha chega perto
         // (senão parece que a música acabou antes da hora).
-        val dotFade = ((endX - restStart) / (thumbRadius * 2)).coerceIn(0f, 1f)
+        val dotFade = ((endX - holeEnd) / (thumbRadius * 2)).coerceIn(0f, 1f)
         if (dotFade > 0f) drawCircle(active.copy(alpha = active.alpha * dotFade), StopDotRadius.toPx(), Offset(endX, cy))
 
-        // Parte tocada: a onda vai até o centro da bolinha (grudada nela, sem folga).
-        val waveEnd = thumbX
-        if (waveEnd > startX) {
-            val amplitude = WaveAmplitude.toPx() * amplitudeScale
-            val k = (2 * PI / WaveLength.toPx()).toFloat()
+        // Parte tocada: a onda. Arrastando, ela continua seguindo a música e
+        // só desvia da bolinha.
+        val amplitude = WaveAmplitude.toPx() * amplitudeScale
+        val k = (2 * PI / WaveLength.toPx()).toFloat()
+        fun wave(from: Float, to: Float) {
+            if (to - from <= 0.5f) return
             val path = Path()
-            var x = startX
+            var x = from
             path.moveTo(x, cy + amplitude * sin(k * x - phase))
-            val step = 2f
-            while (x < waveEnd) {
-                x = (x + step).coerceAtMost(waveEnd)
+            while (x < to) {
+                x = (x + 2f).coerceAtMost(to)
                 path.lineTo(x, cy + amplitude * sin(k * x - phase))
             }
             drawPath(path, active, style = Stroke(width = WaveStroke.toPx(), cap = StrokeCap.Round))
+        }
+        if (dragging == null) {
+            wave(startX, waveEnd)
+        } else {
+            wave(startX, minOf(waveEnd, holeStart))
+            wave(maxOf(startX, holeEnd), waveEnd)
         }
 
         // Bolinha no ponto atual.

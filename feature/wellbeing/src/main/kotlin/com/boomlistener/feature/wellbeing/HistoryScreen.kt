@@ -42,6 +42,8 @@ import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.BoomMenuHeader
+import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
@@ -75,7 +77,7 @@ internal fun HistoryScreen(
             if (hasEntries) {
                 BoomMoreMenu(
                     actions = listOf(
-                        BoomMenuAction(stringResource(R.string.feature_wellbeing_history_clear)) { confirmClear = true },
+                        BoomMenuAction(stringResource(R.string.feature_wellbeing_history_clear), kind = BoomMenuKind.Delete) { confirmClear = true },
                     ),
                 )
             }
@@ -209,13 +211,14 @@ private fun HistoryRow(
         trailingContent = {
             BoomMoreMenu(
                 actions = listOfNotNull(
-                    BoomMenuAction(stringResource(R.string.feature_wellbeing_add_to_playlist)) { songMenu.onAddToPlaylist(entry.uri) },
+                    BoomMenuAction(stringResource(R.string.feature_wellbeing_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { songMenu.onAddToPlaylist(entry.uri) },
                     favoriteAction(entry.uri),
                     entry.artist?.let { name ->
-                        BoomMenuAction(stringResource(R.string.feature_wellbeing_go_to_artist)) { songMenu.onOpenArtist(name) }
+                        BoomMenuAction(stringResource(R.string.feature_wellbeing_go_to_artist), kind = BoomMenuKind.GoToArtist) { songMenu.onOpenArtist(name) }
                     },
-                    BoomMenuAction(stringResource(R.string.feature_wellbeing_edit_tags)) { songMenu.onEditTags(entry.uri) },
+                    BoomMenuAction(stringResource(R.string.feature_wellbeing_edit_tags), kind = BoomMenuKind.EditTags) { songMenu.onEditTags(entry.uri) },
                 ),
+                header = BoomMenuHeader(entry.title, entry.artist, artwork),
                 onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(entry.title, entry.artist)) },
                 openState = menuOpen,
             )

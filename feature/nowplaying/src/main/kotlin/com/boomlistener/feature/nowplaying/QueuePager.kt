@@ -3,7 +3,14 @@
 
 package com.boomlistener.feature.nowplaying
 
+import android.os.SystemClock
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,30 +55,62 @@ internal fun QueuePager(
     val latestCurrent by rememberUpdatedState(current)
     val latestEntries by rememberUpdatedState(entries)
     val latestSkip by rememberUpdatedState(onSkipTo)
+    // A música para onde o dedo levou, até o player confirmar a troca. Nesse
+    // meio-tempo o player às vezes ainda informa a música anterior; sem isso o
+    // carrossel voltava para ela por um instante (a "piscada").
+    var pending by remember { mutableStateOf<Pending?>(null) }
 
-    // A música mudou por fora: o carrossel acompanha (sem brigar com o dedo).
-    LaunchedEffect(current, entries.size) {
+    // A música mudou por fora (ou a fila foi trocada): o carrossel acompanha,
+    // sem brigar com o dedo.
+    LaunchedEffect(current, entries) {
+        val waiting = pending
+        if (waiting != null) {
+            val confirmed = state.queueIndex == waiting.queueIndex
+            val expired = SystemClock.uptimeMillis() - waiting.sinceMs > PENDING_TIMEOUT_MS
+            if (!confirmed && !expired) return@LaunchedEffect
+            pending = null
+        }
         if (pagerState.isScrollInProgress || pagerState.currentPage == current) return@LaunchedEffect
         if (abs(pagerState.currentPage - current) == 1) pagerState.animateScrollToPage(current) else pagerState.scrollToPage(current)
     }
-    // Parou numa música diferente da que toca: troca.
+    // Só o dedo troca de música por aqui. Antes, qualquer parada (inclusive a
+    // do próprio carrossel se ajeitando numa fila nova, como ao tocar no
+    // aleatório) chamava a troca e fazia a música anterior voltar a tocar.
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }
+        var dragged = false
+        launch {
+            pagerState.interactionSource.interactions.collect { if (it is DragInteraction.Start) dragged = true }
+        }
+        snapshotFlow { pagerState.isScrollInProgress }
             .distinctUntilChanged()
-            .collect { settled ->
-                if (settled != latestCurrent) latestEntries.getOrNull(settled)?.let { latestSkip(it.index) }
+            .collect { scrolling ->
+                if (scrolling || !dragged) return@collect
+                dragged = false
+                val settled = pagerState.currentPage
+                if (settled == latestCurrent) return@collect
+                latestEntries.getOrNull(settled)?.let { entry ->
+                    pending = Pending(entry.index, SystemClock.uptimeMillis())
+                    latestSkip(entry.index)
+                }
             }
     }
 
     HorizontalPager(
         state = pagerState,
-        key = { entries[it].key },
+        // Sem "key" no carrossel: com ela, trocar a fila inteira fazia o pager
+        // pular para onde a música antiga foi parar na fila nova. O estado de
+        // cada página (a capa carregada) fica preso à música pelo key() abaixo.
         pageSpacing = pageSpacing,
         // A vizinha já fica pronta (capa carregada) antes de o dedo puxar.
         beyondViewportPageCount = 1,
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
     ) { index ->
-        entries.getOrNull(index)?.let { page(it.item) }
+        entries.getOrNull(index)?.let { entry -> key(entry.key) { page(entry.item) } }
     }
 }
+
+private class Pending(val queueIndex: Int, val sinceMs: Long)
+
+/** Tempo máximo esperando o player confirmar a troca feita pelo dedo. */
+private const val PENDING_TIMEOUT_MS = 1_500L

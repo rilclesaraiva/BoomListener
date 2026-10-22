@@ -54,6 +54,8 @@ import com.boomlistener.core.designsystem.component.BoomFastScroller
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.BoomMenuHeader
+import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.trackPress
@@ -202,26 +204,26 @@ internal fun QueuePanel(
                                 // nele, longe do toque sem querer.
                                 menuActions = listOfNotNull(
                                     if (!isCurrent) {
-                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_play_now)) {
+                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_play_now), kind = BoomMenuKind.PlayNow) {
                                             viewModel.playQueueItem(entry.index)
                                         }
                                     } else {
                                         null
                                     },
                                     if (!isCurrent) {
-                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_remove)) {
+                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_remove), kind = BoomMenuKind.RemoveFromPlaylist) {
                                             viewModel.removeQueueItem(entry.index)
                                         }
                                     } else {
                                         null
                                     },
-                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist)) { onAddToPlaylist(entry.item.uri) },
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { onAddToPlaylist(entry.item.uri) },
                                     favoriteAction(entry.item.uri),
                                     entry.item.artist?.let { name ->
-                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
+                                        BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist), kind = BoomMenuKind.GoToArtist) { onOpenArtist(name) }
                                     },
-                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags)) { onEditTags(entry.item.uri) },
-                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song)) {
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags), kind = BoomMenuKind.EditTags) { onEditTags(entry.item.uri) },
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song), kind = BoomMenuKind.Delete) {
                                         onDelete(entry.item.uri, entry.item.title)
                                     },
                                 ),
@@ -275,7 +277,13 @@ private fun QueueRow(
                 BoomArtwork(image = artwork, fallbackText = entry.item.title)
             }
         },
-        trailingContent = { BoomMoreMenu(actions = menuActions, openState = menuOpen) },
+        trailingContent = {
+            BoomMoreMenu(
+                actions = menuActions,
+                header = BoomMenuHeader(entry.item.title, entry.item.artist ?: unknownArtist, artwork),
+                openState = menuOpen,
+            )
+        },
         headlineContent = { Text(entry.item.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {
             Text(

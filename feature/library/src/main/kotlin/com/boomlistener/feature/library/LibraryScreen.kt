@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
@@ -78,7 +80,9 @@ import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.common.openAppSettings
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomBouncingText
-import com.boomlistener.core.designsystem.component.BoomMenuDropdown
+import com.boomlistener.core.designsystem.component.BoomMenuSheet
+import com.boomlistener.core.designsystem.component.BoomMenuHeader
+import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomFastScroller
 import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
@@ -211,8 +215,8 @@ private fun TrackList(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
-    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails) {
-        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails)
+    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails, onOpenAlbum) {
+        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails, onOpenAlbum)
     }
     when {
         state.totalCount == 0 -> BoomPlaceholder(
@@ -300,7 +304,12 @@ private fun TrackList(
             stickyHeader(key = "songsTitle") {
                 SongsHeader(
                     query = state.query,
-                    onQueryChange = onQueryChange,
+                    // Cada letra digitada traz a tela de volta até a busca (a pessoa
+                    // pode ter rolado para cima no meio da busca).
+                    onQueryChange = { text ->
+                        onQueryChange(text)
+                        scope.launch { listState.bringToSearch(headerItems - 1) }
+                    },
                     // Ao tocar na busca, a lista sobe até ela (os resultados aparecem logo abaixo).
                     onFocused = { scope.launch { listState.animateScrollToItem(headerItems - 1) } },
                 )
@@ -343,6 +352,21 @@ private fun TrackList(
             )
         }
     }
+}
+
+/**
+ * Rola até a barra de busca (item [index]) ficar no topo. Perto, anima; longe,
+ * pula direto (animar até um item fora da tela anda em etapas e trava).
+ */
+internal suspend fun LazyListState.bringToSearch(index: Int) {
+    if (firstVisibleItemIndex == index && firstVisibleItemScrollOffset == 0) return
+    // Já passou da busca (ela está presa no topo): os resultados voltam ao começo.
+    if (firstVisibleItemIndex >= index) {
+        scrollToItem(index)
+        return
+    }
+    val visible = layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
+    if (visible != null) animateScrollBy(visible.offset.toFloat()) else scrollToItem(index)
 }
 
 /** Título "Músicas" com a barra de busca ao lado. */
@@ -449,7 +473,7 @@ private fun RecentGrid(
                     )
                 }
             }
-                SongMenuView(track, menu, menuOpen, withButton = false)
+                SongMenuView(track, menu, menuOpen, withButton = false, cover = cover)
             }
         }
     }
@@ -527,21 +551,34 @@ internal class SongMenu(
     val onAddToPlaylist: (Track) -> Unit,
     val onDelete: (Track) -> Unit,
     val onDetails: (Track) -> Unit,
+    val onOpenAlbum: (albumKey: String) -> Unit,
 )
 
 /** O menu de uma música, igual em todo lugar: com o botão ⋮ ([withButton]) ou só ao segurar. */
 @Composable
-private fun SongMenuView(track: Track, menu: SongMenu, openState: MutableState<Boolean>, withButton: Boolean) {
+private fun SongMenuView(
+    track: Track,
+    menu: SongMenu,
+    openState: MutableState<Boolean>,
+    withButton: Boolean,
+    cover: ImageBitmap?,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val actions = listOfNotNull(
-        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist)) { menu.onAddToPlaylist(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { menu.onAddToPlaylist(track) },
         favoriteAction(track.uri),
-        track.artist?.let { name -> BoomMenuAction(stringResource(R.string.feature_library_go_to_artist)) { menu.onOpenArtist(name) } },
-        BoomMenuAction(stringResource(R.string.feature_library_edit_tags)) { menu.onEditTags(track) },
-        BoomMenuAction(stringResource(R.string.feature_library_details)) { menu.onDetails(track) },
-        BoomMenuAction(stringResource(R.string.feature_library_delete_song)) { menu.onDelete(track) },
+        track.album?.takeIf { it.isNotBlank() }?.let {
+            BoomMenuAction(stringResource(R.string.feature_library_go_to_album), kind = BoomMenuKind.GoToAlbum) { menu.onOpenAlbum(track.albumId.toString()) }
+        },
+        track.artist?.let { name ->
+            BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), kind = BoomMenuKind.GoToArtist) { menu.onOpenArtist(name) }
+        },
+        BoomMenuAction(stringResource(R.string.feature_library_edit_tags), kind = BoomMenuKind.EditTags) { menu.onEditTags(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_details), kind = BoomMenuKind.Details) { menu.onDetails(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete) { menu.onDelete(track) },
     )
+    val header = BoomMenuHeader(track.title, track.artist, cover)
     val onShare: () -> Unit = {
         scope.launch {
             context.shareLink(
@@ -552,9 +589,9 @@ private fun SongMenuView(track: Track, menu: SongMenu, openState: MutableState<B
     }
     val onYoutubeMusic: () -> Unit = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, track.artist)) }
     if (withButton) {
-        BoomMoreMenu(actions = actions, onShare = onShare, onYoutubeMusic = onYoutubeMusic, openState = openState)
+        BoomMoreMenu(actions = actions, onShare = onShare, onYoutubeMusic = onYoutubeMusic, header = header, openState = openState)
     } else {
-        BoomMenuDropdown(openState, actions, onShare = onShare, onYoutubeMusic = onYoutubeMusic)
+        BoomMenuSheet(openState, actions, onShare = onShare, onYoutubeMusic = onYoutubeMusic, header = header)
     }
 }
 
@@ -586,7 +623,7 @@ private fun TrackItem(
                 overflow = TextOverflow.Ellipsis,
             )
         },
-        trailingContent = { SongMenuView(track, menu, menuOpen, withButton = true) },
+        trailingContent = { SongMenuView(track, menu, menuOpen, withButton = true, cover = artwork) },
     )
 }
 

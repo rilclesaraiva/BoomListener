@@ -10,7 +10,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.data.library.FavoritesData
 import kotlinx.coroutines.launch
 
@@ -24,5 +26,7 @@ internal fun favoriteAction(uri: String): BoomMenuAction {
     val favorite = uri in favorites
     return BoomMenuAction(
         stringResource(if (favorite) R.string.feature_wellbeing_unfavorite else R.string.feature_wellbeing_favorite),
+        kind = BoomMenuKind.Favorite,
+        icon = if (favorite) BoomIcons.Favorite else BoomIcons.FavoriteBorder,
     ) { scope.launch { repository.toggle(uri) } }
 }

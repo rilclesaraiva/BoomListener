@@ -56,6 +56,8 @@ import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.BoomMenuHeader
+import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
@@ -79,6 +81,8 @@ internal fun CollectionDetailScreen(
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
     modifier: Modifier = Modifier,
+    /** Abre o álbum de uma música (null dentro do próprio álbum). */
+    onOpenAlbum: ((albumKey: String) -> Unit)? = null,
 ) {
     val rawState by viewModel.state.collectAsStateWithLifecycle()
     // Favoritas: o nome vem do texto da tela (no idioma do celular).
@@ -91,6 +95,12 @@ internal fun CollectionDetailScreen(
     var addingSongs by remember { mutableStateOf(false) }
     val deleteSong = rememberSongDeleter()
     val showDetails = rememberSongDetails()
+    // Capa do topo do menu da playlist: a da primeira música.
+    val headerPx = with(LocalDensity.current) { 56.dp.roundToPx() }
+    val firstUri = ready?.tracks?.firstOrNull()?.uri
+    val playlistCover by produceState<ImageBitmap?>(initialValue = null, firstUri) {
+        value = firstUri?.let { viewModel.artwork(it, headerPx)?.asImageBitmap() }
+    }
 
     BoomScreenScaffold(
         title = ready?.name.orEmpty(),
@@ -100,9 +110,14 @@ internal fun CollectionDetailScreen(
             if (ready?.isPlaylist == true) {
                 BoomMoreMenu(
                     actions = listOf(
-                        BoomMenuAction(stringResource(R.string.feature_library_add_songs)) { addingSongs = true },
-                        BoomMenuAction(stringResource(R.string.feature_library_rename_playlist)) { renaming = true },
-                        BoomMenuAction(stringResource(R.string.feature_library_delete_playlist)) { confirmDelete = true },
+                        BoomMenuAction(stringResource(R.string.feature_library_add_songs), kind = BoomMenuKind.AddToPlaylist) { addingSongs = true },
+                        BoomMenuAction(stringResource(R.string.feature_library_rename_playlist), kind = BoomMenuKind.Rename) { renaming = true },
+                        BoomMenuAction(stringResource(R.string.feature_library_delete_playlist), kind = BoomMenuKind.Delete) { confirmDelete = true },
+                    ),
+                    header = BoomMenuHeader(
+                        title = ready.name,
+                        subtitle = pluralStringResource(R.plurals.feature_library_count, ready.tracks.size, ready.tracks.size),
+                        image = playlistCover,
                     ),
                 )
             }
@@ -219,6 +234,7 @@ private fun TrackListWithHeader(
                         onAddToPlaylist = onAddToPlaylist,
                         onDelete = { onDelete(track) },
                         onDetails = { onDetails(track) },
+                        onOpenAlbum = onOpenAlbum,
                         dragHandle = {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -318,6 +334,7 @@ private fun DetailTrackRow(
     onAddToPlaylist: (Track) -> Unit,
     onDelete: () -> Unit,
     onDetails: () -> Unit,
+    onOpenAlbum: ((String) -> Unit)?,
     dragHandle: @Composable () -> Unit,
 ) {
     val menuOpen = remember { mutableStateOf(false) }
@@ -351,20 +368,29 @@ private fun DetailTrackRow(
         trailingContent = {
                 BoomMoreMenu(
                     actions = listOfNotNull(
-                        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist)) { onAddToPlaylist(track) },
+                        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { onAddToPlaylist(track) },
                         favoriteAction(track.uri),
                         if (isPlaylist) {
-                            BoomMenuAction(stringResource(R.string.feature_library_remove_from_playlist)) { viewModel.remove(track) }
+                            BoomMenuAction(
+                                stringResource(R.string.feature_library_remove_from_playlist),
+                                kind = BoomMenuKind.RemoveFromPlaylist,
+                            ) { viewModel.remove(track) }
                         } else {
                             null
                         },
-                        track.artist?.let { name ->
-                            BoomMenuAction(stringResource(R.string.feature_library_go_to_artist)) { onOpenArtist(name) }
+                        onOpenAlbum?.takeIf { !track.album.isNullOrBlank() }?.let { open ->
+                            BoomMenuAction(stringResource(R.string.feature_library_go_to_album), kind = BoomMenuKind.GoToAlbum) {
+                                open(track.albumId.toString())
+                            }
                         },
-                        BoomMenuAction(stringResource(R.string.feature_library_edit_tags)) { onEditTags(track) },
-                        BoomMenuAction(stringResource(R.string.feature_library_details), onClick = onDetails),
-                        BoomMenuAction(stringResource(R.string.feature_library_delete_song), onClick = onDelete),
+                        track.artist?.let { name ->
+                            BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), kind = BoomMenuKind.GoToArtist) { onOpenArtist(name) }
+                        },
+                        BoomMenuAction(stringResource(R.string.feature_library_edit_tags), kind = BoomMenuKind.EditTags) { onEditTags(track) },
+                        BoomMenuAction(stringResource(R.string.feature_library_details), kind = BoomMenuKind.Details, onClick = onDetails),
+                        BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete, onClick = onDelete),
                     ),
+                    header = BoomMenuHeader(track.title, track.artist, artwork),
                     onShare = {
                         scope.launch {
                             context.shareLink(

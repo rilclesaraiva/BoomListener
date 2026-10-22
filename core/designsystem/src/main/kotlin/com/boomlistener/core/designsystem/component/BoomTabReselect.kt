@@ -7,6 +7,8 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import com.boomlistener.core.designsystem.theme.boomScreenSpec
+import com.boomlistener.core.designsystem.theme.boomSpatialSpec
+import androidx.compose.animation.core.animate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -33,12 +35,19 @@ fun ScrollToTopOnReselect(route: String, state: LazyListState) {
         events.filter { it == route }.collect { state.scrollToTopSmoothly(spec) }
     }
     // De volta ao topo (por toque na aba ou de qualquer jeito): a barra de cima
-    // volta à cor normal, sem ficar com o tom de "rolado".
+    // volta à cor normal, sem ficar com o tom de "rolado", e reaparece se
+    // estava escondida (rolar por código não passa por ela).
+    val reveal = boomSpatialSpec<Float>()
     LaunchedEffect(state, topBar) {
         if (topBar == null) return@LaunchedEffect
         snapshotFlow { state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset == 0 }
             .filter { it }
-            .collect { topBar.contentOffset = 0f }
+            .collect {
+                topBar.contentOffset = 0f
+                if (topBar.heightOffset != 0f) {
+                    animate(topBar.heightOffset, 0f, animationSpec = reveal) { value, _ -> topBar.heightOffset = value }
+                }
+            }
     }
 }
 

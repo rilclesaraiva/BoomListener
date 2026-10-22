@@ -82,6 +82,7 @@ import com.boomlistener.core.common.shareLink
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomMenuHeader
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.BoomIcons
@@ -560,6 +561,7 @@ private fun PopularRow(
                     onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.link, track.title, artistName), track.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, artistName)) },
                     onDeezer = track.link?.let { link -> { context.openUrl(link) } },
+                    header = BoomMenuHeader(track.title, artistName, cover),
                     openState = menuOpen,
                 )
             }
@@ -603,6 +605,7 @@ private fun ReleaseRow(
                     onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.link, release.title, artistName), release.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, artistName)) },
                     onDeezer = release.link?.takeIf { "deezer.com" in it }?.let { link -> { context.openUrl(link) } },
+                    header = BoomMenuHeader(release.title, listOfNotNull(artistName, typeName).joinToString(" • "), cover),
                     openState = menuOpen,
                 )
             }

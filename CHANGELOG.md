@@ -4,6 +4,25 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.37.0] — 2026-10-22
+
+### ✨ New
+- **New song menu.** The ⋮ menu (or holding a song) now opens a panel from the bottom, with the cover and name of what you picked at the top and an icon next to each option. It only shows what makes sense for that item: a song, an album, an artist's release or a playlist.
+- **Go to album** in the song menus.
+- **Mix** in the player menu: keeps the current song playing and fills the queue with the rest of your library, mixed. The first few are similar songs (same artist or genre). Great when the queue has just one song.
+- **Open queue** in the player menu.
+- **Progress bar:** while you drag the dot, the bar keeps showing where the song really is, and the dot shows where you're going. Near the current spot, the dot snaps to it (with a small vibration), so letting go there changes nothing. The easy way to give up on a seek.
+- **Hiding top bar:** scrolling down hides the top bar to give the list more room. Scrolling up brings it back, and it's always there at the top of the page.
+
+### 🐛 Fixes
+- Tapping Shuffle again sometimes went back to the song that was already playing. Each tap now starts a fresh shuffle with a different song.
+- Swiping the mini player or the cover no longer flashes back to the previous song for an instant.
+- Typing in a search (Home songs, Library artists) brings the screen back to the search bar, even if you had scrolled away.
+- Animated profile pictures and covers made from videos or big GIFs play much smoother (up to 15 frames per second instead of 5). Pick the GIF or video again to get the smoother version.
+
+### 🎨 Visual tweaks
+- Your profile's color now tints the top bar too, so the whole page has the same color.
+
 ## [0.36.2] — 2026-10-21
 
 **First public beta of Boom, listener!** 🎧 A local music player for Android: free, open source, no ads, no account, and your data never leaves your phone.

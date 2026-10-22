@@ -40,6 +40,7 @@
     <string name="feature_nowplaying_device_bluetooth">Dispositivo Bluetooth</string>
     <string name="feature_nowplaying_device_usb">Áudio USB</string>
     <string name="feature_nowplaying_device_hdmi">HDMI</string>
+    <string name="feature_nowplaying_mix">Mix</string>
     <string name="feature_nowplaying_play_now">Tocar agora</string>
     <string name="feature_nowplaying_delete_song">Apagar do aparelho</string>
     <string name="feature_nowplaying_delete_song_title">Apagar esta música?</string>

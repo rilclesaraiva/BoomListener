@@ -31,6 +31,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -96,6 +98,7 @@ internal fun CollectionsScreen(
         }
     }
 
+    val searchScope = rememberCoroutineScope()
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_collections_title),
         modifier = modifier,
@@ -128,7 +131,11 @@ internal fun CollectionsScreen(
                         item(key = "artistSearch") {
                             BoomSearchField(
                                 query = artistSearch.query,
-                                onQueryChange = viewModel::onArtistQueryChange,
+                                // Cada letra traz a tela de volta até a busca (item 1, logo abaixo das pílulas).
+                                onQueryChange = { text ->
+                                    viewModel.onArtistQueryChange(text)
+                                    searchScope.launch { listState.bringToSearch(1) }
+                                },
                                 placeholder = stringResource(R.string.feature_library_search_artists),
                                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
                             )

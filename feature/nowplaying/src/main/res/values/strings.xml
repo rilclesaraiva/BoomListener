@@ -40,6 +40,7 @@
     <string name="feature_nowplaying_device_bluetooth">Bluetooth device</string>
     <string name="feature_nowplaying_device_usb">USB audio</string>
     <string name="feature_nowplaying_device_hdmi">HDMI</string>
+    <string name="feature_nowplaying_mix">Mix</string>
     <string name="feature_nowplaying_play_now">Play now</string>
     <string name="feature_nowplaying_delete_song">Delete from device</string>
     <string name="feature_nowplaying_delete_song_title">Delete this song?</string>

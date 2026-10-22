@@ -17,8 +17,12 @@ import java.io.ByteArrayOutputStream
 /** Tamanho máximo da imagem guardada (foto e capa ficam leves). */
 private const val MAX_BYTES = 380_000
 
-/** GIF animado é guardado como está até este tamanho; maior, é refeito menor. */
-internal const val MAX_GIF_BYTES = 2_900_000
+/**
+ * GIF animado é guardado como está até este tamanho; maior, é refeito menor.
+ * Fica só no aparelho, então cabe mais (e o GIF refeito pode ter quadros
+ * suficientes para rodar liso: com 2,9 MB a capa saía com 5 quadros por segundo).
+ */
+internal const val MAX_GIF_BYTES = 8_000_000
 
 /** GIF mais longo que isto é refeito (menor e mais curto). */
 internal const val MAX_GIF_DURATION_MS = 15_000L

@@ -33,6 +33,12 @@ interface PlaybackController {
      */
     fun skipToQueueItem(index: Int) = playQueueItem(index)
 
+    /**
+     * Mix: mantém o que já tocou e a música atual (sem interromper) e troca
+     * tudo o que vem depois por [tracks], já na ordem em que devem tocar.
+     */
+    fun replaceUpNext(tracks: List<Track>) {}
+
     /** Move a música da posição [from] para [to] (posições da lista original). */
     fun moveQueueItem(from: Int, to: Int)
 

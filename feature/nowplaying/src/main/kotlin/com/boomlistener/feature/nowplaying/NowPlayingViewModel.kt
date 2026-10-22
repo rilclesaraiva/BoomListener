@@ -131,6 +131,14 @@ internal class NowPlayingViewModel(
     fun seekTo(positionMs: Long) = controller.seekTo(positionMs)
     fun stop() = controller.stop()
 
+    /** Mix: a música atual continua e o resto da biblioteca, misturado, vem depois. */
+    fun mix() {
+        viewModelScope.launch {
+            val all = runCatching { library.getTracks() }.getOrDefault(emptyList())
+            controller.replaceUpNext(buildMix(state.value.item?.uri, all))
+        }
+    }
+
     /** Recebe a posição de 0 a 1 vinda da barra de progresso. */
     fun seekToFraction(fraction: Float) {
         val duration = state.value.durationMs

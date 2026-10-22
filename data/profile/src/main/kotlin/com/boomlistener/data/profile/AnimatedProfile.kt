@@ -29,15 +29,18 @@ private fun baseSize(kind: ProfileImage): Pair<Int, Int> = when (kind) {
 /**
  * Quantos quadros por segundo dá para usar num GIF de [durationMs] com
  * [pixelsPerFrame], para caber em [maxBytes]. Em média um GIF de vídeo gasta
- * ~0,4 byte por pixel de cada quadro; fica entre 4 e 10 quadros por segundo.
+ * ~0,4 byte por pixel de cada quadro; fica entre 6 e 15 quadros por segundo
+ * (15 já roda liso; mais que isso só pesaria).
  */
 internal fun framesPerSecondFor(durationMs: Long, pixelsPerFrame: Int, maxBytes: Int): Int {
     val pixelFrames = maxBytes / BYTES_PER_PIXEL
     val seconds = (durationMs / 1000.0).coerceAtLeast(1.0)
-    return (pixelFrames / pixelsPerFrame / seconds).toInt().coerceIn(4, 10)
+    return (pixelFrames / pixelsPerFrame / seconds).toInt().coerceIn(MIN_FPS, MAX_FPS)
 }
 
 private const val BYTES_PER_PIXEL = 0.4
+internal const val MIN_FPS = 6
+internal const val MAX_FPS = 15
 
 /** De onde vêm os quadros (um GIF grande ou um vídeo). */
 private interface FrameSource {
@@ -68,7 +71,7 @@ internal fun animatedProfileGif(context: Context, uri: Uri, isVideo: Boolean, gi
                 .take(8)
                 .mapNotNull { source.frameAt(it, w, h) }
             if (samples.isEmpty()) return null
-            val encoder = GifEncoder(w, h, GifEncoder.buildPalette(samples), delayCs = (step / 10).toInt())
+            val encoder = GifEncoder(w, h, GifEncoder.buildPalette(samples), delayCs = (100f / fps).roundToInt())
             var tooBig = false
             for (t in times) {
                 source.frameAt(t, w, h)?.let(encoder::addFrame)

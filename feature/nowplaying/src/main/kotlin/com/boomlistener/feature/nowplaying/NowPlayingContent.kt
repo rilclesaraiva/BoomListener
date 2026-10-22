@@ -67,6 +67,8 @@ import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
 import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.BoomMenuHeader
+import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.BoomSeekBar
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
@@ -160,17 +162,31 @@ internal fun NowPlayingContent(
                                         if (showLyrics) R.string.feature_nowplaying_hide_lyrics
                                         else R.string.feature_nowplaying_show_lyrics,
                                     ),
+                                    kind = BoomMenuKind.Lyrics,
                                 ) { viewModel.toggleLyrics() },
-                                BoomMenuAction(sleepTimerLabel(sleepTimer)) { showSleep = true },
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_speed) + " · " + formatSpeed(playbackPrefs.speed)) { showSpeed = true },
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist)) { onAddToPlaylist(item.uri) },
-                                item.artist?.let { name ->
-                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist)) { onOpenArtist(name) }
+                                // Mix: enche a fila com o resto da biblioteca, misturado.
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_mix), kind = BoomMenuKind.Mix) { viewModel.mix() },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_queue_open), kind = BoomMenuKind.Queue) { queueState.expand() },
+                                BoomMenuAction(sleepTimerLabel(sleepTimer), kind = BoomMenuKind.SleepTimer) { showSleep = true },
+                                BoomMenuAction(
+                                    stringResource(R.string.feature_nowplaying_speed) + " · " + formatSpeed(playbackPrefs.speed),
+                                    kind = BoomMenuKind.Speed,
+                                ) { showSpeed = true },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
+                                    onAddToPlaylist(item.uri)
                                 },
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags)) { onEditTags(item.uri) },
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_details)) { showDetails(item.uri, item.title) },
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song)) { deleteSong(item.uri, item.title) },
+                                item.artist?.let { name ->
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist), kind = BoomMenuKind.GoToArtist) { onOpenArtist(name) }
+                                },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags), kind = BoomMenuKind.EditTags) { onEditTags(item.uri) },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_details), kind = BoomMenuKind.Details) {
+                                    showDetails(item.uri, item.title)
+                                },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song), kind = BoomMenuKind.Delete) {
+                                    deleteSong(item.uri, item.title)
+                                },
                             ),
+                            header = BoomMenuHeader(item.title, item.artist, artwork),
                             onShare = {
                                 scope.launch {
                                     context.shareLink(

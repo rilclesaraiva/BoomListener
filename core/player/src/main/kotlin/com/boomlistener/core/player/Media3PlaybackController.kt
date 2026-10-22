@@ -104,7 +104,10 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         if (tracks.isEmpty()) return@withController
         val items = tracks.map { it.toMediaItem() }
         shuffle.clear()
-        val order = shuffle.start(items, currentIndex = kotlin.random.Random.nextInt(items.size))
+        // Tocar no aleatório de novo começa por outra música, nunca pela que já tocava.
+        val playing = player.currentMediaItem?.mediaId
+        val starts = items.indices.filter { items[it].mediaId != playing }.ifEmpty { items.indices.toList() }
+        val order = shuffle.start(items, currentIndex = starts.random())
         player.shuffleModeEnabled = true
         player.setMediaItems(order, 0, 0L)
         player.prepare()
@@ -132,6 +135,24 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         if (index in 0 until player.mediaItemCount && index != player.currentMediaItemIndex) {
             player.seekToDefaultPosition(index)
         }
+    }
+
+    override fun replaceUpNext(tracks: List<Track>) = withController { player ->
+        val count = player.mediaItemCount
+        val items = tracks.map { it.toMediaItem() }
+        if (count == 0) {
+            if (items.isEmpty()) return@withController
+            shuffle.clear()
+            player.setMediaItems(items, 0, 0L)
+            player.prepare()
+            player.play()
+            return@withController
+        }
+        // A ordem guardada do aleatório não vale mais: a fila nova já vem misturada.
+        shuffle.clear()
+        val current = player.currentMediaItemIndex.coerceAtLeast(0)
+        if (current + 1 < count) player.removeMediaItems(current + 1, count)
+        player.addMediaItems(items)
     }
 
     override fun moveQueueItem(from: Int, to: Int) = withController { player ->
