@@ -48,12 +48,9 @@ internal class UpdatePromptViewModel(
      * internet) escondia por horas uma versão publicada logo depois.
      */
     fun checkOnOpen() {
-        if (handled || _available.value != null) return
+        if (handled) return
         repository.cachedUpdate()?.let { cached ->
-            if (shouldPrompt(cached.latestVersion, now(), repository.promptState())) {
-                _available.value = cached
-                return
-            }
+            if (shouldPrompt(cached.latestVersion, now(), repository.promptState())) _available.value = cached
         }
         if (checking || !shouldAutoCheck(now(), repository.promptState())) return
         checking = true
@@ -61,10 +58,14 @@ internal class UpdatePromptViewModel(
             val result = repository.checkForUpdates()
             // Só conta como consultado quando o GitHub respondeu.
             if (result !is UpdateCheckResult.Failed) repository.markAutoCheck(now())
-            if (!handled && result is UpdateCheckResult.Available &&
-                shouldPrompt(result.latestVersion, now(), repository.promptState())
-            ) {
-                _available.value = result
+            // A resposta nova sempre vence a guardada: o aviso mostra a versão
+            // mais recente e as notas dela (nunca as de uma Release antiga).
+            when {
+                handled -> Unit
+                result is UpdateCheckResult.Available &&
+                    shouldPrompt(result.latestVersion, now(), repository.promptState()) -> _available.value = result
+                result is UpdateCheckResult.UpToDate || result is UpdateCheckResult.NoReleases -> _available.value = null
+                else -> Unit
             }
             checking = false
         }

@@ -115,6 +115,15 @@ class UpdatePromptViewModelTest {
     }
 
     @Test
+    fun respostaNovaDoGitHubTrocaAGuardada() {
+        // Guardada: 0.22.0. O GitHub agora responde 0.23.0: o aviso mostra a 0.23.0 (e as notas dela).
+        val newer = UpdateCheckResult.Available("0.21.0", "0.23.0", "https://example.com", null, notes = "### Newer")
+        val fake = PromptFake(newer, cached = available)
+        val viewModel = UpdatePromptViewModel(fake) { NOW }
+        assertEquals(newer, viewModel.available.value)
+    }
+
+    @Test
     fun falhaSemInternetNaoContaComoConsultado() {
         val fake = PromptFake(UpdateCheckResult.Failed)
         UpdatePromptViewModel(fake) { NOW }

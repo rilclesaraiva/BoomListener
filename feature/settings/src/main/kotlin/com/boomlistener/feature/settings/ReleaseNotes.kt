@@ -12,6 +12,7 @@ internal sealed interface NoteBlock {
 
 private val HEADING = Regex("""^(#{1,6})\s+(.*)$""")
 private val BULLET = Regex("""^(\s*)[-*+]\s+(.*)$""")
+private val QUOTE = Regex("""^\s*>\s?""")
 private val LINK = Regex("""\[([^\]]+)]\([^)]*\)""")
 
 /**
@@ -27,7 +28,8 @@ internal fun parseReleaseNotes(markdown: String): List<NoteBlock> {
         paragraph.clear()
     }
     for (raw in markdown.replace("\r\n", "\n").lines()) {
-        val line = raw.trimEnd()
+        // Destaque ("> texto") vira texto comum, sem o ">" aparecendo.
+        val line = raw.trimEnd().let { QUOTE.replace(it, "") }
         val heading = HEADING.find(line.trimStart())
         val bullet = BULLET.find(line)
         when {

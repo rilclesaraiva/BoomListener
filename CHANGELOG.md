@@ -6,12 +6,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [0.40.3] — 2026-10-22
 
-### 🐛 Fixes
-- The "new version available" screen now shows up on its own when you open the app. Before, it could stay hidden for hours if the app had checked a little earlier, or had tried to check without internet, and you had to look for updates by hand. The app now also checks again when you come back to it, at most once an hour.
-
-## [0.40.2] — 2026-10-22
-
-**Second public beta.** 🎧 This release brings together everything since 0.36.2. Here are the highlights; the full list is in the versions below.
+**Second public beta.** 🎧 This release brings together everything since 0.36.2. Here are the highlights; the full list is in CHANGELOG.md.
 
 > 🧪 **Still a beta.** The phone in portrait is the main target. Landscape and tablet layouts still have broken spots we're working on. Please report anything odd in Issues.
 
@@ -30,10 +25,16 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - Seeking works in MP3 and AAC files without an index, and songs in formats your phone can't play are skipped with a message instead of stopping playback.
 - The back gesture on panels uses the app's own animation, and panels close only when you mean to (Edit profile closes only from the strip at its top).
 - Animated profile pictures from videos or big GIFs play much smoother.
+- The "new version available" screen now shows up on its own when you open or come back to the app, always with the notes of the newest version. Before, it could stay hidden for hours.
 
 ### 🎨 Visual tweaks since 0.36.2
 - The top bar hides as you scroll down and comes back when you scroll up. On your profile, in Library and in Settings, the title is part of the page.
 - Back buttons are an arrow in a circle everywhere. Panels no longer cover the whole screen.
+
+## [0.40.2] — 2026-10-22
+
+### 🐛 Fixes
+- Edit profile only closes when you pull from the strip at its top (where the handle is). Scrolling the form and pulling past the top no longer closes it by accident.
 
 ## [0.40.1] — 2026-10-22
 

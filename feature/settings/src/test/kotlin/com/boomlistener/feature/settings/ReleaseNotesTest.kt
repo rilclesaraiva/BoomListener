@@ -46,4 +46,10 @@ class ReleaseNotesTest {
         assertEquals(listOf("sem fechar" to false), boldRuns("**sem fechar"))
         assertEquals(listOf("nada" to false), boldRuns("nada"))
     }
+
+    @Test
+    fun destaqueComMaiorQueViraTextoComum() {
+        val blocks = parseReleaseNotes("> 🧪 **Still a beta.** Report bugs.")
+        assertEquals(listOf(NoteBlock.Paragraph("🧪 **Still a beta.** Report bugs.")), blocks)
+    }
 }
