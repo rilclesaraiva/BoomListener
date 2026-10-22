@@ -99,6 +99,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.boomlistener.feature.profile.profileScreen
+import com.boomlistener.feature.profile.ProfileSongMenu
 import com.boomlistener.core.designsystem.component.FavoriteShare
 import com.boomlistener.core.designsystem.component.LocalFavoriteShare
 import com.boomlistener.core.common.ShareTarget
@@ -280,6 +281,11 @@ fun BoomListenerApp() {
                 onOpenArtist = openArtist,
                 onOpenHistory = openHistory,
                 onOpenSettings = openSettings,
+                songMenu = ProfileSongMenu(
+                    onOpenArtist = openArtist,
+                    onEditTags = { uri -> navController.navigateToTagEditor(uri) },
+                    onAddToPlaylist = { uri -> addToPlaylistUri = uri },
+                ),
             )
             artistScreen(
                 navController = navController,

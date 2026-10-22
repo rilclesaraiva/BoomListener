@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import com.boomlistener.core.designsystem.component.BoomProfilePalette
 import com.boomlistener.core.designsystem.component.parseProfileColor
 import com.boomlistener.core.designsystem.component.profileBackground
-import com.boomlistener.core.designsystem.component.profileTopColor
+import com.boomlistener.core.designsystem.component.clickableWithMenu
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -109,6 +109,7 @@ internal fun MyProfileScreen(
     onOpenArtist: (String) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
+    songMenu: ProfileSongMenu,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -130,8 +131,10 @@ internal fun MyProfileScreen(
         },
         // A cor que você escolheu tinge o perfil inteiro, a barra de cima junto.
         pageBackground = { profileBackground(state?.profile?.color) },
-        // A barra fica opaca, na cor do topo do perfil (transparente, o conteúdo passava por baixo dela).
-        topBarColor = profileTopColor(state?.profile?.color, MaterialTheme.colorScheme.background),
+        // Barra transparente e fixa: não some ao rolar, e a lista começa embaixo
+        // dela (padding), então nada passa por trás do título.
+        topBarColor = Color.Transparent,
+        pinnedTopBar = true,
     ) { padding ->
         val current = state
         if (current == null) {
@@ -140,8 +143,8 @@ internal fun MyProfileScreen(
         }
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 32.dp),
-            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 32.dp),
+            modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
         ) {
             item(key = "header") {
                 Header(current, viewModel, onEdit = { editing = true })
@@ -161,7 +164,7 @@ internal fun MyProfileScreen(
                     SectionTitle(stringResource(R.string.feature_profile_most_played), stringResource(R.string.feature_profile_most_played_sub))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
                         itemsIndexed(current.topSongs, key = { _, song -> song.uri }) { index, song ->
-                            TopSongCard(index + 1, song, viewModel, onClick = { viewModel.playTop(index) })
+                            TopSongCard(index + 1, song, viewModel, songMenu, onClick = { viewModel.playTop(index) })
                         }
                     }
                 }
@@ -186,6 +189,8 @@ internal fun MyProfileScreen(
                                 caption = pluralStringResource(R.plurals.feature_profile_plays, artist.plays, artist.plays),
                                 viewModel = viewModel,
                                 onClick = { onOpenArtist(artist.name) },
+                                onPlay = { viewModel.playArtist(artist.name, shuffled = false) },
+                                onShuffle = { viewModel.playArtist(artist.name, shuffled = true) },
                             )
                         }
                     }
@@ -201,7 +206,7 @@ internal fun MyProfileScreen(
                     )
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
                         items(current.recent, key = { "${it.timestampMs}-${it.uri}" }) { entry ->
-                            HistoryCard(entry, current.today, viewModel, onClick = { viewModel.playRecent(entry) })
+                            HistoryCard(entry, current.today, viewModel, songMenu, onClick = { viewModel.playRecent(entry) })
                         }
                     }
                 }
@@ -589,9 +594,12 @@ private fun SectionTitle(title: String, subtitle: String?, onMore: (() -> Unit)?
 }
 
 @Composable
-private fun TopSongCard(rank: Int, song: SongStat, viewModel: MyProfileViewModel, onClick: () -> Unit) {
+private fun TopSongCard(rank: Int, song: SongStat, viewModel: MyProfileViewModel, menu: ProfileSongMenu, onClick: () -> Unit) {
     val cover = rememberLocalArtwork(viewModel, song.uri, CoverCard)
-    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = TileBottom)) {
+    // Segurar abre o menu da música.
+    val menuOpen = remember { mutableStateOf(false) }
+    ProfileSongMenuSheet(menuOpen, song.uri, song.title, song.artist, cover, menu, onPlay = onClick)
+    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = TileBottom)) {
         Box {
             BoomArtwork(image = cover, fallbackText = song.title, size = CoverCard)
             // Posição no ranking, num selo no canto.
@@ -693,14 +701,24 @@ private fun DayPartsCard(state: MyProfileUiState) {
 
 /** Bolinha com nome embaixo (artista). */
 @Composable
-private fun PersonChip(name: String, caption: String?, viewModel: MyProfileViewModel, onClick: () -> Unit) {
+private fun PersonChip(
+    name: String,
+    caption: String?,
+    viewModel: MyProfileViewModel,
+    onClick: () -> Unit,
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+) {
     val px = with(LocalDensity.current) { 72.dp.roundToPx() }
     val photo by produceState<ImageBitmap?>(initialValue = null, name) {
         value = viewModel.artistImage(name, px)?.asImageBitmap()
     }
+    // Segurar abre o menu do artista.
+    val menuOpen = remember { mutableStateOf(false) }
+    ProfileArtistMenuSheet(menuOpen, name, photo, onPlay = onPlay, onShuffle = onShuffle, onOpenArtist = onClick)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(88.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(top = 4.dp, bottom = TileBottom),
+        modifier = Modifier.width(88.dp).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(top = 4.dp, bottom = TileBottom),
     ) {
         Avatar(name, size = 72.dp, image = photo)
         Spacer(Modifier.height(6.dp))
@@ -712,15 +730,18 @@ private fun PersonChip(name: String, caption: String?, viewModel: MyProfileViewM
 }
 
 @Composable
-private fun HistoryCard(entry: HistoryEntry, today: LocalDate, viewModel: MyProfileViewModel, onClick: () -> Unit) {
+private fun HistoryCard(entry: HistoryEntry, today: LocalDate, viewModel: MyProfileViewModel, menu: ProfileSongMenu, onClick: () -> Unit) {
     val cover = rememberLocalArtwork(viewModel, entry.uri, CoverCard)
+    // Segurar abre o menu da música.
+    val menuOpen = remember { mutableStateOf(false) }
+    ProfileSongMenuSheet(menuOpen, entry.uri, entry.title, entry.artist, cover, menu, onPlay = onClick)
     val date = remember(entry.timestampMs) { Instant.ofEpochMilli(entry.timestampMs).atZone(ZoneId.systemDefault()).toLocalDate() }
     val label = when (date) {
         today -> stringResource(R.string.feature_profile_today)
         today.minusDays(1) -> stringResource(R.string.feature_profile_yesterday)
         else -> date.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
     }
-    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = TileBottom)) {
+    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = TileBottom)) {
         Box(contentAlignment = Alignment.BottomStart) {
             BoomArtwork(image = cover, fallbackText = entry.title, size = CoverCard)
             Surface(

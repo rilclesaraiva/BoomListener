@@ -143,6 +143,14 @@ internal class MyProfileViewModel(
         playUris(current.recent.map { it.uri }.distinct(), entry.uri)
     }
 
+    /** Toca as músicas de um artista que estão no aparelho (do menu do artista). */
+    fun playArtist(name: String, shuffled: Boolean) {
+        val key = name.normalizedForSearch()
+        val songs = tracks.value.filter { track -> track.artist?.let { artistOf(it).normalizedForSearch() == key } == true }
+        if (songs.isEmpty()) return
+        if (shuffled) player.playShuffled(songs) else player.play(songs, 0)
+    }
+
     private fun playUris(uris: List<String>, start: String?) {
         val byUri = tracks.value.associateBy { it.uri }
         val queue = uris.mapNotNull { byUri[it] }

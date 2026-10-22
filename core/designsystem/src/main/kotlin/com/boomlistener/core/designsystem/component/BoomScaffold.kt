@@ -75,8 +75,10 @@ fun BoomScreenScaffold(
      * a cor do perfil). A barra usa [topBarColor], a cor do topo desse fundo.
      */
     pageBackground: (Modifier.() -> Modifier)? = null,
-    /** Cor (opaca) da barra de cima, parada ou rolada; null = a do tema. */
+    /** Cor da barra de cima, parada ou rolada; null = a do tema. */
     topBarColor: Color? = null,
+    /** Barra fixa: não some ao rolar (ex.: o perfil). */
+    pinnedTopBar: Boolean = false,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val effects = boomEffectsSpec<Float>()
@@ -84,6 +86,8 @@ fun BoomScreenScaffold(
     val topBarState = rememberTopAppBarState()
     val scrollBehavior = if (largeTitle) {
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(topBarState)
+    } else if (pinnedTopBar) {
+        TopAppBarDefaults.pinnedScrollBehavior(topBarState)
     } else {
         // Rolar para baixo esconde a barra; qualquer subida a traz de volta
         // (e no topo da página ela sempre aparece).

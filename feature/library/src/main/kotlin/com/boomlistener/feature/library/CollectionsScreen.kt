@@ -132,6 +132,9 @@ internal fun CollectionsScreen(
                                 count = group.tracks.size,
                                 cover = group.tracks.firstOrNull(),
                                 viewModel = viewModel,
+                                menu = { open, image ->
+                                    GroupMenuSheet(open, group.name, countText(group.tracks.size), group.tracks, image, albumMenu)
+                                },
                                 onClick = { onOpenGenre(group.key) },
                                 modifier = Modifier.animateItem(),
                             )
@@ -163,6 +166,12 @@ internal fun CollectionsScreen(
                                 cover = group.tracks.firstOrNull(),
                                 viewModel = viewModel,
                                 round = true,
+                                menu = { open, image ->
+                                    GroupMenuSheet(
+                                        open, group.name, countText(group.tracks.size), group.tracks, image, albumMenu,
+                                        artistToOpen = group.name, youtubeQuery = group.name to null, round = true,
+                                    )
+                                },
                                 onClick = { onOpenArtist(group.name) },
                                 modifier = Modifier.animateItem(),
                             )
@@ -198,6 +207,12 @@ internal fun CollectionsScreen(
                                 cover = current.favorites.firstOrNull(),
                                 viewModel = viewModel,
                                 fallbackIcon = BoomIcons.Favorite,
+                                menu = { open, image ->
+                                    GroupMenuSheet(
+                                        open, stringResource(R.string.feature_library_favorites), countText(current.favorites.size),
+                                        current.favorites, image, albumMenu,
+                                    )
+                                },
                                 onClick = onOpenFavorites,
                                 modifier = Modifier.animateItem(),
                             )
@@ -210,6 +225,9 @@ internal fun CollectionsScreen(
                                 cover = summary.tracks.firstOrNull(),
                                 viewModel = viewModel,
                                 fallbackIcon = BoomIcons.Playlist,
+                                menu = { open, image ->
+                                    GroupMenuSheet(open, summary.playlist.name, countText(summary.tracks.size), summary.tracks, image, albumMenu)
+                                },
                                 onClick = { onOpenPlaylist(summary.playlist.id) },
                                 modifier = Modifier.animateItem(),
                             )
@@ -305,6 +323,10 @@ private fun CategoryChips(state: CollectionsUiState.Ready, onSelect: (Collection
     }
 }
 
+/** "12 músicas", para o topo dos menus. */
+@Composable
+private fun countText(count: Int): String = pluralStringResource(R.plurals.feature_library_count, count, count)
+
 @Composable
 private fun GroupRow(
     name: String,
@@ -315,13 +337,17 @@ private fun GroupRow(
     modifier: Modifier = Modifier,
     round: Boolean = false,
     fallbackIcon: ImageVector? = null,
+    /** O menu do grupo, aberto ao segurar a linha. */
+    menu: (@Composable (open: MutableState<Boolean>, image: ImageBitmap?) -> Unit)? = null,
 ) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val image by produceState<ImageBitmap?>(initialValue = null, cover?.uri) {
         value = cover?.let { viewModel.artwork(it.uri, px)?.asImageBitmap() }
     }
+    val menuOpen = remember { mutableStateOf(false) }
+    menu?.invoke(menuOpen, image)
     ListItem(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = if (menu != null) modifier.clickableWithMenu(menuOpen, onClick = onClick) else modifier.clickable(onClick = onClick),
         leadingContent = {
             if (image == null && fallbackIcon != null) {
                 Surface(

@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.39.0] — 2026-10-22
+
+### ✨ New
+- **Hold for the menu everywhere:** genres, artists, playlists and Favorites in Library, artists on Home, and on your profile the most played songs, your artists and the history row now open their menu when you hold them. Groups can be played, shuffled or added to a playlist; songs can be played, favorited, added to a playlist, edited or opened by artist.
+
+### 🎨 Visual tweaks
+- Your profile's top bar is transparent again and stays fixed at the top: it no longer hides while scrolling, and the page no longer shows behind the title.
+
 ## [0.38.0] — 2026-10-22
 
 ### ✨ New

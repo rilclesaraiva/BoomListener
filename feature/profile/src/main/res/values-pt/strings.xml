@@ -54,4 +54,11 @@
     <string name="feature_profile_settings">Ajustes</string>
     <string name="feature_profile_make_it_yours">Deixe do seu jeito</string>
     <string name="feature_profile_save_failed">Não deu para salvar. Tente outra imagem.</string>
+    <string name="feature_profile_play">Tocar</string>
+    <string name="feature_profile_shuffle">Aleatório</string>
+    <string name="feature_profile_add_to_playlist">Adicionar à playlist</string>
+    <string name="feature_profile_favorite">Favoritar</string>
+    <string name="feature_profile_unfavorite">Tirar dos favoritos</string>
+    <string name="feature_profile_go_to_artist">Ir para o artista</string>
+    <string name="feature_profile_edit_tags">Editar tags</string>
 </resources>

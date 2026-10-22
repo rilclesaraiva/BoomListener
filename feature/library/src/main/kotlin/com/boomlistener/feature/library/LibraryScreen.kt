@@ -312,7 +312,7 @@ private fun TrackList(
                             contentPadding = PaddingValues(horizontal = 16.dp),
                         ) {
                             items(home.artists, key = { it.key }) { artist ->
-                                HomeArtist(artist, state.version, loadArtwork, onClick = { onOpenArtist(artist.name) })
+                                HomeArtist(artist, state.version, loadArtwork, albumMenu, onClick = { onOpenArtist(artist.name) })
                             }
                         }
                     }
@@ -540,12 +540,20 @@ private fun HomeArtist(
     artist: TrackGroup,
     version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    menu: AlbumMenuActions,
     onClick: () -> Unit,
 ) {
     val cover = rememberHomeCover(artist.tracks.firstOrNull(), version, HomeTile, loadArtwork)
+    // Segurar o artista abre o menu dele.
+    val menuOpen = remember { mutableStateOf(false) }
+    val count = artist.tracks.size
+    GroupMenuSheet(
+        menuOpen, artist.name, pluralStringResource(R.plurals.feature_library_count, count, count), artist.tracks, cover, menu,
+        artistToOpen = artist.name, youtubeQuery = artist.name to null, round = true,
+    )
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(HomeTile).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = 8.dp),
+        modifier = Modifier.width(HomeTile).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = 8.dp),
     ) {
         BoomArtwork(image = cover, fallbackText = artist.name, size = HomeTile, modifier = Modifier.clip(CircleShape))
         Spacer(Modifier.height(8.dp))

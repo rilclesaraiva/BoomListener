@@ -16,7 +16,7 @@ import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomMenuSheet
 import com.boomlistener.core.model.Track
 
-/** O que o menu de um álbum (segurar o bloco) pode fazer. */
+/** O que o menu de um grupo de músicas (álbum, artista, gênero, playlist) pode fazer. */
 internal class AlbumMenuActions(
     val play: (List<Track>) -> Unit,
     val shuffle: (List<Track>) -> Unit,
@@ -37,6 +37,25 @@ internal fun AlbumMenuSheet(
     tracks: List<Track>,
     cover: ImageBitmap?,
     actions: AlbumMenuActions,
+) = GroupMenuSheet(open, name, artist, tracks, cover, actions, artistToOpen = artist, youtubeQuery = name to artist)
+
+/**
+ * Menu de um grupo de músicas, aberto ao segurar: tocar, aleatório,
+ * adicionar à playlist e, quando há, ir para o artista ([artistToOpen]) e
+ * ouvir no YouTube Music ([youtubeQuery]: nome e artista da busca).
+ * Artista, gênero e playlist usam este; o álbum, o [AlbumMenuSheet].
+ */
+@Composable
+internal fun GroupMenuSheet(
+    open: MutableState<Boolean>,
+    name: String,
+    subtitle: String?,
+    tracks: List<Track>,
+    cover: ImageBitmap?,
+    actions: AlbumMenuActions,
+    artistToOpen: String? = null,
+    youtubeQuery: Pair<String, String?>? = null,
+    round: Boolean = false,
 ) {
     val context = LocalContext.current
     BoomMenuSheet(
@@ -47,11 +66,11 @@ internal fun AlbumMenuSheet(
             BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
                 actions.addToPlaylist(tracks)
             },
-            artist?.takeIf { it.isNotBlank() }?.let { name ->
-                BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), kind = BoomMenuKind.GoToArtist) { actions.openArtist(name) }
+            artistToOpen?.takeIf { it.isNotBlank() }?.let { artist ->
+                BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), kind = BoomMenuKind.GoToArtist) { actions.openArtist(artist) }
             },
         ),
-        onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(name, artist)) },
-        header = BoomMenuHeader(name, artist, cover),
+        onYoutubeMusic = youtubeQuery?.let { (title, artist) -> { context.openUrl(ExternalLinks.youtubeMusicSearch(title, artist)) } },
+        header = BoomMenuHeader(name, subtitle, cover, round = round),
     )
 }

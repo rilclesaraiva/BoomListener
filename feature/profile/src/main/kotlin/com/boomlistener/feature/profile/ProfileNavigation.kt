@@ -25,6 +25,7 @@ fun NavGraphBuilder.profileScreen(
     onOpenArtist: (artistName: String) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
+    songMenu: ProfileSongMenu,
 ) {
     composable(MY_PROFILE_ROUTE) {
         val context = LocalContext.current.applicationContext
@@ -44,6 +45,7 @@ fun NavGraphBuilder.profileScreen(
             onOpenArtist = onOpenArtist,
             onOpenHistory = onOpenHistory,
             onOpenSettings = onOpenSettings,
+            songMenu = songMenu,
         )
     }
 }
