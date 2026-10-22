@@ -6,8 +6,29 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [0.40.2] — 2026-10-22
 
-### 🐛 Fixes
-- Edit profile only closes when you pull from the strip at its top (where the handle is). Scrolling the form and pulling past the top no longer closes it by accident.
+**Second public beta.** 🎧 This release brings together everything since 0.36.2. Here are the highlights; the full list is in the versions below.
+
+> 🧪 **Still a beta.** The phone in portrait is the main target. Landscape and tablet layouts still have broken spots we're working on. Please report anything odd in Issues.
+
+### ✨ New since 0.36.2
+- **Release alerts:** your phone tells you when an artist you follow releases a new album, EP or single. Turn them on or off with the bell on the Releases screen.
+- **New menus:** hold any song, album, artist, genre or playlist (and the songs and artists on your profile) to open a menu with the cover on top and icons for each option.
+- **Mix:** from the player menu, keep the current song playing and fill the queue with similar songs first, then the rest of your library.
+- **Grid or list in Library**, remembered for each tab.
+- **Smarter progress bar:** the dot snaps back to where the song is playing (an easy way to give up on a seek), and the time on the left keeps showing the real position.
+- **Better automatic tags:** they now also search the artist's own songs and albums on Deezer, so remixes and EP tracks are found.
+- **Go to album** in song menus, and **Open queue** in the player menu.
+
+### 🐛 Fixes since 0.36.2
+- Shuffle no longer goes back to the song that was already playing, and swiping between songs no longer flashes the previous one.
+- Going to an artist from the full-screen player and coming back reopens the player.
+- Seeking works in MP3 and AAC files without an index, and songs in formats your phone can't play are skipped with a message instead of stopping playback.
+- The back gesture on panels uses the app's own animation, and panels close only when you mean to (Edit profile closes only from the strip at its top).
+- Animated profile pictures from videos or big GIFs play much smoother.
+
+### 🎨 Visual tweaks since 0.36.2
+- The top bar hides as you scroll down and comes back when you scroll up. On your profile, in Library and in Settings, the title is part of the page.
+- Back buttons are an arrow in a circle everywhere. Panels no longer cover the whole screen.
 
 ## [0.40.1] — 2026-10-22
 
