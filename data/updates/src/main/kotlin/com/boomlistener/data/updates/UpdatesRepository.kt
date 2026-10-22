@@ -52,10 +52,20 @@ interface UpdatesRepository {
     fun skipVersion(version: String) {}
 
     fun markAutoCheck(atMs: Long) {}
+
+    /**
+     * A última versão nova encontrada (guardada da consulta anterior), se ainda
+     * for mais nova que a instalada. Deixa o aviso aparecer ao abrir o app sem
+     * esperar a internet nem o intervalo entre consultas.
+     */
+    fun cachedUpdate(): UpdateCheckResult.Available? = null
 }
 
-/** Intervalo mínimo entre consultas automáticas (ao abrir o app). */
-const val AUTO_CHECK_INTERVAL_MS: Long = 6 * 60 * 60 * 1000L
+/**
+ * Intervalo mínimo entre consultas automáticas (ao abrir ou voltar ao app).
+ * 1 h fica bem abaixo do limite do GitHub (60 consultas por hora sem conta).
+ */
+const val AUTO_CHECK_INTERVAL_MS: Long = 60 * 60 * 1000L
 
 /** Abrir o app agora deve consultar o GitHub? */
 fun shouldAutoCheck(nowMs: Long, state: UpdatePromptState): Boolean =

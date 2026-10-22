@@ -3,6 +3,8 @@
 
 package com.boomlistener.feature.settings
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,6 +63,8 @@ fun UpdatePromptHost() {
     val viewModel: UpdatePromptViewModel = viewModel {
         UpdatePromptViewModel(UpdatesData.repository(context.applicationContext))
     }
+    // Voltou para o app (ex.: estava em segundo plano): confere de novo.
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.checkOnOpen() }
     val available by viewModel.available.collectAsStateWithLifecycle()
     available?.let { update ->
         UpdatePromptDialog(

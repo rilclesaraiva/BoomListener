@@ -13,6 +13,7 @@ import java.net.URL
 private const val KEY_SNOOZED_UNTIL = "snoozed_until"
 private const val KEY_SKIPPED = "skipped_version"
 private const val KEY_LAST_CHECK = "last_auto_check"
+private const val KEY_CACHED_RELEASE = "cached_release"
 
 private const val LATEST_RELEASE_URL =
     "https://api.github.com/repos/rilclesaraiva/BoomListener/releases/latest"
@@ -29,14 +30,19 @@ internal class GitHubUpdatesRepository(
             setRequestProperty("Accept", "application/vnd.github+json")
             setRequestProperty("User-Agent", "BoomListener/$current")
         }
-        try {
+        val result = try {
             when (connection.responseCode) {
                 HttpURLConnection.HTTP_OK -> {
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
+                    // Guarda a Release mais recente para a próxima abertura.
+                    prefs.edit().putString(KEY_CACHED_RELEASE, body).apply()
                     parseRelease(body, current)
                 }
                 // A API responde 404 quando ainda não existe nenhuma Release.
-                HttpURLConnection.HTTP_NOT_FOUND -> UpdateCheckResult.NoReleases
+                HttpURLConnection.HTTP_NOT_FOUND -> {
+                    prefs.edit().remove(KEY_CACHED_RELEASE).apply()
+                    UpdateCheckResult.NoReleases
+                }
                 else -> UpdateCheckResult.Failed
             }
         } catch (_: Exception) {
@@ -44,6 +50,12 @@ internal class GitHubUpdatesRepository(
         } finally {
             connection.disconnect()
         }
+        result
+    }
+
+    override fun cachedUpdate(): UpdateCheckResult.Available? {
+        val body = prefs.getString(KEY_CACHED_RELEASE, null) ?: return null
+        return runCatching { parseRelease(body, installedVersion()) as? UpdateCheckResult.Available }.getOrNull()
     }
 
     private fun parseRelease(body: String, current: String): UpdateCheckResult {

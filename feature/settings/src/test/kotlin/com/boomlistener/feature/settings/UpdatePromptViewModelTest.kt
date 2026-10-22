@@ -25,7 +25,9 @@ private const val DAY = 24 * 60 * 60 * 1000L
 private class PromptFake(
     private val result: UpdateCheckResult,
     var state: UpdatePromptState = UpdatePromptState(),
+    var cached: UpdateCheckResult.Available? = null,
 ) : UpdatesRepository {
+    override fun cachedUpdate() = cached
     var checks = 0
     override suspend fun checkForUpdates(): UpdateCheckResult {
         checks++
@@ -101,5 +103,30 @@ class UpdatePromptViewModelTest {
 
         val newer = PromptFake(UpdateCheckResult.Available("0.21.0", "0.23.0", "https://example.com", null), fake.state)
         assertNotNull(UpdatePromptViewModel(newer) { NOW + 2 * AUTO_CHECK_INTERVAL_MS }.available.value)
+    }
+
+    @Test
+    fun versaoJaConhecidaApareceSemEsperarOIntervalo() {
+        // Consultou há pouco (dentro do intervalo), mas a versão nova já era conhecida.
+        val fake = PromptFake(available, UpdatePromptState(lastAutoCheckMs = NOW - 1_000), cached = available)
+        val viewModel = UpdatePromptViewModel(fake) { NOW }
+        assertEquals(available, viewModel.available.value)
+        assertEquals(0, fake.checks)
+    }
+
+    @Test
+    fun falhaSemInternetNaoContaComoConsultado() {
+        val fake = PromptFake(UpdateCheckResult.Failed)
+        UpdatePromptViewModel(fake) { NOW }
+        assertEquals(0L, fake.state.lastAutoCheckMs)
+    }
+
+    @Test
+    fun depoisDeResponderNaoReapareceAoVoltarParaOApp() {
+        val fake = PromptFake(available, cached = available)
+        val viewModel = UpdatePromptViewModel(fake) { NOW }
+        viewModel.onDownload()
+        viewModel.checkOnOpen()
+        assertNull(viewModel.available.value)
     }
 }

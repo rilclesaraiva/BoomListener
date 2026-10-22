@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.40.3] — 2026-10-22
+
+### 🐛 Fixes
+- The "new version available" screen now shows up on its own when you open the app. Before, it could stay hidden for hours if the app had checked a little earlier, or had tried to check without internet, and you had to look for updates by hand. The app now also checks again when you come back to it, at most once an hour.
+
 ## [0.40.2] — 2026-10-22
 
 **Second public beta.** 🎧 This release brings together everything since 0.36.2. Here are the highlights; the full list is in the versions below.

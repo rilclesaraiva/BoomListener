@@ -477,7 +477,7 @@ fun BoomListenerApp() {
             )
         }
 
-        // Versão nova no GitHub: aviso em tela cheia (no máximo uma consulta a cada 6 h).
+        // Versão nova no GitHub: aviso em tela cheia ao abrir o app (no máximo uma consulta por hora).
         UpdatePromptHost()
       }
     }
