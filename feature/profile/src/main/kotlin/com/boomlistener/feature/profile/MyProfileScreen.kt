@@ -355,7 +355,9 @@ private fun EditProfileSheet(profile: MyProfile, viewModel: MyProfileViewModel, 
         onDismissRequest = onDismiss,
         dismissEnabled = !saving,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        // Puxar para baixo fecha (sem botão de X), como os outros painéis.
+        // Fecha puxando para baixo, mas só pela faixa de cima (do puxador):
+        // rolar o formulário até o topo e continuar puxando fechava sem querer.
+        dragOnlyFromTop = true,
     ) {
         Column(
             Modifier

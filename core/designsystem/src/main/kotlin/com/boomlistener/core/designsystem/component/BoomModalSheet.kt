@@ -9,6 +9,11 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -46,6 +51,12 @@ fun BoomModalSheet(
     contentColor: Color = contentColorFor(containerColor),
     /** Falso enquanto o painel não pode fechar (ex.: salvando). */
     dismissEnabled: Boolean = true,
+    /**
+     * Só a faixa de cima (a do puxador) arrasta o painel: rolar o conteúdo até
+     * o topo e continuar puxando não o fecha. Para painéis com coisa a perder
+     * (ex.: Editar perfil), que fechavam fácil demais.
+     */
+    dragOnlyFromTop: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -67,6 +78,19 @@ fun BoomModalSheet(
         // Nunca chega ao topo da tela: a faixa de cima que sobra mostra que o
         // painel é de puxar (para baixo, fecha).
         val maxHeight = LocalConfiguration.current.screenHeightDp.dp * MAX_SHEET_FRACTION
-        Column(Modifier.heightIn(max = maxHeight)) { content() }
+        Column(
+            Modifier
+                .heightIn(max = maxHeight)
+                .then(if (dragOnlyFromTop) Modifier.nestedScroll(KeepScrollInside) else Modifier),
+        ) { content() }
     }
+}
+
+/**
+ * Fica com toda a rolagem que o conteúdo não usou (puxar além do topo), para
+ * ela não chegar ao painel e arrastá-lo. O puxador, fora do conteúdo, continua arrastando.
+ */
+private object KeepScrollInside : NestedScrollConnection {
+    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset = available
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
 }

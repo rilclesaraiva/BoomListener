@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.40.2] — 2026-10-22
+
+### 🐛 Fixes
+- Edit profile only closes when you pull from the strip at its top (where the handle is). Scrolling the form and pulling past the top no longer closes it by accident.
+
 ## [0.40.1] — 2026-10-22
 
 ### 🐛 Fixes
