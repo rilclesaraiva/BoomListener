@@ -34,8 +34,9 @@ class UpdatePromptTest {
     }
 
     @Test
-    fun consultaAutomaticaNoMaximoACadaSeisHoras() {
-        val checked = UpdatePromptState(lastAutoCheckMs = now - 60 * 60 * 1000L)
+    fun consultaAutomaticaNoMaximoUmaVezPorIntervalo() {
+        // Consultou há meio intervalo: ainda não consulta de novo.
+        val checked = UpdatePromptState(lastAutoCheckMs = now - AUTO_CHECK_INTERVAL_MS / 2)
         assertFalse(shouldAutoCheck(now, checked))
         assertTrue(shouldAutoCheck(now + AUTO_CHECK_INTERVAL_MS, checked))
     }
