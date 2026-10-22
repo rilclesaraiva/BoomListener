@@ -31,6 +31,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.boomlistener.core.designsystem.component.clickableWithMenu
+import androidx.compose.runtime.MutableState
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
@@ -99,6 +101,15 @@ internal fun CollectionsScreen(
     }
 
     val searchScope = rememberCoroutineScope()
+    // Álbum inteiro (menu do álbum) a caminho de uma playlist.
+    var addManyToPlaylist by remember { mutableStateOf<List<String>?>(null) }
+    val albumMenu = AlbumMenuActions(
+        play = viewModel::playTracks,
+        shuffle = viewModel::shuffleTracks,
+        addToPlaylist = { tracks -> addManyToPlaylist = tracks.map { it.uri } },
+        openArtist = onOpenArtist,
+    )
+    addManyToPlaylist?.let { uris -> AddToPlaylistSheet(trackUris = uris, onDismiss = { addManyToPlaylist = null }) }
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_collections_title),
         modifier = modifier,
@@ -218,6 +229,9 @@ internal fun CollectionsScreen(
                                         artist = listOfNotNull(album.subtitle, album.year?.toString()).joinToString(" · "),
                                         cover = album.tracks.firstOrNull(),
                                         viewModel = viewModel,
+                                        menu = { open, image ->
+                                            AlbumMenuSheet(open, album.name, album.subtitle, album.tracks, image, albumMenu)
+                                        },
                                         onClick = { onOpenAlbum(album.key) },
                                         modifier = Modifier.weight(1f),
                                     )
@@ -337,6 +351,8 @@ private fun AlbumTile(
     artist: String,
     cover: Track?,
     viewModel: CollectionsViewModel,
+    /** O menu do álbum, aberto ao segurar o bloco. */
+    menu: @Composable (open: MutableState<Boolean>, image: ImageBitmap?) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -344,8 +360,10 @@ private fun AlbumTile(
     val image by produceState<ImageBitmap?>(initialValue = null, cover?.uri) {
         value = cover?.let { viewModel.artwork(it.uri, px)?.asImageBitmap() }
     }
+    val menuOpen = remember { mutableStateOf(false) }
+    menu(menuOpen, image)
     // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
-    Column(modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = 8.dp)) {
+    Column(modifier.clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = 8.dp)) {
         BoomArtwork(
             image = image,
             fallbackText = name,

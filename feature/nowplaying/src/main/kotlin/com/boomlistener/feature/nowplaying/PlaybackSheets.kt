@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.nowplaying
 
+import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +15,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,7 +64,7 @@ internal fun sleepTimerLabel(timer: SleepTimer?): String {
 @Composable
 internal fun SleepTimerSheet(settings: PlaybackSettings, onDismiss: () -> Unit) {
     val timer by settings.sleepTimer.collectAsStateWithLifecycle()
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    BoomModalSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.padding(bottom = 24.dp)) {
             Text(
                 stringResource(R.string.feature_nowplaying_sleep),
@@ -115,7 +115,7 @@ internal fun SpeedSheet(settings: PlaybackSettings, onDismiss: () -> Unit) {
     val prefs by settings.prefs.collectAsStateWithLifecycle()
     var dragging by remember { mutableFloatStateOf(-1f) }
     val speed = if (dragging >= 0f) dragging else prefs.speed
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    BoomModalSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.feature_nowplaying_speed), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))

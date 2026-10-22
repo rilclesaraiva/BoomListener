@@ -115,6 +115,8 @@ internal fun LibraryScreen(
 ) {
     val context = LocalContext.current
     var addToPlaylist by remember { mutableStateOf<Track?>(null) }
+    // Álbum inteiro (menu do álbum) a caminho de uma playlist.
+    var addManyToPlaylist by remember { mutableStateOf<List<String>?>(null) }
     val viewModel: LibraryViewModel = viewModel {
         LibraryViewModel(
             LibraryData.repository(context.applicationContext),
@@ -182,6 +184,12 @@ internal fun LibraryScreen(
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
                     onAddToPlaylist = { addToPlaylist = it },
+                    albumMenu = AlbumMenuActions(
+                        play = viewModel::playTracks,
+                        shuffle = viewModel::shuffleTracks,
+                        addToPlaylist = { tracks -> addManyToPlaylist = tracks.map { it.uri } },
+                        openArtist = onOpenArtist,
+                    ),
                     contentPadding = padding,
                 )
             }
@@ -190,6 +198,9 @@ internal fun LibraryScreen(
 
     addToPlaylist?.let { track ->
         AddToPlaylistSheet(trackUris = listOf(track.uri), onDismiss = { addToPlaylist = null })
+    }
+    addManyToPlaylist?.let { uris ->
+        AddToPlaylistSheet(trackUris = uris, onDismiss = { addManyToPlaylist = null })
     }
 }
 
@@ -210,6 +221,7 @@ private fun TrackList(
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
+    albumMenu: AlbumMenuActions,
     contentPadding: PaddingValues,
 ) {
     val listState = rememberLazyListState()
@@ -229,7 +241,14 @@ private fun TrackList(
             val home = state.home
             // Itens antes da primeira música (para a letra da barra de rolagem).
             val headerItems = 2 + (if (home != null) 3 else 0)
-          LazyColumn(state = listState, contentPadding = contentPadding) {
+          // A lista começa abaixo da barra de cima (padding, não contentPadding):
+          // o "Músicas" fica preso no topo da lista, e com contentPadding ele
+          // ficava por baixo da faixa das notificações quando a barra recolhia.
+          LazyColumn(
+              state = listState,
+              contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
+              modifier = Modifier.padding(top = contentPadding.calculateTopPadding()),
+          ) {
             item(key = "header") {
                 // Aleatório e Tocar, com a contagem do outro lado.
                 Row(
@@ -277,7 +296,7 @@ private fun TrackList(
                             contentPadding = PaddingValues(horizontal = 16.dp),
                         ) {
                             items(home.albums, key = { it.key }) { album ->
-                                HomeAlbum(album, state.version, loadArtwork, onClick = { onOpenAlbum(album.key) })
+                                HomeAlbum(album, state.version, loadArtwork, albumMenu, onClick = { onOpenAlbum(album.key) })
                             }
                         }
                     }
@@ -484,11 +503,15 @@ private fun HomeAlbum(
     album: TrackGroup,
     version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    menu: AlbumMenuActions,
     onClick: () -> Unit,
 ) {
     val cover = rememberHomeCover(album.tracks.firstOrNull(), version, HomeTile, loadArtwork)
+    // Segurar o álbum abre o menu dele.
+    val menuOpen = remember { mutableStateOf(false) }
+    AlbumMenuSheet(menuOpen, album.name, album.subtitle, album.tracks, cover, menu)
     // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
-    Column(Modifier.width(HomeTile).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(bottom = 8.dp)) {
+    Column(Modifier.width(HomeTile).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = 8.dp)) {
         BoomArtwork(image = cover, fallbackText = album.name, size = HomeTile)
         Spacer(Modifier.height(8.dp))
         // Sempre duas linhas de nome e uma de artista (mesmo vazias): todos os

@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.nowplaying
 
+import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +22,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -70,7 +70,7 @@ internal fun DevicesButton(modifier: Modifier = Modifier) {
 private fun DevicesSheet(list: List<AudioOutput>, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val outputs = remember { AudioOutputsData.get(context.applicationContext) }
-    ModalBottomSheet(
+    BoomModalSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,

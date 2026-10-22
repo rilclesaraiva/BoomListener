@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.LinearProgressIndicator
@@ -70,8 +70,8 @@ private const val WAVE_RADIANS_PER_SECOND = 3.1415927f
  * ponto atual (a onda chega grudada nela), uma folga antes do resto da trilha, reto e com um
  * pontinho no fim. Tocar ou arrastar muda o ponto da música.
  *
- * Enquanto arrasta, a onda continua mostrando o que está tocando de verdade
- * e só a bolinha segue o dedo. Perto do ponto que está tocando, a bolinha
+ * Enquanto arrasta, a parte tocada (reta) continua mostrando o que está
+ * tocando de verdade e só a bolinha segue o dedo. Perto do ponto que está tocando, a bolinha
  * gruda nele (ímã): soltar ali não muda nada, o jeito fácil de desistir.
  *
  * @param progress de 0 a 1.
@@ -109,10 +109,10 @@ fun BoomSeekBar(
     val shown = (dragging ?: played).coerceIn(0f, 1f)
     val seek by rememberUpdatedState(onSeek)
 
-    // A onda achata ao pausar e volta ao tocar.
+    // A onda achata ao pausar e ao arrastar, e volta ao tocar.
     val amplitudeScale by animateFloatAsState(
-        // Arrastando, a onda continua correndo: a música não parou.
-        targetValue = if (isPlaying) 1f else 0f,
+        // Arrastando, a trilha fica reta (só volta a ondular ao soltar).
+        targetValue = if (isPlaying && dragging == null) 1f else 0f,
         animationSpec = boomSpatialSpec(),
         label = "waveAmplitude",
     )
@@ -142,25 +142,38 @@ fun BoomSeekBar(
             .fillMaxWidth()
             .height(TouchHeight)
             .onSizeChanged { widthPx = it.width }
+            // Um gesto só para toque e arrasto, que fica com o dedo do começo ao
+            // fim: nenhum movimento (nem o vertical) chega ao painel do player,
+            // que antes dava trancos como se fosse fechar.
             .pointerInput(Unit) {
-                detectTapGestures { offset -> seek((offset.x / size.width).coerceIn(0f, 1f)) }
-            }
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragStart = { offset -> finger = (offset.x / size.width).coerceIn(0f, 1f) },
-                    onDragEnd = {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    down.consume()
+                    val slop = viewConfiguration.touchSlop
+                    var dragging = false
+                    var lastX = down.position.x
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!change.pressed) {
+                            change.consume()
+                            break
+                        }
+                        lastX = change.position.x
+                        if (!dragging && abs(lastX - down.position.x) > slop) dragging = true
+                        if (dragging) finger = (lastX / size.width).coerceIn(0f, 1f)
+                        change.consume()
+                    }
+                    if (dragging) {
                         val at = finger
                         // Grudado no ponto atual: fica onde está, sem pular.
                         val stuck = at != null && abs(at - current) * size.width <= snapPx
                         if (at != null && !stuck) seek(at)
-                        finger = null
-                    },
-                    onDragCancel = { finger = null },
-                    onHorizontalDrag = { change, _ ->
-                        change.consume()
-                        finger = (change.position.x / size.width).coerceIn(0f, 1f)
-                    },
-                )
+                    } else {
+                        seek((lastX / size.width).coerceIn(0f, 1f))
+                    }
+                    finger = null
+                }
             },
     ) {
         val thumbRadius = ThumbRadius.toPx() + (ThumbRadiusDragging.toPx() - ThumbRadius.toPx()) * thumbScale

@@ -16,4 +16,6 @@ dependencies {
     api(libs.androidx.compose.material3)
     api(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.palette)
+    // PredictiveBackHandler dos painéis (BoomModalSheet).
+    implementation(libs.androidx.activity.compose)
 }

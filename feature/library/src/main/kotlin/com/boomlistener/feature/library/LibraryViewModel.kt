@@ -88,6 +88,15 @@ internal class LibraryViewModel(
     }
 
     /** "Tocar aleatório": embaralha o que está na tela (toda a lista ou a busca). */
+    /** Toca uma lista (ex.: um álbum pelo menu), do começo. */
+    fun playTracks(tracks: List<Track>) {
+        if (tracks.isNotEmpty()) player.play(tracks, 0)
+    }
+
+    fun shuffleTracks(tracks: List<Track>) {
+        if (tracks.isNotEmpty()) player.playShuffled(tracks)
+    }
+
     fun shuffleAll() {
         val visible = (uiState.value as? LibraryUiState.Success)?.tracks ?: return
         if (visible.isNotEmpty()) player.playShuffled(visible)

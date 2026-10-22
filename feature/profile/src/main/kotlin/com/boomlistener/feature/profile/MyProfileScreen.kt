@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.profile
 
+import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import com.boomlistener.core.designsystem.component.BoomProfilePalette
 import com.boomlistener.core.designsystem.component.parseProfileColor
 import com.boomlistener.core.designsystem.component.profileBackground
+import com.boomlistener.core.designsystem.component.profileTopColor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,7 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.boomlistener.data.profile.ProfileImage
 import com.boomlistener.data.profile.MAX_BIO
@@ -129,6 +130,8 @@ internal fun MyProfileScreen(
         },
         // A cor que você escolheu tinge o perfil inteiro, a barra de cima junto.
         pageBackground = { profileBackground(state?.profile?.color) },
+        // A barra fica opaca, na cor do topo do perfil (transparente, o conteúdo passava por baixo dela).
+        topBarColor = profileTopColor(state?.profile?.color, MaterialTheme.colorScheme.background),
     ) { padding ->
         val current = state
         if (current == null) {
@@ -332,8 +335,9 @@ private fun EditProfileSheet(profile: MyProfile, viewModel: MyProfileViewModel, 
         picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
     }
 
-    ModalBottomSheet(
-        onDismissRequest = { if (!saving) onDismiss() },
+    BoomModalSheet(
+        onDismissRequest = onDismiss,
+        dismissEnabled = !saving,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         // Puxar para baixo não fecha (fechava sem querer, perdendo o que foi
         // mexido): fecha pelo X, pelo voltar ou tocando fora.

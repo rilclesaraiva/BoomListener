@@ -125,3 +125,12 @@ fun rankCandidates(local: LocalTrackInfo, candidates: List<TrackCandidate>, limi
         .sortedByDescending { it.confidence }
         .distinctBy { it.albumId to comparableSongTitle(it.title) }
         .take(limit)
+
+/**
+ * Músicas da página do artista no Deezer (as populares dele): é o mesmo
+ * lugar onde a página do artista no app encontra a música. Nelas o artista
+ * principal pode ser outro (remix, participação), mas a música é do artista
+ * que você tem: por isso conta como dele ([artistName]) na comparação.
+ */
+fun rankArtistTracks(local: LocalTrackInfo, artistName: String, tracks: List<TrackCandidate>, limit: Int = 6): List<TrackCandidate> =
+    rankCandidates(local, tracks.map { it.copy(artist = artistName) }, limit)

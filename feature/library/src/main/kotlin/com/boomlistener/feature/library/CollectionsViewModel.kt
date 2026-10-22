@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.player.PlaybackController
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -64,7 +65,17 @@ internal class CollectionsViewModel(
     private val searchArtistsOnline: suspend (String) -> List<ExternalArtist>? = { emptyList() },
     private val remoteImage: suspend (String, Int) -> Bitmap? = { _, _ -> null },
     favoriteUris: Flow<List<String>> = flowOf(emptyList()),
+    /** Para tocar um álbum direto do menu dele (null nos testes). */
+    private val player: PlaybackController? = null,
 ) : ViewModel() {
+
+    fun playTracks(tracks: List<Track>) {
+        if (tracks.isNotEmpty()) player?.play(tracks, 0)
+    }
+
+    fun shuffleTracks(tracks: List<Track>) {
+        if (tracks.isNotEmpty()) player?.playShuffled(tracks)
+    }
 
     private val _artistSearch = MutableStateFlow(ArtistSearch())
 

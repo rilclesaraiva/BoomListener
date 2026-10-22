@@ -226,6 +226,27 @@ fun BoomListenerApp() {
         val same = current?.destination?.route == ARTIST_ROUTE && current.arguments?.getString(ARTIST_NAME_ARG) == name
         if (!same) navController.navigateToArtist(name)
     }
+    // Saiu do player aberto para outra tela (artista, editor): ao voltar até a
+    // tela de onde saiu, o player abre de novo, como estava.
+    var reopenPlayerOn by remember { mutableStateOf<String?>(null) }
+    val openFromPlayer: (() -> Unit) -> Unit = { open ->
+        val before = navController.currentBackStackEntry?.id
+        open()
+        val after = navController.currentBackStackEntry?.id
+        if (after != before) reopenPlayerOn = before
+    }
+    LaunchedEffect(backStackEntry) {
+        val target = reopenPlayerOn ?: return@LaunchedEffect
+        val entry = backStackEntry ?: return@LaunchedEffect
+        when {
+            entry.id == target -> {
+                reopenPlayerOn = null
+                playerSheet.expand()
+            }
+            // A tela de origem saiu da pilha (trocou de aba, por exemplo): esquece.
+            navController.currentBackStack.value.none { it.id == target } -> reopenPlayerOn = null
+        }
+    }
     // Na página de um artista (ou num álbum dele), a tela larga dá o espaço
     // todo para ela: a barra lateral recolhe e o painel do artista some.
     val onArtistPage = route == ARTIST_ROUTE || route.startsWith("album/")
@@ -410,12 +431,12 @@ fun BoomListenerApp() {
             // Tocar no artista dentro do player: fecha o player e abre o perfil.
             onOpenArtist = { name ->
                 playerSheet.collapse()
-                openArtist(name)
+                openFromPlayer { openArtist(name) }
             },
             // Editar tags da música que está tocando: fecha o player e abre o editor.
             onEditTags = { uri ->
                 playerSheet.collapse()
-                navController.navigateToTagEditor(uri)
+                openFromPlayer { navController.navigateToTagEditor(uri) }
             },
             onAddToPlaylist = { uri -> addToPlaylistUri = uri },
         )

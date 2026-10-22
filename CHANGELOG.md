@@ -4,6 +4,22 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.38.0] — 2026-10-22
+
+### ✨ New
+- **Album menu:** hold an album (on Home or in Library → Albums) to play it, shuffle it, add it to a playlist, go to the artist or open it in YouTube Music.
+
+### 🐛 Fixes
+- The back gesture on a menu or panel no longer shrinks it with the system's animation. It now closes by sliding down, the app's own way.
+- Going to an artist (or to the tag editor) from the full-screen player and then going back now reopens the player, as it was.
+- Progress bar: the line stays straight while you drag the dot and waves again when you let go. The time on the left keeps showing where the song really is (the bubble shows where you're going). Dragging the dot no longer makes the player jump as if it were closing.
+- Home: with the top bar hidden, the "Songs" header no longer slides under the status bar.
+- Automatic tag fixing now also looks at the artist's songs on Deezer, the same place the artist page uses. Songs that show up on the artist page (like remixes where Deezer lists someone else as the main artist) are no longer "not found".
+
+### 🎨 Visual tweaks
+- When the top bar hides, the status bar area becomes transparent instead of keeping a colored strip.
+- Your profile's top bar is solid again, in your profile color, so the page no longer shows through it.
+
 ## [0.37.0] — 2026-10-22
 
 ### ✨ New

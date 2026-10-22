@@ -72,4 +72,20 @@ class TagMatchingTest {
         val ranked = rankCandidates(local, listOf(same, same.copy(trackId = 99)))
         assertEquals(1, ranked.size)
     }
+
+    @Test
+    fun remixDoArtistaComOutroArtistaPrincipalApareceNasMusicasDele() {
+        // "Vertigo (Lover Girl Remix)" do Dxrkaii: no Deezer o artista principal é outro.
+        val local = LocalTrackInfo("Vertigo (Lover Girl Remix)", "Dxrkaii", "Vertigo (Lover Girl Remix)", 127_000)
+        val tracks = listOf(
+            candidate(1, "Vertigo (Lover Girl Remix)", "Outra Pessoa", durationMs = 127_000),
+            candidate(2, "New Jeans (Jersey Club)", "Dxrkaii", durationMs = 110_000),
+        )
+        // Pela busca comum, o artista diferente derruba a música.
+        assertTrue(rankCandidates(local, tracks).isEmpty())
+        // Nas músicas da página do artista, ela é encontrada.
+        val ranked = rankArtistTracks(local, "Dxrkaii", tracks)
+        assertEquals(1L, ranked.first().trackId)
+        assertTrue(ranked.first().confidence >= AUTO_PICK_CONFIDENCE)
+    }
 }

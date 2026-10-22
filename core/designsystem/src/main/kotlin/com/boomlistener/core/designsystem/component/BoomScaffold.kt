@@ -71,10 +71,12 @@ fun BoomScreenScaffold(
     topBar: (@Composable () -> Unit)? = null,
     snackbarHost: @Composable () -> Unit = {},
     /**
-     * Fundo próprio da página inteira, barra de cima inclusive (ex.: a cor do
-     * perfil). Com ele, a barra fica transparente e mostra esse fundo.
+     * Fundo próprio da página inteira, por trás da barra de cima também (ex.:
+     * a cor do perfil). A barra usa [topBarColor], a cor do topo desse fundo.
      */
     pageBackground: (Modifier.() -> Modifier)? = null,
+    /** Cor (opaca) da barra de cima, parada ou rolada; null = a do tema. */
+    topBarColor: Color? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val effects = boomEffectsSpec<Float>()
@@ -91,13 +93,11 @@ fun BoomScreenScaffold(
     // meio, entre as barras laterais, ficava estranha) e as margens dos lados
     // já ficam com as barras laterais.
     val wide = LocalWideLayout.current
-    val barColors = when {
-        pageBackground != null -> TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent,
-            scrolledContainerColor = Color.Transparent,
-        )
-        wide -> TopAppBarDefaults.topAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface)
-        else -> TopAppBarDefaults.topAppBarColors()
+    val barColor = topBarColor ?: MaterialTheme.colorScheme.surface
+    val barScrolledColor = when {
+        topBarColor != null -> topBarColor
+        wide -> MaterialTheme.colorScheme.surface
+        else -> MaterialTheme.colorScheme.surfaceContainer
     }
     val barInsets = if (wide) TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Top) else TopAppBarDefaults.windowInsets
     val navigationIcon: @Composable () -> Unit = {
@@ -140,12 +140,18 @@ fun BoomScreenScaffold(
                     scrollBehavior = scrollBehavior,
                 )
             } else {
+                // Recolhendo, a barra vai ficando transparente: recolhida, sobra
+                // só a faixa das notificações, que mostra a página por trás.
+                val visible = 1f - topBarState.collapsedFraction
                 TopAppBar(
                     title = { Text(title, style = MaterialTheme.typography.titleLarge) },
                     navigationIcon = navigationIcon,
                     actions = actions,
                     windowInsets = barInsets,
-                    colors = barColors,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = barColor.copy(alpha = barColor.alpha * visible),
+                        scrolledContainerColor = barScrolledColor.copy(alpha = barScrolledColor.alpha * visible),
+                    ),
                     scrollBehavior = scrollBehavior,
                 )
               }

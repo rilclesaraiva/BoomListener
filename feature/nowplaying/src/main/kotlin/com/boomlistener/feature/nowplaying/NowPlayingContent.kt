@@ -289,18 +289,16 @@ internal fun NowPlayingContent(
                     }
 
                     Spacer(Modifier.height(24.dp))
-                    // Arrastando a bolinha: balão e o tempo da esquerda mostram onde ela está.
-                    var scrubbing by remember { mutableStateOf<Float?>(null) }
+                    // Arrastando a bolinha: o balão mostra onde ela está.
                     BoomSeekBar(
                         progress = state.progress,
                         isPlaying = state.isPlaying,
                         onSeek = viewModel::seekToFraction,
+                        // O tempo do alvo fica no balão; o da esquerda segue a música.
                         dragLabel = { fraction -> formatTime((fraction * state.durationMs).toLong()) },
-                        onDragPosition = { scrubbing = it },
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        val shownMs = scrubbing?.let { (it * state.durationMs).toLong() } ?: state.positionMs
-                        Text(formatTime(shownMs), style = MaterialTheme.typography.labelMedium)
+                        Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelMedium)
                         Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelMedium)
                     }
 

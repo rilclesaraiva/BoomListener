@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.tageditor
 
+import com.boomlistener.core.designsystem.component.BoomModalSheet
 import android.Manifest
 import androidx.annotation.StringRes
 import android.app.Activity
@@ -45,7 +46,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
@@ -451,7 +451,7 @@ private fun CandidateSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    BoomModalSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Text(
             text = stringResource(R.string.feature_tageditor_auto_choose_title),
             style = MaterialTheme.typography.titleLarge,

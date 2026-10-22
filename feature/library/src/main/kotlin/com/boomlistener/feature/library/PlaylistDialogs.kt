@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -67,7 +67,7 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
     var creating by remember { mutableStateOf(false) }
     val effects = boomEffectsSpec<Float>()
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    BoomModalSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Text(
             text = stringResource(R.string.feature_library_add_to_playlist),
             style = MaterialTheme.typography.titleLarge,
@@ -158,7 +158,7 @@ internal fun AddSongsSheet(viewModel: CollectionDetailViewModel, onDismiss: () -
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    BoomModalSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Text(
             text = stringResource(R.string.feature_library_add_songs),
             style = MaterialTheme.typography.titleLarge,

@@ -78,6 +78,7 @@ fun NavGraphBuilder.libraryScreen(
                 searchArtistsOnline = deezer::searchArtists,
                 remoteImage = deezer::image,
                 favoriteUris = FavoritesData.repository(context).favorites,
+                player = PlayerConnection.controller(context),
             )
         }
         CollectionsScreen(

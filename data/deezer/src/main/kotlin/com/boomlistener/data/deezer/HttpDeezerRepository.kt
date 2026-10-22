@@ -139,10 +139,21 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
                 ranked = rankCandidates(local, candidates)
                 if (ranked.isNotEmpty()) break
             }
+            // Nada na busca: procura nas músicas da página do artista, como a
+            // página do artista faz (lá ela aparecia, aqui "nada encontrado").
+            if (ranked.isEmpty() && artist != null) ranked = searchInArtistTracks(local, artist)
             if (ranked.isEmpty()) TrackSearchResult.NotFound else TrackSearchResult.Found(ranked)
         } catch (_: Exception) {
             TrackSearchResult.Failed
         }
+    }
+
+    /** As músicas do artista (achado do mesmo jeito que a página dele), comparadas com o arquivo. */
+    private fun searchInArtistTracks(local: LocalTrackInfo, artistName: String): List<TrackCandidate> {
+        val search = getJson("$API/search/artist?q=" + URLEncoder.encode(artistName, "UTF-8") + "&limit=10")
+        val found = pickArtist(artistName, search.optJSONArray("data").objects().map { it.toArtist() }) ?: return emptyList()
+        val top = getJson("$API/artist/${found.id}/top?limit=100")
+        return rankArtistTracks(local, found.name, top.optJSONArray("data").objects().map { it.toCandidate() })
     }
 
     override suspend fun trackTags(candidate: TrackCandidate): TrackTagsResult = withContext(Dispatchers.IO) {
