@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.39.2] — 2026-10-22
+
+### 🐛 Fixes
+- The Profile tab scrolls again. Since the last version, you could tap things but not move the page.
+
 ## [0.39.1] — 2026-10-22
 
 ### 🐛 Fixes

@@ -116,7 +116,10 @@ fun BoomScreenScaffold(
         modifier
     }
     Scaffold(
-        modifier = pageModifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        // Barra própria (ou nenhuma, como no perfil): sem ligar a rolagem à barra
+        // padrão. Ela não foi desenhada, então não sabe a própria altura, e o
+        // "esconder ao rolar" engolia toda a rolagem da lista (a tela travava).
+        modifier = if (topBar == null) pageModifier.nestedScroll(scrollBehavior.nestedScrollConnection) else pageModifier,
         containerColor = if (pageBackground != null) Color.Transparent else pageColor,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = snackbarHost,
