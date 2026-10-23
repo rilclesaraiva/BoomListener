@@ -10,6 +10,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -106,8 +109,13 @@ fun BoomArtworkSurface(
     val container by animateColorAsState(targetContainer, animationSpec = boomEffectsSpec(), label = "miniTint")
     val onContainer by animateColorAsState(targetContent, animationSpec = boomEffectsSpec(), label = "onMiniTint")
     val accent by animateColorAsState(targetAccent, animationSpec = boomEffectsSpec(), label = "accent")
+    // Luz fraquinha em volta, no tom da capa: o mini player tem a cor do fundo
+    // do player e, sem ela, parecia grudado nas coisas da página por baixo.
+    val glowTarget = seed?.let { lerp(it, Color.White, 0.35f) } ?: MaterialTheme.colorScheme.onSurface
+    val glow by animateColorAsState(glowTarget, animationSpec = boomEffectsSpec(), label = "glow")
     Box(
         modifier
+            .dropShadow(shape, Shadow(radius = GlowRadius, color = glow, alpha = GLOW_ALPHA))
             .clip(shape)
             .background(container),
     ) {
@@ -118,3 +126,6 @@ fun BoomArtworkSurface(
         )
     }
 }
+
+private val GlowRadius = 14.dp
+private const val GLOW_ALPHA = 0.28f

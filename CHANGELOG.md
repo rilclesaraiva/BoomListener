@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.42.2] — 2026-10-23
+
+### 🎨 Visual tweaks
+- The mini player now has a faint glow around it, in the cover's color, so it stands out from the page behind it.
+
 ## [0.42.1] — 2026-10-23
 
 ### 🐛 Fixes
