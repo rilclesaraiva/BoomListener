@@ -49,19 +49,20 @@ import com.boomlistener.core.player.AudioOutputsData
  * fone, Bluetooth…). Tocar abre a lista de dispositivos conectados.
  */
 @Composable
-internal fun DevicesButton(modifier: Modifier = Modifier) {
+internal fun DevicesPill(modifier: Modifier = Modifier) {
     val context = LocalContext.current.applicationContext
     val outputs = remember { AudioOutputsData.get(context) }
     val list by outputs.outputs.collectAsStateWithLifecycle()
     var open by remember { mutableStateOf(false) }
     val active = list.firstOrNull { it.active }
 
-    FilledTonalIconButton(onClick = { open = true }, modifier = modifier) {
-        Icon(
-            imageVector = active?.kind?.icon() ?: BoomIcons.Devices,
-            contentDescription = stringResource(R.string.feature_nowplaying_devices),
-        )
-    }
+    // Pílula com o nome da saída que está tocando ("Fone Bluetooth").
+    PlayerPill(
+        icon = active?.kind?.icon() ?: BoomIcons.Devices,
+        text = active?.displayName() ?: stringResource(R.string.feature_nowplaying_devices),
+        onClick = { open = true },
+        modifier = modifier,
+    )
     if (open) DevicesSheet(list = list, onDismiss = { open = false })
 }
 

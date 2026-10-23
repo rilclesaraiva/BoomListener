@@ -51,6 +51,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.boomlistener.core.designsystem.component.BoomButtonGroupSpacing
+import com.boomlistener.core.designsystem.component.BoomGroupButtonStyle
+import com.boomlistener.core.designsystem.component.BoomGroupButton
+import com.boomlistener.core.designsystem.component.BoomButtonGroup
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -152,7 +157,6 @@ internal fun NowPlayingContent(
                     }
                     // O "x de y" agora fica na fila; o topo só tem os botões.
                     Spacer(Modifier.weight(1f))
-                    DevicesButton()
                     if (item != null) {
                         BoomMoreMenu(
                             actions = listOfNotNull(
@@ -313,7 +317,7 @@ internal fun NowPlayingContent(
                         onNext = viewModel::next,
                         onRepeat = viewModel::cycleRepeatMode,
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(12.dp))
                     UpNextHandle(state = state, queueState = queueState)
                     // Folga para o puxador da fila não ficar colado no gesto de
                     // "ir para a tela inicial" do Android, que fica logo abaixo.
@@ -354,42 +358,72 @@ internal fun NowPlayingContent(
 }
 
 /**
- * Faixa de baixo do player: um "puxador" e a próxima música. Tocar ou
- * puxar para cima abre a fila, acompanhando o dedo.
+ * Faixa de baixo do player: um "puxador" e duas pílulas, a saída de som (com
+ * o nome do aparelho) e a próxima música. Tocar na de baixo ou puxar a faixa
+ * para cima abre a fila, acompanhando o dedo.
  */
 @Composable
 private fun UpNextHandle(state: PlaybackState, queueState: PlayerSheetState) {
     val currentPosition = state.queue.indexOfFirst { it.index == state.queueIndex }
     val next = state.queue.getOrNull(currentPosition + 1)?.item
-    val openQueue = stringResource(R.string.feature_nowplaying_queue_open)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .semantics { contentDescription = openQueue }
-            .clickable(onClick = queueState::expand)
             .draggable(
                 state = rememberDraggableState { delta -> queueState.dragBy(-delta) },
                 orientation = Orientation.Vertical,
                 onDragStopped = { velocity -> queueState.settle(-velocity) },
             )
-            .padding(vertical = 12.dp),
+            .padding(vertical = 8.dp),
     ) {
         DragHandle()
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = if (next != null) {
-                stringResource(R.string.feature_nowplaying_up_next_song, next.title)
-            } else {
-                stringResource(R.string.feature_nowplaying_queue_end)
-            },
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Spacer(Modifier.height(12.dp))
+        // Uma em cada ponta; nomes compridos encolhem com reticências.
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            DevicesPill(Modifier.weight(1f, fill = false).padding(end = 4.dp))
+            PlayerPill(
+                icon = BoomIcons.QueueMusic,
+                text = if (next != null) {
+                    stringResource(R.string.feature_nowplaying_up_next_song, next.title)
+                } else {
+                    stringResource(R.string.feature_nowplaying_queue_end)
+                },
+                onClick = queueState::expand,
+                modifier = Modifier.weight(1f, fill = false).padding(start = 4.dp),
+            )
+        }
+    }
+}
+
+/** Pílula pequena com ícone e texto, para as ações de baixo do player. */
+@Composable
+internal fun PlayerPill(
+    icon: ImageVector,
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier.height(40.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 14.dp),
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 
@@ -416,54 +450,66 @@ private fun Controls(
     onNext: () -> Unit,
     onRepeat: () -> Unit,
 ) {
-    // Aleatório e repetir viram botões "apertados" (fundo preenchido) quando
-    // ligados, para ficar óbvio que estão ativos.
-    val toggleColors = IconButtonDefaults.iconToggleButtonColors(
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        checkedContainerColor = MaterialTheme.colorScheme.primary,
-        checkedContentColor = MaterialTheme.colorScheme.onPrimary,
-    )
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconToggleButton(
-            checked = shuffle,
-            onCheckedChange = { onShuffle() },
-            colors = toggleColors,
-        ) {
-            Icon(BoomIcons.Shuffle, stringResource(R.string.feature_nowplaying_shuffle))
-        }
-        FilledTonalIconButton(onClick = onPrevious, modifier = Modifier.size(56.dp)) {
-            Icon(BoomIcons.SkipPrevious, stringResource(R.string.feature_nowplaying_previous))
-        }
-        FilledIconButton(
-            onClick = onPlayPause,
-            modifier = Modifier.size(80.dp),
-            shape = MaterialTheme.shapes.extraLarge,
-        ) {
-            if (isPlaying) {
-                Icon(BoomIcons.Pause, stringResource(R.string.feature_nowplaying_pause), Modifier.size(36.dp))
-            } else {
-                Icon(BoomIcons.Play, stringResource(R.string.feature_nowplaying_play), Modifier.size(36.dp))
+    // Grupo de botões de ponta a ponta (Material 3 Expressive): o play é o
+    // maior e o único na cor primária, para ser o mais importante da tela.
+    // Redondo pausado, mais quadrado tocando (a forma muda junto com o ícone).
+    Column(Modifier.fillMaxWidth()) {
+        BoomButtonGroup {
+            BoomGroupButton(onClick = onPrevious, height = TransportHeight) {
+                Icon(BoomIcons.SkipPrevious, stringResource(R.string.feature_nowplaying_previous), Modifier.size(32.dp))
+            }
+            BoomGroupButton(
+                onClick = onPlayPause,
+                height = TransportHeight,
+                weight = 1.6f,
+                style = BoomGroupButtonStyle.Filled,
+                round = !isPlaying,
+            ) {
+                if (isPlaying) {
+                    Icon(BoomIcons.Pause, stringResource(R.string.feature_nowplaying_pause), Modifier.size(40.dp))
+                } else {
+                    Icon(BoomIcons.Play, stringResource(R.string.feature_nowplaying_play), Modifier.size(40.dp))
+                }
+            }
+            BoomGroupButton(onClick = onNext, height = TransportHeight) {
+                Icon(BoomIcons.SkipNext, stringResource(R.string.feature_nowplaying_next), Modifier.size(32.dp))
             }
         }
-        FilledTonalIconButton(onClick = onNext, modifier = Modifier.size(56.dp)) {
-            Icon(BoomIcons.SkipNext, stringResource(R.string.feature_nowplaying_next))
-        }
-        IconToggleButton(
-            checked = repeatMode != RepeatMode.Off,
-            onCheckedChange = { onRepeat() },
-            colors = toggleColors,
-        ) {
-            Icon(
-                if (repeatMode == RepeatMode.One) BoomIcons.RepeatOne else BoomIcons.Repeat,
-                stringResource(R.string.feature_nowplaying_repeat),
-            )
+        Spacer(Modifier.height(BoomButtonGroupSpacing))
+        // Aleatório e repetir: pílulas com nome, cheias de cor quando ligadas.
+        BoomButtonGroup {
+            BoomGroupButton(
+                onClick = onShuffle,
+                height = ToggleHeight,
+                style = BoomGroupButtonStyle.Toggle,
+                checked = shuffle,
+                round = true,
+            ) {
+                Icon(BoomIcons.Shuffle, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.feature_nowplaying_shuffle), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            }
+            BoomGroupButton(
+                onClick = onRepeat,
+                height = ToggleHeight,
+                style = BoomGroupButtonStyle.Toggle,
+                checked = repeatMode != RepeatMode.Off,
+                round = true,
+            ) {
+                Icon(
+                    if (repeatMode == RepeatMode.One) BoomIcons.RepeatOne else BoomIcons.Repeat,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.feature_nowplaying_repeat), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            }
         }
     }
 }
+
+private val TransportHeight = 80.dp
+private val ToggleHeight = 48.dp
 
 /** 215000 ms → "3:35". */
 internal fun formatTime(ms: Long): String {

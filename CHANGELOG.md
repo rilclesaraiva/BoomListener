@@ -4,6 +4,13 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.41.0] — 2026-10-23
+
+### 🎨 Visual tweaks
+- **New player controls**, following Material 3 Expressive: previous, play and next now fill the whole width as one group. Play is the biggest button and the only one in the main color. It's round while paused and turns squarer while playing, and every button squishes and stretches a little when you press it.
+- Shuffle and Repeat are now wide buttons with their names, filled with color when they're on.
+- The bottom of the player shows two small buttons: where the sound is playing (with the device name, like "Bluetooth headphones") and what's up next. The sound output moved there from the top of the player.
+
 ## [0.40.5] — 2026-10-23
 
 ### 🐛 Fixes
