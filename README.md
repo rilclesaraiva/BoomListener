@@ -51,4 +51,4 @@ Kotlin, Jetpack Compose and Material 3, split into modules (`core`, `data`, `fea
 
 ## License
 
-[GNU GPL v3](LICENSE).
+[GNU GPL v3](LICENSE)..
