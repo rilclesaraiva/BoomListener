@@ -16,6 +16,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,16 +80,46 @@ fun PlayerSheet(
 
     // Mede a tela sempre, mesmo fechado: o mini player precisa da altura para
     // o arraste para cima acompanhar o dedo na proporção certa.
-    // Cantos de cima arredondados enquanto o painel sobe ou desce; aberto de
-    // vez, ocupa a tela toda com cantos retos.
+    //
+    // O player cresce a partir do mini player: fechado, ele é um cartão do
+    // tamanho do mini player (mesmas margens e cantos); abrindo, sobe até o
+    // topo, perde as margens e os cantos, a barra de abas desce (no :app,
+    // por [PlayerSheetState.fraction]) e o conteúdo do mini player esmaece
+    // enquanto o da tela cheia aparece.
     val corner = MaterialTheme.shapes.extraLarge.topStart
     val density = LocalDensity.current
+    val sideInsetPx = with(density) { MiniPlayerSideInset.toPx() }
+    val topInsetPx = with(density) { MiniPlayerTopInset.toPx() }
+    val cardColor = MaterialTheme.colorScheme.surfaceContainerHigh
     BoxWithConstraints(modifier.fillMaxSize()) {
         val heightPx = with(LocalDensity.current) { maxHeight.toPx() }
         val cornerPx = corner.toPx(Size(heightPx, heightPx), density)
         state.screenHeightPx = heightPx
         queueState.screenHeightPx = heightPx
         if (!state.isVisible) return@BoxWithConstraints
+
+        // Tudo lido dentro do graphicsLayer: acompanhar o dedo não recompõe a tela.
+        val growLayer: GraphicsLayerScope.() -> Unit = {
+            val p = state.progress
+            val closed = (1f - p).coerceIn(0f, 1f)
+            // A mola passa um pouco do fim: o player não sobe além do topo.
+            val offset = (1f - p).coerceAtLeast(0f) * state.travelPx
+            translationY = offset
+            // A base também cresce, do fim do mini player até o fim da tela,
+            // empurrando a barra de abas para baixo.
+            val miniBottom = if (state.collapsedBottomPx > 0f) state.collapsedBottomPx else heightPx
+            val bottomOnScreen = miniBottom + (heightPx - miniBottom) * p.coerceIn(0f, 1f)
+            shape = InsetRoundedShape(
+                sidePx = sideInsetPx * closed,
+                topPx = topInsetPx * closed,
+                bottomPx = (bottomOnScreen - offset - topInsetPx * closed).coerceAtLeast(topInsetPx * closed + 1f),
+                radiusPx = cornerPx * (closed * 2f).coerceIn(0f, 1f),
+            )
+            clip = true
+        }
+
+        // Fundo do cartão que cresce (aparece antes do conteúdo da tela cheia).
+        Box(Modifier.fillMaxSize().graphicsLayer(growLayer).background(cardColor))
 
         NowPlayingContent(
             onCollapse = { if (queueState.isVisible) queueState.collapse() else state.collapse() },
@@ -90,11 +130,9 @@ fun PlayerSheet(
             onAddToPlaylist = onAddToPlaylist,
             modifier = Modifier
                 .graphicsLayer {
-                    // A mola passa um pouco do fim: o player não sobe além do topo.
-                    translationY = (1f - state.progress).coerceAtLeast(0f) * heightPx
-                    val radius = CornerSize(cornerPx * ((1f - state.progress) * 4f).coerceIn(0f, 1f))
-                    shape = RoundedCornerShape(topStart = radius, topEnd = radius, bottomStart = CornerSize(0f), bottomEnd = CornerSize(0f))
-                    clip = true
+                    growLayer()
+                    // A tela cheia surge depois que o mini player já esmaeceu.
+                    alpha = ((state.progress - FULL_FADE_START) / FULL_FADE_LENGTH).coerceIn(0f, 1f)
                 }
                 .draggable(
                     state = rememberDraggableState { delta ->
@@ -107,5 +145,44 @@ fun PlayerSheet(
                     },
                 ),
         )
+
+        // O mini player no começo do cartão, esmaecendo enquanto ele cresce
+        // (e voltando ao fechar). Some de vez quando já não se vê.
+        if (state.progress < MINI_FADE_LENGTH) {
+            MiniPlayer(
+                sheetState = state,
+                modifier = Modifier.graphicsLayer {
+                    translationY = (1f - state.progress).coerceAtLeast(0f) * state.travelPx
+                    alpha = (1f - state.progress / MINI_FADE_LENGTH).coerceIn(0f, 1f)
+                },
+            )
+        }
     }
 }
+
+/** Retângulo de cantos arredondados com margens dos lados e em cima, cortado em [bottomPx]. */
+private class InsetRoundedShape(
+    private val sidePx: Float,
+    private val topPx: Float,
+    private val bottomPx: Float,
+    private val radiusPx: Float,
+) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
+        Outline.Rounded(
+            RoundRect(
+                left = sidePx,
+                top = topPx,
+                right = (size.width - sidePx).coerceAtLeast(sidePx),
+                bottom = bottomPx.coerceAtMost(size.height),
+                cornerRadius = CornerRadius(radiusPx, radiusPx),
+            ),
+        )
+}
+
+/** Margens do mini player (as do cartão dele no MiniPlayer). */
+private val MiniPlayerSideInset = 8.dp
+private val MiniPlayerTopInset = 4.dp
+
+private const val MINI_FADE_LENGTH = 0.3f
+private const val FULL_FADE_START = 0.2f
+private const val FULL_FADE_LENGTH = 0.45f

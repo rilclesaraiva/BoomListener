@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.42.0] — 2026-10-23
+
+### ✨ New
+- **The mini player grows into the full player.** Pull it up and it stretches to fill the screen, pushing the tab bar down out of the way, while the mini player's info fades out and the full player fades in. Pulling the full player down shrinks it back into the mini player, and the tab bar comes back.
+
+### 🐛 Fixes
+- Turning on Shuffle no longer flashes the song's initial on the cover for a moment.
+
 ## [0.41.0] — 2026-10-23
 
 ### 🎨 Visual tweaks

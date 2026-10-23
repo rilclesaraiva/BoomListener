@@ -58,6 +58,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.boomlistener.feature.nowplaying.playerSheetAnchor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -386,7 +388,8 @@ fun BoomListenerApp() {
                             sheetState = playerSheet,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } },
+                                .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } }
+                                .playerSheetAnchor(playerSheet),
                             playerModifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
                         )
                     }
@@ -423,7 +426,9 @@ fun BoomListenerApp() {
                         enter = expandVertically(barSpec) + fadeIn(barFade),
                         exit = shrinkVertically(barSpec) + fadeOut(barFade),
                     ) {
-                    NavigationBar {
+                    // Abrindo o player, a barra de abas desce junto, empurrada
+                    // pelo cartão que cresce a partir do mini player.
+                    NavigationBar(Modifier.graphicsLayer { translationY = playerSheet.fraction * size.height }) {
                         TopLevelDestination.entries.forEach { destination ->
                             NavigationBarItem(
                                 selected = destination == selectedTab,
@@ -452,7 +457,9 @@ fun BoomListenerApp() {
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = bottom)
-                        .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } },
+                        .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } }
+                        // O player em tela cheia cresce a partir daqui.
+                        .playerSheetAnchor(playerSheet),
                 ) {
                     MiniPlayer(sheetState = playerSheet)
                 }
