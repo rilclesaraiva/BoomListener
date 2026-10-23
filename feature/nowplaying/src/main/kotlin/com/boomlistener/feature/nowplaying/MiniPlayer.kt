@@ -81,7 +81,7 @@ fun MiniPlayer(
     val sizePx = with(LocalDensity.current) { 48.dp.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
     // O mini player ganha o tom pastel da capa, para se destacar da barra de baixo.
-    val artworkColor = rememberArtworkColor(artwork)
+    val artworkColor = rememberPlayerTint(viewModel, item?.uri)
 
     val returnSpec = boomFastSpatialSpec<Float>()
     // Quanto o mini player foi puxado para baixo (px), no gesto de encerrar.

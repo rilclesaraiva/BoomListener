@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.42.1] — 2026-10-23
+
+### 🐛 Fixes
+- Turning on Shuffle no longer makes the covers race past on the full player. The cover of the current song stays still.
+
+### 🎨 Visual tweaks
+- The mini player now has the same color as the full player's background (a tint from the cover), and the card that grows between them uses that color too, so the change from one to the other looks like the same thing growing.
+
 ## [0.42.0] — 2026-10-23
 
 ### ✨ New

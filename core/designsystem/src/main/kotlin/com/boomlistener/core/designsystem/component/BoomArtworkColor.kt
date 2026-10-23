@@ -44,6 +44,18 @@ fun rememberArtworkColor(image: ImageBitmap?): Color? {
 }
 
 /**
+ * O tom do topo do player: a cor da capa misturada à superfície do tema. É a
+ * mesma cor do mini player, para os dois combinarem quando um vira o outro.
+ */
+@Composable
+fun artworkTopTint(seed: Color?): Color {
+    val surface = MaterialTheme.colorScheme.surface
+    return seed?.let { lerp(surface, it, TINT_AMOUNT) } ?: surface
+}
+
+private const val TINT_AMOUNT = 0.42f
+
+/**
  * Fundo tingido pela capa: a cor da capa misturada à superfície do tema no
  * topo, descendo até a superfície pura. A mistura mantém o contraste dos
  * textos do tema; a troca de cor entre músicas é animada.
@@ -51,18 +63,11 @@ fun rememberArtworkColor(image: ImageBitmap?): Color? {
 @Composable
 fun Modifier.artworkTintedBackground(seed: Color?): Modifier {
     val surface = MaterialTheme.colorScheme.surface
-    val target = seed?.let { lerp(surface, it, 0.42f) } ?: surface
+    val target = artworkTopTint(seed)
     val top by animateColorAsState(target, animationSpec = boomEffectsSpec(), label = "artworkTint")
     return drawBehind {
         drawRect(Brush.verticalGradient(0f to top, 0.75f to lerp(surface, top, 0.35f), 1f to surface))
     }
-}
-
-/** Tom pastel da capa e a cor de texto com bom contraste sobre ele. */
-private fun pastelOf(seed: Color): Pair<Color, Color> {
-    val pastel = lerp(seed, Color.White, 0.55f)
-    val onPastel = if (pastel.luminance() > 0.45f) Color(0xFF1B1B1F) else Color.White
-    return pastel to onPastel
 }
 
 /**
@@ -84,9 +89,9 @@ private fun accentOn(pastel: Color, seed: Color): Color =
 val LocalArtworkAccent = staticCompositionLocalOf { Color.Unspecified }
 
 /**
- * Superfície no tom pastel da capa (gradiente suave da esquerda para a
- * direita), com a cor do conteúdo ajustada para manter o contraste. Sem
- * capa, usa o primaryContainer do tema. A troca entre músicas é animada.
+ * Superfície no tom do topo do player ([artworkTopTint]): o mini player tem a
+ * mesma cor do player aberto. Sem capa, a superfície do tema. A troca entre
+ * músicas é animada.
  */
 @Composable
 fun BoomArtworkSurface(
@@ -95,17 +100,16 @@ fun BoomArtworkSurface(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val fallback = MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-    val (targetContainer, targetContent) = seed?.let(::pastelOf) ?: fallback
+    val targetContainer = if (seed != null) artworkTopTint(seed) else MaterialTheme.colorScheme.surfaceContainerHigh
+    val targetContent = MaterialTheme.colorScheme.onSurface
     val targetAccent = seed?.let { accentOn(targetContainer, it) } ?: MaterialTheme.colorScheme.primary
-    val container by animateColorAsState(targetContainer, animationSpec = boomEffectsSpec(), label = "pastel")
-    val onContainer by animateColorAsState(targetContent, animationSpec = boomEffectsSpec(), label = "onPastel")
+    val container by animateColorAsState(targetContainer, animationSpec = boomEffectsSpec(), label = "miniTint")
+    val onContainer by animateColorAsState(targetContent, animationSpec = boomEffectsSpec(), label = "onMiniTint")
     val accent by animateColorAsState(targetAccent, animationSpec = boomEffectsSpec(), label = "accent")
-    val deeper = lerp(container, seed ?: container, 0.25f)
     Box(
         modifier
             .clip(shape)
-            .background(Brush.horizontalGradient(listOf(container, deeper))),
+            .background(container),
     ) {
         CompositionLocalProvider(
             LocalContentColor provides onContainer,

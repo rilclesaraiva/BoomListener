@@ -51,62 +51,68 @@ internal fun QueuePager(
         state.item?.let { page(it) }
         return
     }
-    val pagerState = rememberPagerState(initialPage = current) { entries.size }
-    val latestCurrent by rememberUpdatedState(current)
-    val latestEntries by rememberUpdatedState(entries)
-    val latestSkip by rememberUpdatedState(onSkipTo)
-    // A música para onde o dedo levou, até o player confirmar a troca. Nesse
-    // meio-tempo o player às vezes ainda informa a música anterior; sem isso o
-    // carrossel voltava para ela por um instante (a "piscada").
-    var pending by remember { mutableStateOf<Pending?>(null) }
+    // A ordem da fila mudou (aleatório, mover, mix): um carrossel novo, já
+    // parado na música atual. Antes, o mesmo carrossel corria da posição velha
+    // até a nova, e as capas do caminho passavam piscando na tela.
+    val order = remember(entries) { entries.map { it.key } }
+    key(order) {
+        val pagerState = rememberPagerState(initialPage = current) { entries.size }
+        val latestCurrent by rememberUpdatedState(current)
+        val latestEntries by rememberUpdatedState(entries)
+        val latestSkip by rememberUpdatedState(onSkipTo)
+        // A música para onde o dedo levou, até o player confirmar a troca. Nesse
+        // meio-tempo o player às vezes ainda informa a música anterior; sem isso o
+        // carrossel voltava para ela por um instante (a "piscada").
+        var pending by remember { mutableStateOf<Pending?>(null) }
 
-    // A música mudou por fora (ou a fila foi trocada): o carrossel acompanha,
-    // sem brigar com o dedo.
-    LaunchedEffect(current, entries) {
-        val waiting = pending
-        if (waiting != null) {
-            val confirmed = state.queueIndex == waiting.queueIndex
-            val expired = SystemClock.uptimeMillis() - waiting.sinceMs > PENDING_TIMEOUT_MS
-            if (!confirmed && !expired) return@LaunchedEffect
-            pending = null
-        }
-        if (pagerState.isScrollInProgress || pagerState.currentPage == current) return@LaunchedEffect
-        if (abs(pagerState.currentPage - current) == 1) pagerState.animateScrollToPage(current) else pagerState.scrollToPage(current)
-    }
-    // Só o dedo troca de música por aqui. Antes, qualquer parada (inclusive a
-    // do próprio carrossel se ajeitando numa fila nova, como ao tocar no
-    // aleatório) chamava a troca e fazia a música anterior voltar a tocar.
-    LaunchedEffect(pagerState) {
-        var dragged = false
-        launch {
-            pagerState.interactionSource.interactions.collect { if (it is DragInteraction.Start) dragged = true }
-        }
-        snapshotFlow { pagerState.isScrollInProgress }
-            .distinctUntilChanged()
-            .collect { scrolling ->
-                if (scrolling || !dragged) return@collect
-                dragged = false
-                val settled = pagerState.currentPage
-                if (settled == latestCurrent) return@collect
-                latestEntries.getOrNull(settled)?.let { entry ->
-                    pending = Pending(entry.index, SystemClock.uptimeMillis())
-                    latestSkip(entry.index)
-                }
+        // A música mudou por fora (ou a fila foi trocada): o carrossel acompanha,
+        // sem brigar com o dedo.
+        LaunchedEffect(current, entries) {
+            val waiting = pending
+            if (waiting != null) {
+                val confirmed = state.queueIndex == waiting.queueIndex
+                val expired = SystemClock.uptimeMillis() - waiting.sinceMs > PENDING_TIMEOUT_MS
+                if (!confirmed && !expired) return@LaunchedEffect
+                pending = null
             }
-    }
+            if (pagerState.isScrollInProgress || pagerState.currentPage == current) return@LaunchedEffect
+            if (abs(pagerState.currentPage - current) == 1) pagerState.animateScrollToPage(current) else pagerState.scrollToPage(current)
+        }
+        // Só o dedo troca de música por aqui. Antes, qualquer parada (inclusive a
+        // do próprio carrossel se ajeitando numa fila nova, como ao tocar no
+        // aleatório) chamava a troca e fazia a música anterior voltar a tocar.
+        LaunchedEffect(pagerState) {
+            var dragged = false
+            launch {
+                pagerState.interactionSource.interactions.collect { if (it is DragInteraction.Start) dragged = true }
+            }
+            snapshotFlow { pagerState.isScrollInProgress }
+                .distinctUntilChanged()
+                .collect { scrolling ->
+                    if (scrolling || !dragged) return@collect
+                    dragged = false
+                    val settled = pagerState.currentPage
+                    if (settled == latestCurrent) return@collect
+                    latestEntries.getOrNull(settled)?.let { entry ->
+                        pending = Pending(entry.index, SystemClock.uptimeMillis())
+                        latestSkip(entry.index)
+                    }
+                }
+        }
 
-    HorizontalPager(
-        state = pagerState,
-        // Sem "key" no carrossel: com ela, trocar a fila inteira fazia o pager
-        // pular para onde a música antiga foi parar na fila nova. O estado de
-        // cada página (a capa carregada) fica preso à música pelo key() abaixo.
-        pageSpacing = pageSpacing,
-        // A vizinha já fica pronta (capa carregada) antes de o dedo puxar.
-        beyondViewportPageCount = 1,
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier,
-    ) { index ->
-        entries.getOrNull(index)?.let { entry -> key(entry.key) { page(entry.item) } }
+        HorizontalPager(
+            state = pagerState,
+            // Sem "key" no carrossel: com ela, trocar a fila inteira fazia o pager
+            // pular para onde a música antiga foi parar na fila nova. O estado de
+            // cada página (a capa carregada) fica preso à música pelo key() abaixo.
+            pageSpacing = pageSpacing,
+            // A vizinha já fica pronta (capa carregada) antes de o dedo puxar.
+            beyondViewportPageCount = 1,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = modifier,
+        ) { index ->
+            entries.getOrNull(index)?.let { entry -> key(entry.key) { page(entry.item) } }
+        }
     }
 }
 

@@ -108,7 +108,9 @@ internal fun NowPlayingContent(
     val scope = rememberCoroutineScope()
     val sizePx = with(LocalDensity.current) { ArtworkSizeForLoading.roundToPx() }
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
-    val artworkColor = rememberArtworkColor(artwork)
+    // A cor sai da capa pequena, a mesma do mini player: os dois ficam com o
+    // mesmo tom e combinam quando um vira o outro.
+    val artworkColor = rememberPlayerTint(viewModel, item?.uri)
     val showLyrics by viewModel.showLyrics.collectAsStateWithLifecycle()
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     // A posição da letra sobrevive a ir para a capa e voltar; música nova, do topo.

@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Density
@@ -90,7 +91,9 @@ fun PlayerSheet(
     val density = LocalDensity.current
     val sideInsetPx = with(density) { MiniPlayerSideInset.toPx() }
     val topInsetPx = with(density) { MiniPlayerTopInset.toPx() }
-    val cardColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    // O cartão tem o fundo do player aberto (tom da capa), igual ao mini player.
+    val tint = rememberPlayerTint(viewModel, playback.item?.uri)
+    val surface = MaterialTheme.colorScheme.surface
     BoxWithConstraints(modifier.fillMaxSize()) {
         val heightPx = with(LocalDensity.current) { maxHeight.toPx() }
         val cornerPx = corner.toPx(Size(heightPx, heightPx), density)
@@ -119,7 +122,7 @@ fun PlayerSheet(
         }
 
         // Fundo do cartão que cresce (aparece antes do conteúdo da tela cheia).
-        Box(Modifier.fillMaxSize().graphicsLayer(growLayer).background(cardColor))
+        Box(Modifier.fillMaxSize().graphicsLayer(growLayer).background(surface).artworkTintedBackground(tint))
 
         NowPlayingContent(
             onCollapse = { if (queueState.isVisible) queueState.collapse() else state.collapse() },

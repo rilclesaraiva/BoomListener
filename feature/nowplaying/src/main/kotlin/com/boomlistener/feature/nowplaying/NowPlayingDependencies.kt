@@ -5,6 +5,10 @@ package com.boomlistener.feature.nowplaying
 
 import android.util.LruCache
 import androidx.compose.runtime.Composable
+import com.boomlistener.core.designsystem.component.rememberArtworkColor
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
@@ -52,3 +56,15 @@ internal fun rememberArtwork(viewModel: NowPlayingViewModel, uri: String?, sizeP
 private object ArtworkMemory : LruCache<String, ImageBitmap>(24 * 1024) {
     override fun sizeOf(key: String, value: ImageBitmap): Int = (value.width * value.height * 4 / 1024).coerceAtLeast(1)
 }
+
+/**
+ * Cor da capa que tinge o mini player, o player aberto e o cartão que cresce
+ * entre os dois. Sempre tirada da mesma capa pequena, para os três baterem.
+ */
+@Composable
+internal fun rememberPlayerTint(viewModel: NowPlayingViewModel, uri: String?): Color? {
+    val sizePx = with(LocalDensity.current) { TintSampleSize.roundToPx() }
+    return rememberArtworkColor(rememberArtwork(viewModel, uri, sizePx))
+}
+
+private val TintSampleSize = 48.dp
