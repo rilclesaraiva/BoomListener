@@ -1,6 +1,8 @@
 // Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.boomlistener.feature.library
 
 import androidx.compose.foundation.clickable
@@ -43,6 +45,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -161,17 +166,26 @@ internal fun CollectionsScreen(
                     }
                     CollectionKind.Artists -> {
                         // Busca em pílula: os seus artistas e, do Deezer, os que você não tem.
-                        item(key = "artistSearch") {
-                            BoomSearchField(
-                                query = artistSearch.query,
-                                // Cada letra traz a tela de volta até a busca (logo abaixo das pílulas).
-                                onQueryChange = { text ->
-                                    viewModel.onArtistQueryChange(text)
-                                    searchScope.launch { listState.bringToSearch(SEARCH_ITEM_INDEX) }
-                                },
-                                placeholder = stringResource(R.string.feature_library_search_artists),
-                                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
-                            )
+                        // Presa no topo, como a do Início: começa com uma faixa do
+                        // tamanho da das notificações, na cor da página, então
+                        // digitando ela fica logo abaixo dessa faixa (sólida), nunca
+                        // por baixo dela.
+                        stickyHeader(key = "artistSearch") {
+                            Surface(color = MaterialTheme.colorScheme.surface) {
+                                Column {
+                                    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                                    BoomSearchField(
+                                        query = artistSearch.query,
+                                        // Cada letra traz a tela de volta até a busca (logo abaixo das pílulas).
+                                        onQueryChange = { text ->
+                                            viewModel.onArtistQueryChange(text)
+                                            searchScope.launch { listState.bringToSearch(SEARCH_ITEM_INDEX) }
+                                        },
+                                        placeholder = stringResource(R.string.feature_library_search_artists),
+                                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
+                                    )
+                                }
+                            }
                         }
                         if (current.artists.isEmpty() && !searching) {
                             item(key = "empty") { EmptySection(R.string.feature_library_artists_empty) }
