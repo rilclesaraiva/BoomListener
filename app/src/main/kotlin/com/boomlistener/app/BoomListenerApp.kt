@@ -58,6 +58,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
@@ -343,6 +347,9 @@ fun BoomListenerApp() {
       // (pouca largura) começa com a barra e o painel recolhidos.
       var sidebarExpanded by rememberSaveable { mutableStateOf(maxWidth >= 840.dp) }
       var artistPanelOpen by rememberSaveable { mutableStateOf(maxWidth >= 1000.dp) }
+      // Altura do mini player (0 sem música), que as telas usam como folga no fim.
+      var miniPlayerHeight by remember { mutableStateOf(0.dp) }
+      val density = LocalDensity.current
       CompositionLocalProvider(
           LocalWideLayout provides wide,
           LocalProfileButton provides { ProfileAvatarButton(onClick = { openTab(TopLevelDestination.Profile) }) },
@@ -367,12 +374,18 @@ fun BoomListenerApp() {
                     } else {
                         WindowInsets(0, 0, 0, 0)
                     }
-                    Column(Modifier.weight(1f).fillMaxHeight().windowInsetsPadding(centerInsets)) {
-                        navGraph(Modifier.weight(1f).fillMaxWidth())
+                    // O mini player flutua por cima das telas, sem faixa de fundo.
+                    Box(Modifier.weight(1f).fillMaxHeight().windowInsetsPadding(centerInsets)) {
+                        CompositionLocalProvider(LocalBottomOverlay provides miniPlayerHeight) {
+                            navGraph(Modifier.fillMaxSize())
+                        }
                         AnimatedVisibility(
                             visible = !inSettings && !inTagEditor,
                             enter = expandVertically(barSpec) + fadeIn(barFade),
                             exit = shrinkVertically(barSpec) + fadeOut(barFade),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } },
                         ) {
                             MiniPlayer(
                                 sheetState = playerSheet,
@@ -408,14 +421,6 @@ fun BoomListenerApp() {
         } else {
         Scaffold(
             bottomBar = {
-                Column {
-                    AnimatedVisibility(
-                        visible = !inSettings && !inTagEditor,
-                        enter = expandVertically(barSpec) + fadeIn(barFade),
-                        exit = shrinkVertically(barSpec) + fadeOut(barFade),
-                    ) {
-                        MiniPlayer(sheetState = playerSheet)
-                    }
                     AnimatedVisibility(
                         visible = onTab,
                         enter = expandVertically(barSpec) + fadeIn(barFade),
@@ -432,11 +437,29 @@ fun BoomListenerApp() {
                         }
                     }
                     }
-                }
             },
         ) { innerPadding ->
-            // Cada tela cuida do próprio topo; daqui só a folga das barras de baixo.
-            navGraph(Modifier.padding(bottom = innerPadding.calculateBottomPadding()))
+            // Cada tela cuida do próprio topo; daqui só a folga da barra de abas.
+            // O mini player flutua por cima das telas, sem faixa de fundo atrás
+            // dele: a página continua por baixo e as listas ganham folga no fim
+            // (LocalBottomOverlay).
+            val bottom = innerPadding.calculateBottomPadding()
+            Box(Modifier.fillMaxSize()) {
+                CompositionLocalProvider(LocalBottomOverlay provides miniPlayerHeight) {
+                    navGraph(Modifier.padding(bottom = bottom))
+                }
+                AnimatedVisibility(
+                    visible = !inSettings && !inTagEditor,
+                    enter = expandVertically(barSpec) + fadeIn(barFade),
+                    exit = shrinkVertically(barSpec) + fadeOut(barFade),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = bottom)
+                        .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } },
+                ) {
+                    MiniPlayer(sheetState = playerSheet)
+                }
+            }
         }
         }
 

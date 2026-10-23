@@ -54,6 +54,7 @@ import com.boomlistener.core.common.shareLink
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomFloatingBackButton
 import com.boomlistener.core.designsystem.component.BoomLoading
@@ -123,7 +124,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
         },
     )
 
-    LazyColumn(contentPadding = PaddingValues(bottom = 24.dp), modifier = Modifier.fillMaxSize()) {
+    LazyColumn(contentPadding = PaddingValues(bottom = 24.dp + LocalBottomOverlay.current), modifier = Modifier.fillMaxSize()) {
         item {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

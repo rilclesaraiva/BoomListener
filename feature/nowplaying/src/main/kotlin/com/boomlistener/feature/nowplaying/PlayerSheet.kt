@@ -90,7 +90,8 @@ fun PlayerSheet(
             onAddToPlaylist = onAddToPlaylist,
             modifier = Modifier
                 .graphicsLayer {
-                    translationY = (1f - state.progress) * heightPx
+                    // A mola passa um pouco do fim: o player não sobe além do topo.
+                    translationY = (1f - state.progress).coerceAtLeast(0f) * heightPx
                     val radius = CornerSize(cornerPx * ((1f - state.progress) * 4f).coerceIn(0f, 1f))
                     shape = RoundedCornerShape(topStart = radius, topEnd = radius, bottomStart = CornerSize(0f), bottomEnd = CornerSize(0f))
                     clip = true

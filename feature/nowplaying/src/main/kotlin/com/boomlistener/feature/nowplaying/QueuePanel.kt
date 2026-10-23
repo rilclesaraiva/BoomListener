@@ -44,6 +44,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -114,6 +117,16 @@ internal fun QueuePanel(
         if (queueState.isExpanded && currentPosition >= 0) listState.scrollToItem(currentPosition)
     }
 
+    // Fundo escurecido, como nos outros painéis: segura todo toque no player
+    // por trás (tocar nele fecha a fila).
+    val scrim = MaterialTheme.colorScheme.scrim
+    Box(
+        Modifier
+            .fillMaxSize()
+            .drawBehind { drawRect(scrim, alpha = ScrimAlpha * queueState.progress.coerceIn(0f, 1f)) }
+            .pointerInput(Unit) { detectTapGestures { queueState.collapse() } },
+    )
+
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.extraLarge.copy(bottomStart = ZeroCornerSize, bottomEnd = ZeroCornerSize),
@@ -121,7 +134,9 @@ internal fun QueuePanel(
             .fillMaxSize()
             .statusBarsPadding()
             .padding(top = 48.dp)
-            .graphicsLayer { translationY = (1f - queueState.progress) * heightPx },
+            // A mola da abertura passa um pouco do fim; o painel não sobe além
+            // do lugar dele (sobraria um vão vazio embaixo).
+            .graphicsLayer { translationY = (1f - queueState.progress).coerceAtLeast(0f) * heightPx },
     ) {
         Column {
             // Cabeçalho: puxar para baixo fecha a fila.
@@ -165,7 +180,8 @@ internal fun QueuePanel(
             }
 
             Box(Modifier.weight(1f)) {
-            LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+            // Sem esticar além da primeira e da última música: o fim da fila é o fim.
+            LazyColumn(state = listState, overscrollEffect = null, modifier = Modifier.fillMaxSize()) {
                 items(localQueue, key = { it.key }) { entry ->
                     ReorderableItem(reorderState, key = entry.key) { isDragging ->
                         val isCurrent = entry.index == state.queueIndex
@@ -298,3 +314,6 @@ private fun QueueRow(
         },
     )
 }
+
+/** Quanto o fundo escurece com a fila aberta (o mesmo dos painéis do M3). */
+private const val ScrimAlpha = 0.32f

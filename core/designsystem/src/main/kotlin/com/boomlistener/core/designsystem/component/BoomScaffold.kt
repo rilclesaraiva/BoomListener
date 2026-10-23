@@ -36,6 +36,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -173,7 +174,15 @@ fun BoomScreenScaffold(
             // "rolado" quando sobem até o topo por código).
             CompositionLocalProvider(LocalTopBarState provides topBarState) {
                 Box(Modifier.fillMaxSize()) {
-                    content(padding)
+                    // O mini player flutua por cima da página: a lista ganha
+                    // folga embaixo para o último item não ficar atrás dele.
+                    val overlay = LocalBottomOverlay.current
+                    content(
+                        PaddingValues(
+                            top = padding.calculateTopPadding(),
+                            bottom = padding.calculateBottomPadding() + overlay,
+                        ),
+                    )
                     // Tela sem barra presa (título na página): o voltar fica parado
                     // no canto, por cima da página, e não sobe junto ao rolar.
                     if (topBar != null && onBack != null) BoomFloatingBackButton(onClick = onBack)
@@ -182,6 +191,13 @@ fun BoomScreenScaffold(
         },
     )
 }
+
+/**
+ * Altura do que flutua por cima da parte de baixo das telas (o mini player).
+ * Ele não tem faixa de fundo própria: a página continua por trás dele, e as
+ * listas usam isto como folga no fim.
+ */
+val LocalBottomOverlay = compositionLocalOf { 0.dp }
 
 /**
  * Estado da barra superior da tela atual. Rolar a lista por código (tocar de

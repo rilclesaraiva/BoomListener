@@ -84,6 +84,7 @@ import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
@@ -138,7 +139,7 @@ internal fun MyProfileScreen(
         }
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(bottom = 32.dp),
+            contentPadding = PaddingValues(bottom = 32.dp + LocalBottomOverlay.current),
             modifier = Modifier.fillMaxSize(),
         ) {
             item(key = "title") {

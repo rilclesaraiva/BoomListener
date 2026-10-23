@@ -61,6 +61,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.RowScope
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -151,12 +156,17 @@ internal fun LibraryScreen(
     val deleteSong = rememberSongDeleter()
     val showDetails = rememberSongDetails()
 
+    val title = stringResource(R.string.feature_library_title)
+    val topActions: @Composable RowScope.() -> Unit = {
+        BoomTopActions(onOpenReleases = onOpenReleases, onOpenSettings = onOpenSettings)
+    }
+    // Sem barra presa na tela: o título é o topo da página e sobe junto ao rolar.
     BoomScreenScaffold(
-        title = stringResource(R.string.feature_library_title),
+        title = title,
         modifier = modifier,
-        actions = { BoomTopActions(onOpenReleases = onOpenReleases, onOpenSettings = onOpenSettings) },
+        topBar = {},
     ) { padding ->
-        val contentModifier = Modifier.padding(padding)
+        val contentModifier = Modifier.padding(padding).windowInsetsPadding(WindowInsets.statusBars)
         when {
             !hasPermission -> AudioPermissionRequest(
                 denied = denials > 0,
@@ -191,6 +201,7 @@ internal fun LibraryScreen(
                         openArtist = onOpenArtist,
                     ),
                     contentPadding = padding,
+                    title = { BoomPageTitle(title, statusBarInset = false, actions = topActions) },
                 )
             }
         }
@@ -223,6 +234,7 @@ private fun TrackList(
     onAddToPlaylist: (Track) -> Unit,
     albumMenu: AlbumMenuActions,
     contentPadding: PaddingValues,
+    title: @Composable () -> Unit,
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -234,21 +246,23 @@ private fun TrackList(
         state.totalCount == 0 -> BoomPlaceholder(
             title = stringResource(R.string.feature_library_empty_title),
             message = stringResource(R.string.feature_library_empty_message),
-            modifier = Modifier.padding(contentPadding),
+            modifier = Modifier.padding(contentPadding).windowInsetsPadding(WindowInsets.statusBars),
         )
 
         else -> Box(Modifier.fillMaxSize()) {
             val home = state.home
             // Itens antes da primeira música (para a letra da barra de rolagem).
-            val headerItems = 2 + (if (home != null) 3 else 0)
-          // A lista começa abaixo da barra de cima (padding, não contentPadding):
-          // o "Músicas" fica preso no topo da lista, e com contentPadding ele
-          // ficava por baixo da faixa das notificações quando a barra recolhia.
+            val headerItems = 3 + (if (home != null) 3 else 0)
+          // A lista começa abaixo da faixa das notificações (padding, não
+          // contentPadding): o "Músicas" fica preso no topo da lista, e com
+          // contentPadding ele ficava por baixo dessa faixa. O título é a
+          // primeira linha e sobe junto ao rolar.
           LazyColumn(
               state = listState,
               contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
-              modifier = Modifier.padding(top = contentPadding.calculateTopPadding()),
+              modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
           ) {
+            item(key = "title") { title() }
             item(key = "header") {
                 // Aleatório e Tocar, com a contagem do outro lado.
                 Row(
@@ -367,7 +381,8 @@ private fun TrackList(
                 startIndex = headerItems - 1,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding()),
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(bottom = contentPadding.calculateBottomPadding()),
             )
         }
     }

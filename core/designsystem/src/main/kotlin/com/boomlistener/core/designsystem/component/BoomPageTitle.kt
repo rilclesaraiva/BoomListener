@@ -29,6 +29,9 @@ import androidx.compose.ui.unit.dp
  * @param hasBack a tela tem voltar: o título começa mais para o lado, para o
  *   botão parado nunca ficar por cima dele (nem ao rolar).
  * @param large título grande embaixo da linha do voltar (Ajustes).
+ * @param statusBarInset desce o título para baixo da faixa das notificações.
+ *   false quando a própria lista já começa abaixo dela (Início, que tem
+ *   cabeçalho preso e não pode deixá-lo por baixo dessa faixa).
  */
 @Composable
 fun BoomPageTitle(
@@ -36,10 +39,12 @@ fun BoomPageTitle(
     modifier: Modifier = Modifier,
     hasBack: Boolean = false,
     large: Boolean = false,
+    statusBarInset: Boolean = true,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val start = if (hasBack) BoomBackButtonInset else 16.dp
-    Column(modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
+    val insets = if (statusBarInset) modifier.windowInsetsPadding(WindowInsets.statusBars) else modifier
+    Column(insets.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().height(64.dp).padding(start = start, end = 4.dp),

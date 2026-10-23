@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.40.4] — 2026-10-23
+
+### 🐛 Fixes
+- With the queue open, the player behind it is dimmed and can no longer be tapped by accident. Tapping the dimmed part closes the queue.
+- The queue stops at its last song: pulling hard no longer shows an empty space below it.
+
+### 🎨 Visual tweaks
+- The mini player now floats over the page, with no strip behind it (you could see that strip when closing the mini player).
+- Artist page: while the photo loads, the big area shows the artist's initial instead of a cover from your phone, and the small round picture is always the cover of their newest release.
+- Artist page: no more top bar when you scroll. Only the back button stays in the corner.
+- Home: the title is now part of the page and scrolls with it, like in Library, Profile and Settings.
+
 ## [0.40.3] — 2026-10-22
 
 **Second public beta.** 🎧 This release brings together everything since 0.36.2. Here are the highlights; the full list is in CHANGELOG.md.

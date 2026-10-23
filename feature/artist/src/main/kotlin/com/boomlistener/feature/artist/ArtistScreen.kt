@@ -87,6 +87,7 @@ import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomFloatingBackButton
+import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomTabs
@@ -138,10 +139,9 @@ internal fun ArtistScreen(
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val ready = (state.profile as? ProfileState.Ready)?.profile
     val fromMusicBrainz = (state.profile as? ProfileState.Ready)?.fromMusicBrainz == true
-    val showTopBar by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
 
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-        LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 24.dp)) {
+        LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 24.dp + LocalBottomOverlay.current)) {
             item(key = "header") { Header(state, ready, viewModel) }
             item(key = "stats") { Stats(state, ready?.takeUnless { fromMusicBrainz }) }
             item(key = "actions") {
@@ -176,23 +176,7 @@ internal fun ArtistScreen(
             }
         }
 
-        // Barra de cima: a seta sempre; o nome aparece quando o cabeçalho sai da tela.
-        AnimatedVisibility(visible = showTopBar, enter = fadeIn(), exit = fadeOut()) {
-            Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-                Column {
-                    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-                    Row(Modifier.height(64.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Spacer(Modifier.width(64.dp))
-                        Text(
-                            text = state.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            }
-        }
+        // Sem barra de cima: só o voltar, parado no canto.
         BoomFloatingBackButton(onClick = onBack)
     }
 }
@@ -202,25 +186,34 @@ private fun Header(state: ArtistUiState, profile: ArtistProfile?, viewModel: Art
     val density = LocalDensity.current
     val widthPx = with(density) { 600.dp.roundToPx() }
     val photo = rememberRemoteImage(viewModel, profile?.artist?.pictureUrl, widthPx)
-    val firstLocal = state.localTracks.firstOrNull()
     val avatarPx = with(density) { AvatarSize.roundToPx() }
-    // A foto redonda usa a capa do lançamento mais recente (ou a de uma música sua).
-    val avatarRemote = rememberRemoteImage(viewModel, profile?.releases?.firstOrNull()?.coverUrl, avatarPx)
-    val avatarLocal = rememberLocalArtwork(viewModel, firstLocal, avatarPx)
+    // Área grande: só a foto do artista. A redonda: sempre a capa do
+    // lançamento mais novo. Enquanto não chegam, a inicial do nome (nunca a
+    // capa de uma música do aparelho no lugar).
+    val newest = profile?.releases?.maxByOrNull { it.releaseDate.orEmpty() }
+    val avatarRemote = rememberRemoteImage(viewModel, newest?.coverUrl, avatarPx)
     val surface = MaterialTheme.colorScheme.surface
 
     Box(Modifier.fillMaxWidth().height(HeaderHeight + AvatarSize / 2)) {
         Box(Modifier.fillMaxWidth().height(HeaderHeight)) {
-            val background = photo ?: avatarLocal
-            if (background != null) {
+            if (photo != null) {
                 Image(
-                    bitmap = background,
+                    bitmap = photo,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
-                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.secondaryContainer))
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.secondaryContainer),
+                ) {
+                    Text(
+                        text = state.name.trim().firstOrNull()?.uppercase() ?: "♪",
+                        style = MaterialTheme.typography.displayLarge,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
             }
             Box(
                 Modifier.fillMaxSize().background(
@@ -240,7 +233,7 @@ private fun Header(state: ArtistUiState, profile: ArtistProfile?, viewModel: Art
             )
         }
         BoomArtwork(
-            image = avatarRemote ?: avatarLocal,
+            image = avatarRemote,
             fallbackText = state.name,
             size = AvatarSize,
             modifier = Modifier
