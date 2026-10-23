@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.nowplaying
 
+import android.util.LruCache
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -36,8 +37,18 @@ internal fun nowPlayingViewModel(): NowPlayingViewModel {
 internal fun rememberArtwork(viewModel: NowPlayingViewModel, uri: String?, sizePx: Int): ImageBitmap? {
     // Muda quando alguma tag foi editada: a capa é lida de novo.
     val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
-    val artwork by produceState<ImageBitmap?>(initialValue = null, uri, sizePx, version) {
-        value = uri?.let { viewModel.artwork(it, sizePx)?.asImageBitmap() }
+    val cacheKey = "$uri|$sizePx|$version"
+    // Capa já vista começa pronta (da memória), sem passar pela inicial: ao
+    // trocar a fila (ex.: aleatório), o carrossel monta a página de novo e a
+    // letra inicial piscava por um instante antes da capa carregar.
+    val artwork by produceState<ImageBitmap?>(initialValue = uri?.let { ArtworkMemory.get(cacheKey) }, uri, sizePx, version) {
+        val cached = uri?.let { ArtworkMemory.get(cacheKey) }
+        value = cached ?: uri?.let { viewModel.artwork(it, sizePx)?.asImageBitmap() }?.also { ArtworkMemory.put(cacheKey, it) }
     }
     return artwork
+}
+
+/** As últimas capas mostradas no player e no mini player (até ~24 MB). */
+private object ArtworkMemory : LruCache<String, ImageBitmap>(24 * 1024) {
+    override fun sizeOf(key: String, value: ImageBitmap): Int = (value.width * value.height * 4 / 1024).coerceAtLeast(1)
 }
