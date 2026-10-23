@@ -81,6 +81,7 @@ import com.boomlistener.feature.library.libraryScreen
 import com.boomlistener.feature.nowplaying.MiniPlayer
 import com.boomlistener.feature.nowplaying.PlayerSheet
 import com.boomlistener.feature.nowplaying.rememberPlayerSheetState
+import com.boomlistener.feature.nowplaying.PlayerSheetState
 import com.boomlistener.feature.releases.navigateToReleases
 import com.boomlistener.feature.releases.releasesScreen
 import com.boomlistener.feature.settings.SETTINGS_ROUTE
@@ -379,19 +380,15 @@ fun BoomListenerApp() {
                         CompositionLocalProvider(LocalBottomOverlay provides miniPlayerHeight) {
                             navGraph(Modifier.fillMaxSize())
                         }
-                        AnimatedVisibility(
+                        // Função à parte: aqui dentro da Row, AnimatedVisibility viraria a versão de RowScope.
+                        FloatingMiniPlayer(
                             visible = !inSettings && !inTagEditor,
-                            enter = expandVertically(barSpec) + fadeIn(barFade),
-                            exit = shrinkVertically(barSpec) + fadeOut(barFade),
+                            sheetState = playerSheet,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } },
-                        ) {
-                            MiniPlayer(
-                                sheetState = playerSheet,
-                                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
-                            )
-                        }
+                            playerModifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
+                        )
                     }
                     // Só com música tocando: o artista dela (recolhível).
                     val playingArtist = playback.item?.artist?.takeIf { it.isNotBlank() && !onArtistPage }
@@ -505,4 +502,24 @@ fun BoomListenerApp() {
       }
     }
 }
+}
+
+/** O mini player flutuando sobre as telas, com a entrada e a saída animadas. */
+@Composable
+private fun FloatingMiniPlayer(
+    visible: Boolean,
+    sheetState: PlayerSheetState,
+    modifier: Modifier = Modifier,
+    playerModifier: Modifier = Modifier,
+) {
+    val barSpec = boomSpatialSpec<IntSize>()
+    val barFade = boomEffectsSpec<Float>()
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(barSpec) + fadeIn(barFade),
+        exit = shrinkVertically(barSpec) + fadeOut(barFade),
+        modifier = modifier,
+    ) {
+        MiniPlayer(sheetState = sheetState, modifier = playerModifier)
+    }
 }
