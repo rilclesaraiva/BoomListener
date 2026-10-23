@@ -340,7 +340,9 @@ internal fun NowPlayingContent(
         }
 
         QueuePanel(
-            state = state,
+            queue = state.queue,
+            queueIndex = state.queueIndex,
+            queueSize = state.queueSize,
             queueState = queueState,
             viewModel = viewModel,
             onOpenArtist = onOpenArtist,

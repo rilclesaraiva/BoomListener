@@ -61,6 +61,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -201,7 +202,7 @@ internal fun LibraryScreen(
                         openArtist = onOpenArtist,
                     ),
                     contentPadding = padding,
-                    title = { BoomPageTitle(title, statusBarInset = false, actions = topActions) },
+                    title = { BoomPageTitle(title, actions = topActions) },
                 )
             }
         }
@@ -253,14 +254,13 @@ private fun TrackList(
             val home = state.home
             // Itens antes da primeira música (para a letra da barra de rolagem).
             val headerItems = 3 + (if (home != null) 3 else 0)
-          // A lista começa abaixo da faixa das notificações (padding, não
-          // contentPadding): o "Músicas" fica preso no topo da lista, e com
-          // contentPadding ele ficava por baixo dessa faixa. O título é a
-          // primeira linha e sobe junto ao rolar.
+          // A lista vai até o topo da tela: a faixa das notificações fica
+          // transparente e mostra a página rolando por trás. O "Músicas", preso
+          // no topo, traz a própria faixa sólida (SongsHeader) e cobre essa área.
+          // O título é a primeira linha e sobe junto ao rolar.
           LazyColumn(
               state = listState,
               contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
-              modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
           ) {
             item(key = "title") { title() }
             item(key = "header") {
@@ -406,10 +406,15 @@ internal suspend fun LazyListState.bringToSearch(index: Int) {
 /** Título "Músicas" com a barra de busca ao lado. */
 @Composable
 private fun SongsHeader(query: String, onQueryChange: (String) -> Unit, onFocused: () -> Unit) {
+    // Preso no topo, fica embaixo da faixa das notificações: a faixa de cima
+    // (do tamanho dela) deixa essa área sólida, na mesma cor do cabeçalho.
+    // Fora do topo, ela é só um respiro acima do título.
     Surface(color = MaterialTheme.colorScheme.surface) {
+    Column {
+    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 40.dp, top = 20.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
     ) {
         Text(stringResource(R.string.feature_library_songs), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.width(16.dp))
@@ -420,6 +425,7 @@ private fun SongsHeader(query: String, onQueryChange: (String) -> Unit, onFocuse
             modifier = Modifier.weight(1f),
             onFocused = onFocused,
         )
+    }
     }
     }
 }

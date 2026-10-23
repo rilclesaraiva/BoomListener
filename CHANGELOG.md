@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.40.5] — 2026-10-23
+
+### 🐛 Fixes
+- The queue no longer opens an empty space below the last song when you scroll it while music is playing.
+- Playing a song from a list now puts it at the top of the queue, with the rest of the list after it. Before, picking the last song of a list left the queue at its very end.
+
+### 🎨 Visual tweaks
+- Home: the status bar is see-through while you scroll the top of the page, and turns solid in the color of the "Songs" header once that header sticks to the top.
+
 ## [0.40.4] — 2026-10-23
 
 ### 🐛 Fixes

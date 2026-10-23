@@ -107,7 +107,8 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
             // vem embaralhado, guardando a ordem da lista para depois.
             player.setMediaItems(shuffle.start(items, startIndex), 0, 0L)
         } else {
-            player.setMediaItems(items, startIndex, 0L)
+            // A escolhida no topo da fila, as outras embaixo dela.
+            player.setMediaItems(queueStartingAt(items, startIndex), 0, 0L)
         }
         player.prepare()
         player.play()

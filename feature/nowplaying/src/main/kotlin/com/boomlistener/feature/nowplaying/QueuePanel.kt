@@ -62,7 +62,6 @@ import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.trackPress
-import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.QueueEntry
 import kotlinx.coroutines.CancellationException
 import sh.calvin.reorderable.ReorderableItem
@@ -75,7 +74,12 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
  */
 @Composable
 internal fun QueuePanel(
-    state: PlaybackState,
+    // Só o que a fila usa, e não o PlaybackState inteiro: tocando, ele muda a
+    // cada meio segundo (a posição da música), e a fila se recompunha junto no
+    // meio da rolagem, o que abria um vão vazio no fim da lista.
+    queue: List<QueueEntry>,
+    queueIndex: Int,
+    queueSize: Int,
     queueState: PlayerSheetState,
     viewModel: NowPlayingViewModel,
     onOpenArtist: (String) -> Unit,
@@ -100,17 +104,17 @@ internal fun QueuePanel(
 
     // Cópia local da fila: enquanto o dedo arrasta uma música, a lista muda na
     // hora aqui na tela, e o player só recebe a mudança ao soltar.
-    var localQueue by remember { mutableStateOf(state.queue) }
+    var localQueue by remember { mutableStateOf(queue) }
     var dragging by remember { mutableStateOf(false) }
     var dragStartPosition by remember { mutableIntStateOf(-1) }
-    LaunchedEffect(state.queue) { if (!dragging) localQueue = state.queue }
+    LaunchedEffect(queue) { if (!dragging) localQueue = queue }
 
     val reorderState = rememberReorderableLazyListState(listState) { from, to ->
         if (from.index in localQueue.indices && to.index in localQueue.indices) {
             localQueue = localQueue.toMutableList().apply { add(to.index, removeAt(from.index)) }
         }
     }
-    val currentPosition = localQueue.indexOfFirst { it.index == state.queueIndex }
+    val currentPosition = localQueue.indexOfFirst { it.index == queueIndex }
 
     // Ao abrir, a lista já começa na música que está tocando.
     LaunchedEffect(queueState.isExpanded) {
@@ -164,8 +168,8 @@ internal fun QueuePanel(
                         )
                         // Posição na fila ("9 de 72"), que antes ficava no topo do player.
                         Text(
-                            text = if (state.queueSize > 0) {
-                                stringResource(R.string.feature_nowplaying_queue_position, state.queueIndex + 1, state.queueSize)
+                            text = if (queueSize > 0) {
+                                stringResource(R.string.feature_nowplaying_queue_position, queueIndex + 1, queueSize)
                             } else {
                                 stringResource(R.string.feature_nowplaying_reorder)
                             },
@@ -184,7 +188,7 @@ internal fun QueuePanel(
             LazyColumn(state = listState, overscrollEffect = null, modifier = Modifier.fillMaxSize()) {
                 items(localQueue, key = { it.key }) { entry ->
                     ReorderableItem(reorderState, key = entry.key) { isDragging ->
-                        val isCurrent = entry.index == state.queueIndex
+                        val isCurrent = entry.index == queueIndex
                         Surface(shadowElevation = if (isDragging) 8.dp else 0.dp) {
                             QueueRow(
                                 entry = entry,
