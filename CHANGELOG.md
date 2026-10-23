@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.42.3] — 2026-10-23
+
+### 🐛 Fixes
+- Messages at the bottom of the screen (like the one from the bell on Releases) now show above the mini player instead of behind it.
+
+### 🎨 Visual tweaks
+- Home: the fast-scroll bar starts below the "Songs" header instead of running up beside the search box.
+
 ## [0.42.2] — 2026-10-23
 
 ### 🎨 Visual tweaks

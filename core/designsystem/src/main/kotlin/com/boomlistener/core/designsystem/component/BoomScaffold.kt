@@ -41,6 +41,8 @@ import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -127,7 +129,15 @@ fun BoomScreenScaffold(
         modifier = if (topBar == null) pageModifier.nestedScroll(scrollBehavior.nestedScrollConnection) else pageModifier,
         containerColor = if (pageBackground != null) Color.Transparent else pageColor,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = snackbarHost,
+        // Avisos sobem acima do mini player (que flutua por cima da tela) e da
+        // barra de gestos do sistema; antes ficavam escondidos atrás dele.
+        snackbarHost = {
+            Box(
+                Modifier
+                    .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
+                    .padding(bottom = LocalBottomOverlay.current),
+            ) { snackbarHost() }
+        },
         topBar = {
             // A troca entre a barra normal e uma barra própria (ex.: busca)
             // é animada, nunca um corte seco.
