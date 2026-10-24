@@ -412,27 +412,26 @@ private fun TrackList(
  * pula direto (animar até um item fora da tela anda em etapas e trava).
  */
 internal suspend fun LazyListState.bringToSearch(index: Int) {
-    if (firstVisibleItemIndex == index && firstVisibleItemScrollOffset == 0) return
-    // Já passou da busca (ela está presa no topo): os resultados voltam ao começo.
-    if (firstVisibleItemIndex >= index) {
+    // Já passou da busca (ela está presa no topo e a lista rolou nos
+    // resultados): os resultados voltam ao começo.
+    if (firstVisibleItemIndex > index) {
         scrollToItem(index)
         return
     }
+    // A busca já está no topo, ou quase: não mexe na página. Rolar a cada
+    // letra fazia a página tremer e recriava o campo de texto (segurar o
+    // apagar só apagava uma letra).
+    if (firstVisibleItemIndex == index) return
     val visible = layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
     when {
         visible == null -> scrollToItem(index)
-        // Quase no topo (só a faixa das notificações de distância): encaixa de
-        // vez. Animar esses poucos pixels a cada letra fazia a página tremer.
-        visible.offset <= NEAR_TOP_PX -> scrollToItem(index)
-        // Alvo absoluto (e não "role tantos pixels"): com várias letras seguidas,
-        // a lista mudando por baixo e uma animação cancelando a outra, o
-        // deslocamento relativo errava por alguns pixels e a busca não parava
-        // no lugar (a página dava pulinhos a cada letra).
+        visible.offset <= NEAR_TOP_PX -> Unit
+        // Longe do topo: sobe até ela, com alvo absoluto.
         else -> animateScrollToItem(index)
     }
 }
 
-/** Distância do topo (px) em que a busca encaixa sem animar. */
+/** Distância do topo (px) em que a busca já conta como "no topo". */
 private const val NEAR_TOP_PX = 160
 
 /** Título "Músicas" com a barra de busca ao lado. */

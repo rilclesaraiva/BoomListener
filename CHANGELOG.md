@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.43.2] — 2026-10-24
+
+### 🐛 Fixes
+- Typing in the search boxes (Home and Library → Artists) no longer makes the page shake, and holding backspace deletes letter after letter again.
+
 ## [0.43.1] — 2026-10-23
 
 ### 🐛 Fixes
