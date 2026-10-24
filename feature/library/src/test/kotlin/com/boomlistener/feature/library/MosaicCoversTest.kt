@@ -26,9 +26,21 @@ class MosaicCoversTest {
     }
 
     @Test
-    fun albunsRepetidosDemaisFicaComCapaUnica() {
-        val tracks = listOf(song(1, 10), song(2, 10), song(3, 20), song(4, 20), song(5, 30))
+    fun todasDoMesmoAlbumFicaComCapaUnica() {
+        val tracks = listOf(song(1, 10), song(2, 10), song(3, 10), song(4, 10))
         assertEquals(listOf(1L), mosaicCovers(tracks).map { it.id })
+    }
+
+    @Test
+    fun doisAlbunsRepetemEmDiagonal() {
+        val tracks = listOf(song(1, 10), song(2, 10), song(3, 20), song(4, 20))
+        assertEquals(listOf(1L, 3L, 3L, 1L), mosaicCovers(tracks).map { it.id })
+    }
+
+    @Test
+    fun tresAlbunsRepeteSoAPrimeiraNoCanto() {
+        val tracks = listOf(song(1, 10), song(2, 20), song(3, 20), song(4, 30))
+        assertEquals(listOf(1L, 2L, 4L, 1L), mosaicCovers(tracks).map { it.id })
     }
 
     @Test

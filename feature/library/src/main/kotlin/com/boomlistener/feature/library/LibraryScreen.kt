@@ -419,8 +419,21 @@ internal suspend fun LazyListState.bringToSearch(index: Int) {
         return
     }
     val visible = layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
-    if (visible != null) animateScrollBy(visible.offset.toFloat()) else scrollToItem(index)
+    when {
+        visible == null -> scrollToItem(index)
+        // Quase no topo (só a faixa das notificações de distância): encaixa de
+        // vez. Animar esses poucos pixels a cada letra fazia a página tremer.
+        visible.offset <= NEAR_TOP_PX -> scrollToItem(index)
+        // Alvo absoluto (e não "role tantos pixels"): com várias letras seguidas,
+        // a lista mudando por baixo e uma animação cancelando a outra, o
+        // deslocamento relativo errava por alguns pixels e a busca não parava
+        // no lugar (a página dava pulinhos a cada letra).
+        else -> animateScrollToItem(index)
+    }
 }
+
+/** Distância do topo (px) em que a busca encaixa sem animar. */
+private const val NEAR_TOP_PX = 160
 
 /** Título "Músicas" com a barra de busca ao lado. */
 @Composable

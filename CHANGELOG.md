@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.43.1] — 2026-10-23
+
+### 🐛 Fixes
+- Typing in a search box no longer makes the page jump a little with each letter.
+
+### 🎨 Visual tweaks
+- Playlist covers: the four-cover mosaic now shows up whenever a playlist with more than 3 songs has songs from at least 2 different albums (covers repeat diagonally when there are fewer than 4 albums). Only playlists where every song is from the same album keep a single cover.
+
 ## [0.43.0] — 2026-10-23
 
 ### ✨ New
