@@ -21,15 +21,22 @@ import kotlinx.coroutines.withContext
  * decodificadores do aparelho) e mede o RMS a cada [LEVEL_WINDOW_MS]. Nulo se
  * o arquivo não puder ser lido; aí o banner usa barras genéricas.
  */
-internal suspend fun loadClipLevels(context: Context, uri: String, clip: ShareClip): FloatArray? =
+/** O som de um trecho: a força a cada 50 ms e as faixas de frequência (graves → agudos). */
+internal class ClipSound(val levels: FloatArray, val spectrum: Array<FloatArray>)
+
+internal suspend fun loadClipLevels(context: Context, uri: String, clip: ShareClip): ClipSound? =
     withContext(Dispatchers.IO) {
         runCatching { decodeLevels(context, uri, clip) }.getOrNull()
     }
 
-private suspend fun decodeLevels(context: Context, uri: String, clip: ShareClip): FloatArray? {
+private suspend fun decodeLevels(context: Context, uri: String, clip: ShareClip): ClipSound? {
     val count = ((clip.lengthMs + LEVEL_WINDOW_MS - 1) / LEVEL_WINDOW_MS).toInt().coerceAtLeast(1)
     val sums = DoubleArray(count)
     val samples = IntArray(count)
+    // O trecho em mono (média dos canais), para as faixas de frequência.
+    var mono = FloatArray(0)
+    var monoSize = 0
+    var monoRate = 0
     val extractor = MediaExtractor()
     var codec: MediaCodec? = null
     try {
@@ -94,6 +101,11 @@ private suspend fun decodeLevels(context: Context, uri: String, clip: ShareClip)
                                 sums[window] += (v * v).toDouble()
                             }
                             samples[window] += channels
+                            var sum = 0f
+                            for (c in 0 until channels) sum += values[frame * channels + c]
+                            if (monoSize == mono.size) mono = mono.copyOf(maxOf(rate * 4, mono.size * 2))
+                            mono[monoSize++] = sum / channels
+                            monoRate = rate
                         }
                         if (info.presentationTimeUs > endUs) outputDone = true
                     }
@@ -108,7 +120,8 @@ private suspend fun decodeLevels(context: Context, uri: String, clip: ShareClip)
         extractor.release()
     }
     if (samples.all { it == 0 }) return null
-    return FloatArray(count) { if (samples[it] == 0) 0f else sqrt(sums[it] / samples[it]).toFloat() }
+    val levels = FloatArray(count) { if (samples[it] == 0) 0f else sqrt(sums[it] / samples[it]).toFloat() }
+    return ClipSound(levels, spectrumFrames(mono.copyOf(monoSize), monoRate))
 }
 
 private const val TIMEOUT_US = 10_000L

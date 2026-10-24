@@ -4,6 +4,12 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.45.1] — 2026-10-24
+
+### 🎨 Visual tweaks
+- Share banner video: the bars now work like an equalizer, with the bass on the left and the treble on the right, instead of a wave coming out of the middle.
+- Share banner clip bar: no more white line inside the window; the played part just fills it up as the clip plays.
+
 ## [0.45.0] — 2026-10-24
 
 ### ✨ New

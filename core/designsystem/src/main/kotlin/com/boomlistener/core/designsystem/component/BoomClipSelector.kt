@@ -26,7 +26,7 @@ import kotlin.math.roundToLong
  * Escolha de um trecho de tamanho fixo dentro de uma música: a barra é a
  * música inteira e a janela destacada é o trecho, com o começo e o fim
  * marcados. Arrastar a janela (ou tocar fora dela, que a centraliza ali)
- * muda o começo. [playheadMs] (dentro do trecho) mostra o que está tocando.
+ * muda o começo. [playheadMs] (dentro do trecho) preenche o que já tocou.
  */
 @Composable
 fun BoomClipSelector(
@@ -96,17 +96,10 @@ fun BoomClipSelector(
         val radius = CornerRadius(WindowCorner.toPx())
         drawRoundRect(scheme.primaryContainer, Offset(x0, 0f), Size(x1 - x0, h), radius)
 
-        // O que já tocou do trecho, e o ponto que está tocando.
+        // O que já tocou do trecho vai preenchendo a janela.
         if (playheadMs != null && lengthMs > 0) {
             val px = x0 + (x1 - x0) * (playheadMs.toFloat() / lengthMs).coerceIn(0f, 1f)
             drawRoundRect(scheme.primary.copy(alpha = PlayedAlpha), Offset(x0, 0f), Size(px - x0, h), radius)
-            val line = PlayheadWidth.toPx()
-            drawRoundRect(
-                scheme.onPrimaryContainer,
-                Offset(px - line / 2, h * 0.18f),
-                Size(line, h * 0.64f),
-                CornerRadius(line / 2),
-            )
         }
         drawRoundRect(scheme.primary, Offset(x0, 0f), Size(x1 - x0, h), radius, style = Stroke(BorderWidth.toPx()))
 
@@ -125,5 +118,4 @@ private val MinWindowWidth = 28.dp
 private val WindowCorner = 12.dp
 private val BorderWidth = 2.dp
 private val HandleWidth = 4.dp
-private val PlayheadWidth = 3.dp
 private const val PlayedAlpha = 0.3f

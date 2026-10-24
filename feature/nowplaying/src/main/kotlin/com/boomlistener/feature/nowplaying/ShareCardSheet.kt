@@ -82,7 +82,7 @@ private enum class CardStyle { Cover, Theme, Dark }
 private class LoadedCover(val bitmap: Bitmap?)
 
 /** A força do som lida para um trecho (nula se o arquivo não pôde ser lido). */
-private class ClipLevelsResult(val clip: ShareClip, val levels: FloatArray?)
+private class ClipLevelsResult(val clip: ShareClip, val sound: ClipSound?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,7 +133,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
         // Enquanto lê o novo trecho, o desenho anterior continua (sem piscar).
         value = ClipLevelsResult(chosenClip, loadClipLevels(context, item.uri, chosenClip))
     }
-    val bars = remember(levels) { levels?.levels?.let(::waveformBars) }
+    val bars = remember(levels) { levels?.sound?.levels?.let(::waveformBars) }
     val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text, bars) {
         if (loaded != null) value = withContext(Dispatchers.Default) { renderShareCard(cover, text, colors, bars).bitmap }
     }
@@ -268,12 +268,12 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                 try {
                                     // As barrinhas do vídeo pulsam com o som: o banner vai sem elas
                                     // e elas são desenhadas a cada quadro.
-                                    val clipLevels = levels?.takeIf { it.clip == clip }?.levels
+                                    val clipSound = levels?.takeIf { it.clip == clip }?.sound
                                         ?: loadClipLevels(context, item.uri, clip)
                                     val base = withContext(Dispatchers.Default) {
-                                        renderShareCard(cover, text, colors, clipLevels?.let(::waveformBars), drawBars = clipLevels == null)
+                                        renderShareCard(cover, text, colors, clipSound?.levels?.let(::waveformBars), drawBars = clipSound == null)
                                     }
-                                    val video = exportShareVideo(context, base, clipLevels, colors.accent, item.uri, clip)
+                                    val video = exportShareVideo(context, base, clipSound?.spectrum, colors.accent, item.uri, clip)
                                     context.shareFile(video, "video/mp4", chooser)
                                 } catch (cancel: CancellationException) {
                                     throw cancel

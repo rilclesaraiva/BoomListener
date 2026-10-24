@@ -60,15 +60,16 @@ internal suspend fun saveShareImage(context: Context, card: Bitmap): File = with
 
 /**
  * Faz o vídeo: o banner durante o trecho, com o som da música desse trecho.
- * Com [levels], [card] vem sem as barrinhas e elas são desenhadas por cima a
- * cada quadro, pulsando com o som ([pulseBars]); sem, o banner fica parado.
+ * Com [spectrum], [card] vem sem as barrinhas e elas são desenhadas por cima a
+ * cada quadro, como um equalizador ([spectrumBars]: graves à esquerda, agudos
+ * à direita); sem, o banner fica parado.
  * Roda no Transformer do Media3 (que precisa da thread principal).
  */
 @OptIn(UnstableApi::class)
 internal suspend fun exportShareVideo(
     context: Context,
     card: ShareCardImage,
-    levels: FloatArray?,
+    spectrum: Array<FloatArray>?,
     barColor: Int,
     audioUri: String,
     clip: ShareClip,
@@ -83,8 +84,8 @@ internal suspend fun exportShareVideo(
             .build(),
     ).setFrameRate(VIDEO_FRAME_RATE)
         .apply {
-            if (levels != null) {
-                setEffects(Effects(emptyList(), listOf(OverlayEffect(listOf(PulseOverlay(levels, card.waveCenterY, barColor))))))
+            if (spectrum != null) {
+                setEffects(Effects(emptyList(), listOf(OverlayEffect(listOf(PulseOverlay(spectrum, card.waveCenterY, barColor))))))
             }
         }
         .build()
@@ -154,7 +155,7 @@ internal fun Context.shareFile(file: File, mimeType: String, chooserTitle: Strin
  */
 @OptIn(UnstableApi::class)
 private class PulseOverlay(
-    private val levels: FloatArray,
+    private val spectrum: Array<FloatArray>,
     private val centerY: Float,
     private val color: Int,
 ) : CanvasOverlay(true) {
@@ -164,7 +165,7 @@ private class PulseOverlay(
         val scale = canvas.width.toFloat() / SHARE_CARD_WIDTH
         canvas.save()
         canvas.scale(scale, scale)
-        drawWaveBars(canvas, SHARE_CARD_WIDTH / 2f, centerY, pulseBars(levels, presentationTimeUs / 1000), color)
+        drawWaveBars(canvas, SHARE_CARD_WIDTH / 2f, centerY, spectrumBars(spectrum, presentationTimeUs / 1000), color)
         canvas.restore()
     }
 }
