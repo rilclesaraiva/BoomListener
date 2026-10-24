@@ -6,8 +6,26 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [0.42.4] — 2026-10-23
 
-### 🐛 Fixes
-- Library → Artists: while you type, the search box no longer slides up under the status bar. It sticks to the top just below it, like the search on Home.
+**Third public beta.** 🎧 This release brings together everything since 0.40.3: a redesigned player and a lot of polish. Here are the highlights; the full list is in CHANGELOG.md.
+
+> 🧪 **Still a beta.** The phone in portrait is the main target. Landscape and tablet layouts still have broken spots we're working on. Please report anything odd in Issues.
+
+### ✨ New since 0.40.3
+- **The mini player grows into the full player.** Pull it up and it stretches to fill the screen, pushing the tab bar down, while its info fades into the full player. Pull down and it shrinks back.
+- **New player controls** (Material 3 Expressive): previous, play and next fill the whole width as one group. Play is the biggest button, round while paused and squarer while playing, and the buttons squish a little when pressed. Shuffle and Repeat are wide buttons with their names.
+- At the bottom of the player: where the sound is playing (with the device name) and what's up next.
+- Playing a song from a list puts it at the top of the queue, with the rest of the list after it.
+
+### 🐛 Fixes since 0.40.3
+- With the queue open, the player behind it is dimmed and can't be tapped by accident; the queue stops at its last song and no longer shows an empty space.
+- Shuffle no longer makes the covers flash or race past on the player.
+- Messages at the bottom of the screen show above the mini player instead of behind it.
+- Library → Artists: the search box sticks just below the status bar while you type, like the one on Home.
+
+### 🎨 Visual tweaks since 0.40.3
+- The mini player floats over the page, in the same color as the full player, with a faint glow around it.
+- Artist page: no top bar, the artist's initial while the photo loads, and the round picture is always the newest release's cover.
+- Home: the title scrolls with the page, the status bar turns solid under the sticky "Songs" header, and the fast-scroll bar starts below that header.
 
 ## [0.42.3] — 2026-10-23
 
