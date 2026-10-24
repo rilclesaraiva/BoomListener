@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.43.4] — 2026-10-24
+
+### 🐛 Fixes
+- Search boxes (Home and Library → Artists): on the first letter the box moves up to sit right under the status bar, so no cut-off bits of what's above it show at the top. After that the page stays still while you type.
+
 ## [0.43.2] — 2026-10-24
 
 ### 🐛 Fixes

@@ -185,8 +185,9 @@ internal fun CollectionsScreen(
                                         query = artistSearch.query,
                                         // Cada letra traz a tela de volta até a busca (logo abaixo das pílulas).
                                         onQueryChange = { text ->
+                                            val firstLetter = artistSearch.query.isEmpty() && text.isNotEmpty()
                                             viewModel.onArtistQueryChange(text)
-                                            searchScope.launch { listState.bringToSearch(SEARCH_ITEM_INDEX) }
+                                            searchScope.launch { listState.bringToSearch(SEARCH_ITEM_INDEX, firstLetter) }
                                         },
                                         placeholder = stringResource(R.string.feature_library_search_artists),
                                         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
