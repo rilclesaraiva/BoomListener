@@ -4,6 +4,12 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.43.5] — 2026-10-24
+
+### 🐛 Fixes
+- Search boxes: the box now stays exactly at the top for every letter you type, not only the first, so no cut-off bits show above it.
+- The status bar above the search boxes only turns solid once the box is stuck to the top. Before, it turned solid a bit early and cut off what was passing under it.
+
 ## [0.43.4] — 2026-10-24
 
 ### 🐛 Fixes

@@ -65,20 +65,10 @@ fun Modifier.tuckUnderStickyHeader(): Modifier {
 }
 
 /**
- * Se o cabeçalho (item [headerIndex]) já chegou ao topo, ou quase: a partir
- * daí a busca estaria embaixo dos ícones do sistema, então a faixa fica sólida.
+ * Se o cabeçalho (item [headerIndex]) está preso no topo: só aí a faixa das
+ * notificações acima dele fica sólida. Chegando perto ela continua
+ * transparente (escurecer antes cortava o que passava por baixo).
  */
 @Composable
-fun rememberStickyHeaderStuck(state: LazyListState, headerIndex: Int): State<Boolean> {
-    val statusPx = WindowInsets.statusBars.getTop(LocalDensity.current)
-    return remember(state, headerIndex, statusPx) {
-        derivedStateOf {
-            if (state.firstVisibleItemIndex >= headerIndex) {
-                true
-            } else {
-                val header = state.layoutInfo.visibleItemsInfo.firstOrNull { it.index == headerIndex }
-                header != null && header.offset < statusPx
-            }
-        }
-    }
-}
+fun rememberStickyHeaderStuck(state: LazyListState, headerIndex: Int): State<Boolean> =
+    remember(state, headerIndex) { derivedStateOf { state.firstVisibleItemIndex >= headerIndex } }

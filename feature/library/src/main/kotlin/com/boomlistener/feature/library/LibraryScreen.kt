@@ -110,6 +110,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.boomlistener.data.library.LibraryData
 
@@ -359,7 +360,7 @@ private fun TrackList(
                     onQueryChange = { text ->
                         val firstLetter = state.query.isEmpty() && text.isNotEmpty()
                         onQueryChange(text)
-                        scope.launch { listState.bringToSearch(headerItems - 1, firstLetter) }
+                        listState.bringToSearch(headerItems - 1, firstLetter, scope)
                     },
                     // Ao tocar na busca, a lista sobe até ela (os resultados aparecem logo abaixo).
                     onFocused = { scope.launch { listState.animateScrollToItem(headerItems - 1) } },
@@ -412,22 +413,24 @@ private fun TrackList(
  * Rola até a barra de busca (item [index]) ficar no topo. Perto, anima; longe,
  * pula direto (animar até um item fora da tela anda em etapas e trava).
  */
-internal suspend fun LazyListState.bringToSearch(index: Int, firstLetter: Boolean) {
-    // Já passou da busca (presa no topo, lista rolada nos resultados): os
-    // resultados voltam ao começo.
-    if (firstVisibleItemIndex > index) {
-        scrollToItem(index)
+internal fun LazyListState.bringToSearch(index: Int, firstLetter: Boolean, scope: CoroutineScope) {
+    val visible = layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
+    val atTop = firstVisibleItemIndex >= index || (visible != null && visible.offset <= NEAR_TOP_PX)
+    if (atTop) {
+        // Busca no topo (ou quase, ou a lista rolada nos resultados): fica
+        // exatamente no topo também depois que os resultados mudarem. Sem isso,
+        // a lista se reajustava a cada letra pela troca dos resultados, descia
+        // uns pixels e mostrava pedaços do que vem antes da busca. É um pedido
+        // para a próxima medida (nem anima nem cancela o campo de texto).
+        requestScrollToItem(index)
         return
     }
-    // Só na primeira letra a busca sobe até o topo exato (abaixo da faixa das
-    // notificações, sem pedaços do que vem antes). Nas letras seguintes ela já
-    // está lá e a página não se mexe: rolar a cada letra fazia a página tremer
-    // e recriava o campo (segurar o apagar só apagava uma letra).
-    if (!firstLetter) return
-    if (firstVisibleItemIndex == index && firstVisibleItemScrollOffset == 0) return
-    val visible = layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
-    if (visible != null) animateScrollToItem(index) else scrollToItem(index)
+    // Longe do topo: só na primeira letra a busca sobe até lá, animando.
+    if (firstLetter) scope.launch { animateScrollToItem(index) }
 }
+
+/** Distância do topo (px) em que a busca já conta como "no topo". */
+private const val NEAR_TOP_PX = 160
 
 /** Título "Músicas" com a barra de busca ao lado. */
 @Composable
