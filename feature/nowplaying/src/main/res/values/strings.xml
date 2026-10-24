@@ -65,4 +65,17 @@
     <string name="feature_nowplaying_details">Details</string>
     <string name="feature_nowplaying_favorite">Add to favorites</string>
     <string name="feature_nowplaying_unfavorite">Remove from favorites</string>
+    <string name="feature_nowplaying_share_card">Share banner</string>
+    <string name="feature_nowplaying_share_card_label">Listening now</string>
+    <string name="feature_nowplaying_share_card_colors">Colors</string>
+    <string name="feature_nowplaying_share_card_color_cover">Cover color</string>
+    <string name="feature_nowplaying_share_card_color_theme">App color</string>
+    <string name="feature_nowplaying_share_card_color_dark">Dark</string>
+    <string name="feature_nowplaying_share_card_clip">Clip: %1$s – %2$s</string>
+    <string name="feature_nowplaying_share_card_clip_hint">Drag to choose the 30 seconds that go with the video. The song jumps there so you can hear it.</string>
+    <string name="feature_nowplaying_share_card_image">Image</string>
+    <string name="feature_nowplaying_share_card_video">Video with 30 s</string>
+    <string name="feature_nowplaying_share_card_making">Making the video…</string>
+    <string name="feature_nowplaying_share_card_error">Couldn\'t make the video for this song. You can still share the image.</string>
+    <string name="feature_nowplaying_share_card_chooser">Share with</string>
 </resources>

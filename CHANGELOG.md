@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.44.0] — 2026-10-24
+
+### ✨ New
+- Share banner: in the player menu, "Share banner" makes a story-sized card with the cover, the song and the artist, ready for Instagram stories, WhatsApp status and the like. Pick one of three color styles, then share just the image or a video with 30 seconds of the song. Drag the bar to choose which 30 seconds; the song jumps there so you can hear it. Only a 30-second clip ever goes out, never the whole song.
+
+### 🐛 Fixes
+- Search results (Home and Library → Artists) no longer leave a huge empty space after the last result.
+- Library → Artists: the fast-scroll bar stays below the search box instead of going over the top of the page.
+
 ## [0.43.6] — 2026-10-24
 
 ### 🐛 Fixes

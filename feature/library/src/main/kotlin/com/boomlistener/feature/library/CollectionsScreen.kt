@@ -42,6 +42,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -145,6 +147,8 @@ internal fun CollectionsScreen(
                     onOpenFavorites = onOpenFavorites,
                 )
               val artistSearchStuck by rememberStickyHeaderStuck(listState, SEARCH_ITEM_INDEX)
+              val artistSearchRoom = rememberSearchRoom(listState, SEARCH_ITEM_INDEX, entries to artistSearch)
+              var artistSearchPx by remember { mutableIntStateOf(0) }
               LazyColumn(state = listState, contentPadding = padding) {
                 item(key = "pageTitle") {
                     BoomPageTitle(stringResource(R.string.feature_library_collections_title)) {
@@ -180,7 +184,7 @@ internal fun CollectionsScreen(
                         // digitando ela fica logo abaixo dessa faixa (sólida), nunca
                         // por baixo dela.
                         stickyHeader(key = "artistSearch") {
-                            BoomStickyHeader(stuck = artistSearchStuck) {
+                            BoomStickyHeader(stuck = artistSearchStuck, modifier = Modifier.onSizeChanged { artistSearchPx = it.height }) {
                                     BoomSearchField(
                                         query = artistSearch.query,
                                         // Cada letra traz a tela de volta até a busca (logo abaixo das pílulas).
@@ -207,7 +211,7 @@ internal fun CollectionsScreen(
                             )
                             // Sem este espaço, poucos resultados deixariam a lista mais curta
                             // que a tela e ela desceria a cada letra (a busca pularia de lugar).
-                            item(key = "searchRoom") { Spacer(Modifier.fillParentMaxHeight()) }
+                            searchRoomItem(artistSearchRoom)
                         }
                     }
                     CollectionKind.Playlists -> {
@@ -233,12 +237,19 @@ internal fun CollectionsScreen(
               }
                 // Letra de cada linha da lista, na mesma ordem dos itens acima.
                 val labels = remember(current, artistSearch, grid) { collectionLabels(current, artistSearch, entries, grid) }
+                // Em Artistas, a barrinha é só da lista abaixo da busca: começa
+                // embaixo da busca presa (como no Início) e nunca sobe por cima dela.
+                val artists = current.selected == CollectionKind.Artists
                 BoomFastScroller(
                     state = listState,
                     label = { index -> labels.getOrNull(index) ?: labels.firstOrNull { it != null } },
+                    startIndex = if (artists) SEARCH_ITEM_INDEX else 0,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
+                        .padding(
+                            top = if (artists) with(LocalDensity.current) { artistSearchPx.toDp() } else padding.calculateTopPadding(),
+                            bottom = padding.calculateBottomPadding(),
+                        ),
                 )
             }
         }

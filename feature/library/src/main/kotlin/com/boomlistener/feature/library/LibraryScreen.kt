@@ -263,6 +263,7 @@ private fun TrackList(
             var songsHeaderPx by remember { mutableIntStateOf(0) }
             // Preso no topo: a faixa das notificações acima dele fica sólida.
             val songsHeaderStuck by rememberStickyHeaderStuck(listState, headerItems - 1)
+            val searchRoom = rememberSearchRoom(listState, headerItems - 1, state.tracks)
             // O item logo antes do "Músicas" fica por baixo da faixa dele (sem vão).
             val tuck = Modifier.tuckUnderStickyHeader()
           // A lista vai até o topo da tela: a faixa das notificações fica
@@ -388,9 +389,7 @@ private fun TrackList(
             // Buscando, os resultados podem ser poucos: sem este espaço no fim, a
             // lista ficaria mais curta que a tela e desceria sozinha (a busca
             // pularia de lugar a cada letra). Com ele, a busca fica onde está.
-            if (state.query.isNotEmpty()) {
-                item(key = "searchRoom") { Spacer(Modifier.fillParentMaxHeight()) }
-            }
+            if (state.query.isNotEmpty()) searchRoomItem(searchRoom)
           }
             // Arrastar pela direita pula pela lista, mostrando a letra.
             BoomFastScroller(

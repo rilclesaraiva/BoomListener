@@ -126,6 +126,8 @@ internal fun NowPlayingContent(
     var showSpeed by remember { mutableStateOf(false) }
     if (showSleep) SleepTimerSheet(playbackSettings, onDismiss = { showSleep = false })
     if (showSpeed) SpeedSheet(playbackSettings, onDismiss = { showSpeed = false })
+    var showShareCard by remember { mutableStateOf(false) }
+    if (showShareCard && item != null) ShareCardSheet(viewModel, item, onDismiss = { showShareCard = false })
 
     // Com a letra aberta, o "voltar" fecha só a letra (a capa volta com a
     // mesma animação), não o player inteiro. A fila, quando aberta, tem prioridade.
@@ -170,6 +172,10 @@ internal fun NowPlayingContent(
                                     ),
                                     kind = BoomMenuKind.Lyrics,
                                 ) { viewModel.toggleLyrics() },
+                                // Banner para stories/status: imagem ou vídeo com 30 s da música.
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_share_card), kind = BoomMenuKind.ShareCard) {
+                                    showShareCard = true
+                                },
                                 // Mix: enche a fila com o resto da biblioteca, misturado.
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_mix), kind = BoomMenuKind.Mix) { viewModel.mix() },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_queue_open), kind = BoomMenuKind.Queue) { queueState.expand() },

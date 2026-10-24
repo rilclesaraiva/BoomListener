@@ -19,6 +19,9 @@ dependencies {
     implementation(project(":data:deezer"))
     // Arrastar para reordenar a fila.
     implementation(libs.reorderable)
+    // Banner para compartilhar: vídeo com o trecho de 30 s (Transformer) e o FileProvider.
+    implementation(libs.androidx.media3.transformer)
+    implementation(libs.androidx.core)
 
     testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -66,6 +66,7 @@ val LocalFavoriteShare = staticCompositionLocalOf<FavoriteShare?> { null }
 enum class BoomMenuKind {
     Share,
     ShareWithFavorite,
+    ShareCard,
     Lyrics,
     PlayNow,
     PlayNext,
@@ -92,6 +93,7 @@ internal val BoomMenuKind.icon: ImageVector?
     get() = when (this) {
         BoomMenuKind.Share -> BoomIcons.Share
         BoomMenuKind.ShareWithFavorite -> BoomIcons.Send
+        BoomMenuKind.ShareCard -> BoomIcons.Image
         BoomMenuKind.Lyrics -> BoomIcons.Article
         BoomMenuKind.PlayNow -> BoomIcons.Play
         BoomMenuKind.PlayNext -> BoomIcons.QueuePlayNext
