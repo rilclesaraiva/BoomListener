@@ -4,11 +4,6 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
-## [0.43.3] — 2026-10-24
-
-### 🎨 Visual tweaks
-- While you type in a search box, everything above it is hidden behind the page color, so no cut-off bits of the filter chips or artist names show up at the top of the screen.
-
 ## [0.43.2] — 2026-10-24
 
 ### 🐛 Fixes
