@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.43.6] — 2026-10-24
+
+### 🐛 Fixes
+- Search boxes (Home and Library → Artists): while you type near the top, the box now sticks right under a solid status bar and stays there. Before, each letter nudged the page back a few pixels, so the box came loose, the status bar flickered and the page seemed to tremble.
+
 ## [0.43.5] — 2026-10-24
 
 ### 🐛 Fixes
