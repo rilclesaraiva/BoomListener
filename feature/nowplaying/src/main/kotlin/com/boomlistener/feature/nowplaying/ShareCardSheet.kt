@@ -31,6 +31,13 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -111,9 +118,11 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
         if (loaded != null) value = withContext(Dispatchers.Default) { renderShareCard(cover, text, colors) }
     }
 
-    // Começo do trecho: onde a música está ao abrir o painel.
-    var startMs by remember(item.uri) { mutableFloatStateOf(ShareClip.at(playback.positionMs, durationMs).startMs.toFloat()) }
+    // O trecho começa sempre no começo da música; a pessoa arrasta para escolher.
+    var startMs by remember(item.uri) { mutableFloatStateOf(0f) }
     val clip = ShareClip.at(startMs.toLong(), durationMs)
+    var previewStart by remember(item.uri) { mutableLongStateOf(0L) }
+    SharePreview(item.uri, ShareClip.at(previewStart, durationMs), viewModel)
     val maxStart = ShareClip.maxStart(durationMs)
 
     var making by remember { mutableStateOf<Job?>(null) }
@@ -189,8 +198,8 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                 Slider(
                     value = startMs.coerceIn(0f, maxStart.toFloat()),
                     onValueChange = { startMs = it },
-                    // Solto o dedo, a música pula para o começo do trecho (para ouvir).
-                    onValueChangeFinished = { viewModel.seekTo(clip.startMs) },
+                    // Solto o dedo, a prévia passa a tocar o trecho escolhido.
+                    onValueChangeFinished = { previewStart = clip.startMs },
                     valueRange = 0f..maxStart.toFloat(),
                     enabled = making == null,
                     modifier = Modifier.fillMaxWidth(),
@@ -263,3 +272,44 @@ private const val COVER_PX = 780
 private val PREVIEW_HEIGHT = 360.dp
 private val SWATCH_SIZE = 44.dp
 private val BUTTON_ROW_HEIGHT = 48.dp
+
+/**
+ * Toca só o trecho escolhido, em volta, enquanto o painel está aberto. A
+ * música que estava tocando pausa ao abrir e volta ao fechar; a prévia é um
+ * player à parte (não mexe na fila nem no ponto da música).
+ */
+@Composable
+private fun SharePreview(uri: String, clip: ShareClip, viewModel: NowPlayingViewModel) {
+    val context = LocalContext.current
+    val player = remember {
+        ExoPlayer.Builder(context.applicationContext)
+            // Sem pedir o foco de áudio: o player principal já está pausado por nós
+            // e, se perdesse o foco, não voltaria a tocar sozinho ao fechar.
+            .setAudioAttributes(AudioAttributes.DEFAULT, false)
+            .build()
+            .apply { repeatMode = Player.REPEAT_MODE_ONE }
+    }
+    DisposableEffect(player) {
+        val wasPlaying = viewModel.state.value.isPlaying
+        if (wasPlaying) viewModel.togglePlayPause()
+        onDispose {
+            player.release()
+            if (wasPlaying && !viewModel.state.value.isPlaying) viewModel.togglePlayPause()
+        }
+    }
+    LaunchedEffect(player, uri, clip) {
+        player.setMediaItem(
+            MediaItem.Builder()
+                .setUri(uri)
+                .setClippingConfiguration(
+                    MediaItem.ClippingConfiguration.Builder()
+                        .setStartPositionMs(clip.startMs)
+                        .setEndPositionMs(clip.endMs)
+                        .build(),
+                )
+                .build(),
+        )
+        player.prepare()
+        player.play()
+    }
+}

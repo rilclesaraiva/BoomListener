@@ -21,6 +21,8 @@ dependencies {
     implementation(libs.reorderable)
     // Banner para compartilhar: vídeo com o trecho de 30 s (Transformer) e o FileProvider.
     implementation(libs.androidx.media3.transformer)
+    // Prévia do trecho no painel do banner (um player só dele).
+    implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.core)
 
     testImplementation(libs.kotlinx.coroutines.test)

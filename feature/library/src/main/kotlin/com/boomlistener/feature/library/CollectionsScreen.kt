@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.runtime.setValue
@@ -147,8 +148,8 @@ internal fun CollectionsScreen(
                     onOpenFavorites = onOpenFavorites,
                 )
               val artistSearchStuck by rememberStickyHeaderStuck(listState, SEARCH_ITEM_INDEX)
-              val artistSearchRoom = rememberSearchRoom(listState, SEARCH_ITEM_INDEX, entries to artistSearch)
               var artistSearchPx by remember { mutableIntStateOf(0) }
+              val artistSearchRoom = rememberSearchRoom(listState, SEARCH_ITEM_INDEX, entries to artistSearch)
               LazyColumn(state = listState, contentPadding = padding) {
                 item(key = "pageTitle") {
                     BoomPageTitle(stringResource(R.string.feature_library_collections_title)) {
@@ -237,17 +238,30 @@ internal fun CollectionsScreen(
               }
                 // Letra de cada linha da lista, na mesma ordem dos itens acima.
                 val labels = remember(current, artistSearch, grid) { collectionLabels(current, artistSearch, entries, grid) }
-                // Em Artistas, a barrinha é só da lista abaixo da busca: começa
-                // embaixo da busca presa (como no Início) e nunca sobe por cima dela.
+                // Em Artistas, a barrinha é só da lista abaixo da busca: o trilho
+                // começa logo embaixo dela, onde quer que ela esteja (presa no topo
+                // ou mais abaixo, antes de rolar), e nunca sobe por cima.
                 val artists = current.selected == CollectionKind.Artists
+                val searchBottomPx by remember(listState) {
+                    derivedStateOf {
+                        val search = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == SEARCH_ITEM_INDEX }
+                        search?.let { it.offset + it.size } ?: 0
+                    }
+                }
+                // Balão de letra só nos seus artistas em lista (estão em ordem
+                // alfabética). Buscando, ou em grade, a barrinha fica sem balão.
+                val showLabel = !(artists && (grid || searching))
                 BoomFastScroller(
                     state = listState,
-                    label = { index -> labels.getOrNull(index) ?: labels.firstOrNull { it != null } },
-                    startIndex = if (artists) SEARCH_ITEM_INDEX else 0,
+                    label = { index -> if (showLabel) labels.getOrNull(index) ?: labels.firstOrNull { it != null } else null },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(
-                            top = if (artists) with(LocalDensity.current) { artistSearchPx.toDp() } else padding.calculateTopPadding(),
+                            top = if (artists) {
+                                with(LocalDensity.current) { maxOf(searchBottomPx, artistSearchPx).toDp() }
+                            } else {
+                                padding.calculateTopPadding()
+                            },
                             bottom = padding.calculateBottomPadding(),
                         ),
                 )

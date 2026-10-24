@@ -74,7 +74,7 @@
     <string name="feature_nowplaying_share_card_color_theme">Cor do app</string>
     <string name="feature_nowplaying_share_card_color_dark">Escuro</string>
     <string name="feature_nowplaying_share_card_clip">Trecho: %1$s – %2$s</string>
-    <string name="feature_nowplaying_share_card_clip_hint">Arraste para escolher os 30 segundos que vão no vídeo. A música pula para lá para você ouvir.</string>
+    <string name="feature_nowplaying_share_card_clip_hint">Arraste para escolher os 30 segundos que vão no vídeo. O trecho toca aqui enquanto este painel está aberto.</string>
     <string name="feature_nowplaying_share_card_image">Imagem</string>
     <string name="feature_nowplaying_share_card_video">Vídeo com 30 s</string>
     <string name="feature_nowplaying_share_card_making">Fazendo o vídeo…</string>

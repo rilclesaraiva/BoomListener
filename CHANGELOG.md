@@ -4,6 +4,12 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.44.1] — 2026-10-24
+
+### 🎨 Visual tweaks
+- Share banner: the clip now starts at the beginning of the song. While the panel is open, the song you were playing pauses and only the chosen 30 seconds play, on repeat; moving the bar changes the clip, not the song you were listening to, which picks up again when you close the panel.
+- Library → Artists: the fast-scroll bar is always there for your artists, starting right below the search box. The letter bubble only shows for your artists in list view (they're in alphabetical order), not in grid view or while searching.
+
 ## [0.44.0] — 2026-10-24
 
 ### ✨ New
