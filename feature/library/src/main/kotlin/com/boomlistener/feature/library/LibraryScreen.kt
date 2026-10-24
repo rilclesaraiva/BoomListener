@@ -446,7 +446,7 @@ private fun SongsHeader(
     // Preso no topo, fica embaixo da faixa das notificações: a faixa de cima
     // (do tamanho dela) deixa essa área sólida, na mesma cor do cabeçalho.
     // Fora do topo, ela é só um respiro acima do título.
-    BoomStickyHeader(stuck = stuck, modifier = modifier) {
+    BoomStickyHeader(stuck = stuck, coverAbove = query.isNotEmpty(), modifier = modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 40.dp, top = 12.dp, bottom = 8.dp),

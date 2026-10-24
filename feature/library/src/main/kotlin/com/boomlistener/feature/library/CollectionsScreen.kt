@@ -180,7 +180,7 @@ internal fun CollectionsScreen(
                         // digitando ela fica logo abaixo dessa faixa (sólida), nunca
                         // por baixo dela.
                         stickyHeader(key = "artistSearch") {
-                            BoomStickyHeader(stuck = artistSearchStuck) {
+                            BoomStickyHeader(stuck = artistSearchStuck, coverAbove = searching) {
                                     BoomSearchField(
                                         query = artistSearch.query,
                                         // Cada letra traz a tela de volta até a busca (logo abaixo das pílulas).
