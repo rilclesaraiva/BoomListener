@@ -3,6 +3,7 @@
 
 package com.boomlistener.app
 
+import com.boomlistener.core.common.OfflineMode
 import android.app.Application
 import com.boomlistener.core.player.PlaybackHooks
 import com.boomlistener.data.wellbeing.HistoryData
@@ -25,6 +26,8 @@ class BoomApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Antes de tudo: com o modo offline ligado, nada pode ir para a internet.
+        OfflineMode.init(this)
         val stats = StatsData.repository(this)
         val history = HistoryData.repository(this)
         // Abre o perfil já no início: na primeira vez depois da versão com

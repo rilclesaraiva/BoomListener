@@ -211,6 +211,7 @@ private fun HistoryRow(
         trailingContent = {
             BoomMoreMenu(
                 actions = listOfNotNull(
+                    playNextAction(entry.uri),
                     BoomMenuAction(stringResource(R.string.feature_wellbeing_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { songMenu.onAddToPlaylist(entry.uri) },
                     favoriteAction(entry.uri),
                     entry.artist?.let { name ->

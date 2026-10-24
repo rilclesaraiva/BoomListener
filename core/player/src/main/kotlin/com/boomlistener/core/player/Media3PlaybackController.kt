@@ -151,6 +151,22 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         }
     }
 
+    override fun playNext(track: Track) = withController { player ->
+        val item = track.toMediaItem()
+        if (player.mediaItemCount == 0) {
+            shuffle.clear()
+            player.setMediaItems(listOf(item), 0, 0L)
+            player.prepare()
+            player.play()
+            return@withController
+        }
+        val current = player.currentMediaItem
+        // Com o aleatório ligado, entra também na ordem original (logo depois
+        // da atual), para continuar lá quando o aleatório for desligado.
+        shuffle.insertAfter(current, item)
+        player.addMediaItem(player.currentMediaItemIndex + 1, item)
+    }
+
     override fun replaceUpNext(tracks: List<Track>) = withController { player ->
         val count = player.mediaItemCount
         val items = tracks.map { it.toMediaItem() }

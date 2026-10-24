@@ -3,6 +3,8 @@
 
 package com.boomlistener.feature.settings
 
+import androidx.compose.material3.Switch
+import com.boomlistener.core.common.OfflineMode
 import android.content.Context
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -61,6 +63,7 @@ internal fun SettingsScreen(
             onSkip = updatesViewModel::skipVersion,
         )
     }
+    val offline by OfflineMode.enabled.collectAsStateWithLifecycle()
     BoomScreenScaffold(
         title = stringResource(R.string.feature_settings_title),
         onBack = onBack,
@@ -101,6 +104,15 @@ internal fun SettingsScreen(
                         title = stringResource(R.string.feature_settings_share),
                         subtitle = stringResource(R.string.feature_settings_share_summary),
                         onClick = onOpenShare,
+                    )
+                    // Modo 100% offline: nada vai para a internet (só a verificação de atualizações).
+                    BoomSettingsItem(
+                        icon = BoomIcons.CloudOff,
+                        accent = BoomAccent.Secondary,
+                        title = stringResource(R.string.feature_settings_offline),
+                        subtitle = stringResource(R.string.feature_settings_offline_summary),
+                        onClick = { OfflineMode.set(context, !offline) },
+                        trailing = { Switch(checked = offline, onCheckedChange = { OfflineMode.set(context, it) }) },
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.Wellbeing,

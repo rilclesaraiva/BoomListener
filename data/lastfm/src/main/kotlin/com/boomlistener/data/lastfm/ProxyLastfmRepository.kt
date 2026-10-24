@@ -3,6 +3,7 @@
 
 package com.boomlistener.data.lastfm
 
+import com.boomlistener.core.common.OfflineMode
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -75,6 +76,7 @@ internal class ProxyLastfmRepository(context: Context) : LastfmRepository {
         if (file.exists() && System.currentTimeMillis() - file.lastModified() < CACHE_TTL_MS) {
             runCatching { return JSONObject(file.readText()) }
         }
+        OfflineMode.requireOnline()
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 10_000
             readTimeout = 10_000

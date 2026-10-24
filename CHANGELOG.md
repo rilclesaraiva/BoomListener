@@ -4,6 +4,18 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.43.0] — 2026-10-23
+
+### ✨ New
+- **Offline mode** (Settings): when it's on, the app doesn't go to the internet at all: no artist pages, photos, lyrics or release radar. Only the app-update check still works. Photos and covers you've already seen keep showing. It's off by default.
+- **Add to queue:** hold a song (or tap ⋮) and choose "Add to queue" to make it play right after the current one.
+- **Playlist covers:** playlists with more than 3 songs from at least 4 different albums get a cover made of four album covers.
+- **New playlist and album pages:** a big cover across the top (the four-cover mosaic for playlists), the name centered over it, and a big round Play button with Shuffle next to it. It's on purpose different from artist pages, so you can tell them apart at a glance.
+
+### 🎨 Visual tweaks
+- The search boxes on Home and in Library → Artists sit closer to what's above them, and the songs below them come up with them.
+- The "More artists" line in the artist search keeps the same height while it loads, so the list no longer jumps a little as you type.
+
 ## [0.42.4] — 2026-10-23
 
 **Third public beta.** 🎧 This release brings together everything since 0.40.3: a redesigned player and a lot of polish. Here are the highlights; the full list is in CHANGELOG.md.

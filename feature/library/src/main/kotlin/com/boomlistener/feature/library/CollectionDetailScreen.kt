@@ -37,6 +37,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.boomlistener.core.designsystem.component.BoomMosaicArtwork
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -68,7 +81,11 @@ import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
-private val HeaderCover = 168.dp
+/** Altura máxima da capa do topo (em pé ela é quadrada, da largura da tela). */
+private val HeaderMaxHeight = 420.dp
+
+/** Tamanho em que as capas do topo são carregadas. */
+private val HeaderImageSize = 420.dp
 
 /**
  * Um gênero, álbum ou playlist aberto: capa, Tocar / Aleatório e as músicas.
@@ -102,11 +119,8 @@ internal fun CollectionDetailScreen(
         value = firstUri?.let { viewModel.artwork(it, headerPx)?.asImageBitmap() }
     }
 
-    BoomScreenScaffold(
-        title = ready?.name.orEmpty(),
-        onBack = onBack,
-        modifier = modifier,
-        actions = {
+    // Menu da playlist (adicionar, renomear, apagar): fica na linha de botões do topo.
+    val playlistMenu: @Composable () -> Unit = {
             if (ready?.isPlaylist == true) {
                 BoomMoreMenu(
                     actions = listOf(
@@ -121,7 +135,14 @@ internal fun CollectionDetailScreen(
                     ),
                 )
             }
-        },
+    }
+
+    BoomScreenScaffold(
+        title = ready?.name.orEmpty(),
+        onBack = onBack,
+        modifier = modifier,
+        // Sem barra presa: a capa grande é o topo da página (o voltar fica parado no canto).
+        topBar = {},
     ) { padding ->
         when (val current = state) {
             CollectionDetailUiState.Loading -> BoomLoading(Modifier.padding(padding))
@@ -141,6 +162,7 @@ internal fun CollectionDetailScreen(
                 onDetails = { showDetails(it.uri, it.title) },
                 onAddSongs = { addingSongs = true },
                 onOpenAlbum = onOpenAlbum,
+                playlistMenu = playlistMenu,
             )
         }
     }
@@ -195,6 +217,7 @@ private fun TrackListWithHeader(
     onDetails: (Track) -> Unit,
     onAddSongs: () -> Unit,
     onOpenAlbum: ((String) -> Unit)?,
+    playlistMenu: @Composable () -> Unit,
 ) {
     val listState = rememberLazyListState()
     // Reordenar mexe na lista da tela na hora; a playlist só é gravada ao soltar.
@@ -212,7 +235,7 @@ private fun TrackListWithHeader(
 
     Box(Modifier.fillMaxSize()) {
     LazyColumn(state = listState, contentPadding = padding) {
-        item(key = "header") { Header(state, viewModel, onAddSongs) }
+        item(key = "header") { Header(state, viewModel, onAddSongs, playlistMenu) }
         if (state.tracks.isEmpty()) {
             item(key = "empty") {
                 Text(
@@ -276,20 +299,65 @@ private fun TrackListWithHeader(
     }
 }
 
+/**
+ * Topo de playlist, álbum ou gênero: a capa grande de ponta a ponta (montada
+ * com quatro capas nas playlists, [mosaicCovers]) esmaecendo no fundo, o nome
+ * centralizado em cima dela e a linha de botões (tocar redondo e grande à
+ * direita). Diferente da página do artista, que tem foto, capa redonda e o
+ * nome à esquerda, para não se confundirem.
+ */
 @Composable
-private fun Header(state: CollectionDetailUiState.Ready, viewModel: CollectionDetailViewModel, onAddSongs: () -> Unit) {
-    val px = with(LocalDensity.current) { HeaderCover.roundToPx() }
-    val coverUri = state.tracks.firstOrNull()?.uri
-    val cover by produceState<ImageBitmap?>(initialValue = null, coverUri) {
-        value = coverUri?.let { viewModel.artwork(it, px)?.asImageBitmap() }
+private fun Header(
+    state: CollectionDetailUiState.Ready,
+    viewModel: CollectionDetailViewModel,
+    onAddSongs: () -> Unit,
+    playlistMenu: @Composable () -> Unit,
+) {
+    val px = with(LocalDensity.current) { HeaderImageSize.roundToPx() }
+    val covers = if (state.isPlaylist || state.isFavorites) mosaicCovers(state.tracks) else listOfNotNull(state.tracks.firstOrNull())
+    val uris = covers.map { it.uri }
+    val images by produceState<List<ImageBitmap?>>(initialValue = List(uris.size) { null }, uris) {
+        value = uris.map { uri -> viewModel.artwork(uri, px)?.asImageBitmap() }
     }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-    ) {
-        BoomArtwork(image = cover, fallbackText = state.name, size = HeaderCover)
-        Spacer(Modifier.size(12.dp))
-        Text(state.name, style = MaterialTheme.typography.headlineSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    val background = MaterialTheme.colorScheme.background
+    val hasTracks = state.tracks.isNotEmpty()
+
+    Column(Modifier.fillMaxWidth()) {
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            Box(Modifier.fillMaxWidth().height(minOf(maxWidth, HeaderMaxHeight))) {
+                when {
+                    covers.size >= MOSAIC_SIZE -> BoomMosaicArtwork(images, size = null, shape = RectangleShape, modifier = Modifier.fillMaxSize())
+                    images.firstOrNull() != null -> Image(
+                        bitmap = images.first()!!,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    else -> Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.secondaryContainer),
+                    ) {
+                        Icon(
+                            if (state.isPlaylist || state.isFavorites) BoomIcons.Playlist else BoomIcons.Album,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(72.dp),
+                        )
+                    }
+                }
+                // A capa esmaece até o fundo da página; o nome fica em cima dessa parte.
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.4f to Color.Transparent, 1f to background)))
+                Text(
+                    state.name,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp),
+                )
+            }
+        }
         Text(
             text = listOfNotNull(
                 state.subtitle,
@@ -300,26 +368,32 @@ private fun Header(state: CollectionDetailUiState.Ready, viewModel: CollectionDe
             ).joinToString(" · "),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp),
         )
-        Spacer(Modifier.size(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = { viewModel.play() }, enabled = state.tracks.isNotEmpty()) {
-                Icon(BoomIcons.Play, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.feature_library_play))
+        // Ações de apoio à esquerda; aleatório e tocar (o maior) à direita.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
+        ) {
+            if (state.isPlaylist) {
+                FilledTonalIconButton(onClick = onAddSongs, modifier = Modifier.size(48.dp)) {
+                    Icon(BoomIcons.Add, contentDescription = stringResource(R.string.feature_library_add_songs))
+                }
+                playlistMenu()
             }
-            FilledTonalButton(onClick = viewModel::shuffle, enabled = state.tracks.isNotEmpty()) {
-                Icon(BoomIcons.Shuffle, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.feature_library_shuffle_all))
+            Spacer(Modifier.weight(1f))
+            FilledTonalIconButton(onClick = viewModel::shuffle, enabled = hasTracks, modifier = Modifier.size(48.dp)) {
+                Icon(BoomIcons.Shuffle, contentDescription = stringResource(R.string.feature_library_shuffle_all))
             }
-        }
-        if (state.isPlaylist) {
-            Spacer(Modifier.size(8.dp))
-            OutlinedButton(onClick = onAddSongs) {
-                Icon(BoomIcons.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.feature_library_add_songs))
+            FilledIconButton(
+                onClick = { viewModel.play() },
+                enabled = hasTracks,
+                shape = CircleShape,
+                modifier = Modifier.size(64.dp),
+            ) {
+                Icon(BoomIcons.Play, contentDescription = stringResource(R.string.feature_library_play), modifier = Modifier.size(32.dp))
             }
         }
     }
@@ -370,6 +444,7 @@ private fun DetailTrackRow(
         trailingContent = {
                 BoomMoreMenu(
                     actions = listOfNotNull(
+                        playNextAction(track),
                         BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { onAddToPlaylist(track) },
                         favoriteAction(track.uri),
                         if (isPlaylist) {

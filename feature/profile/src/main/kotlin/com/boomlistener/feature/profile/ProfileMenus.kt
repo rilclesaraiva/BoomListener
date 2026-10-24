@@ -61,6 +61,7 @@ internal fun ProfileSongMenuSheet(
         actions = listOfNotNull(
             BoomMenuAction(stringResource(R.string.feature_profile_play), kind = BoomMenuKind.PlayNow, onClick = onPlay),
             favoriteAction(uri),
+            playNextAction(uri),
             BoomMenuAction(stringResource(R.string.feature_profile_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { menu.onAddToPlaylist(uri) },
             artist?.takeIf { it.isNotBlank() }?.let { name ->
                 BoomMenuAction(stringResource(R.string.feature_profile_go_to_artist), kind = BoomMenuKind.GoToArtist) {

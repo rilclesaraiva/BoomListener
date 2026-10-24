@@ -61,6 +61,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.boomlistener.core.designsystem.component.tuckUnderStickyHeader
+import com.boomlistener.core.designsystem.component.rememberStickyHeaderStuck
+import com.boomlistener.core.designsystem.component.BoomStickyHeader
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
@@ -257,6 +260,10 @@ private fun TrackList(
             val headerItems = 3 + (if (home != null) 3 else 0)
             // Altura do "Músicas" preso no topo, para a barrinha começar abaixo dele.
             var songsHeaderPx by remember { mutableIntStateOf(0) }
+            // Preso no topo: a faixa das notificações acima dele fica sólida.
+            val songsHeaderStuck by rememberStickyHeaderStuck(listState, headerItems - 1)
+            // O item logo antes do "Músicas" fica por baixo da faixa dele (sem vão).
+            val tuck = Modifier.tuckUnderStickyHeader()
           // A lista vai até o topo da tela: a faixa das notificações fica
           // transparente e mostra a página rolando por trás. O "Músicas", preso
           // no topo, traz a própria faixa sólida (SongsHeader) e cobre essa área.
@@ -271,7 +278,10 @@ private fun TrackList(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     // Folga à direita: a barra de rolagem rápida fica nessa borda.
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 48.dp, top = 4.dp, bottom = 8.dp),
+                    modifier = Modifier
+                        .then(if (home == null) tuck else Modifier)
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 48.dp, top = 4.dp, bottom = 8.dp),
                 ) {
                     FilledTonalIconButton(
                         onClick = onShuffleAll,
@@ -319,6 +329,7 @@ private fun TrackList(
                     }
                 }
                 item(key = "artists") {
+                  Column(tuck) {
                     if (home.artists.isNotEmpty()) {
                         HomeSectionTitle(
                             stringResource(R.string.feature_library_artists),
@@ -333,12 +344,14 @@ private fun TrackList(
                             }
                         }
                     }
+                  }
                 }
             }
             // "Músicas" com a busca ao lado: fica sempre, mesmo buscando.
             // Fica presa no topo ao rolar: a busca está sempre à mão.
             stickyHeader(key = "songsTitle") {
                 SongsHeader(
+                    stuck = songsHeaderStuck,
                     modifier = Modifier.onSizeChanged { songsHeaderPx = it.height },
                     query = state.query,
                     // Cada letra digitada traz a tela de volta até a busca (a pessoa
@@ -415,17 +428,16 @@ private fun SongsHeader(
     query: String,
     onQueryChange: (String) -> Unit,
     onFocused: () -> Unit,
+    stuck: Boolean,
     modifier: Modifier = Modifier,
 ) {
     // Preso no topo, fica embaixo da faixa das notificações: a faixa de cima
     // (do tamanho dela) deixa essa área sólida, na mesma cor do cabeçalho.
     // Fora do topo, ela é só um respiro acima do título.
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier) {
-    Column {
-    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+    BoomStickyHeader(stuck = stuck, modifier = modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 40.dp, top = 12.dp, bottom = 8.dp),
     ) {
         Text(stringResource(R.string.feature_library_songs), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.width(16.dp))
@@ -436,7 +448,6 @@ private fun SongsHeader(
             modifier = Modifier.weight(1f),
             onFocused = onFocused,
         )
-    }
     }
     }
 }
@@ -629,6 +640,7 @@ private fun SongMenuView(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val actions = listOfNotNull(
+        playNextAction(track),
         BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { menu.onAddToPlaylist(track) },
         favoriteAction(track.uri),
         track.album?.takeIf { it.isNotBlank() }?.let {

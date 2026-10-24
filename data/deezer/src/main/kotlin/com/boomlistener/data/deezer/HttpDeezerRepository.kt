@@ -3,6 +3,7 @@
 
 package com.boomlistener.data.deezer
 
+import com.boomlistener.core.common.OfflineMode
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -190,6 +191,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         runCatching {
             val file = File(imageCache, sha1(url))
             if (!file.exists()) {
+                OfflineMode.requireOnline()
                 val connection = URL(url).openConnection() as HttpURLConnection
                 connection.connectTimeout = 10_000
                 connection.readTimeout = 15_000
@@ -231,6 +233,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             runCatching {
                 val file = File(imageCache, sha1(url))
                 if (!file.exists()) {
+                    OfflineMode.requireOnline()
                     val connection = URL(url).openConnection() as HttpURLConnection
                     connection.connectTimeout = 10_000
                     connection.readTimeout = 15_000
@@ -260,6 +263,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         if (file.exists() && System.currentTimeMillis() - file.lastModified() < JSON_TTL_MS) {
             runCatching { return JSONObject(file.readText()) }
         }
+        OfflineMode.requireOnline()
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 10_000
             readTimeout = 10_000

@@ -45,6 +45,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.boomlistener.core.designsystem.component.BoomMosaicArtwork
+import androidx.compose.foundation.layout.heightIn
+import com.boomlistener.core.designsystem.component.tuckUnderStickyHeader
+import com.boomlistener.core.designsystem.component.rememberStickyHeaderStuck
+import com.boomlistener.core.designsystem.component.BoomStickyHeader
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.WindowInsets
@@ -139,6 +144,7 @@ internal fun CollectionsScreen(
                     onOpenPlaylist = onOpenPlaylist,
                     onOpenFavorites = onOpenFavorites,
                 )
+              val artistSearchStuck by rememberStickyHeaderStuck(listState, SEARCH_ITEM_INDEX)
               LazyColumn(state = listState, contentPadding = padding) {
                 item(key = "pageTitle") {
                     BoomPageTitle(stringResource(R.string.feature_library_collections_title)) {
@@ -146,6 +152,8 @@ internal fun CollectionsScreen(
                     }
                 }
                 item(key = "chips") {
+                  // Em Artistas, a busca presa vem logo depois e fica por cima do fim deste item.
+                  Column(if (current.selected == CollectionKind.Artists) Modifier.tuckUnderStickyHeader() else Modifier) {
                     // Pílulas e, na ponta, grade/lista (lembrado por pílula).
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f)) { CategoryChips(current, onSelect = viewModel::select) }
@@ -158,6 +166,7 @@ internal fun CollectionsScreen(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
+                  }
                 }
                 when (current.selected) {
                     CollectionKind.Genres -> {
@@ -171,9 +180,7 @@ internal fun CollectionsScreen(
                         // digitando ela fica logo abaixo dessa faixa (sólida), nunca
                         // por baixo dela.
                         stickyHeader(key = "artistSearch") {
-                            Surface(color = MaterialTheme.colorScheme.surface) {
-                                Column {
-                                    Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                            BoomStickyHeader(stuck = artistSearchStuck) {
                                     BoomSearchField(
                                         query = artistSearch.query,
                                         // Cada letra traz a tela de volta até a busca (logo abaixo das pílulas).
@@ -184,7 +191,6 @@ internal fun CollectionsScreen(
                                         placeholder = stringResource(R.string.feature_library_search_artists),
                                         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
                                     )
-                                }
                             }
                         }
                         if (current.artists.isEmpty() && !searching) {
@@ -295,7 +301,7 @@ private fun countText(count: Int): String = pluralStringResource(R.plurals.featu
 private fun GroupRow(
     name: String,
     subtitle: String,
-    cover: Track?,
+    covers: List<Track>,
     viewModel: CollectionsViewModel,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -305,15 +311,14 @@ private fun GroupRow(
     menu: (@Composable (open: MutableState<Boolean>, image: ImageBitmap?) -> Unit)? = null,
 ) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
-    val image by produceState<ImageBitmap?>(initialValue = null, cover?.uri) {
-        value = cover?.let { viewModel.artwork(it.uri, px)?.asImageBitmap() }
-    }
+    val images = rememberCovers(covers, px, viewModel)
+    val image = images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu?.invoke(menuOpen, image)
     ListItem(
         modifier = if (menu != null) modifier.clickableWithMenu(menuOpen, onClick = onClick) else modifier.clickable(onClick = onClick),
         leadingContent = {
-            if (image == null && fallbackIcon != null) {
+            if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -322,6 +327,8 @@ private fun GroupRow(
                 ) {
                     Box(contentAlignment = Alignment.Center) { Icon(fallbackIcon, contentDescription = null) }
                 }
+            } else if (covers.size >= MOSAIC_SIZE) {
+                BoomMosaicArtwork(images)
             } else {
                 BoomArtwork(
                     image = image,
@@ -339,7 +346,7 @@ private fun GroupRow(
 private fun AlbumTile(
     name: String,
     artist: String,
-    cover: Track?,
+    covers: List<Track>,
     viewModel: CollectionsViewModel,
     /** O menu do grupo, aberto ao segurar o bloco. */
     menu: @Composable (open: MutableState<Boolean>, image: ImageBitmap?) -> Unit,
@@ -351,14 +358,13 @@ private fun AlbumTile(
     fallbackIcon: ImageVector? = null,
 ) {
     val px = with(LocalDensity.current) { 200.dp.roundToPx() }
-    val image by produceState<ImageBitmap?>(initialValue = null, cover?.uri) {
-        value = cover?.let { viewModel.artwork(it.uri, px)?.asImageBitmap() }
-    }
+    val images = rememberCovers(covers, px, viewModel)
+    val image = images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu(menuOpen, image)
     // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
     Column(modifier.clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = 8.dp)) {
-        if (image == null && fallbackIcon != null) {
+        if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
             Surface(
                 color = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -367,6 +373,8 @@ private fun AlbumTile(
             ) {
                 Box(contentAlignment = Alignment.Center) { Icon(fallbackIcon, contentDescription = null, modifier = Modifier.size(48.dp)) }
             }
+        } else if (covers.size >= MOSAIC_SIZE) {
+            BoomMosaicArtwork(images, size = null, modifier = Modifier.fillMaxWidth().aspectRatio(1f))
         } else {
             BoomArtwork(
                 image = image,
@@ -467,7 +475,8 @@ private fun LazyListScope.onlineArtists(
     }
     if (online.isEmpty()) {
         item(key = "onlineState") {
-            Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+            // Altura fixa: girando ou com texto, o resto da lista não sobe e desce a cada letra.
+            Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 20.dp), contentAlignment = Alignment.CenterStart) {
                 when {
                     search.loading -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                     search.failed -> Text(
@@ -526,6 +535,8 @@ private class GroupEntry(
     val tracks: List<Track>,
     val round: Boolean = false,
     val fallbackIcon: ImageVector? = null,
+    /** Playlists: capa montada com as de quatro álbuns ([mosaicCovers]). */
+    val mosaic: Boolean = false,
     val onClick: () -> Unit,
     val menu: @Composable (open: MutableState<Boolean>, image: ImageBitmap?) -> Unit,
 )
@@ -568,14 +579,14 @@ private fun collectionEntries(
             listOf(
                 GroupEntry(
                     "favorites", favoritesName, countOf(state.favorites.size), state.favorites,
-                    fallbackIcon = BoomIcons.Favorite, onClick = onOpenFavorites,
+                    fallbackIcon = BoomIcons.Favorite, mosaic = true, onClick = onOpenFavorites,
                 ) { open, image ->
                     GroupMenuSheet(open, favoritesName, countText(state.favorites.size), state.favorites, image, albumMenu)
                 },
             ) + state.playlists.map { summary ->
                 GroupEntry(
                     "p:" + summary.playlist.id, summary.playlist.name, countOf(summary.tracks.size), summary.tracks,
-                    fallbackIcon = BoomIcons.Playlist, onClick = { onOpenPlaylist(summary.playlist.id) },
+                    fallbackIcon = BoomIcons.Playlist, mosaic = true, onClick = { onOpenPlaylist(summary.playlist.id) },
                 ) { open, image ->
                     GroupMenuSheet(open, summary.playlist.name, countText(summary.tracks.size), summary.tracks, image, albumMenu)
                 }
@@ -604,7 +615,7 @@ private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, v
                     AlbumTile(
                         name = entry.name,
                         artist = entry.subtitle,
-                        cover = entry.tracks.firstOrNull(),
+                        covers = entry.covers(),
                         viewModel = viewModel,
                         round = entry.round,
                         fallbackIcon = entry.fallbackIcon,
@@ -621,7 +632,7 @@ private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, v
             GroupRow(
                 name = entry.name,
                 subtitle = entry.subtitle,
-                cover = entry.tracks.firstOrNull(),
+                covers = entry.covers(),
                 viewModel = viewModel,
                 round = entry.round,
                 fallbackIcon = entry.fallbackIcon,
@@ -631,4 +642,18 @@ private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, v
             )
         }
     }
+}
+
+/** As capas do grupo: a do mosaico (playlists) ou só a primeira música. */
+private fun GroupEntry.covers(): List<Track> =
+    if (mosaic) mosaicCovers(tracks) else listOfNotNull(tracks.firstOrNull())
+
+/** Carrega as capas de [covers] (na mesma ordem; null enquanto não chega). */
+@Composable
+private fun rememberCovers(covers: List<Track>, px: Int, viewModel: CollectionsViewModel): List<ImageBitmap?> {
+    val uris = covers.map { it.uri }
+    val images by produceState<List<ImageBitmap?>>(initialValue = List(uris.size) { null }, uris) {
+        value = uris.map { uri -> viewModel.artwork(uri, px)?.asImageBitmap() }
+    }
+    return images
 }

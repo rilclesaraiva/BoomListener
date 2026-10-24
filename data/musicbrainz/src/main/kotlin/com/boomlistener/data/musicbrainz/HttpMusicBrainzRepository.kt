@@ -3,6 +3,7 @@
 
 package com.boomlistener.data.musicbrainz
 
+import com.boomlistener.core.common.OfflineMode
 import android.content.Context
 import android.os.SystemClock
 import com.boomlistener.core.model.ArtistProfile
@@ -191,6 +192,7 @@ internal class HttpMusicBrainzRepository(context: Context) : MusicBrainzReposito
 
     /** O corpo da resposta; null em 503. */
     private fun fetch(url: String): String? {
+        OfflineMode.requireOnline()
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 10_000
             readTimeout = 15_000
@@ -211,6 +213,7 @@ internal class HttpMusicBrainzRepository(context: Context) : MusicBrainzReposito
     private fun download(url: String): ByteArray? = runCatching {
         val file = File(coverCache, sha1(url))
         if (!file.exists()) {
+            OfflineMode.requireOnline()
             val connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 10_000
                 readTimeout = 20_000

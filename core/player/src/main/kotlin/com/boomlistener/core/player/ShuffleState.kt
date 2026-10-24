@@ -63,6 +63,17 @@ internal class ShuffleState<T>(
         return list.subList(0, position).toList() to list.subList(position + 1, list.size).toList()
     }
 
+    /**
+     * Uma música entrou na fila logo depois de [anchor] ("adicionar à fila"):
+     * entra no mesmo ponto da ordem original. Sem [anchor] (ou se ela não está
+     * na ordem), vai para o fim.
+     */
+    fun insertAfter(anchor: T?, item: T) {
+        val list = original ?: return
+        val position = anchor?.let { a -> list.indexOfFirst { keyOf(it) == keyOf(a) } } ?: -1
+        if (position >= 0) list.add(position + 1, item) else list.add(item)
+    }
+
     /** Esquece tudo (fila trocada ou encerrada). */
     fun clear() {
         original = null

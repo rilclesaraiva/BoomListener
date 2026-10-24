@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.releases
 
+import com.boomlistener.core.common.OfflineMode
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -113,6 +114,9 @@ object ReleaseAlerts {
 /** A conferência em segundo plano (WorkManager). */
 class ReleaseCheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
+        // Modo offline: o radar não consulta nada (volta a conferir quando desligar).
+        OfflineMode.init(applicationContext)
+        if (OfflineMode.isOn) return Result.success()
         val context = applicationContext
         val alerts = ReleasesData.alerts(context)
         val followed = ReleasesData.follows(context).followed.first()

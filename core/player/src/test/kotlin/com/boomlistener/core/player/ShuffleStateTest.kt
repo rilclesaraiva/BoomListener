@@ -71,4 +71,21 @@ class ShuffleStateTest {
         assertEquals(songs.toSet(), round.toSet())
         assertEquals(round.size, round.distinct().size)
     }
+
+    @Test
+    fun adicionarAFilaEntraNaOrdemOriginalLogoDepoisDaAtual() {
+        val state = newState()
+        state.start(listOf("a", "b", "c"), currentIndex = 1)
+        state.insertAfter("b", "x")
+        val (before, after) = state.stop("b")!!
+        assertEquals(listOf("a"), before)
+        assertEquals(listOf("x", "c"), after)
+    }
+
+    @Test
+    fun adicionarAFilaSemAleatorioNaoFazNada() {
+        val state = newState()
+        state.insertAfter("a", "x")
+        assertFalse(state.isActive)
+    }
 }

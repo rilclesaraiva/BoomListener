@@ -60,4 +60,6 @@
     <string name="feature_profile_unfavorite">Tirar dos favoritos</string>
     <string name="feature_profile_go_to_artist">Ir para o artista</string>
     <string name="feature_profile_edit_tags">Editar tags</string>
+    <string name="feature_profile_play_next">Adicionar à fila</string>
+    <string name="feature_profile_play_next_done">Vai tocar em seguida</string>
 </resources>

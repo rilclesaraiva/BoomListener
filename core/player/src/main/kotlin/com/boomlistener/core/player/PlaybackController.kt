@@ -52,6 +52,12 @@ interface PlaybackController {
     fun replaceUpNext(tracks: List<Track>) {}
 
     /**
+     * "Adicionar à fila": [track] toca logo depois da música atual (é a
+     * próxima). Sem nada tocando, começa a tocar ela.
+     */
+    fun playNext(track: Track) {}
+
+    /**
      * Título de cada música que não tocou porque o aparelho não tem como ler
      * o formato dela (o player já pulou para a próxima). Para avisar na tela.
      */

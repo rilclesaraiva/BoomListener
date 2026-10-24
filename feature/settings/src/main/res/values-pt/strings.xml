@@ -104,4 +104,6 @@
     <string name="feature_settings_share_not_found">Nenhum app instalado com esse pacote recebe links</string>
     <string name="feature_settings_share_apps">Apps do celular</string>
     <string name="feature_settings_share_none">Nenhum</string>
+    <string name="feature_settings_offline">Modo offline</string>
+    <string name="feature_settings_offline_summary">Nada vai para a internet: sem páginas de artista, fotos, letras nem radar de lançamentos. A verificação de atualizações do app continua.</string>
 </resources>

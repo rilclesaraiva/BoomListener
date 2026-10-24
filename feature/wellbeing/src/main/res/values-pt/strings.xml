@@ -24,4 +24,6 @@
     <string name="feature_wellbeing_edit_tags">Editar tags</string>
     <string name="feature_wellbeing_favorite">Favoritar</string>
     <string name="feature_wellbeing_unfavorite">Tirar dos favoritos</string>
+    <string name="feature_wellbeing_play_next">Adicionar à fila</string>
+    <string name="feature_wellbeing_play_next_done">Vai tocar em seguida</string>
 </resources>

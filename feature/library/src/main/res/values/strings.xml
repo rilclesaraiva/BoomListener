@@ -72,4 +72,6 @@
     <string name="feature_library_favorites">Favorites</string>
     <string name="feature_library_show_grid">Show as grid</string>
     <string name="feature_library_show_list">Show as list</string>
+    <string name="feature_library_play_next">Add to queue</string>
+    <string name="feature_library_play_next_done">Plays next</string>
 </resources>

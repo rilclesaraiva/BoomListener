@@ -72,4 +72,6 @@
     <string name="feature_library_favorites">Favoritas</string>
     <string name="feature_library_show_grid">Mostrar em grade</string>
     <string name="feature_library_show_list">Mostrar em lista</string>
+    <string name="feature_library_play_next">Adicionar à fila</string>
+    <string name="feature_library_play_next_done">Vai tocar em seguida</string>
 </resources>

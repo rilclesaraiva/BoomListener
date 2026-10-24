@@ -3,6 +3,7 @@
 
 package com.boomlistener.data.lyrics
 
+import com.boomlistener.core.common.OfflineMode
 import android.content.Context
 import com.boomlistener.core.model.Lyrics
 import kotlinx.coroutines.Dispatchers
@@ -120,6 +121,7 @@ internal class LrclibLyricsRepository(context: Context) : LyricsRepository {
 
     /** null = 404 (não encontrada). Outros erros viram exceção. */
     private fun request(url: String): String? {
+        OfflineMode.requireOnline()
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 8_000
             readTimeout = 12_000
