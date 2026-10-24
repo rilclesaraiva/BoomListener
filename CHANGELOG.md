@@ -6,9 +6,22 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [0.45.1] — 2026-10-24
 
-### 🎨 Visual tweaks
-- Share banner video: the bars now work like an equalizer, with the bass on the left and the treble on the right, instead of a wave coming out of the middle.
-- Share banner clip bar: no more white line inside the window; the played part just fills it up as the clip plays.
+**Fourth public beta.** 🎧 This release brings together everything since 0.42.4: a share banner, an offline mode, a few handy new options and a lot of fixes to the search boxes. Here are the highlights; the full list is below in this file.
+
+> 🧪 **Still a beta.** The phone in portrait is the main target. Landscape and tablet layouts still have broken spots we're working on. Please report anything odd in Issues.
+
+### ✨ New since 0.42.4
+- **Share banner** (player menu → "Share banner"): a story-sized card with the cover, the song and the artist, for Instagram stories, WhatsApp status and the like. Pick one of three color styles and share just the image or a video with 30 seconds of the song. Only a 30-second clip ever goes out, never the whole song.
+  - Choose the 30 seconds on a bar that shows the whole song, with the clip as a window you drag. While the panel is open, only that clip plays, on repeat; the song you were listening to picks up again when you close it.
+  - The bars on the banner come from the sound of the clip itself: in the image they draw the 30 seconds from start to end; in the video they move like an equalizer, bass on the left and treble on the right.
+- **Offline mode** (Settings): the app doesn't go to the internet at all (no artist pages, photos, lyrics or release radar); what you've already seen keeps showing. Only the app-update check still works. Off by default.
+- **Add to queue:** hold a song (or tap ⋮) and choose "Add to queue" to play it right after the current one.
+- **Playlist covers** made of four album covers when a playlist has songs from different albums.
+- **New playlist and album pages,** with a big cover across the top and a big round Play button.
+
+### 🐛 Fixes since 0.42.4
+- Search boxes (Home and Library → Artists): typing no longer makes the page jump, shake or flicker. The box sticks right under a solid status bar while you type, holding backspace deletes letter after letter again, and there's no huge empty space after the last result.
+- Library → Artists: the fast-scroll bar is always there for your artists and starts below the search box; the letter bubble only shows in list view, not in grid view or while searching.
 
 ## [0.45.0] — 2026-10-24
 
