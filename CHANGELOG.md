@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.45.0] — 2026-10-24
+
+### ✨ New
+- Share banner: the little bars now come from the sound of the chosen 30 seconds. In the image they draw the clip from start to end; in the video they pulse along with the music.
+- Share banner: a new clip bar. The whole song is the bar and the 30 seconds are a highlighted window with a clear start and end; drag it (or tap where you want it) to move it. A marker inside the window follows the clip as it plays.
+
+### 🐛 Fixes
+- Share banner: the clip preview no longer keeps playing when you leave the app; it picks up again when you come back.
+
 ## [0.44.1] — 2026-10-24
 
 ### 🎨 Visual tweaks

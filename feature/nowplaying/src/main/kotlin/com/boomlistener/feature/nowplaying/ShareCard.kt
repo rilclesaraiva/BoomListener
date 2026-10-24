@@ -48,7 +48,21 @@ internal data class ShareCardText(
 internal const val SHARE_CARD_WIDTH = 1080
 internal const val SHARE_CARD_HEIGHT = 1920
 
-internal fun renderShareCard(cover: Bitmap?, text: ShareCardText, colors: ShareCardColors): Bitmap {
+/** O banner desenhado e onde ficam as barrinhas (para o vídeo redesenhá-las a cada quadro). */
+internal class ShareCardImage(val bitmap: Bitmap, val waveCenterY: Float)
+
+/**
+ * Desenha o banner. [bars] são as alturas das barrinhas (0–1, do som do
+ * trecho; nulo enquanto não carregou, ou sem leitura: barras genéricas).
+ * Com [drawBars] falso o lugar delas fica vazio (o vídeo as desenha por cima).
+ */
+internal fun renderShareCard(
+    cover: Bitmap?,
+    text: ShareCardText,
+    colors: ShareCardColors,
+    bars: FloatArray?,
+    drawBars: Boolean = true,
+): ShareCardImage {
     val bitmap = Bitmap.createBitmap(SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val w = SHARE_CARD_WIDTH.toFloat()
@@ -133,8 +147,11 @@ internal fun renderShareCard(cover: Bitmap?, text: ShareCardText, colors: ShareC
     canvas.restore()
     y += artistLayout.height + 70f
 
-    // Onda de barrinhas (sempre a mesma para a mesma música).
-    drawWave(canvas, centerX = w / 2, centerY = y + 50f, seed = text.title.hashCode() * 31 + text.artist.hashCode(), color = colors.accent)
+    // Barrinhas: o desenho do som do trecho.
+    val waveCenterY = y + 50f
+    if (drawBars) {
+        drawWaveBars(canvas, w / 2, waveCenterY, bars ?: genericBars(text.title.hashCode() * 31 + text.artist.hashCode()), colors.accent)
+    }
 
     // Nome do app embaixo.
     val appPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -144,7 +161,7 @@ internal fun renderShareCard(cover: Bitmap?, text: ShareCardText, colors: ShareC
         textAlign = Paint.Align.CENTER
     }
     canvas.drawText(text.appName, w / 2, h - 150f, appPaint)
-    return bitmap
+    return ShareCardImage(bitmap, waveCenterY)
 }
 
 private fun centeredLayout(text: String, width: Int, maxLines: Int, paint: TextPaint): StaticLayout =
@@ -155,21 +172,27 @@ private fun centeredLayout(text: String, width: Int, maxLines: Int, paint: TextP
         .setIncludePad(false)
         .build()
 
-private fun drawWave(canvas: Canvas, centerX: Float, centerY: Float, seed: Int, color: Int) {
-    val bars = 27
+/** Desenha as barrinhas centradas em ([centerX], [centerY]), com alturas de 0 a 1. */
+internal fun drawWaveBars(canvas: Canvas, centerX: Float, centerY: Float, heights: FloatArray, color: Int) {
     val barWidth = 14f
     val gap = 12f
-    val maxHeight = 96f
-    val random = Random(seed)
+    val maxHeight = 110f
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
-    val total = bars * barWidth + (bars - 1) * gap
+    val total = heights.size * barWidth + (heights.size - 1) * gap
     var x = centerX - total / 2
-    for (i in 0 until bars) {
-        // Mais alta no meio, mais baixa nas pontas, com um pouco de acaso.
-        val middle = 1f - abs(i - bars / 2f) / (bars / 2f)
-        val height = maxHeight * (0.25f + 0.55f * middle + 0.2f * random.nextFloat())
+    for (fraction in heights) {
+        val height = (maxHeight * fraction).coerceAtLeast(barWidth)
         canvas.drawRoundRect(x, centerY - height / 2, x + barWidth, centerY + height / 2, barWidth / 2, barWidth / 2, paint)
         x += barWidth + gap
+    }
+}
+
+/** Sem leitura do som: mais altas no meio, com um pouco de acaso (sempre iguais para a mesma música). */
+private fun genericBars(seed: Int): FloatArray {
+    val random = Random(seed)
+    return FloatArray(WAVE_BARS) { i ->
+        val middle = 1f - abs(i - WAVE_BARS / 2f) / (WAVE_BARS / 2f)
+        0.25f + 0.55f * middle + 0.2f * random.nextFloat()
     }
 }
 

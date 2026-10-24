@@ -24,13 +24,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -66,6 +64,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.boomlistener.core.designsystem.component.BoomClipSelector
 
 /*
  * Painel "Compartilhar banner": prévia do banner, três jeitos de cor, o
@@ -77,6 +80,9 @@ private enum class CardStyle { Cover, Theme, Dark }
 
 /** A capa já procurada (pode não ter capa nenhuma). */
 private class LoadedCover(val bitmap: Bitmap?)
+
+/** A força do som lida para um trecho (nula se o arquivo não pôde ser lido). */
+private class ClipLevelsResult(val clip: ShareClip, val levels: FloatArray?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,15 +120,23 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
         artist = item.artist ?: stringResource(R.string.feature_nowplaying_unknown_artist),
         appName = SHARE_CARD_APP_NAME,
     )
-    val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text) {
-        if (loaded != null) value = withContext(Dispatchers.Default) { renderShareCard(cover, text, colors) }
-    }
-
     // O trecho começa sempre no começo da música; a pessoa arrasta para escolher.
-    var startMs by remember(item.uri) { mutableFloatStateOf(0f) }
-    val clip = ShareClip.at(startMs.toLong(), durationMs)
-    var previewStart by remember(item.uri) { mutableLongStateOf(0L) }
-    SharePreview(item.uri, ShareClip.at(previewStart, durationMs), viewModel)
+    var startMs by remember(item.uri) { mutableLongStateOf(0L) }
+    val clip = ShareClip.at(startMs, durationMs)
+    // Trecho "assentado" (depois de soltar o dedo): é o que toca e o que dá o desenho.
+    var chosenStart by remember(item.uri) { mutableLongStateOf(0L) }
+    val chosenClip = ShareClip.at(chosenStart, durationMs)
+    val playheadMs = sharePreview(item.uri, chosenClip, viewModel)
+
+    // A força do som do trecho escolhido (as barrinhas saem dela).
+    val levels by produceState<ClipLevelsResult?>(initialValue = null, item.uri, chosenClip) {
+        // Enquanto lê o novo trecho, o desenho anterior continua (sem piscar).
+        value = ClipLevelsResult(chosenClip, loadClipLevels(context, item.uri, chosenClip))
+    }
+    val bars = remember(levels) { levels?.levels?.let(::waveformBars) }
+    val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text, bars) {
+        if (loaded != null) value = withContext(Dispatchers.Default) { renderShareCard(cover, text, colors, bars).bitmap }
+    }
     val maxStart = ShareClip.maxStart(durationMs)
 
     var making by remember { mutableStateOf<Job?>(null) }
@@ -195,15 +209,19 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                 modifier = Modifier.fillMaxWidth(),
             )
             if (maxStart > 0) {
-                Slider(
-                    value = startMs.coerceIn(0f, maxStart.toFloat()),
-                    onValueChange = { startMs = it },
+                Spacer(Modifier.height(8.dp))
+                BoomClipSelector(
+                    totalMs = durationMs,
+                    startMs = clip.startMs,
+                    lengthMs = clip.lengthMs,
+                    // O ponto que está tocando só aparece com o trecho assentado.
+                    playheadMs = playheadMs.takeIf { clip == chosenClip },
+                    onStartChange = { startMs = it },
                     // Solto o dedo, a prévia passa a tocar o trecho escolhido.
-                    onValueChangeFinished = { previewStart = clip.startMs },
-                    valueRange = 0f..maxStart.toFloat(),
+                    onChangeFinished = { chosenStart = clip.startMs },
                     enabled = making == null,
-                    modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(8.dp))
                 Text(
                     stringResource(R.string.feature_nowplaying_share_card_clip_hint),
                     style = MaterialTheme.typography.bodySmall,
@@ -244,11 +262,18 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                     ) { Text(stringResource(R.string.feature_nowplaying_share_card_image)) }
                     Button(
                         onClick = {
-                            val image = card ?: return@Button
+                            if (card == null) return@Button
                             failed = false
                             making = scope.launch {
                                 try {
-                                    val video = exportShareVideo(context, image, item.uri, clip)
+                                    // As barrinhas do vídeo pulsam com o som: o banner vai sem elas
+                                    // e elas são desenhadas a cada quadro.
+                                    val clipLevels = levels?.takeIf { it.clip == clip }?.levels
+                                        ?: loadClipLevels(context, item.uri, clip)
+                                    val base = withContext(Dispatchers.Default) {
+                                        renderShareCard(cover, text, colors, clipLevels?.let(::waveformBars), drawBars = clipLevels == null)
+                                    }
+                                    val video = exportShareVideo(context, base, clipLevels, colors.accent, item.uri, clip)
                                     context.shareFile(video, "video/mp4", chooser)
                                 } catch (cancel: CancellationException) {
                                     throw cancel
@@ -274,13 +299,15 @@ private val SWATCH_SIZE = 44.dp
 private val BUTTON_ROW_HEIGHT = 48.dp
 
 /**
- * Toca só o trecho escolhido, em volta, enquanto o painel está aberto. A
- * música que estava tocando pausa ao abrir e volta ao fechar; a prévia é um
- * player à parte (não mexe na fila nem no ponto da música).
+ * Toca só o trecho escolhido, em volta, enquanto o painel está aberto, e
+ * devolve o ponto que está tocando dentro dele. A música que estava tocando
+ * pausa ao abrir e volta ao fechar; a prévia é um player à parte (não mexe na
+ * fila nem no ponto da música) e pausa quando o app sai da tela.
  */
 @Composable
-private fun SharePreview(uri: String, clip: ShareClip, viewModel: NowPlayingViewModel) {
+private fun sharePreview(uri: String, clip: ShareClip, viewModel: NowPlayingViewModel): Long {
     val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     val player = remember {
         ExoPlayer.Builder(context.applicationContext)
             // Sem pedir o foco de áudio: o player principal já está pausado por nós
@@ -289,10 +316,20 @@ private fun SharePreview(uri: String, clip: ShareClip, viewModel: NowPlayingView
             .build()
             .apply { repeatMode = Player.REPEAT_MODE_ONE }
     }
-    DisposableEffect(player) {
+    DisposableEffect(player, lifecycle) {
         val wasPlaying = viewModel.state.value.isPlaying
         if (wasPlaying) viewModel.togglePlayPause()
+        // App fora da tela: a prévia para (não toca em segundo plano); voltando, continua.
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> player.pause()
+                Lifecycle.Event.ON_START -> player.play()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
         onDispose {
+            lifecycle.removeObserver(observer)
             player.release()
             if (wasPlaying && !viewModel.state.value.isPlaying) viewModel.togglePlayPause()
         }
@@ -310,6 +347,16 @@ private fun SharePreview(uri: String, clip: ShareClip, viewModel: NowPlayingView
                 .build(),
         )
         player.prepare()
-        player.play()
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) player.play()
     }
+    // O ponto que está tocando, lido algumas vezes por segundo.
+    val position by produceState(initialValue = 0L, player, clip) {
+        while (true) {
+            value = player.currentPosition.coerceIn(0, clip.lengthMs)
+            delay(POSITION_TICK_MS)
+        }
+    }
+    return position
 }
+
+private const val POSITION_TICK_MS = 50L

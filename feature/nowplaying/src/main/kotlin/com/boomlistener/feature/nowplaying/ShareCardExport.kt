@@ -7,6 +7,9 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +19,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.audio.ToInt16PcmAudioProcessor
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.effect.CanvasOverlay
+import androidx.media3.effect.OverlayEffect
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
@@ -38,7 +43,7 @@ import kotlinx.coroutines.withContext
  */
 
 private const val SHARE_DIR = "share"
-private const val VIDEO_FRAME_RATE = 15
+private const val VIDEO_FRAME_RATE = 24
 
 private fun shareDir(context: Context): File =
     File(context.cacheDir, SHARE_DIR).apply {
@@ -54,12 +59,21 @@ internal suspend fun saveShareImage(context: Context, card: Bitmap): File = with
 }
 
 /**
- * Faz o vídeo: o banner parado durante o trecho, com o som da música desse
- * trecho. Roda no Transformer do Media3 (que precisa da thread principal).
+ * Faz o vídeo: o banner durante o trecho, com o som da música desse trecho.
+ * Com [levels], [card] vem sem as barrinhas e elas são desenhadas por cima a
+ * cada quadro, pulsando com o som ([pulseBars]); sem, o banner fica parado.
+ * Roda no Transformer do Media3 (que precisa da thread principal).
  */
 @OptIn(UnstableApi::class)
-internal suspend fun exportShareVideo(context: Context, card: Bitmap, audioUri: String, clip: ShareClip): File {
-    val image = saveShareImage(context, card)
+internal suspend fun exportShareVideo(
+    context: Context,
+    card: ShareCardImage,
+    levels: FloatArray?,
+    barColor: Int,
+    audioUri: String,
+    clip: ShareClip,
+): File {
+    val image = saveShareImage(context, card.bitmap)
     val output = File(image.parentFile, image.nameWithoutExtension + ".mp4")
     val still = EditedMediaItem.Builder(
         MediaItem.Builder()
@@ -67,7 +81,13 @@ internal suspend fun exportShareVideo(context: Context, card: Bitmap, audioUri: 
             .setMimeType(MimeTypes.IMAGE_PNG)
             .setImageDurationMs(clip.lengthMs)
             .build(),
-    ).setFrameRate(VIDEO_FRAME_RATE).build()
+    ).setFrameRate(VIDEO_FRAME_RATE)
+        .apply {
+            if (levels != null) {
+                setEffects(Effects(emptyList(), listOf(OverlayEffect(listOf(PulseOverlay(levels, card.waveCenterY, barColor))))))
+            }
+        }
+        .build()
     val audio = EditedMediaItem.Builder(
         MediaItem.Builder()
             .setUri(audioUri)
@@ -126,4 +146,25 @@ internal fun Context.shareFile(file: File, mimeType: String, chooserTitle: Strin
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     startActivity(Intent.createChooser(send, chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+/**
+ * As barrinhas do vídeo: a cada quadro, limpa e desenha as alturas daquele
+ * instante do trecho, no mesmo lugar em que a imagem as desenharia.
+ */
+@OptIn(UnstableApi::class)
+private class PulseOverlay(
+    private val levels: FloatArray,
+    private val centerY: Float,
+    private val color: Int,
+) : CanvasOverlay(true) {
+    override fun onDraw(canvas: Canvas, presentationTimeUs: Long) {
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+        // O quadro pode ter outro tamanho que o banner: desenha na escala dele.
+        val scale = canvas.width.toFloat() / SHARE_CARD_WIDTH
+        canvas.save()
+        canvas.scale(scale, scale)
+        drawWaveBars(canvas, SHARE_CARD_WIDTH / 2f, centerY, pulseBars(levels, presentationTimeUs / 1000), color)
+        canvas.restore()
+    }
 }
