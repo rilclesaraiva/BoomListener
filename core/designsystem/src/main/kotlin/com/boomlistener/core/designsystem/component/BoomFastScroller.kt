@@ -74,13 +74,16 @@ fun BoomFastScroller(
     startIndex: Int = 0,
     /** A partir de quantos itens a barrinha aparece (listas curtas que ainda rolam podem pedir menos). */
     minItems: Int = MIN_ITEMS,
+    /** Falso: aparece também com o que vem antes de [startIndex] ainda na tela. */
+    hideBeforeStart: Boolean = true,
 ) {
     val metrics = remember(state, startIndex) { ListScrollMetrics(state, startIndex) }
     FastScrollerImpl(
         minItems = minItems,
         total = { state.layoutInfo.totalItemsCount },
         startIndex = startIndex,
-        inSection = { state.firstVisibleItemIndex >= startIndex },
+        inSection = { !hideBeforeStart || state.firstVisibleItemIndex >= startIndex },
+        indexAt = metrics::indexAt,
         visible = { state.layoutInfo.visibleItemsInfo.size },
         fraction = metrics::fraction,
         scrolling = { state.isScrollInProgress },
@@ -140,6 +143,24 @@ private class ListScrollMetrics(private val state: LazyListState, private val st
         return (scrolled / max).coerceIn(0f, 1f)
     }
 
+    /**
+     * O item na altura da bolinha: o ponto [fraction] da lista inteira (em
+     * pixels). No topo do trilho, o primeiro; no fim, o último; no meio, o que
+     * está perto da bolinha (o balão mostra a letra dele).
+     */
+    fun indexAt(fraction: Float): Int {
+        measure()
+        val heights = heights()
+        if (heights.isEmpty()) return start
+        var remaining = fraction.coerceIn(0f, 1f) * heights.sum()
+        var index = 0
+        while (index < heights.lastIndex && remaining >= heights[index]) {
+            remaining -= heights[index]
+            index++
+        }
+        return start + index
+    }
+
     suspend fun scrollTo(fraction: Float) {
         measure()
         val heights = heights()
@@ -184,6 +205,8 @@ private fun FastScrollerImpl(
     total: () -> Int,
     startIndex: Int = 0,
     inSection: () -> Boolean = { true },
+    /** O item que o balão mostra para a posição da bolinha; null = proporcional à contagem. */
+    indexAt: ((Float) -> Int)? = null,
     visible: () -> Int,
     fraction: () -> Float,
     scrolling: () -> Boolean,
@@ -227,7 +250,8 @@ private fun FastScrollerImpl(
     // último; no meio, o item proporcional (o que está perto da bolinha na tela).
     // Antes era o item do topo da tela, e com a bolinha lá embaixo o balão
     // mostrava uma letra lá de cima.
-    val shownIndex = startIndex + (currentFraction * (total() - 1 - startIndex).coerceAtLeast(0)).roundToInt()
+    val shownIndex = indexAt?.invoke(currentFraction)
+        ?: (startIndex + (currentFraction * (total() - 1 - startIndex).coerceAtLeast(0)).roundToInt())
 
     BoxWithConstraints(modifier.fillMaxHeight().padding(vertical = 8.dp)) {
         val density = LocalDensity.current
