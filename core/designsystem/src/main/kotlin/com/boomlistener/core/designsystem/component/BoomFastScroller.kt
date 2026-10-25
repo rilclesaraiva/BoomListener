@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
@@ -34,6 +35,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -84,6 +87,14 @@ fun BoomFastScroller(
         startIndex = startIndex,
         inSection = { !hideBeforeStart || state.firstVisibleItemIndex >= startIndex },
         indexAt = metrics::indexAt,
+        // O balão é do item que está ao lado da bolinha na tela.
+        itemAtY = { y ->
+            val info = state.layoutInfo
+            info.visibleItemsInfo.lastOrNull { item ->
+                val top = item.offset + info.beforeContentPadding
+                y >= top && y < top + item.size
+            }?.index
+        },
         visible = { state.layoutInfo.visibleItemsInfo.size },
         fraction = metrics::fraction,
         scrolling = { state.isScrollInProgress },
@@ -207,6 +218,11 @@ private fun FastScrollerImpl(
     inSection: () -> Boolean = { true },
     /** O item que o balão mostra para a posição da bolinha; null = proporcional à contagem. */
     indexAt: ((Float) -> Int)? = null,
+    /**
+     * O item que está na altura [y] (pixels a partir do topo da lista, que
+     * fica no mesmo lugar que o pai da barrinha); null = nenhum ali.
+     */
+    itemAtY: ((Float) -> Int?)? = null,
     visible: () -> Int,
     fraction: () -> Float,
     scrolling: () -> Boolean,
@@ -253,11 +269,16 @@ private fun FastScrollerImpl(
     val shownIndex = indexAt?.invoke(currentFraction)
         ?: (startIndex + (currentFraction * (total() - 1 - startIndex).coerceAtLeast(0)).roundToInt())
 
-    BoxWithConstraints(modifier.fillMaxHeight().padding(vertical = 8.dp)) {
+    // Onde o trilho começa dentro do pai (o mesmo lugar da lista): para achar o item ao lado da bolinha.
+    var trackTopPx by remember { mutableFloatStateOf(0f) }
+    BoxWithConstraints(
+        modifier.fillMaxHeight().padding(vertical = 8.dp).onGloballyPositioned { trackTopPx = it.positionInParent().y },
+    ) {
         val density = LocalDensity.current
         val trackPx = with(density) { maxHeight.toPx() }
         val thumbPx = with(density) { ThumbHeight.toPx() }
         val thumbY = ((trackPx - thumbPx) * currentFraction).roundToInt()
+        val labelIndex = itemAtY?.invoke(trackTopPx + thumbY + thumbPx / 2) ?: shownIndex
 
         fun jump(y: Float) {
             // O centro da bolinha fica sob o dedo; o topo e o fim do trilho são o começo e o fim da lista.
@@ -267,7 +288,7 @@ private fun FastScrollerImpl(
 
         // Balão com a letra, ao lado da bolinha, enquanto arrasta.
         if (dragging) {
-            label(shownIndex)?.let { text ->
+            label(labelIndex)?.let { text ->
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,

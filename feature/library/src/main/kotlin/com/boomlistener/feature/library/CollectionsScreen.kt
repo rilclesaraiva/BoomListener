@@ -263,10 +263,8 @@ internal fun CollectionsScreen(
                     label = { index -> if (showLabel) labels.getOrNull(index) ?: labels.firstOrNull { it != null } else null },
                     // Aqui as listas costumam ser curtas: basta rolar para ela aparecer.
                     minItems = 0,
-                    // Só os grupos contam (o balão é do grupo na altura da bolinha), mas
-                    // ela aparece também com o cabeçalho ainda na tela.
-                    startIndex = headerCount,
-                    hideBeforeStart = false,
+                    // A lista inteira: arrastar até o topo do trilho volta ao topo da página
+                    // (pílulas e busca à vista). O balão é do grupo ao lado da bolinha.
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(

@@ -4,6 +4,12 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.46.3] — 2026-10-25
+
+### 🐛 Fixes
+- Fast-scroll bar: the letter bubble now shows the letter of the song, artist or genre right next to the thumb on screen.
+- Library → Genres and Artists: dragging the bar all the way up now takes you back to the top of the page.
+
 ## [0.46.2] — 2026-10-25
 
 ### 🐛 Fixes
