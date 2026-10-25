@@ -249,7 +249,9 @@ internal fun CollectionsScreen(
                 var headerPx by remember(current.selected) { mutableIntStateOf(0) }
                 LaunchedEffect(listState, headerCount) {
                     snapshotFlow {
-                        val visible = listState.layoutInfo.visibleItemsInfo.filter { it.index < headerCount }
+                        // distinctBy: a busca presa aparece duas vezes na lista de visíveis
+                        // (como item e como cabeçalho preso), o que impedia a medida em Artistas.
+                        val visible = listState.layoutInfo.visibleItemsInfo.filter { it.index < headerCount }.distinctBy { it.index }
                         // Só com o cabeçalho inteiro medido (as alturas não mudam ao rolar).
                         if (visible.size == headerCount) visible.sumOf { it.size } else null
                     }.collect { if (it != null && it > 0) headerPx = it }
