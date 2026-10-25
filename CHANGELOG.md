@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.46.5] — 2026-10-25
+
+### 🐛 Fixes
+- Library: the fast-scroll bar no longer flashes for an instant up by the chips before settling below them.
+
 ## [0.46.4] — 2026-10-25
 
 ### 🐛 Fixes

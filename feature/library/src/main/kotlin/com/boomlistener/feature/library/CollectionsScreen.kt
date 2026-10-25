@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -246,34 +247,41 @@ internal fun CollectionsScreen(
                 // bolinha dava pulos.
                 val artists = current.selected == CollectionKind.Artists
                 val headerCount = collectionHeaderCount(current.selected)
-                var headerPx by remember(current.selected) { mutableIntStateOf(0) }
-                LaunchedEffect(listState, headerCount) {
+                // Medida guardada por pílula: voltar a uma já medida mostra a barrinha na hora.
+                val headerSizes = remember { mutableStateMapOf<CollectionKind, Int>() }
+                val selectedKind = current.selected
+                val headerPx = headerSizes[selectedKind] ?: 0
+                LaunchedEffect(listState, selectedKind) {
                     snapshotFlow {
                         // distinctBy: a busca presa aparece duas vezes na lista de visíveis
                         // (como item e como cabeçalho preso), o que impedia a medida em Artistas.
                         val visible = listState.layoutInfo.visibleItemsInfo.filter { it.index < headerCount }.distinctBy { it.index }
                         // Só com o cabeçalho inteiro medido (as alturas não mudam ao rolar).
                         if (visible.size == headerCount) visible.sumOf { it.size } else null
-                    }.collect { if (it != null && it > 0) headerPx = it }
+                    }.collect { if (it != null && it > 0) headerSizes[selectedKind] = it }
                 }
-                val topPx = maxOf(headerPx, if (artists) artistSearchPx else 0)
+                val topPx = headerPx
                 // Balão de letra só em lista (em ordem alfabética) e nunca buscando;
                 // em grade não faz sentido.
                 val showLabel = !grid && !(artists && searching)
-                BoomFastScroller(
-                    state = listState,
-                    label = { index -> if (showLabel) labels.getOrNull(index) ?: labels.firstOrNull { it != null } else null },
-                    // Aqui as listas costumam ser curtas: basta rolar para ela aparecer.
-                    minItems = 0,
-                    // A lista inteira: arrastar até o topo do trilho volta ao topo da página
-                    // (pílulas e busca à vista). O balão é do grupo ao lado da bolinha.
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(
-                            top = with(LocalDensity.current) { topPx.toDp() }.coerceAtLeast(padding.calculateTopPadding()),
-                            bottom = padding.calculateBottomPadding(),
-                        ),
-                )
+                // Só depois de medir o cabeçalho: antes disso o trilho começaria lá em
+                // cima e a barrinha piscava ali por um instante.
+                if (headerPx > 0) {
+                    BoomFastScroller(
+                        state = listState,
+                        label = { index -> if (showLabel) labels.getOrNull(index) ?: labels.firstOrNull { it != null } else null },
+                        // Aqui as listas costumam ser curtas: basta rolar para ela aparecer.
+                        minItems = 0,
+                        // A lista inteira: arrastar até o topo do trilho volta ao topo da página
+                        // (pílulas e busca à vista). O balão é do grupo ao lado da bolinha.
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(
+                                top = with(LocalDensity.current) { topPx.toDp() }.coerceAtLeast(padding.calculateTopPadding()),
+                                bottom = padding.calculateBottomPadding(),
+                            ),
+                    )
+                }
             }
         }
     }
