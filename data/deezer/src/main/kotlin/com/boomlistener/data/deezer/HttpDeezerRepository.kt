@@ -33,7 +33,8 @@ private const val API = "https://api.deezer.com"
 // Respostas da API ficam guardadas por um dia (discografia muda pouco).
 // song.link (Odesli): gratuito, sem chave, até 10 consultas por minuto.
 private const val SONG_LINK_API = "https://api.song-link.io/v1-alpha.1/links"
-private const val SHARE_CONFIDENCE = 0.6f
+// Busca do iTunes (catálogo da Apple Music): gratuita, oficial e sem chave.
+private const val ITUNES_SEARCH = "https://itunes.apple.com/search"
 private const val JSON_TTL_MS = 24L * 60 * 60 * 1000
 
 internal class HttpDeezerRepository(context: Context) : DeezerRepository {
@@ -219,11 +220,25 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
     }
 
     override suspend fun youtubeMusicLinkForSong(title: String, artist: String?, durationMs: Long): String? {
-        val found = searchTrack(LocalTrackInfo(title, artist, album = null, durationMs)) as? TrackSearchResult.Found
-            ?: return null
-        // Só com boa certeza: melhor o link de busca do que a música errada.
-        val best = found.candidates.first().takeIf { it.confidence >= SHARE_CONFIDENCE } ?: return null
-        return best.link?.let { youtubeMusicLink(it) }
+        val local = LocalTrackInfo(title, artist, album = null, durationMs)
+        // 1º: Deezer. Só com boa certeza: melhor o link de busca do que a música errada.
+        val deezer = (searchTrack(local) as? TrackSearchResult.Found)
+            ?.candidates?.firstOrNull()?.takeIf { it.confidence >= SHARE_CONFIDENCE }
+        deezer?.link?.let { link -> youtubeMusicLink(link)?.let { return it } }
+        // 2º: o catálogo da Apple (quando o Deezer não tem, ou o song.link não ligou).
+        val apple = appleSongs(local).let { bestShareCandidate(local, it) } ?: return null
+        return apple.link?.let { youtubeMusicLink(it) }
+    }
+
+    /** A música na busca do iTunes (catálogo da Apple Music); vazio se falhar. */
+    private suspend fun appleSongs(local: LocalTrackInfo): List<TrackCandidate> = withContext(Dispatchers.IO) {
+        runCatching {
+            val country = Locale.getDefault().country.ifBlank { "US" }
+            val term = listOfNotNull(local.artist, searchableSongTitle(local.title)).joinToString(" ")
+            parseItunesSongs(
+                getJson("$ITUNES_SEARCH?entity=song&limit=15&country=$country&term=" + URLEncoder.encode(term, "UTF-8")),
+            )
+        }.getOrDefault(emptyList())
     }
 
     override suspend fun image(url: String, sizePx: Int): Bitmap? {

@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.46.1] — 2026-10-25
+
+### 🐛 Fixes
+- Fast-scroll bar: it no longer jumps around when you scroll slowly. It now follows the real position of the list, and in the Library its track stays put instead of stretching as the page header scrolls away.
+
+### 🎨 Visual tweaks
+- Sharing a song finds the exact YouTube Music link more often: when Deezer doesn't have the song, the app now also looks it up in Apple's music catalog. If neither is sure it's the same song, you still get the search link, never the wrong song.
+
 ## [0.46.0] — 2026-10-25
 
 ### ✨ New

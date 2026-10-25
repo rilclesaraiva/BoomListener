@@ -13,4 +13,7 @@ dependencies {
     api(project(":core:model"))
     implementation(project(":core:common"))
     implementation(libs.kotlinx.coroutines.android)
+
+    // org.json de verdade nos testes (resposta da busca da Apple).
+    testImplementation(libs.org.json)
 }

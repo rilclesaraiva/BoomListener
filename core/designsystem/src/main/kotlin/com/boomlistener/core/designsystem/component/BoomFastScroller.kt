@@ -91,46 +91,66 @@ fun BoomFastScroller(
 }
 
 /**
- * Onde a lista está, em pixels: a altura de uma linha comum (a do meio das
- * que estão na tela) vezes o número de itens. Assim a bolinha anda contínua,
- * chega ao fim junto com a lista, e arrastar até embaixo leva ao último item.
+ * Onde a lista está, em pixels de verdade: guarda a altura de cada item já
+ * medido (os que ainda não passaram pela tela contam com a média dos
+ * medidos). Assim, rolando devagar, a bolinha anda junto com a lista, sem
+ * saltos (antes a altura de "uma linha comum" era estimada pelo que estava na
+ * tela e mudava quando entravam linhas de alturas diferentes, como títulos
+ * de seção e linhas de grade).
  */
 private class ListScrollMetrics(private val state: LazyListState, private val start: Int) {
-    /** Altura de uma linha comum (com o espaço entre linhas); 0 = ainda não mediu. */
-    private var rowPx = 0f
+    private var sizes = IntArray(0)
 
-    private fun row(): Float {
+    private fun measure() {
         val info = state.layoutInfo
-        val sizes = info.visibleItemsInfo.map { it.size }.sorted()
-        // Com poucos itens na tela (seções altas do topo), fica a medida de antes.
-        if (sizes.size >= 3 || rowPx == 0f) {
-            sizes.getOrNull(sizes.size / 2)?.let { rowPx = (it + info.mainAxisItemSpacing).toFloat() }
-        }
-        return rowPx.coerceAtLeast(1f)
+        if (info.totalItemsCount != sizes.size) sizes = IntArray(info.totalItemsCount)
+        val spacing = info.mainAxisItemSpacing
+        info.visibleItemsInfo.forEach { if (it.index in sizes.indices) sizes[it.index] = it.size + spacing }
     }
 
-    private fun maxScroll(row: Float): Float {
+    /** Altura de cada item a partir de [start]: a medida, ou a média das medidas. */
+    private fun heights(): FloatArray {
+        var sum = 0L
+        var known = 0
+        for (i in start until sizes.size) {
+            if (sizes[i] > 0) {
+                sum += sizes[i]
+                known++
+            }
+        }
+        val average = if (known > 0) sum.toFloat() / known else 1f
+        return FloatArray((sizes.size - start).coerceAtLeast(0)) { sizes[start + it].takeIf { s -> s > 0 }?.toFloat() ?: average }
+    }
+
+    private fun viewport(): Float {
         val info = state.layoutInfo
-        val viewport = info.viewportSize.height - info.beforeContentPadding - info.afterContentPadding
-        return (info.totalItemsCount - start) * row - viewport
+        return (info.viewportSize.height - info.beforeContentPadding - info.afterContentPadding).toFloat()
     }
 
     fun fraction(): Float {
-        val row = row()
-        val max = maxScroll(row)
+        measure()
+        val heights = heights()
+        val max = heights.sum() - viewport()
         if (max <= 0f) return 0f
         if (!state.canScrollForward) return 1f
-        if (state.firstVisibleItemIndex < start) return 0f
-        val scrolled = (state.firstVisibleItemIndex - start) * row + state.firstVisibleItemScrollOffset
+        val first = state.firstVisibleItemIndex
+        if (first < start) return 0f
+        var scrolled = state.firstVisibleItemScrollOffset.toFloat()
+        for (i in 0 until (first - start).coerceAtMost(heights.size)) scrolled += heights[i]
         return (scrolled / max).coerceIn(0f, 1f)
     }
 
     suspend fun scrollTo(fraction: Float) {
-        val row = row()
-        val target = (fraction * maxScroll(row)).coerceAtLeast(0f)
-        val last = (state.layoutInfo.totalItemsCount - 1).coerceAtLeast(start)
-        val index = (start + (target / row).toInt()).coerceIn(start, last)
-        state.scrollToItem(index, (target - (index - start) * row).roundToInt().coerceAtLeast(0))
+        measure()
+        val heights = heights()
+        if (heights.isEmpty()) return
+        var remaining = (fraction * (heights.sum() - viewport())).coerceAtLeast(0f)
+        var index = 0
+        while (index < heights.lastIndex && remaining >= heights[index]) {
+            remaining -= heights[index]
+            index++
+        }
+        state.scrollToItem(start + index, remaining.roundToInt())
     }
 }
 

@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.layout.onSizeChanged
@@ -238,18 +239,22 @@ internal fun CollectionsScreen(
               }
                 // Letra de cada linha da lista, na mesma ordem dos itens acima.
                 val labels = remember(current, artistSearch, grid) { collectionLabels(current, artistSearch, entries, grid) }
-                // A barrinha é só dos grupos: o trilho começa logo abaixo do que vem
-                // antes deles (pílulas, ou a busca em Artistas), onde quer que isso
-                // esteja na tela, e termina no fim da lista. Nunca sobe por cima.
+                // A barrinha é só dos grupos: o trilho começa onde o primeiro grupo
+                // fica com a página no topo (logo abaixo das pílulas, ou da busca em
+                // Artistas) e vai até o fim. O trilho fica parado: acompanhar o
+                // cabeçalho enquanto ele sobe esticava o trilho a cada quadro e a
+                // bolinha dava pulos.
                 val artists = current.selected == CollectionKind.Artists
-                val lastHeaderIndex = collectionHeaderCount(current.selected) - 1
-                val headerBottomPx by remember(listState, lastHeaderIndex) {
-                    derivedStateOf {
-                        val header = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == lastHeaderIndex }
-                        header?.let { it.offset + it.size } ?: 0
-                    }
+                val headerCount = collectionHeaderCount(current.selected)
+                var headerPx by remember(current.selected) { mutableIntStateOf(0) }
+                LaunchedEffect(listState, headerCount) {
+                    snapshotFlow {
+                        val visible = listState.layoutInfo.visibleItemsInfo.filter { it.index < headerCount }
+                        // Só com o cabeçalho inteiro medido (as alturas não mudam ao rolar).
+                        if (visible.size == headerCount) visible.sumOf { it.size } else null
+                    }.collect { if (it != null && it > 0) headerPx = it }
                 }
-                val topPx = maxOf(headerBottomPx, if (artists) artistSearchPx else 0)
+                val topPx = maxOf(headerPx, if (artists) artistSearchPx else 0)
                 // Balão de letra só em lista (em ordem alfabética) e nunca buscando;
                 // em grade não faz sentido.
                 val showLabel = !grid && !(artists && searching)
