@@ -50,6 +50,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -130,7 +131,7 @@ internal fun MyProfileScreen(
         // dela e sobe junto ao rolar, sem barra presa na tela.
         topBar = {},
         // A cor que você escolheu tinge o perfil inteiro, o título junto.
-        pageBackground = { profileBackground(state?.profile?.color) },
+        pageBackground = { profileBackground(state?.profile?.color, solid = state?.profile?.solidColor == true) },
     ) { padding ->
         val current = state
         if (current == null) {
@@ -321,6 +322,7 @@ private fun EditProfileSheet(profile: MyProfile, viewModel: MyProfileViewModel, 
     var bio by remember { mutableStateOf(profile.bio) }
     var bannerChange by remember { mutableStateOf<ImageChange>(ImageChange.Keep) }
     var color by remember { mutableStateOf(profile.color) }
+    var solid by remember { mutableStateOf(profile.solidColor) }
     var avatarChange by remember { mutableStateOf<ImageChange>(ImageChange.Keep) }
     val savedBanner = rememberProfileImage(ProfileImage.Banner, profile.bannerVersion)
     val savedPhoto = rememberProfileImage(ProfileImage.Avatar, profile.avatarVersion)
@@ -413,6 +415,23 @@ private fun EditProfileSheet(profile: MyProfile, viewModel: MyProfileViewModel, 
             }
 
             ProfileColorPicker(color = color, enabled = !saving, onChange = { color = it })
+            // Com cor: degradê (do topo para baixo) ou a cor no perfil inteiro.
+            if (color.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !solid,
+                        onClick = { solid = false },
+                        enabled = !saving,
+                        label = { Text(stringResource(R.string.feature_profile_color_gradient)) },
+                    )
+                    FilterChip(
+                        selected = solid,
+                        onClick = { solid = true },
+                        enabled = !saving,
+                        label = { Text(stringResource(R.string.feature_profile_color_solid)) },
+                    )
+                }
+            }
 
             OutlinedTextField(
                 value = name,
@@ -441,6 +460,7 @@ private fun EditProfileSheet(profile: MyProfile, viewModel: MyProfileViewModel, 
                         bannerChange,
                         avatarChange,
                         color = color,
+                        solidColor = solid,
                         onDone = onDismiss,
                     ) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),

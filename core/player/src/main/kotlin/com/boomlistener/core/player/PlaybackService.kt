@@ -5,6 +5,10 @@ package com.boomlistener.core.player
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -14,6 +18,10 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.Tracks
+import androidx.media3.extractor.metadata.id3.InternalFrame
+import androidx.media3.extractor.metadata.id3.TextInformationFrame
+import androidx.media3.extractor.metadata.vorbis.VorbisComment
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
@@ -35,6 +43,10 @@ class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private val scope = MainScope()
     private lateinit var mixer: VolumeMixer
+    /** Ganho ReplayGain (dB) da música atual, lido das tags; null = sem tag. */
+    private var trackGainDb: Float? = null
+    /** Quando a música pausou porque o fone saiu (null = não foi isso). */
+    private var pausedByHeadphonesAt: Long? = null
     private var exo: ExoPlayer? = null
 
     // Transição entre músicas: o volume acompanha o ponto da música (sobe no
@@ -138,7 +150,19 @@ class PlaybackService : MediaSessionService() {
                 )
             }
 
+            // ReplayGain: as tags da música nova chegam com as faixas dela.
+            override fun onTracksChanged(tracks: Tracks) {
+                trackGainDb = replayGainDb(gainTagsOf(tracks))
+                applyReplayGain()
+            }
+
             override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                // Pausou porque o fone saiu: lembra, para voltar a tocar quando ele reconectar.
+                pausedByHeadphonesAt = if (!playWhenReady && reason == Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY) {
+                    SystemClock.elapsedRealtime()
+                } else {
+                    null
+                }
                 // Timer "fim da música": pausou sozinho no fim da música, missão cumprida.
                 if (!playWhenReady && reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
                     PlaybackSettingsData.internalGet(this@PlaybackService).cancelSleepTimer()
@@ -181,9 +205,11 @@ class PlaybackService : MediaSessionService() {
             settings.prefs.collect { prefs ->
                 player.setPlaybackSpeed(prefs.speed)
                 updateTransition()
+                applyReplayGain()
             }
         }
         scope.launch { settings.sleepTimer.collectLatest { timer -> runSleepTimer(timer) } }
+        getSystemService(AudioManager::class.java)?.registerAudioDeviceCallback(headphonesCallback, tickHandler)
 
         val builder = MediaSession.Builder(this, sessionPlayer)
         openAppIntent()?.let { builder.setSessionActivity(it) }
@@ -223,25 +249,82 @@ class PlaybackService : MediaSessionService() {
     }
 
     private fun restore(player: ExoPlayer, snapshot: PlaybackSnapshot) {
-        val items = snapshot.items.map { item ->
-            MediaItem.Builder()
-                .setMediaId(item.uri)
-                .setUri(item.uri)
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(item.title)
-                        .setArtist(item.artist)
-                        .setAlbumTitle(item.album)
-                        .setIsPlayable(true)
-                        .setIsBrowsable(false)
-                        .build(),
-                )
-                .build()
-        }
+        val items = snapshot.items.map(::snapshotMediaItem)
         player.setMediaItems(items, snapshot.index, snapshot.positionMs)
         player.repeatMode = snapshot.repeatMode
+        // "Lembrar o aleatório": a fila já está embaralhada; volta ligado, com a ordem original guardada.
+        val original = snapshot.original
+        if (snapshot.shuffle && original != null && PlaybackSettingsData.internalGet(this).prefs.value.keepShuffle) {
+            SharedShuffle.state.adopt(original.map(::snapshotMediaItem))
+            player.shuffleModeEnabled = true
+        }
         player.playWhenReady = false
         player.prepare()
+    }
+
+    private fun snapshotMediaItem(item: SnapshotItem): MediaItem =
+        MediaItem.Builder()
+            .setMediaId(item.uri)
+            .setUri(item.uri)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(item.title)
+                    .setArtist(item.artist)
+                    .setAlbumTitle(item.album)
+                    .setIsPlayable(true)
+                    .setIsBrowsable(false)
+                    .build(),
+            )
+            .build()
+
+    private fun MediaItem.toSnapshotItem() = SnapshotItem(
+        uri = mediaId,
+        title = mediaMetadata.title?.toString().orEmpty(),
+        artist = mediaMetadata.artist?.toString(),
+        album = mediaMetadata.albumTitle?.toString(),
+    )
+
+    /** Volume igualado pelo ReplayGain (só com a opção ligada). */
+    private fun applyReplayGain() {
+        if (!::mixer.isInitialized) return
+        val on = PlaybackSettingsData.internalGet(this).prefs.value.replayGain
+        mixer.replayGain = if (on) replayGainVolume(trackGainDb) else 1f
+    }
+
+    /** As tags de ganho da faixa de áudio que está tocando (ID3, Vorbis/FLAC/Opus e MP4). */
+    private fun gainTagsOf(tracks: Tracks): List<Pair<String, String>> = buildList {
+        for (group in tracks.groups) {
+            if (group.type != C.TRACK_TYPE_AUDIO || !group.isSelected) continue
+            for (i in 0 until group.length) {
+                val metadata = group.getTrackFormat(i).metadata ?: continue
+                for (e in 0 until metadata.length()) {
+                    when (val entry = metadata.get(e)) {
+                        is TextInformationFrame -> {
+                            val name = entry.description ?: continue
+                            entry.values.firstOrNull()?.let { add(name to it) }
+                        }
+                        is VorbisComment -> add(entry.key to entry.value)
+                        is InternalFrame -> add(entry.description to entry.text)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Fone reconectado: se a música pausou porque ele saiu (há pouco) e a
+     * opção está ligada, volta a tocar. Sem permissão de Bluetooth: o
+     * AudioManager avisa das saídas de som novas.
+     */
+    private val headphonesCallback = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {
+            val pausedAt = pausedByHeadphonesAt ?: return
+            if (!PlaybackSettingsData.internalGet(this@PlaybackService).prefs.value.resumeOnReconnect) return
+            if (SystemClock.elapsedRealtime() - pausedAt > RESUME_WINDOW_MS) return
+            if (addedDevices.none { it.isSink && it.type in HEADPHONE_TYPES }) return
+            pausedByHeadphonesAt = null
+            mediaSession?.player?.play()
+        }
     }
 
     private fun scheduleSave() {
@@ -257,21 +340,15 @@ class PlaybackService : MediaSessionService() {
             snapshots.save(null)
             return
         }
-        val items = (0 until count).map { index ->
-            val item = player.getMediaItemAt(index)
-            SnapshotItem(
-                uri = item.mediaId,
-                title = item.mediaMetadata.title?.toString().orEmpty(),
-                artist = item.mediaMetadata.artist?.toString(),
-                album = item.mediaMetadata.albumTitle?.toString(),
-            )
-        }
+        val items = (0 until count).map { index -> player.getMediaItemAt(index).toSnapshotItem() }
         snapshots.save(
             PlaybackSnapshot(
                 items = items,
                 index = player.currentMediaItemIndex.coerceIn(0, count - 1),
                 positionMs = player.currentPosition.coerceAtLeast(0),
                 repeatMode = player.repeatMode,
+                shuffle = player.shuffleModeEnabled,
+                original = SharedShuffle.state.originalItems()?.takeIf { player.shuffleModeEnabled }?.map { it.toSnapshotItem() },
             ),
         )
     }
@@ -288,6 +365,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        getSystemService(AudioManager::class.java)?.unregisterAudioDeviceCallback(headphonesCallback)
         scope.cancel()
         tickHandler.removeCallbacks(transitionTick)
         tickHandler.removeCallbacks(tick)
@@ -315,6 +393,18 @@ class PlaybackService : MediaSessionService() {
 
 /** Espera antes de aplicar a saída escolhida (junta toques seguidos). */
 private const val OUTPUT_SWITCH_DELAY_MS = 250L
+
+/** Até quanto tempo depois de o fone sair a música volta sozinha quando ele reconecta. */
+private const val RESUME_WINDOW_MS = 30 * 60_000L
+
+/** Saídas que contam como fone (com fio, USB, Bluetooth). */
+private val HEADPHONE_TYPES: Set<Int> = buildSet {
+    add(AudioDeviceInfo.TYPE_WIRED_HEADSET)
+    add(AudioDeviceInfo.TYPE_WIRED_HEADPHONES)
+    add(AudioDeviceInfo.TYPE_BLUETOOTH_A2DP)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) add(AudioDeviceInfo.TYPE_USB_HEADSET)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) add(AudioDeviceInfo.TYPE_BLE_HEADSET)
+}
 
 /** De quanto em quanto tempo o volume da transição é atualizado. */
 private const val TRANSITION_TICK_MS = 50L

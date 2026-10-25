@@ -62,4 +62,6 @@
     <string name="feature_profile_edit_tags">Edit tags</string>
     <string name="feature_profile_play_next">Add to queue</string>
     <string name="feature_profile_play_next_done">Plays next</string>
+    <string name="feature_profile_color_gradient">Gradient</string>
+    <string name="feature_profile_color_solid">Solid</string>
 </resources>

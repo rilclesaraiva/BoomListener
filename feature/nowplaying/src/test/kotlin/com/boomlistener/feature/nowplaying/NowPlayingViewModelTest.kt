@@ -104,6 +104,39 @@ class NowPlayingViewModelTest {
     }
 
     @Test
+    fun internetPrimeiroQuandoEscolhido() {
+        val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
+        val online = Lyrics(listOf(LyricLine(0, "da internet")), synced = true, source = "LRCLIB")
+        val repo = FakeLyrics(LyricsResult.Found(online))
+        val viewModel = NowPlayingViewModel(
+            FakeController(duration = 200_000, item = song),
+            NoLibrary,
+            repo,
+            embeddedLyrics = { "[00:01.00] do arquivo" },
+            onlineLyricsFirst = { true },
+        )
+        viewModel.toggleLyrics()
+        assertEquals(1, repo.calls)
+        assertEquals(LyricsUiState.Ready("content://1", online), viewModel.lyrics.value)
+    }
+
+    @Test
+    fun internetPrimeiroSemResultadoUsaOArquivo() {
+        val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
+        val repo = FakeLyrics(LyricsResult.Failed)
+        val viewModel = NowPlayingViewModel(
+            FakeController(duration = 200_000, item = song),
+            NoLibrary,
+            repo,
+            embeddedLyrics = { "[00:01.00] do arquivo" },
+            onlineLyricsFirst = { true },
+        )
+        viewModel.toggleLyrics()
+        val state = viewModel.lyrics.value as LyricsUiState.Ready
+        assertEquals("do arquivo", state.lyrics.lines.single().text)
+    }
+
+    @Test
     fun tentarDeNovoDepoisDeFalha() {
         val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
         val repo = FakeLyrics(LyricsResult.Failed)

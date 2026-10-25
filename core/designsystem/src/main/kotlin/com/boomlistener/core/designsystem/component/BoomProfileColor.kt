@@ -11,6 +11,9 @@ import androidx.compose.ui.graphics.compositeOver
 
 private const val PROFILE_TOP_ALPHA = 0.55f
 
+/** Sólida, a cor cobre a página toda: um pouco mais leve que o topo do degradê, para o texto ler bem. */
+private const val PROFILE_SOLID_ALPHA = 0.4f
+
 /**
  * Cores prontas para o perfil (a pessoa também pode digitar um hexadecimal).
  * É a cor escolhida pelo usuário, não do tema; mora aqui, no design system.
@@ -31,10 +34,12 @@ fun parseProfileColor(hex: String?): Color? {
 
 /**
  * Fundo do perfil na cor escolhida: forte no topo e sumindo para baixo, como
- * nos perfis do Discord. Sem cor, não muda nada.
+ * nos perfis do Discord, ou a mesma cor no perfil inteiro com [solid]. Sem
+ * cor, não muda nada.
  */
-fun Modifier.profileBackground(hex: String?): Modifier {
+fun Modifier.profileBackground(hex: String?, solid: Boolean = false): Modifier {
     val color = parseProfileColor(hex) ?: return this
+    if (solid) return background(color.copy(alpha = PROFILE_SOLID_ALPHA))
     return background(
         Brush.verticalGradient(
             0f to color.copy(alpha = PROFILE_TOP_ALPHA),

@@ -26,6 +26,8 @@ data class MyProfile(
     val bio: String = "",
     /** "#RRGGBB" ou "" (nenhuma). */
     val color: String = "",
+    /** Cor sólida no perfil inteiro; falso = degradê do topo para baixo (o padrão). */
+    val solidColor: Boolean = false,
     /** Muda a cada troca de imagem (0 = sem imagem): a tela relê quando muda. */
     val avatarVersion: Long = 0,
     val bannerVersion: Long = 0,
@@ -43,8 +45,8 @@ const val MAX_BIO = 160
 interface ProfileRepository {
     val profile: StateFlow<MyProfile>
 
-    /** Nome, descrição e cor; false se a cor for inválida. */
-    suspend fun save(name: String, bio: String, color: String): Boolean
+    /** Nome, descrição, cor e se a cor é sólida; false se a cor for inválida. */
+    suspend fun save(name: String, bio: String, color: String, solidColor: Boolean): Boolean
 
     /**
      * Troca a foto ou a capa por [uri] (o content:// do seletor de fotos do
@@ -80,6 +82,7 @@ internal fun profileToJson(profile: MyProfile): String = JSONObject()
     .put("name", profile.name)
     .put("bio", profile.bio)
     .put("color", profile.color)
+    .put("solid", profile.solidColor)
     .put("avatar", profile.avatarVersion)
     .put("banner", profile.bannerVersion)
     .toString()
@@ -90,6 +93,8 @@ internal fun profileFromJson(text: String): MyProfile {
         name = json.optString("name"),
         bio = json.optString("bio").take(MAX_BIO),
         color = cleanProfileColor(json.optString("color")).orEmpty(),
+        // Arquivos de antes desta opção não têm "solid": continuam com o degradê.
+        solidColor = json.optBoolean("solid", false),
         avatarVersion = json.optLong("avatar"),
         bannerVersion = json.optLong("banner"),
     )
@@ -171,11 +176,11 @@ internal class LocalProfileRepository(private val context: Context) : ProfileRep
         _profile.value = profile
     }
 
-    override suspend fun save(name: String, bio: String, color: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun save(name: String, bio: String, color: String, solidColor: Boolean): Boolean = withContext(Dispatchers.IO) {
         val cleanColor = cleanProfileColor(color) ?: return@withContext false
         mutex.withLock {
             runCatching {
-                write(_profile.value.copy(name = name.trim().take(40), bio = bio.trim().take(MAX_BIO), color = cleanColor))
+                write(_profile.value.copy(name = name.trim().take(40), bio = bio.trim().take(MAX_BIO), color = cleanColor, solidColor = solidColor))
             }.isSuccess
         }
     }

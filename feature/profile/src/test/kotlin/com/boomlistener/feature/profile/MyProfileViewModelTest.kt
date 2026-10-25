@@ -89,9 +89,9 @@ private class FakeProfile : ProfileRepository {
     val imageCalls = mutableListOf<Pair<ProfileImage, String?>>()
     var failImages = false
 
-    override suspend fun save(name: String, bio: String, color: String): Boolean {
+    override suspend fun save(name: String, bio: String, color: String, solidColor: Boolean): Boolean {
         val clean = cleanProfileColor(color) ?: return false
-        profile.value = profile.value.copy(name = name, bio = bio.take(MAX_BIO), color = clean)
+        profile.value = profile.value.copy(name = name, bio = bio.take(MAX_BIO), color = clean, solidColor = solidColor)
         return true
     }
 

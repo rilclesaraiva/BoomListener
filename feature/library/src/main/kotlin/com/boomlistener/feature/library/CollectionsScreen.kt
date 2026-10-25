@@ -238,30 +238,30 @@ internal fun CollectionsScreen(
               }
                 // Letra de cada linha da lista, na mesma ordem dos itens acima.
                 val labels = remember(current, artistSearch, grid) { collectionLabels(current, artistSearch, entries, grid) }
-                // Em Artistas, a barrinha é só da lista abaixo da busca: o trilho
-                // começa logo embaixo dela, onde quer que ela esteja (presa no topo
-                // ou mais abaixo, antes de rolar), e nunca sobe por cima.
+                // A barrinha é só dos grupos: o trilho começa logo abaixo do que vem
+                // antes deles (pílulas, ou a busca em Artistas), onde quer que isso
+                // esteja na tela, e termina no fim da lista. Nunca sobe por cima.
                 val artists = current.selected == CollectionKind.Artists
-                val searchBottomPx by remember(listState) {
+                val lastHeaderIndex = collectionHeaderCount(current.selected) - 1
+                val headerBottomPx by remember(listState, lastHeaderIndex) {
                     derivedStateOf {
-                        val search = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == SEARCH_ITEM_INDEX }
-                        search?.let { it.offset + it.size } ?: 0
+                        val header = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == lastHeaderIndex }
+                        header?.let { it.offset + it.size } ?: 0
                     }
                 }
-                // Balão de letra só nos seus artistas em lista (estão em ordem
-                // alfabética). Buscando, ou em grade, a barrinha fica sem balão.
-                val showLabel = !(artists && (grid || searching))
+                val topPx = maxOf(headerBottomPx, if (artists) artistSearchPx else 0)
+                // Balão de letra só em lista (em ordem alfabética) e nunca buscando;
+                // em grade não faz sentido.
+                val showLabel = !grid && !(artists && searching)
                 BoomFastScroller(
                     state = listState,
                     label = { index -> if (showLabel) labels.getOrNull(index) ?: labels.firstOrNull { it != null } else null },
+                    // Aqui as listas costumam ser curtas: basta rolar para ela aparecer.
+                    minItems = 0,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(
-                            top = if (artists) {
-                                with(LocalDensity.current) { maxOf(searchBottomPx, artistSearchPx).toDp() }
-                            } else {
-                                padding.calculateTopPadding()
-                            },
+                            top = with(LocalDensity.current) { topPx.toDp() }.coerceAtLeast(padding.calculateTopPadding()),
                             bottom = padding.calculateBottomPadding(),
                         ),
                 )
@@ -442,6 +442,12 @@ private fun EmptySection(message: Int) {
 }
 
 /** O rótulo do índice de cada item da lista (null nos que não são grupo). */
+/** Quantas linhas vêm antes dos grupos (título, pílulas e, em Artistas, a busca ou o botão de nova playlist). */
+private fun collectionHeaderCount(kind: CollectionKind): Int = when (kind) {
+    CollectionKind.Artists, CollectionKind.Playlists -> 3
+    CollectionKind.Genres, CollectionKind.Albums -> 2
+}
+
 private fun collectionLabels(
     state: CollectionsUiState.Ready,
     search: ArtistSearch,

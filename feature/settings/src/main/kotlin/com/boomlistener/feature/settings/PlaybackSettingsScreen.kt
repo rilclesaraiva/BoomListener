@@ -98,6 +98,46 @@ internal fun PlaybackSettingsScreen(onBack: () -> Unit, modifier: Modifier = Mod
                     )
                 }
             }
+            item(key = "more") {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_playback_more)) {
+                    // ReplayGain: iguala o volume pelas tags das músicas (só baixa, nunca distorce).
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_playback_replaygain),
+                        subtitle = stringResource(R.string.feature_settings_playback_replaygain_summary),
+                        onClick = { settings.setReplayGain(!prefs.replayGain) },
+                        trailing = { Switch(checked = prefs.replayGain, onCheckedChange = settings::setReplayGain) },
+                    )
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_playback_resume),
+                        subtitle = stringResource(R.string.feature_settings_playback_resume_summary),
+                        onClick = { settings.setResumeOnReconnect(!prefs.resumeOnReconnect) },
+                        trailing = { Switch(checked = prefs.resumeOnReconnect, onCheckedChange = settings::setResumeOnReconnect) },
+                    )
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_playback_keep_shuffle),
+                        subtitle = stringResource(R.string.feature_settings_playback_keep_shuffle_summary),
+                        onClick = { settings.setKeepShuffle(!prefs.keepShuffle) },
+                        trailing = { Switch(checked = prefs.keepShuffle, onCheckedChange = settings::setKeepShuffle) },
+                    )
+                }
+            }
+            item(key = "lyrics") {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_playback_lyrics)) {
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_playback_lyrics_online),
+                        subtitle = stringResource(
+                            if (prefs.lyricsOnlineFirst) R.string.feature_settings_playback_lyrics_online_on
+                            else R.string.feature_settings_playback_lyrics_online_off,
+                        ),
+                        onClick = { settings.setLyricsOnlineFirst(!prefs.lyricsOnlineFirst) },
+                        trailing = { Switch(checked = prefs.lyricsOnlineFirst, onCheckedChange = settings::setLyricsOnlineFirst) },
+                    )
+                }
+            }
             item(key = "speed") {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_playback_speed)) {
                     var dragging by remember { mutableFloatStateOf(-1f) }

@@ -20,17 +20,28 @@ internal data class PlaybackSnapshot(
     val index: Int,
     val positionMs: Long,
     val repeatMode: Int,
+    /** O aleatório estava ligado (a fila acima já é a ordem embaralhada). */
+    val shuffle: Boolean = false,
+    /** Com o aleatório ligado: a ordem original, para desligá-lo depois. */
+    val original: List<SnapshotItem>? = null,
 )
 
 private const val HEADER = "boom-queue-v1"
+/** Separa a fila da ordem original (linhas de música começam pelo endereço, nunca por "#"). */
+private const val ORIGINAL_MARK = "#original"
 
 /** Texto simples, uma música por linha, com tab separando os campos (puro e testável). */
 internal fun encodeSnapshot(snapshot: PlaybackSnapshot): String = buildString {
     append(HEADER).append('\t').append(snapshot.index).append('\t').append(snapshot.positionMs)
-        .append('\t').append(snapshot.repeatMode).append('\n')
-    snapshot.items.forEach { item ->
+        .append('\t').append(snapshot.repeatMode).append('\t').append(if (snapshot.shuffle) 1 else 0).append('\n')
+    fun line(item: SnapshotItem) {
         append(listOf(item.uri, item.title, item.artist.orEmpty(), item.album.orEmpty()).joinToString("\t") { escape(it) })
         append('\n')
+    }
+    snapshot.items.forEach(::line)
+    snapshot.original?.let { original ->
+        append(ORIGINAL_MARK).append('\n')
+        original.forEach(::line)
     }
 }
 
@@ -38,17 +49,23 @@ internal fun decodeSnapshot(text: String): PlaybackSnapshot? {
     val lines = text.split('\n').filter { it.isNotEmpty() }
     val header = lines.firstOrNull()?.split('\t') ?: return null
     if (header.size < 4 || header[0] != HEADER) return null
-    val items = lines.drop(1).mapNotNull { line ->
+    fun parse(line: String): SnapshotItem? {
         val fields = line.split('\t').map(::unescape)
-        if (fields.size < 4 || fields[0].isEmpty()) return@mapNotNull null
-        SnapshotItem(fields[0], fields[1], fields[2].ifEmpty { null }, fields[3].ifEmpty { null })
+        if (fields.size < 4 || fields[0].isEmpty()) return null
+        return SnapshotItem(fields[0], fields[1], fields[2].ifEmpty { null }, fields[3].ifEmpty { null })
     }
+    val body = lines.drop(1)
+    val mark = body.indexOf(ORIGINAL_MARK)
+    val items = (if (mark >= 0) body.subList(0, mark) else body).mapNotNull(::parse)
+    val original = if (mark >= 0) body.subList(mark + 1, body.size).mapNotNull(::parse).takeIf { it.isNotEmpty() } else null
     if (items.isEmpty()) return null
     return PlaybackSnapshot(
         items = items,
         index = (header[1].toIntOrNull() ?: 0).coerceIn(items.indices),
         positionMs = (header[2].toLongOrNull() ?: 0L).coerceAtLeast(0),
         repeatMode = header[3].toIntOrNull() ?: 0,
+        shuffle = header.getOrNull(4) == "1",
+        original = original,
     )
 }
 

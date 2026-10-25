@@ -14,6 +14,8 @@ dependencies {
     implementation(project(":data:updates"))
     implementation(project(":data:library"))
     implementation(project(":core:player"))
+    // Escolher onde salvar / qual backup abrir (seletor de arquivos do sistema).
+    implementation(libs.androidx.activity.compose)
 
     testImplementation(libs.kotlinx.coroutines.test)
 }

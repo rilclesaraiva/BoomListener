@@ -4,6 +4,19 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.46.0] — 2026-10-25
+
+### ✨ New
+- **Backup** (Settings → Backup): save your playlists, favorites, history, stats, profile, followed artists and settings to a file, and bring them back later, even on a new phone. Songs are found again by file name, so your playlists keep working. Your songs themselves aren't included, and the file only goes where you save it.
+- **Even out volume (ReplayGain)** (Settings → Playback): songs that carry ReplayGain tags play at a similar volume. Loud songs get quieter; nothing is boosted, so nothing distorts.
+- **Resume when headphones reconnect** (Settings → Playback): if the music paused because your headphones disconnected, it plays again when they come back (within 30 minutes).
+- **Remember shuffle** (Settings → Playback): when you open the app again, shuffle stays on if it was on.
+- **Lyrics source** (Settings → Playback → Lyrics): choose whether the lyrics inside the file or the online ones (LRCLIB) come first.
+- **Profile color:** choose between the gradient (as before) and a solid color across the whole profile.
+
+### 🐛 Fixes
+- Library → Genres and Artists: the fast-scroll bar now shows up on short lists too, runs from the first item to the last, and never goes over the page header. The letter bubble only shows in list view.
+
 ## [0.45.1] — 2026-10-24
 
 **Fourth public beta.** 🎧 This release brings together everything since 0.42.4: a share banner, an offline mode, a few handy new options and a lot of fixes to the search boxes. Here are the highlights; the full list is below in this file.

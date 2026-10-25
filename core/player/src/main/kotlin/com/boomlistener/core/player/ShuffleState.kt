@@ -74,6 +74,14 @@ internal class ShuffleState<T>(
         if (position >= 0) list.add(position + 1, item) else list.add(item)
     }
 
+    /** A ordem original guardada (null com o aleatório desligado). */
+    fun originalItems(): List<T>? = original?.toList()
+
+    /** Volta a um aleatório já em andamento (app reaberto): [order] é a ordem original. */
+    fun adopt(order: List<T>) {
+        original = order.toMutableList()
+    }
+
     /** Esquece tudo (fila trocada ou encerrada). */
     fun clear() {
         original = null
@@ -96,4 +104,13 @@ internal class ShuffleState<T>(
         }
         return result
     }
+}
+
+/**
+ * O aleatório do app é um só no processo: o controller (telas) mexe nele e o
+ * serviço guarda/restaura a ordem original junto com a fila ("lembrar o
+ * aleatório ao reabrir").
+ */
+internal object SharedShuffle {
+    val state = ShuffleState<androidx.media3.common.MediaItem>(keyOf = { it.mediaId })
 }

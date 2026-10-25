@@ -39,6 +39,7 @@ internal fun SettingsScreen(
     onOpenLibrary: () -> Unit,
     onOpenPlayback: () -> Unit,
     onOpenShare: () -> Unit,
+    onOpenBackup: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -113,6 +114,14 @@ internal fun SettingsScreen(
                         subtitle = stringResource(R.string.feature_settings_offline_summary),
                         onClick = { OfflineMode.set(context, !offline) },
                         trailing = { Switch(checked = offline, onCheckedChange = { OfflineMode.set(context, it) }) },
+                    )
+                    // Backup dos dados do app num arquivo (e restaurar, inclusive num celular novo).
+                    BoomSettingsItem(
+                        icon = BoomIcons.Backup,
+                        accent = BoomAccent.Primary,
+                        title = stringResource(R.string.feature_settings_backup),
+                        subtitle = stringResource(R.string.feature_settings_backup_summary),
+                        onClick = onOpenBackup,
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.Wellbeing,

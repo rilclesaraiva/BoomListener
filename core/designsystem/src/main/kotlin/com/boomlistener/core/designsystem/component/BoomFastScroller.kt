@@ -72,9 +72,12 @@ fun BoomFastScroller(
     label: (index: Int) -> String?,
     modifier: Modifier = Modifier,
     startIndex: Int = 0,
+    /** A partir de quantos itens a barrinha aparece (listas curtas que ainda rolam podem pedir menos). */
+    minItems: Int = MIN_ITEMS,
 ) {
     val metrics = remember(state, startIndex) { ListScrollMetrics(state, startIndex) }
     FastScrollerImpl(
+        minItems = minItems,
         total = { state.layoutInfo.totalItemsCount },
         startIndex = startIndex,
         inSection = { state.firstVisibleItemIndex >= startIndex },
@@ -157,6 +160,7 @@ fun BoomFastScroller(
 
 @Composable
 private fun FastScrollerImpl(
+    minItems: Int = MIN_ITEMS,
     total: () -> Int,
     startIndex: Int = 0,
     inSection: () -> Boolean = { true },
@@ -167,7 +171,7 @@ private fun FastScrollerImpl(
     label: (Int) -> String?,
     modifier: Modifier,
 ) {
-    val enoughItems by remember { derivedStateOf { total() - startIndex >= MIN_ITEMS && total() > visible() } }
+    val enoughItems by remember { derivedStateOf { total() - startIndex >= minItems && total() > visible() } }
     if (!enoughItems) return
     // Fora da seção (ex.: o topo do Início, acima de "Músicas"), a barra some.
     val active by remember { derivedStateOf(inSection) }

@@ -44,6 +44,8 @@ internal class NowPlayingViewModel(
     private val embeddedLyrics: suspend (uri: String) -> String? = { null },
     /** Link do YouTube Music de uma música do aparelho (null se não achar). */
     private val songLink: suspend (title: String, artist: String?, durationMs: Long) -> String? = { _, _, _ -> null },
+    /** Ajustes → Reprodução → Letras: a da internet antes da que está no arquivo? */
+    private val onlineLyricsFirst: () -> Boolean = { false },
 ) : ViewModel() {
 
     val state: StateFlow<PlaybackState> = controller.state
@@ -80,14 +82,17 @@ internal class NowPlayingViewModel(
                 lyricsVersion = version
                 _lyrics.value = LyricsUiState.Loading
 
-                // 1º: a letra guardada no próprio arquivo (não precisa de internet).
-                val fromFile = runCatching { lyricsFromText(embeddedLyrics(item.uri)) }.getOrNull()
-                if (fromFile != null) {
-                    _lyrics.value = LyricsUiState.Ready(item.uri, fromFile)
-                    return@collectLatest
+                // A letra guardada no próprio arquivo (não precisa de internet).
+                suspend fun fromFile() = runCatching { lyricsFromText(embeddedLyrics(item.uri)) }.getOrNull()
+                val onlineFirst = onlineLyricsFirst()
+                if (!onlineFirst) {
+                    fromFile()?.let {
+                        _lyrics.value = LyricsUiState.Ready(item.uri, it)
+                        return@collectLatest
+                    }
                 }
 
-                // 2º: LRCLIB. Dá um instante para a duração da música chegar do player.
+                // LRCLIB. Dá um instante para a duração da música chegar do player.
                 if (controller.state.value.durationMs <= 0) delay(400)
                 val query = LyricsQuery(
                     title = item.title,
@@ -95,10 +100,14 @@ internal class NowPlayingViewModel(
                     album = item.album,
                     durationMs = controller.state.value.durationMs,
                 )
-                _lyrics.value = when (val result = lyricsRepository.getLyrics(query)) {
-                    is LyricsResult.Found -> LyricsUiState.Ready(item.uri, result.lyrics)
-                    LyricsResult.NotFound -> LyricsUiState.NotFound
-                    LyricsResult.Failed -> LyricsUiState.Failed
+                val result = lyricsRepository.getLyrics(query)
+                // Internet primeiro e ela não achou (ou falhou): a do arquivo serve.
+                val fallback = if (onlineFirst && result !is LyricsResult.Found) fromFile() else null
+                _lyrics.value = when {
+                    result is LyricsResult.Found -> LyricsUiState.Ready(item.uri, result.lyrics)
+                    fallback != null -> LyricsUiState.Ready(item.uri, fallback)
+                    result == LyricsResult.NotFound -> LyricsUiState.NotFound
+                    else -> LyricsUiState.Failed
                 }
             }
         }

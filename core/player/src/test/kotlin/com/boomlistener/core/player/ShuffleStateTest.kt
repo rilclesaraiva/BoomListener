@@ -88,4 +88,13 @@ class ShuffleStateTest {
         state.insertAfter("a", "x")
         assertFalse(state.isActive)
     }
+
+    @Test
+    fun `adopted order is restored when shuffle stops`() {
+        val state = newState()
+        state.adopt(listOf("a", "b", "c", "d"))
+        assertEquals(listOf("a", "b", "c", "d"), state.originalItems())
+        assertEquals(listOf("a", "b") to listOf("d"), state.stop("c"))
+        assertEquals(null, state.originalItems())
+    }
 }

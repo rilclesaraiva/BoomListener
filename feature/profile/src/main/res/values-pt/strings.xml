@@ -62,4 +62,6 @@
     <string name="feature_profile_edit_tags">Editar tags</string>
     <string name="feature_profile_play_next">Adicionar à fila</string>
     <string name="feature_profile_play_next_done">Vai tocar em seguida</string>
+    <string name="feature_profile_color_gradient">Degradê</string>
+    <string name="feature_profile_color_solid">Sólida</string>
 </resources>

@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.lyrics.LyricsData
+import com.boomlistener.core.player.PlaybackSettingsData
 import com.boomlistener.data.tags.TagsData
 import com.boomlistener.data.deezer.DeezerData
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,6 +33,7 @@ internal fun nowPlayingViewModel(): NowPlayingViewModel {
             LyricsData.repository(context),
             embeddedLyrics = TagsData.repository(context)::readLyrics,
             songLink = DeezerData.repository(context)::youtubeMusicLinkForSong,
+            onlineLyricsFirst = { PlaybackSettingsData.get(context).prefs.value.lyricsOnlineFirst },
         )
     }
 }

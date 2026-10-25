@@ -19,6 +19,7 @@ internal const val LICENSES_ROUTE = "settings/licenses"
 internal const val LIBRARY_SETTINGS_ROUTE = "settings/library"
 internal const val PLAYBACK_SETTINGS_ROUTE = "settings/playback"
 internal const val SHARE_SETTINGS_ROUTE = "settings/share"
+internal const val BACKUP_ROUTE = "settings/backup"
 
 fun NavController.navigateToSettings() = navigateOnce(SETTINGS_ROUTE) { launchSingleTop = true }
 
@@ -41,6 +42,7 @@ fun NavGraphBuilder.settingsScreen(
             onOpenLibrary = { navController.navigateOnce(LIBRARY_SETTINGS_ROUTE) },
             onOpenPlayback = { navController.navigateOnce(PLAYBACK_SETTINGS_ROUTE) },
             onOpenShare = { navController.navigateOnce(SHARE_SETTINGS_ROUTE) },
+            onOpenBackup = { navController.navigateOnce(BACKUP_ROUTE) },
             onBack = back,
         )
     }
@@ -48,6 +50,7 @@ fun NavGraphBuilder.settingsScreen(
     composable(LIBRARY_SETTINGS_ROUTE) { LibrarySettingsScreen(onBack = back) }
     composable(PLAYBACK_SETTINGS_ROUTE) { PlaybackSettingsScreen(onBack = back) }
     composable(SHARE_SETTINGS_ROUTE) { ShareSettingsScreen(onBack = back) }
+    composable(BACKUP_ROUTE) { BackupScreen(onBack = back) }
     composable(ABOUT_ROUTE) { AboutScreen(onBack = back) }
     composable(PRIVACY_ROUTE) { PrivacyScreen(onBack = back) }
     composable(LICENSES_ROUTE) { LicensesScreen(onBack = back) }

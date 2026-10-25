@@ -36,4 +36,19 @@ class PlaybackSnapshotTest {
         assertEquals(0, snapshot.index)
         assertEquals(0L, snapshot.positionMs)
     }
+
+    @Test
+    fun `shuffle and original order round trip`() {
+        val a = SnapshotItem("content://1", "A", null, null)
+        val b = SnapshotItem("content://2", "B", "X", null)
+        val snapshot = PlaybackSnapshot(listOf(b, a), index = 0, positionMs = 10, repeatMode = 0, shuffle = true, original = listOf(a, b))
+        assertEquals(snapshot, decodeSnapshot(encodeSnapshot(snapshot)))
+    }
+
+    @Test
+    fun `old files without shuffle still read`() {
+        val snapshot = decodeSnapshot("boom-queue-v1\t0\t0\t0\ncontent://1\tA\t\t\n")!!
+        assertEquals(false, snapshot.shuffle)
+        assertEquals(null, snapshot.original)
+    }
 }

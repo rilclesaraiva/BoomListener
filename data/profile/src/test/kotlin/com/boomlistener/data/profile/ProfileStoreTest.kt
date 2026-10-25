@@ -30,4 +30,13 @@ class ProfileStoreTest {
         assertEquals(MyProfile(name = "Rilcle", bio = "Olá", color = "#00FF00"), profileFromOldSocialAccount(old))
         assertNull(profileFromOldSocialAccount("não é json"))
     }
+
+    @Test
+    fun `solid color round trips and old files keep the gradient`() {
+        val solid = MyProfile(name = "R", color = "#7A0000", solidColor = true)
+        assertEquals(solid, profileFromJson(profileToJson(solid)))
+        val old = profileFromJson("""{"name":"R","bio":"","color":"#7A0000","avatar":0,"banner":0}""")
+        assertEquals(false, old.solidColor)
+        assertEquals("#7A0000", old.color)
+    }
 }

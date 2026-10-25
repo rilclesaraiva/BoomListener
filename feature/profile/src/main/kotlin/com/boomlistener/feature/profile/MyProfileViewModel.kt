@@ -112,12 +112,13 @@ internal class MyProfileViewModel(
         banner: ImageChange,
         avatar: ImageChange,
         color: String = profile.profile.value.color,
+        solidColor: Boolean = profile.profile.value.solidColor,
         onDone: () -> Unit,
     ) {
         if (_saving.value) return
         _saving.value = true
         viewModelScope.launch {
-            var ok = profile.save(name, bio.take(MAX_BIO), color)
+            var ok = profile.save(name, bio.take(MAX_BIO), color, solidColor)
             for ((kind, change) in listOf(ProfileImage.Banner to banner, ProfileImage.Avatar to avatar)) {
                 when (change) {
                     ImageChange.Keep -> Unit

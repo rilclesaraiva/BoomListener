@@ -52,7 +52,7 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     // Embaralhamento próprio (ver ShuffleState). O "shuffleModeEnabled" do
     // player só guarda se o aleatório está ligado: o serviço usa uma ordem de
     // embaralhamento neutra, então a fila do player é sempre a ordem real.
-    private val shuffle = ShuffleState<MediaItem>(keyOf = { it.mediaId })
+    private val shuffle = SharedShuffle.state
     private var lastIndex = C.INDEX_UNSET
 
     private val _unsupported = MutableSharedFlow<String>(extraBufferCapacity = 4)

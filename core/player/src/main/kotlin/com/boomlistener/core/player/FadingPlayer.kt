@@ -19,11 +19,17 @@ internal class VolumeMixer(private val exo: ExoPlayer, private val handler: Hand
             field = value
             apply()
         }
+    /** Volume igualado pelo ReplayGain da música atual (1 = sem ajuste). */
+    var replayGain = 1f
+        set(value) {
+            field = value
+            apply()
+        }
     private var fade = 1f
     private var ramp: Runnable? = null
 
     private fun apply() {
-        exo.volume = (transition * fade).coerceIn(0f, 1f)
+        exo.volume = (transition * fade * replayGain).coerceIn(0f, 1f)
     }
 
     /** Vai o fator de fade até [target] em [durationMs]; [then] roda no fim. */
