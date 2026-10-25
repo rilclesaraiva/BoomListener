@@ -24,7 +24,6 @@ The app **never streams** from external services. Deezer, MusicBrainz and Last.f
 Your library, playlists, favorites, profile, followed artists and stats stay **on your phone only**. There is no account and no server of ours keeping your data. The app only goes online for:
 
 - public artist, album and lyrics information (Deezer, MusicBrainz, Cover Art Archive, Last.fm and LRCLIB)
-- matching YouTube Music links when you share a song (song.link)
 - checking GitHub for a new version
 
 It asks for access to your music and audio, and (on Android 13 and newer) for permission to show release alerts, which you can turn off.

@@ -104,16 +104,9 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun compartilharUsaOLinkDaMusicaOuABusca() = runTest(dispatcher) {
+    fun compartilharUsaABuscaNoYoutubeMusic() = runTest(dispatcher) {
         val song = Track(1, "content://1", "Catharsis", "Chikoi The Maid", null, 0, 180_000, null, null, 0)
-        val found = LibraryViewModel(
-            FakeLibraryRepository(listOf(song)),
-            FakePlaybackController(),
-            songLink = { _, _, _ -> "https://music.youtube.com/watch?v=U4PI7v6inYc&drli=1" },
-        )
-        assertEquals("https://music.youtube.com/watch?v=U4PI7v6inYc&drli=1", found.shareUrl(song))
-
-        val notFound = LibraryViewModel(FakeLibraryRepository(listOf(song)), FakePlaybackController())
-        assertTrue(notFound.shareUrl(song).startsWith("https://music.youtube.com/search?q="))
+        val viewModel = LibraryViewModel(FakeLibraryRepository(listOf(song)), FakePlaybackController())
+        assertTrue(viewModel.shareUrl(song).startsWith("https://music.youtube.com/search?q="))
     }
 }

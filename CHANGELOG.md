@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.46.2] — 2026-10-25
+
+### 🐛 Fixes
+- Fast-scroll bar: the letter bubble now shows the letter of the item next to the thumb (on Home and in Library → Genres and Artists). Before, it could get stuck on the first letter.
+- Profile with a solid color: the whole page now is that exact color (#000000 is true black, in any theme), and the text and cards take matching shades so everything stays readable.
+
+### 🎨 Visual tweaks
+- Sharing a song now always sends a YouTube Music search link. The service that turned Deezer and Apple links into exact YouTube Music links (song.link) shut down its free access, so the exact link wasn't working anyway.
+
 ## [0.46.1] — 2026-10-25
 
 ### 🐛 Fixes

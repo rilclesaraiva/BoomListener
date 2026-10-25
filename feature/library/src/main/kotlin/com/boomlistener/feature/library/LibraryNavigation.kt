@@ -112,7 +112,6 @@ fun NavGraphBuilder.libraryScreen(
                     library = LibraryData.repository(context),
                     playlists = PlaylistData.repository(context),
                     player = PlayerConnection.controller(context),
-                    songLink = DeezerData.repository(context)::youtubeMusicLinkForSong,
                     favorites = FavoritesData.repository(context).favorites,
                 )
             }

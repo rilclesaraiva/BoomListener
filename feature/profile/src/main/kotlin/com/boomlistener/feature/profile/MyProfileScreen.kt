@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import com.boomlistener.core.designsystem.component.BoomProfilePalette
 import com.boomlistener.core.designsystem.component.parseProfileColor
 import com.boomlistener.core.designsystem.component.profileBackground
+import com.boomlistener.core.designsystem.component.BoomProfileSurface
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -124,89 +125,93 @@ internal fun MyProfileScreen(
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(MY_PROFILE_ROUTE, listState)
 
-    BoomScreenScaffold(
-        title = stringResource(R.string.feature_profile_my_profile),
-        modifier = modifier,
-        // O título faz parte da página (primeira linha da lista): fica no topo
-        // dela e sobe junto ao rolar, sem barra presa na tela.
-        topBar = {},
-        // A cor que você escolheu tinge o perfil inteiro, o título junto.
-        pageBackground = { profileBackground(state?.profile?.color, solid = state?.profile?.solidColor == true) },
-    ) { padding ->
-        val current = state
-        if (current == null) {
-            BoomLoading(Modifier.padding(padding))
-            return@BoomScreenScaffold
-        }
-        LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(bottom = 32.dp + LocalBottomOverlay.current),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            item(key = "title") {
-                ProfileTitleBar(onEdit = { editing = true }, onOpenSettings = onOpenSettings)
+    // Cor sólida: a página inteira na cor escolhida (preto puro fica preto puro),
+    // com textos e cartões em tons que combinam com ela.
+    BoomProfileSurface(state?.profile?.color, solid = state?.profile?.solidColor == true) {
+        BoomScreenScaffold(
+            title = stringResource(R.string.feature_profile_my_profile),
+            modifier = modifier,
+            // O título faz parte da página (primeira linha da lista): fica no topo
+            // dela e sobe junto ao rolar, sem barra presa na tela.
+            topBar = {},
+            // A cor que você escolheu tinge o perfil inteiro, o título junto.
+            pageBackground = { profileBackground(state?.profile?.color, solid = state?.profile?.solidColor == true) },
+        ) { padding ->
+            val current = state
+            if (current == null) {
+                BoomLoading(Modifier.padding(padding))
+                return@BoomScreenScaffold
             }
-            item(key = "header") {
-                Header(current, viewModel, onEdit = { editing = true })
-                if (saveFailed) {
-                    Text(
-                        stringResource(R.string.feature_profile_save_failed),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                    )
+            LazyColumn(
+                state = listState,
+                contentPadding = PaddingValues(bottom = 32.dp + LocalBottomOverlay.current),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                item(key = "title") {
+                    ProfileTitleBar(onEdit = { editing = true }, onOpenSettings = onOpenSettings)
                 }
-            }
-            item(key = "month") { MonthCard(current) }
+                item(key = "header") {
+                    Header(current, viewModel, onEdit = { editing = true })
+                    if (saveFailed) {
+                        Text(
+                            stringResource(R.string.feature_profile_save_failed),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                        )
+                    }
+                }
+                item(key = "month") { MonthCard(current) }
 
-            if (current.topSongs.isNotEmpty()) {
-                item(key = "top") {
-                    SectionTitle(stringResource(R.string.feature_profile_most_played), stringResource(R.string.feature_profile_most_played_sub))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                        itemsIndexed(current.topSongs, key = { _, song -> song.uri }) { index, song ->
-                            TopSongCard(index + 1, song, viewModel, songMenu, onClick = { viewModel.playTop(index) })
+                if (current.topSongs.isNotEmpty()) {
+                    item(key = "top") {
+                        SectionTitle(stringResource(R.string.feature_profile_most_played), stringResource(R.string.feature_profile_most_played_sub))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
+                            itemsIndexed(current.topSongs, key = { _, song -> song.uri }) { index, song ->
+                                TopSongCard(index + 1, song, viewModel, songMenu, onClick = { viewModel.playTop(index) })
+                            }
                         }
                     }
                 }
-            }
 
-            item(key = "time") {
-                SectionTitle(stringResource(R.string.feature_profile_listening_time), stringResource(R.string.feature_profile_last_7_days))
-                // Um embaixo do outro, na largura da tela: nada fica cortado na borda.
-                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    WeekCard(current)
-                    DayPartsCard(current)
+                item(key = "time") {
+                    SectionTitle(stringResource(R.string.feature_profile_listening_time), stringResource(R.string.feature_profile_last_7_days))
+                    // Um embaixo do outro, na largura da tela: nada fica cortado na borda.
+                    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        WeekCard(current)
+                        DayPartsCard(current)
+                    }
                 }
-            }
 
-            if (current.stats.topArtists.isNotEmpty()) {
-                item(key = "artists") {
-                    SectionTitle(stringResource(R.string.feature_profile_top_artists), stringResource(R.string.feature_profile_last_30_days))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                        items(current.stats.topArtists, key = { it.name }) { artist ->
-                            PersonChip(
-                                name = artist.name,
-                                caption = pluralStringResource(R.plurals.feature_profile_plays, artist.plays, artist.plays),
-                                viewModel = viewModel,
-                                onClick = { onOpenArtist(artist.name) },
-                                onPlay = { viewModel.playArtist(artist.name, shuffled = false) },
-                                onShuffle = { viewModel.playArtist(artist.name, shuffled = true) },
-                            )
+                if (current.stats.topArtists.isNotEmpty()) {
+                    item(key = "artists") {
+                        SectionTitle(stringResource(R.string.feature_profile_top_artists), stringResource(R.string.feature_profile_last_30_days))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
+                            items(current.stats.topArtists, key = { it.name }) { artist ->
+                                PersonChip(
+                                    name = artist.name,
+                                    caption = pluralStringResource(R.plurals.feature_profile_plays, artist.plays, artist.plays),
+                                    viewModel = viewModel,
+                                    onClick = { onOpenArtist(artist.name) },
+                                    onPlay = { viewModel.playArtist(artist.name, shuffled = false) },
+                                    onShuffle = { viewModel.playArtist(artist.name, shuffled = true) },
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            if (current.recent.isNotEmpty()) {
-                item(key = "history") {
-                    SectionTitle(
-                        stringResource(R.string.feature_profile_history),
-                        null,
-                        onMore = onOpenHistory,
-                    )
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                        items(current.recent, key = { "${it.timestampMs}-${it.uri}" }) { entry ->
-                            HistoryCard(entry, current.today, viewModel, songMenu, onClick = { viewModel.playRecent(entry) })
+                if (current.recent.isNotEmpty()) {
+                    item(key = "history") {
+                        SectionTitle(
+                            stringResource(R.string.feature_profile_history),
+                            null,
+                            onMore = onOpenHistory,
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
+                            items(current.recent, key = { "${it.timestampMs}-${it.uri}" }) { entry ->
+                                HistoryCard(entry, current.today, viewModel, songMenu, onClick = { viewModel.playRecent(entry) })
+                            }
                         }
                     }
                 }

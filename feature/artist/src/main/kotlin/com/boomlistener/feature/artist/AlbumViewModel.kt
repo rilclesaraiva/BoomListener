@@ -67,10 +67,6 @@ internal class AlbumViewModel(
 
     suspend fun image(url: String, sizePx: Int): Bitmap? = deezer.image(url, sizePx)
 
-    /**
-     * Link para compartilhar uma música ou álbum do Deezer: o mesmo no YouTube
-     * Music (pelo song.link) ou, se não achar, a busca por ele lá.
-     */
-    suspend fun shareUrl(deezerLink: String?, title: String, artist: String?): String =
-        deezerLink?.let { deezer.youtubeMusicLink(it) } ?: ExternalLinks.youtubeMusicSearch(title, artist)
+    /** Link para compartilhar uma música ou álbum: a busca por ele no YouTube Music. */
+    fun shareUrl(title: String, artist: String?): String = ExternalLinks.youtubeMusicSearch(title, artist)
 }

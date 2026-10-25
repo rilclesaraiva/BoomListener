@@ -84,7 +84,6 @@ A tela nunca chama repositório nem API direto; tudo passa pelo ViewModel.
 | MediaStore | arquivos de música do aparelho | — | fonte da biblioteca |
 | Deezer API | foto do artista, discografia, lançamentos | não precisa | ~50 req / 5 s por IP; respostas em cache |
 | Last.fm API | bio, tags, similares, scrobble | sim | chamado **só via `proxy/`**, a chave nunca vai no APK |
-| song.link | links "abrir em…" para outros serviços | não precisa | o app **nunca reproduz** nada de fora |
 
 O que vem de fora fica em cache em arquivo (JSON e imagens, no `cacheDir` de cada módulo `data`), para não repetir consultas. Não existe banco Room: os dados do usuário ficam em DataStore e arquivos.
 

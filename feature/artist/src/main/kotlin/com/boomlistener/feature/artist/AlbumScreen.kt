@@ -168,7 +168,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
                     Icon(BoomIcons.OpenExternal, stringResource(R.string.feature_artist_open_external))
                 }
                 BoomMoreMenu(
-                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.link, release.title, album.artistName), release.title) } },
+                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.title, album.artistName), release.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, album.artistName)) },
                     onDeezer = release.link?.let { link -> { context.openUrl(link) } },
                     header = BoomMenuHeader(release.title, album.artistName, cover),
@@ -217,7 +217,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
                             }
                         }
                         BoomMoreMenu(
-                            onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.link, track.title, album.artistName), track.title) } },
+                            onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.title, album.artistName), track.title) } },
                             onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, album.artistName)) },
                             onDeezer = track.link?.let { link -> { context.openUrl(link) } },
                             header = BoomMenuHeader(track.title, album.artistName, cover),

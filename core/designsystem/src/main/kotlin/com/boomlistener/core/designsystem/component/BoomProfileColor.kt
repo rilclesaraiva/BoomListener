@@ -4,15 +4,19 @@
 package com.boomlistener.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 
 private const val PROFILE_TOP_ALPHA = 0.55f
-
-/** Sólida, a cor cobre a página toda: um pouco mais leve que o topo do degradê, para o texto ler bem. */
-private const val PROFILE_SOLID_ALPHA = 0.4f
 
 /**
  * Cores prontas para o perfil (a pessoa também pode digitar um hexadecimal).
@@ -39,7 +43,7 @@ fun parseProfileColor(hex: String?): Color? {
  */
 fun Modifier.profileBackground(hex: String?, solid: Boolean = false): Modifier {
     val color = parseProfileColor(hex) ?: return this
-    if (solid) return background(color.copy(alpha = PROFILE_SOLID_ALPHA))
+    if (solid) return background(color)
     return background(
         Brush.verticalGradient(
             0f to color.copy(alpha = PROFILE_TOP_ALPHA),
@@ -57,3 +61,54 @@ fun profileTopColor(hex: String?, base: Color): Color? {
     val color = parseProfileColor(hex) ?: return null
     return color.copy(alpha = PROFILE_TOP_ALPHA).compositeOver(base)
 }
+
+/**
+ * Perfil com cor sólida: a página é a própria cor (o #000000 fica preto
+ * puro, em qualquer tema) e os textos, cartões e contornos ganham tons tirados
+ * dela, claros sobre cor escura e escuros sobre cor clara, para ler bem. Sem
+ * cor, ou no degradê, o tema do app fica como está.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun BoomProfileSurface(hex: String?, solid: Boolean, content: @Composable () -> Unit) {
+    val color = parseProfileColor(hex)
+    if (!solid || color == null) {
+        content()
+        return
+    }
+    MaterialExpressiveTheme(
+        colorScheme = MaterialTheme.colorScheme.onSolidColor(color),
+        motionScheme = MaterialTheme.motionScheme,
+        shapes = MaterialTheme.shapes,
+        typography = MaterialTheme.typography,
+        content = content,
+    )
+}
+
+/** As superfícies do tema trocadas por tons de [color]; o resto (destaques) fica. */
+internal fun ColorScheme.onSolidColor(color: Color): ColorScheme {
+    val ink = if (color.luminance() > SOLID_LIGHT_LUMINANCE) Color.Black else Color.White
+    fun tone(amount: Float) = lerp(color, ink, amount)
+    return copy(
+        background = color,
+        onBackground = ink,
+        surface = color,
+        onSurface = ink,
+        surfaceDim = color,
+        surfaceBright = tone(0.12f),
+        surfaceContainerLowest = tone(0.02f),
+        surfaceContainerLow = tone(0.05f),
+        surfaceContainer = tone(0.08f),
+        surfaceContainerHigh = tone(0.11f),
+        surfaceContainerHighest = tone(0.15f),
+        surfaceVariant = tone(0.15f),
+        onSurfaceVariant = lerp(ink, color, 0.3f),
+        outline = lerp(ink, color, 0.5f),
+        outlineVariant = lerp(ink, color, 0.75f),
+        inverseSurface = ink,
+        inverseOnSurface = color,
+    )
+}
+
+/** A partir daqui a cor é clara: textos escuros. */
+private const val SOLID_LIGHT_LUMINANCE = 0.4f

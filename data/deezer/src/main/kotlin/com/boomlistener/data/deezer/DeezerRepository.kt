@@ -70,15 +70,6 @@ interface DeezerRepository {
 
     /** A imagem original (para gravar como capa no arquivo). */
     suspend fun imageBytes(url: String): ByteArray? = null
-
-    /**
-     * Link do YouTube Music (formato de [youtubeMusicShareUrl]) para uma
-     * música ou álbum do Deezer, pelo song.link. null se não achar.
-     */
-    suspend fun youtubeMusicLink(deezerUrl: String): String? = null
-
-    /** O mesmo para uma música do aparelho: acha no Deezer primeiro. */
-    suspend fun youtubeMusicLinkForSong(title: String, artist: String?, durationMs: Long): String? = null
 }
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */

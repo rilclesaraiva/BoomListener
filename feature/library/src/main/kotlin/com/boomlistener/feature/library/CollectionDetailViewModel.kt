@@ -61,7 +61,6 @@ internal class CollectionDetailViewModel(
     private val library: LibraryRepository,
     private val playlists: PlaylistRepository,
     private val player: PlaybackController,
-    private val songLink: suspend (title: String, artist: String?, durationMs: Long) -> String? = { _, _, _ -> null },
     /** Endereços das favoritas (só usados na lista de favoritas). */
     private val favorites: Flow<List<String>> = flowOf(emptyList()),
 ) : ViewModel() {
@@ -171,8 +170,7 @@ internal class CollectionDetailViewModel(
         (ref as? CollectionRef.Playlist)?.let { wanted -> playlists.playlists.first().firstOrNull { it.id == wanted.id } }
 
     suspend fun shareUrl(track: Track): String =
-        runCatching { songLink(track.title, track.artist, track.durationMs) }.getOrNull()
-            ?: ExternalLinks.youtubeMusicSearch(track.title, track.artist)
+        ExternalLinks.youtubeMusicSearch(track.title, track.artist)
 
     suspend fun artwork(uri: String, sizePx: Int): Bitmap? = library.loadArtwork(uri, sizePx)
 }

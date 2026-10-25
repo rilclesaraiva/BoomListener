@@ -132,7 +132,6 @@ internal fun LibraryScreen(
         LibraryViewModel(
             LibraryData.repository(context.applicationContext),
             PlayerConnection.controller(context.applicationContext),
-            songLink = DeezerData.repository(context.applicationContext)::youtubeMusicLinkForSong,
         )
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

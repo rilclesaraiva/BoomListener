@@ -544,7 +544,7 @@ private fun PopularRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OwnedMark(owned)
                 BoomMoreMenu(
-                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.link, track.title, artistName), track.title) } },
+                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(track.title, artistName), track.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(track.title, artistName)) },
                     onDeezer = track.link?.let { link -> { context.openUrl(link) } },
                     header = BoomMenuHeader(track.title, artistName, cover),
@@ -588,7 +588,7 @@ private fun ReleaseRow(
                     Icon(BoomIcons.Owned, stringResource(R.string.feature_artist_owned), tint = MaterialTheme.colorScheme.primary)
                 }
                 BoomMoreMenu(
-                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.link, release.title, artistName), release.title) } },
+                    onShare = { scope.launch { context.shareLink(viewModel.shareUrl(release.title, artistName), release.title) } },
                     onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(release.title, artistName)) },
                     onDeezer = release.link?.takeIf { "deezer.com" in it }?.let { link -> { context.openUrl(link) } },
                     header = BoomMenuHeader(release.title, listOfNotNull(artistName, typeName).joinToString(" • "), cover),

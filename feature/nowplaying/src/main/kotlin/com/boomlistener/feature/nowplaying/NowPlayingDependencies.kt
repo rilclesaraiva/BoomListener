@@ -32,7 +32,6 @@ internal fun nowPlayingViewModel(): NowPlayingViewModel {
             LibraryData.repository(context),
             LyricsData.repository(context),
             embeddedLyrics = TagsData.repository(context)::readLyrics,
-            songLink = DeezerData.repository(context)::youtubeMusicLinkForSong,
             onlineLyricsFirst = { PlaybackSettingsData.get(context).prefs.value.lyricsOnlineFirst },
         )
     }

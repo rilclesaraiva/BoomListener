@@ -42,8 +42,6 @@ internal class NowPlayingViewModel(
     private val lyricsRepository: LyricsRepository,
     /** Letra guardada dentro do arquivo (tag), que tem prioridade sobre a internet. */
     private val embeddedLyrics: suspend (uri: String) -> String? = { null },
-    /** Link do YouTube Music de uma música do aparelho (null se não achar). */
-    private val songLink: suspend (title: String, artist: String?, durationMs: Long) -> String? = { _, _, _ -> null },
     /** Ajustes → Reprodução → Letras: a da internet antes da que está no arquivo? */
     private val onlineLyricsFirst: () -> Boolean = { false },
 ) : ViewModel() {
@@ -115,8 +113,7 @@ internal class NowPlayingViewModel(
 
     /** Link para compartilhar a música atual: no YouTube Music, ou a busca por ela. */
     suspend fun shareUrl(item: NowPlayingItem): String =
-        runCatching { songLink(item.title, item.artist, controller.state.value.durationMs) }.getOrNull()
-            ?: ExternalLinks.youtubeMusicSearch(item.title, item.artist)
+        ExternalLinks.youtubeMusicSearch(item.title, item.artist)
 
     fun toggleLyrics() {
         _showLyrics.value = !_showLyrics.value
