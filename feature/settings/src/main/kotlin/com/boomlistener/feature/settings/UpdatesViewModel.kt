@@ -6,6 +6,7 @@ package com.boomlistener.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boomlistener.data.updates.UpdateCheckResult
+import com.boomlistener.data.updates.UpdatePromptState
 import com.boomlistener.data.updates.UpdatesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,12 +22,17 @@ internal sealed interface UpdatesUiState {
 /** "Verificar atualizações": só consulta o GitHub quando o usuário toca. */
 internal class UpdatesViewModel(
     private val repository: UpdatesRepository,
+    private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<UpdatesUiState>(UpdatesUiState.Idle)
     val state: StateFlow<UpdatesUiState> = _state.asStateFlow()
 
     /** Mostra o aviso de versão nova; some ao fechar e volta a cada nova verificação. */
+    /** Como estão os avisos automáticos (adiados, versão pulada). */
+    private val _prompts = MutableStateFlow(repository.promptState())
+    val prompts: StateFlow<UpdatePromptState> = _prompts.asStateFlow()
+
     private val _showDialog = MutableStateFlow(false)
     val showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
@@ -46,7 +52,8 @@ internal class UpdatesViewModel(
 
     /** Adiar os avisos automáticos (o botão de verificar continua funcionando). */
     fun snooze(period: SnoozePeriod) {
-        repository.snoozePrompt(System.currentTimeMillis() + period.days * 24 * 60 * 60 * 1000L)
+        repository.snoozePrompt(now() + period.days * 24 * 60 * 60 * 1000L)
+        _prompts.value = repository.promptState()
         _showDialog.value = false
     }
 
@@ -54,6 +61,13 @@ internal class UpdatesViewModel(
         ((_state.value as? UpdatesUiState.Done)?.result as? UpdateCheckResult.Available)?.let {
             repository.skipVersion(it.latestVersion)
         }
+        _prompts.value = repository.promptState()
         _showDialog.value = false
+    }
+
+    /** Volta a avisar normalmente (desfaz o adiar e o "pular esta versão"). */
+    fun resumePrompts() {
+        repository.resumePrompts()
+        _prompts.value = repository.promptState()
     }
 }

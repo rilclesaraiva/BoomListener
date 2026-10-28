@@ -40,4 +40,11 @@ class UpdatePromptTest {
         assertFalse(shouldAutoCheck(now, checked))
         assertTrue(shouldAutoCheck(now + AUTO_CHECK_INTERVAL_MS, checked))
     }
+
+    @Test
+    fun abrirDoZeroSempreConsultaMenosAdiado() {
+        val justChecked = UpdatePromptState(lastAutoCheckMs = now - 1_000)
+        assertTrue(shouldAutoCheck(now, justChecked, coldStart = true))
+        assertFalse(shouldAutoCheck(now, justChecked.copy(snoozedUntilMs = now + day), coldStart = true))
+    }
 }

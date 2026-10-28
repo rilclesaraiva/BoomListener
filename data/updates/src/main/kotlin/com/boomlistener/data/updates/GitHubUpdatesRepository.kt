@@ -14,6 +14,7 @@ private const val KEY_SNOOZED_UNTIL = "snoozed_until"
 private const val KEY_SKIPPED = "skipped_version"
 private const val KEY_LAST_CHECK = "last_auto_check"
 private const val KEY_CACHED_RELEASE = "cached_release"
+private const val KEY_ETAG = "cached_release_etag"
 
 private const val LATEST_RELEASE_URL =
     "https://api.github.com/repos/rilclesaraiva/BoomListener/releases/latest"
@@ -29,18 +30,31 @@ internal class GitHubUpdatesRepository(
             readTimeout = 10_000
             setRequestProperty("Accept", "application/vnd.github+json")
             setRequestProperty("User-Agent", "BoomListener/$current")
+            // Pergunta "mudou desde a última?": a resposta 304 (nada mudou) não
+            // gasta o limite de consultas do GitHub, então dá para conferir a
+            // cada abertura do app.
+            val etag = prefs.getString(KEY_ETAG, null)
+            if (etag != null && prefs.contains(KEY_CACHED_RELEASE)) setRequestProperty("If-None-Match", etag)
         }
         val result = try {
             when (connection.responseCode) {
                 HttpURLConnection.HTTP_OK -> {
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     // Guarda a Release mais recente para a próxima abertura.
-                    prefs.edit().putString(KEY_CACHED_RELEASE, body).apply()
+                    prefs.edit()
+                        .putString(KEY_CACHED_RELEASE, body)
+                        .putString(KEY_ETAG, connection.getHeaderField("ETag"))
+                        .apply()
                     parseRelease(body, current)
+                }
+                // Nada mudou desde a última consulta: vale a Release guardada.
+                HttpURLConnection.HTTP_NOT_MODIFIED -> {
+                    val body = prefs.getString(KEY_CACHED_RELEASE, null)
+                    if (body == null) UpdateCheckResult.Failed else parseRelease(body, current)
                 }
                 // A API responde 404 quando ainda não existe nenhuma Release.
                 HttpURLConnection.HTTP_NOT_FOUND -> {
-                    prefs.edit().remove(KEY_CACHED_RELEASE).apply()
+                    prefs.edit().remove(KEY_CACHED_RELEASE).remove(KEY_ETAG).apply()
                     UpdateCheckResult.NoReleases
                 }
                 else -> UpdateCheckResult.Failed
@@ -91,6 +105,10 @@ internal class GitHubUpdatesRepository(
 
     override fun skipVersion(version: String) {
         prefs.edit().putString(KEY_SKIPPED, version).apply()
+    }
+
+    override fun resumePrompts() {
+        prefs.edit().remove(KEY_SNOOZED_UNTIL).remove(KEY_SKIPPED).apply()
     }
 
     override fun markAutoCheck(atMs: Long) {

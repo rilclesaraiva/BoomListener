@@ -150,4 +150,9 @@
     <string name="feature_settings_language">Language</string>
     <string name="feature_settings_language_app">App language</string>
     <string name="feature_settings_language_follows_phone">Follows your phone’s language (choosing per app needs Android 13 or newer)</string>
+    <string name="feature_settings_update_prompts">Update notices</string>
+    <string name="feature_settings_update_prompts_on">On: a notice shows when a new version comes out</string>
+    <string name="feature_settings_update_prompts_snoozed">Paused until %1$s</string>
+    <string name="feature_settings_update_prompts_skipped">Skipping version %1$s</string>
+    <string name="feature_settings_update_prompts_always">Show notices normally</string>
 </resources>

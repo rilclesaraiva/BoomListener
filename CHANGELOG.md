@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.51.2] — 2026-10-28
+
+### 🐛 Fixes
+- Update notice: it now shows up as soon as a new version is out, every time you open the app. Before, it could take up to an hour, or only appear after clearing the app's data.
+- Update notice: "Not now" only hides it until you open the app again (close it from recents and reopen, and it's back). To keep it quiet for longer, use the bell.
+
+### ✨ New
+- Settings → About → Update notices: see whether update notices are paused or skipping a version, and turn them back on (or pause them for a week or a month).
+
 ## [0.51.1] — 2026-10-28
 
 > Everything since 0.45.1: Spanish, an audio visualizer over the cover, backup, background blur, a smoother player and many fixes. Still a beta: landscape and tablet screens may look rough in places.

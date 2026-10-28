@@ -64,22 +64,29 @@ class UpdatePromptViewModelTest {
     }
 
     @Test
-    fun naoConsultaDeNovoLogoDepois() {
+    fun abrirDoZeroSempreConsultaVoltarSoDepoisDoIntervalo() {
+        // Consultou há 1 s: abrir o app do zero consulta de novo (achou a Release nova).
         val fake = PromptFake(available, UpdatePromptState(lastAutoCheckMs = NOW - 1_000))
         val viewModel = UpdatePromptViewModel(fake) { NOW }
-        assertEquals(0, fake.checks)
-        assertNull(viewModel.available.value)
-        UpdatePromptViewModel(fake) { NOW + AUTO_CHECK_INTERVAL_MS }
+        assertEquals(1, fake.checks)
+        assertEquals(available, viewModel.available.value)
+        // Voltar para o app logo depois não consulta de novo.
+        viewModel.checkOnOpen()
         assertEquals(1, fake.checks)
     }
 
     @Test
-    fun agoraNaoAdiaUmDia() {
+    fun agoraNaoSoAteAbrirDeNovo() {
         val fake = PromptFake(available)
         val viewModel = UpdatePromptViewModel(fake) { NOW }
         viewModel.later()
         assertNull(viewModel.available.value)
-        assertEquals(NOW + DAY, fake.state.snoozedUntilMs)
+        assertEquals(0L, fake.state.snoozedUntilMs)
+        // Mesma sessão (voltou para o app): não reaparece.
+        viewModel.checkOnOpen()
+        assertNull(viewModel.available.value)
+        // Abriu o app de novo: aparece.
+        assertEquals(available, UpdatePromptViewModel(fake) { NOW + 60_000 }.available.value)
     }
 
     @Test
@@ -111,7 +118,6 @@ class UpdatePromptViewModelTest {
         val fake = PromptFake(available, UpdatePromptState(lastAutoCheckMs = NOW - 1_000), cached = available)
         val viewModel = UpdatePromptViewModel(fake) { NOW }
         assertEquals(available, viewModel.available.value)
-        assertEquals(0, fake.checks)
     }
 
     @Test

@@ -51,6 +51,9 @@ interface UpdatesRepository {
     /** Não avisar mais desta versão (só da próxima). */
     fun skipVersion(version: String) {}
 
+    /** Desfaz o adiar e o "pular esta versão" (Ajustes → Avisos de atualização). */
+    fun resumePrompts() {}
+
     fun markAutoCheck(atMs: Long) {}
 
     /**
@@ -62,14 +65,19 @@ interface UpdatesRepository {
 }
 
 /**
- * Intervalo mínimo entre consultas automáticas (ao abrir ou voltar ao app).
- * 1 h fica bem abaixo do limite do GitHub (60 consultas por hora sem conta).
+ * Intervalo mínimo entre consultas automáticas ao **voltar** para o app (sair
+ * e voltar várias vezes não consulta a cada vez). Abrir o app do zero sempre
+ * consulta: a consulta pergunta "mudou?" (ETag) e a resposta "não mudou" não
+ * gasta o limite do GitHub (60 por hora sem conta).
  */
-const val AUTO_CHECK_INTERVAL_MS: Long = 60 * 60 * 1000L
+const val AUTO_CHECK_INTERVAL_MS: Long = 10 * 60 * 1000L
 
-/** Abrir o app agora deve consultar o GitHub? */
-fun shouldAutoCheck(nowMs: Long, state: UpdatePromptState): Boolean =
-    nowMs >= state.snoozedUntilMs && nowMs - state.lastAutoCheckMs >= AUTO_CHECK_INTERVAL_MS
+/**
+ * Consultar o GitHub agora? Adiado, nunca. Abrindo o app do zero ([coldStart]),
+ * sempre; voltando para ele, só passado [AUTO_CHECK_INTERVAL_MS].
+ */
+fun shouldAutoCheck(nowMs: Long, state: UpdatePromptState, coldStart: Boolean = false): Boolean =
+    nowMs >= state.snoozedUntilMs && (coldStart || nowMs - state.lastAutoCheckMs >= AUTO_CHECK_INTERVAL_MS)
 
 /** O aviso da versão [latestVersion] pode aparecer sozinho agora? */
 fun shouldPrompt(latestVersion: String, nowMs: Long, state: UpdatePromptState): Boolean =

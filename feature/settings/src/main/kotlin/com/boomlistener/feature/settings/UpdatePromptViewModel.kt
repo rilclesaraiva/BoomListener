@@ -20,8 +20,10 @@ private const val DAY_MS = 24 * 60 * 60 * 1000L
 internal enum class SnoozePeriod(val days: Int) { Week(7), Month(30) }
 
 /**
- * O aviso de versão nova que aparece sozinho ao abrir o app. Consulta o
- * GitHub no máximo a cada 1 h e respeita o "adiar" e o "pular esta versão".
+ * O aviso de versão nova que aparece sozinho ao abrir o app. Abrindo do zero,
+ * sempre consulta o GitHub; voltando ao app, no máximo a cada 10 min. Respeita
+ * o adiar (sino) e o "pular esta versão"; "Agora não" vale só até o app ser
+ * aberto de novo.
  */
 internal class UpdatePromptViewModel(
     private val repository: UpdatesRepository,
@@ -37,7 +39,7 @@ internal class UpdatePromptViewModel(
     private var checking = false
 
     init {
-        checkOnOpen()
+        checkOnOpen(coldStart = true)
     }
 
     /**
@@ -47,12 +49,12 @@ internal class UpdatePromptViewModel(
      * saber a resposta: uma consulta que não achava nada (ou falhava sem
      * internet) escondia por horas uma versão publicada logo depois.
      */
-    fun checkOnOpen() {
+    fun checkOnOpen(coldStart: Boolean = false) {
         if (handled) return
         repository.cachedUpdate()?.let { cached ->
             if (shouldPrompt(cached.latestVersion, now(), repository.promptState())) _available.value = cached
         }
-        if (checking || !shouldAutoCheck(now(), repository.promptState())) return
+        if (checking || !shouldAutoCheck(now(), repository.promptState(), coldStart)) return
         checking = true
         viewModelScope.launch {
             val result = repository.checkForUpdates()
@@ -77,10 +79,12 @@ internal class UpdatePromptViewModel(
         _available.value = null
     }
 
-    /** "Agora não": lembra de novo amanhã. */
+    /**
+     * "Agora não": some só agora. Fechar o app (tirar dos recentes) e abrir de
+     * novo mostra o aviso outra vez; para silenciar por mais tempo há o sino.
+     */
     fun later() {
         handled = true
-        repository.snoozePrompt(now() + DAY_MS)
         _available.value = null
     }
 
