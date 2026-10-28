@@ -199,6 +199,8 @@ fun BoomMenuSheet(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
+        // O painel, para fechar de dentro das colunas (que não deixam chamá-lo direto).
+        val sheet = this
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
             if (header != null) {
                 Row(
@@ -237,7 +239,7 @@ fun BoomMenuSheet(
                         .clickable(enabled = action.enabled) {
                             // Fecha com a animação de descer e só então some de vez.
                             action.onClick()
-                            dismiss()
+                            sheet.dismiss()
                         }
                         .padding(horizontal = 24.dp, vertical = 14.dp)
                         .alpha(if (action.enabled) 1f else 0.38f),
