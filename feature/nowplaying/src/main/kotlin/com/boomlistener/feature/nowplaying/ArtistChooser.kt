@@ -6,6 +6,7 @@ package com.boomlistener.feature.nowplaying
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -51,6 +52,7 @@ internal fun rememberArtistOpener(onOpenArtist: (String) -> Unit): (String) -> U
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ArtistChooserSheet(
     fullName: String,
