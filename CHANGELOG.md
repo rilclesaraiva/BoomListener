@@ -4,6 +4,12 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.47.1] — 2026-10-27
+
+### 🐛 Fixes
+- Opening Settings or the tag editor with background blur on no longer stutters.
+- Fix tags automatically: when your tags already match what it finds (and the song already has a cover), it now says so and changes nothing, instead of filling in the same data again.
+
 ## [0.47.0] — 2026-10-27
 
 ### ✨ New

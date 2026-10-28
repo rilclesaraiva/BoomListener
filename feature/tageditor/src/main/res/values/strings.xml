@@ -30,6 +30,7 @@
     <string name="feature_tageditor_auto_search">Search</string>
     <string name="feature_tageditor_auto_searching">Searching Deezer, MusicBrainz and Last.fm…</string>
     <string name="feature_tageditor_auto_applied">Filled in from %1$s. Check the fields and tap Save.</string>
+    <string name="feature_tageditor_auto_already_correct">Your tags already match %1$s. Nothing to change.</string>
     <string name="feature_tageditor_auto_other">Other matches</string>
     <string name="feature_tageditor_auto_undo">Undo</string>
     <string name="feature_tageditor_auto_not_found">No match found. Check the title and artist, then search again.</string>

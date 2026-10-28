@@ -382,6 +382,20 @@ private fun AutoTagCard(state: TagEditorUiState, viewModel: TagEditorViewModel) 
                                 }
                             }
                         }
+                        is AutoTagState.AlreadyCorrect -> {
+                            Text(
+                                text = stringResource(
+                                    R.string.feature_tageditor_auto_already_correct,
+                                    listOf(auto.chosen.album, auto.chosen.artist).filter { it.isNotBlank() }.joinToString(" · "),
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            if (auto.others.isNotEmpty()) {
+                                OutlinedButton(onClick = viewModel::showOtherMatches) {
+                                    Text(stringResource(R.string.feature_tageditor_auto_other))
+                                }
+                            }
+                        }
                         else -> {
                             Text(
                                 text = stringResource(

@@ -46,9 +46,13 @@ private const val URI = "content://media/external/audio/media/7"
 
 private val inFile = TrackTags(title = "Catharsis", artist = "Chikoi The Maid", lyrics = "letra minha")
 
-private class FakeTags(var writeResult: TagsWriteResult = TagsWriteResult.Success) : TagsRepository {
+private class FakeTags(
+    var writeResult: TagsWriteResult = TagsWriteResult.Success,
+    private val fileTags: TrackTags = inFile,
+    private val fileCover: ByteArray? = null,
+) : TagsRepository {
     var written: Pair<TrackTags, CoverEdit>? = null
-    override suspend fun read(uri: String) = TagsReadResult.Found(inFile, cover = null, durationMs = 180_000)
+    override suspend fun read(uri: String) = TagsReadResult.Found(fileTags, cover = fileCover, durationMs = 180_000)
     override suspend fun readLyrics(uri: String): String? = null
     override suspend fun write(uri: String, tags: TrackTags, cover: CoverEdit): TagsWriteResult {
         written = tags to cover
@@ -263,5 +267,34 @@ class TagEditorViewModelTest {
         vm.save()
         assertTrue(vm.state.value.hasChanges)
         assertFalse(vm.state.value.saving)
+    }
+
+    @Test
+    fun tagsJaCorretasNaoMudamNada() {
+        // O arquivo já tem tudo o que o Deezer (e o gênero do Last.fm) trariam, e já tem capa.
+        val complete = TrackTags(
+            title = "Catharsis", artist = "Chikoi The Maid", album = "Insertion", albumArtist = "Chikoi The Maid",
+            year = "2024", genre = "Math Rock", trackNumber = "4", trackTotal = "9", discNumber = "1",
+            lyrics = "letra minha",
+        )
+        val vm = viewModel(tags = FakeTags(fileTags = complete, fileCover = byteArrayOf(5)))
+        vm.autoTag()
+        val state = vm.state.value
+        assertTrue(state.autoTag is AutoTagState.AlreadyCorrect)
+        assertFalse(state.hasChanges)
+        assertArrayEquals(byteArrayOf(5), state.shownCover)
+    }
+
+    @Test
+    fun tagsIguaisMasSemCapaTrazACapa() {
+        val complete = TrackTags(
+            title = "Catharsis", artist = "Chikoi The Maid", album = "Insertion", albumArtist = "Chikoi The Maid",
+            year = "2024", genre = "Math Rock", trackNumber = "4", trackTotal = "9", discNumber = "1",
+            lyrics = "letra minha",
+        )
+        val vm = viewModel(tags = FakeTags(fileTags = complete, fileCover = null))
+        vm.autoTag()
+        assertTrue(vm.state.value.autoTag is AutoTagState.Applied)
+        assertTrue(vm.state.value.hasChanges)
     }
 }

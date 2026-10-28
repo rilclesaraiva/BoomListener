@@ -30,6 +30,7 @@
     <string name="feature_tageditor_auto_search">Buscar</string>
     <string name="feature_tageditor_auto_searching">Buscando no Deezer, no MusicBrainz e no Last.fm…</string>
     <string name="feature_tageditor_auto_applied">Preenchido com %1$s. Confira os campos e toque em Salvar.</string>
+    <string name="feature_tageditor_auto_already_correct">Suas tags já batem com %1$s. Nada a mudar.</string>
     <string name="feature_tageditor_auto_other">Outras opções</string>
     <string name="feature_tageditor_auto_undo">Desfazer</string>
     <string name="feature_tageditor_auto_not_found">Nada encontrado. Confira o título e o artista e busque de novo.</string>

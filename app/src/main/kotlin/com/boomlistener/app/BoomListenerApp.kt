@@ -15,6 +15,7 @@ import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.core.designsystem.component.LocalWideLayout
 import com.boomlistener.core.designsystem.component.LocalProfileButton
 import com.boomlistener.core.designsystem.component.BoomIcons
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.Surface
@@ -368,7 +369,14 @@ fun BoomListenerApp() {
       var sidebarExpanded by rememberSaveable { mutableStateOf(maxWidth >= 840.dp) }
       var artistPanelOpen by rememberSaveable { mutableStateOf(maxWidth >= 1000.dp) }
       // Altura do mini player (0 sem música), que as telas usam como folga no fim.
-      var miniPlayerHeight by remember { mutableStateOf(0.dp) }
+      // Medida no próprio mini player (não no que anima a entrada e a saída):
+      // assim ela não muda a cada quadro ao entrar nos Ajustes, o que fazia as
+      // duas telas se refazerem (e desfocarem de novo) quadro a quadro.
+      var miniPlayerMeasured by remember { mutableStateOf(0.dp) }
+      val miniPlayerVisible = !inSettings && !inTagEditor
+      val miniPlayerHeight = if (miniPlayerVisible) miniPlayerMeasured else 0.dp
+      // Altura da barra de abas, medida nela mesma pelo mesmo motivo.
+      var navBarMeasured by remember { mutableStateOf<Dp?>(null) }
       val density = LocalDensity.current
       CompositionLocalProvider(
           LocalWideLayout provides wide,
@@ -402,13 +410,14 @@ fun BoomListenerApp() {
                         }
                         // Função à parte: aqui dentro da Row, AnimatedVisibility viraria a versão de RowScope.
                         FloatingMiniPlayer(
-                            visible = !inSettings && !inTagEditor,
+                            visible = miniPlayerVisible,
                             sheetState = playerSheet,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } }
                                 .playerSheetAnchor(playerSheet),
-                            playerModifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
+                            playerModifier = Modifier
+                                .onSizeChanged { miniPlayerMeasured = with(density) { it.height.toDp() } }
+                                .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
                         )
                     }
                     // Só com música tocando: o artista dela (recolhível).
@@ -446,7 +455,11 @@ fun BoomListenerApp() {
                     ) {
                     // Abrindo o player, a barra de abas desce junto, empurrada
                     // pelo cartão que cresce a partir do mini player.
-                    NavigationBar(Modifier.graphicsLayer { translationY = playerSheet.fraction * size.height }) {
+                    NavigationBar(
+                        Modifier
+                            .onSizeChanged { navBarMeasured = with(density) { it.height.toDp() } }
+                            .graphicsLayer { translationY = playerSheet.fraction * size.height },
+                    ) {
                         TopLevelDestination.entries.forEach { destination ->
                             NavigationBarItem(
                                 selected = destination == selectedTab,
@@ -463,24 +476,28 @@ fun BoomListenerApp() {
             // O mini player flutua por cima das telas, sem faixa de fundo atrás
             // dele: a página continua por baixo e as listas ganham folga no fim
             // (LocalBottomOverlay).
-            val bottom = innerPadding.calculateBottomPadding()
+            // A folga salta direto para o valor final (com ou sem a barra), em
+            // vez de acompanhar a barra encolhendo quadro a quadro.
+            val bottom = navBarMeasured?.let { if (onTab) it else 0.dp } ?: innerPadding.calculateBottomPadding()
             Box(Modifier.fillMaxSize()) {
                 CompositionLocalProvider(LocalBottomOverlay provides miniPlayerHeight) {
                     // Abrindo o player, o app por trás vai desfocando.
                     navGraph(Modifier.padding(bottom = bottom).fractionBlur(backgroundBlur.enabled, { playerSheet.fraction }))
                 }
                 AnimatedVisibility(
-                    visible = !inSettings && !inTagEditor,
+                    visible = miniPlayerVisible,
                     enter = expandVertically(barSpec) + fadeIn(barFade),
                     exit = shrinkVertically(barSpec) + fadeOut(barFade),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = bottom)
-                        .onSizeChanged { miniPlayerHeight = with(density) { it.height.toDp() } }
                         // O player em tela cheia cresce a partir daqui.
                         .playerSheetAnchor(playerSheet),
                 ) {
-                    MiniPlayer(sheetState = playerSheet)
+                    MiniPlayer(
+                        sheetState = playerSheet,
+                        modifier = Modifier.onSizeChanged { miniPlayerMeasured = with(density) { it.height.toDp() } },
+                    )
                 }
             }
         }

@@ -58,6 +58,8 @@ internal sealed interface AutoTagState {
     data class Choosing(val candidates: List<TrackCandidate>) : AutoTagState
     /** Preencheu o formulário com [chosen]; [others] são as outras opções. */
     data class Applied(val chosen: TrackCandidate, val others: List<TrackCandidate>) : AutoTagState
+    /** Achou [chosen], e o arquivo já está igual: nada a trocar. */
+    data class AlreadyCorrect(val chosen: TrackCandidate, val others: List<TrackCandidate>) : AutoTagState
     data object NotFound : AutoTagState
     data object Failed : AutoTagState
 }
@@ -242,8 +244,12 @@ internal class TagEditorViewModel(
 
     /** Mostra de novo as opções encontradas (para trocar a escolhida). */
     fun showOtherMatches() {
-        val applied = _state.value.autoTag as? AutoTagState.Applied ?: return
-        _state.update { it.copy(autoTag = AutoTagState.Choosing(listOf(applied.chosen) + applied.others)) }
+        val (chosen, others) = when (val auto = _state.value.autoTag) {
+            is AutoTagState.Applied -> auto.chosen to auto.others
+            is AutoTagState.AlreadyCorrect -> auto.chosen to auto.others
+            else -> return
+        }
+        _state.update { it.copy(autoTag = AutoTagState.Choosing(listOf(chosen) + others)) }
     }
 
     /** Fechou a lista de opções sem escolher. */
@@ -297,13 +303,25 @@ internal class TagEditorViewModel(
         }
 
         val current = _state.value
+        val others = all.filter { other -> other.trackId != candidate.trackId }
+        val merged = mergeSuggestion(
+            beforeAuto?.first ?: current.tags,
+            official.copy(genre = lastfmGenre ?: official.genre),
+        )
+        // O arquivo já tem exatamente isso (e já tem capa): não troca nada, só avisa.
+        if (beforeAuto == null && current.tags == current.original && merged == current.original &&
+            current.cover == CoverState.Original && current.originalCover != null
+        ) {
+            _state.update { it.copy(autoTag = AutoTagState.AlreadyCorrect(candidate, others)) }
+            return
+        }
         if (beforeAuto == null) beforeAuto = current.tags to current.cover
         val base = beforeAuto!!.first
         _state.update {
             it.copy(
                 tags = mergeSuggestion(base, official.copy(genre = lastfmGenre ?: official.genre)),
                 cover = coverBytes?.let { bytes -> CoverState.New(bytes) } ?: beforeAuto!!.second,
-                autoTag = AutoTagState.Applied(candidate, all.filter { other -> other.trackId != candidate.trackId }),
+                autoTag = AutoTagState.Applied(candidate, others),
             )
         }
     }
