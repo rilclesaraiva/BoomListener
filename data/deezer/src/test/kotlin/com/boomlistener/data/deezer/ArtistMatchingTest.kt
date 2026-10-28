@@ -43,4 +43,32 @@ class ArtistMatchingTest {
         assertEquals("1989", comparableTitle("1989 [Deluxe Edition]"))
         assertEquals("acai", comparableTitle("Açaí - EP"))
     }
+
+    @Test
+    fun separaVariosArtistas() {
+        assertEquals(listOf("Salako", "Ziahfyah", "ELHAE"), splitArtistNames("Salako, Ziahfyah y ELHAE"))
+        assertEquals(listOf("Djavan", "Caetano Veloso"), splitArtistNames("Djavan feat. Caetano Veloso"))
+        assertEquals(listOf("Anitta", "J Balvin"), splitArtistNames("Anitta & J Balvin"))
+        assertEquals(listOf("Alok", "Vintage Culture"), splitArtistNames("Alok x Vintage Culture"))
+        assertEquals(listOf("Malcolm X"), splitArtistNames("Malcolm X"))
+        assertEquals(listOf("Chikoi The Maid"), splitArtistNames("Chikoi The Maid"))
+    }
+
+    @Test
+    fun nomeInteiroPrimeiroDepoisCadaUm() {
+        assertEquals(
+            listOf("Earth, Wind & Fire", "Earth", "Wind", "Fire"),
+            artistSearchNames("Earth, Wind & Fire"),
+        )
+        assertEquals(listOf("Djavan", "Caetano Veloso"), artistSearchNames("Djavan feat. Caetano Veloso"))
+        assertEquals(listOf("Pitty"), artistSearchNames("Pitty"))
+    }
+
+    @Test
+    fun juntaPrincipaisEConvidados() {
+        assertEquals("Salako, Ziahfyah, ELHAE", joinArtists(listOf("Salako", "Ziahfyah", "ELHAE"), emptyList(), "Do Tha Thing"))
+        assertEquals("Djavan feat. Caetano Veloso", joinArtists(listOf("Djavan"), listOf("Caetano Veloso"), "Linha do Equador"))
+        // Convidado já no título não se repete.
+        assertEquals("Anitta", joinArtists(listOf("Anitta"), listOf("J Balvin"), "Downtown (feat. J Balvin)"))
+    }
 }

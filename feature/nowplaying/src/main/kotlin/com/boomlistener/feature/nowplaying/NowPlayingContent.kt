@@ -263,7 +263,12 @@ internal fun NowPlayingContent(
                                         // deitado, a altura).
                                         modifier = Modifier
                                             .aspectRatio(1f, matchHeightConstraintsFirst = true)
-                                            .clickable(onClick = viewModel::toggleLyrics),
+                                            // Sem a cor por cima ao segurar: a capa é a arte, não um botão.
+                                            .clickable(
+                                                interactionSource = null,
+                                                indication = null,
+                                                onClick = viewModel::toggleLyrics,
+                                            ),
                                     )
                                 }
                             }

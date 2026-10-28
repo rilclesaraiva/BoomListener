@@ -27,4 +27,8 @@ internal class AppearanceViewModel(
     fun setDynamicColor(enabled: Boolean) {
         viewModelScope.launch { repository.setDynamicColor(enabled) }
     }
+
+    fun setBackgroundBlur(enabled: Boolean) {
+        viewModelScope.launch { repository.setBackgroundBlur(enabled) }
+    }
 }

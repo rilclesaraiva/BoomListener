@@ -37,23 +37,26 @@ data class LocalTrackInfo(
 private val FEAT_IN_TITLE = Regex("""\s*[(\[]\s*(feat\.?|ft\.?|featuring|with|part\.?)\s[^)\]]*[)\]]""", RegexOption.IGNORE_CASE)
 private val EXTRA_IN_TITLE = Regex("""\s*[(\[][^)\]]*(official|audio|video|lyric|clipe|visualizer|hq|hd)[^)\]]*[)\]]""", RegexOption.IGNORE_CASE)
 private val TRACK_NUMBER_PREFIX = Regex("""^\d{1,3}\s*[-._)]\s*""")
+// Hashtags no título ("Do Tha Thing #JerseyClub"): o Deezer não tem.
+private val HASHTAG = Regex("""\s+#\p{L}\S*""")
 private val NON_WORD = Regex("""[^\p{L}\p{N}]+""")
 
 /**
  * Título comparável: sem "(feat. Fulano)", "[Official Video]", número de
- * faixa no começo ("03 - "), acentos, maiúsculas e pontuação.
+ * faixa no começo ("03 - "), hashtags, acentos, maiúsculas e pontuação.
  */
 fun comparableSongTitle(title: String): String =
     title.replace(FEAT_IN_TITLE, "")
         .replace(EXTRA_IN_TITLE, "")
         .replace(TRACK_NUMBER_PREFIX, "")
+        .replace(HASHTAG, "")
         .normalizedForSearch()
         .replace(NON_WORD, " ")
         .trim()
 
 /** Título para mandar na busca (sem os enfeites, mas com acentos). */
 fun searchableSongTitle(title: String): String =
-    title.replace(FEAT_IN_TITLE, "").replace(EXTRA_IN_TITLE, "").replace(TRACK_NUMBER_PREFIX, "").trim()
+    title.replace(FEAT_IN_TITLE, "").replace(EXTRA_IN_TITLE, "").replace(TRACK_NUMBER_PREFIX, "").replace(HASHTAG, "").trim()
 
 private fun words(text: String): Set<String> = text.split(' ').filter { it.isNotBlank() }.toSet()
 
@@ -81,6 +84,11 @@ internal fun artistSimilarity(local: String?, remote: String): Float {
         a == b -> 1f
         // "Anitta & J Balvin" x "Anitta"; "Djavan" x "Djavan e Caetano".
         a.startsWith(b) || b.startsWith(a) -> 0.7f
+        // Vários artistas: "Salako, Ziahfyah y ELHAE" x "ELHAE" (no Deezer o
+        // principal pode ser qualquer um deles).
+        splitArtistNames(local).map { it.normalizedForSearch() }
+            .intersect(splitArtistNames(remote).map { it.normalizedForSearch() }.toSet())
+            .isNotEmpty() -> 0.8f
         else -> 0f
     }
 }

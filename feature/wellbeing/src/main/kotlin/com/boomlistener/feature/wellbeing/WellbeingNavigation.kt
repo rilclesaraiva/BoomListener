@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.wellbeing
 
+import com.boomlistener.core.designsystem.component.BoomNavScreen
 import com.boomlistener.core.common.navigateOnce
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,7 +28,7 @@ fun NavController.navigateToHistory() = navigateOnce(HISTORY_ROUTE) { launchSing
  * fornece; uma feature não conhece a outra).
  */
 fun NavGraphBuilder.wellbeingScreen(onBack: () -> Unit, songMenu: HistorySongMenu = HistorySongMenu()) {
-    composable(WELLBEING_ROUTE) { WellbeingScreen(onBack = onBack) }
+    composable(WELLBEING_ROUTE) { BoomNavScreen(this) { WellbeingScreen(onBack = onBack) } }
     composable(HISTORY_ROUTE) {
         val context = LocalContext.current.applicationContext
         val viewModel = viewModel {
@@ -39,7 +40,9 @@ fun NavGraphBuilder.wellbeingScreen(onBack: () -> Unit, songMenu: HistorySongMen
                 firstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek,
             )
         }
-        HistoryScreen(viewModel = viewModel, onBack = onBack, songMenu = songMenu)
+        BoomNavScreen(this) {
+            HistoryScreen(viewModel = viewModel, onBack = onBack, songMenu = songMenu)
+        }
     }
 }
 

@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.settings
 
+import com.boomlistener.core.designsystem.component.BoomNavScreen
 import com.boomlistener.core.common.popBackStackOnce
 import com.boomlistener.core.common.navigateOnce
 import androidx.navigation.NavController
@@ -33,25 +34,27 @@ fun NavGraphBuilder.settingsScreen(
 ) {
     val back: () -> Unit = { navController.popBackStackOnce() }
     composable(SETTINGS_ROUTE) {
-        SettingsScreen(
-            onOpenAppearance = { navController.navigateOnce(APPEARANCE_ROUTE) },
-            onOpenWellbeing = onOpenWellbeing,
-            onOpenAbout = { navController.navigateOnce(ABOUT_ROUTE) },
-            onOpenPrivacy = { navController.navigateOnce(PRIVACY_ROUTE) },
-            onOpenLicenses = { navController.navigateOnce(LICENSES_ROUTE) },
-            onOpenLibrary = { navController.navigateOnce(LIBRARY_SETTINGS_ROUTE) },
-            onOpenPlayback = { navController.navigateOnce(PLAYBACK_SETTINGS_ROUTE) },
-            onOpenShare = { navController.navigateOnce(SHARE_SETTINGS_ROUTE) },
-            onOpenBackup = { navController.navigateOnce(BACKUP_ROUTE) },
-            onBack = back,
-        )
+        BoomNavScreen(this) {
+            SettingsScreen(
+                onOpenAppearance = { navController.navigateOnce(APPEARANCE_ROUTE) },
+                onOpenWellbeing = onOpenWellbeing,
+                onOpenAbout = { navController.navigateOnce(ABOUT_ROUTE) },
+                onOpenPrivacy = { navController.navigateOnce(PRIVACY_ROUTE) },
+                onOpenLicenses = { navController.navigateOnce(LICENSES_ROUTE) },
+                onOpenLibrary = { navController.navigateOnce(LIBRARY_SETTINGS_ROUTE) },
+                onOpenPlayback = { navController.navigateOnce(PLAYBACK_SETTINGS_ROUTE) },
+                onOpenShare = { navController.navigateOnce(SHARE_SETTINGS_ROUTE) },
+                onOpenBackup = { navController.navigateOnce(BACKUP_ROUTE) },
+                onBack = back,
+            )
+        }
     }
-    composable(APPEARANCE_ROUTE) { AppearanceScreen(onBack = back) }
-    composable(LIBRARY_SETTINGS_ROUTE) { LibrarySettingsScreen(onBack = back) }
-    composable(PLAYBACK_SETTINGS_ROUTE) { PlaybackSettingsScreen(onBack = back) }
-    composable(SHARE_SETTINGS_ROUTE) { ShareSettingsScreen(onBack = back) }
-    composable(BACKUP_ROUTE) { BackupScreen(onBack = back) }
-    composable(ABOUT_ROUTE) { AboutScreen(onBack = back) }
-    composable(PRIVACY_ROUTE) { PrivacyScreen(onBack = back) }
-    composable(LICENSES_ROUTE) { LicensesScreen(onBack = back) }
+    composable(APPEARANCE_ROUTE) { BoomNavScreen(this) { AppearanceScreen(onBack = back) } }
+    composable(LIBRARY_SETTINGS_ROUTE) { BoomNavScreen(this) { LibrarySettingsScreen(onBack = back) } }
+    composable(PLAYBACK_SETTINGS_ROUTE) { BoomNavScreen(this) { PlaybackSettingsScreen(onBack = back) } }
+    composable(SHARE_SETTINGS_ROUTE) { BoomNavScreen(this) { ShareSettingsScreen(onBack = back) } }
+    composable(BACKUP_ROUTE) { BoomNavScreen(this) { BackupScreen(onBack = back) } }
+    composable(ABOUT_ROUTE) { BoomNavScreen(this) { AboutScreen(onBack = back) } }
+    composable(PRIVACY_ROUTE) { BoomNavScreen(this) { PrivacyScreen(onBack = back) } }
+    composable(LICENSES_ROUTE) { BoomNavScreen(this) { LicensesScreen(onBack = back) } }
 }

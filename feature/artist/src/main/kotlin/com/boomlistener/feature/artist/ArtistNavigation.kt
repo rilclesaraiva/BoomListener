@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.artist
 
+import com.boomlistener.core.designsystem.component.BoomNavScreen
 import com.boomlistener.core.common.navigateOnce
 import android.net.Uri
 import androidx.navigation.NavController
@@ -32,12 +33,14 @@ fun NavGraphBuilder.artistScreen(
 ) {
     composable(ARTIST_ROUTE) { entry ->
         val name = entry.arguments?.getString(ARTIST_NAME_ARG).orEmpty()
-        ArtistScreen(
-            artistName = name,
-            onBack = onBack,
-            onOpenArtist = onOpenArtist,
-            onOpenAlbum = { albumId -> navController.navigateToAlbum(albumId, name) },
-        )
+        BoomNavScreen(this) {
+            ArtistScreen(
+                artistName = name,
+                onBack = onBack,
+                onOpenArtist = onOpenArtist,
+                onOpenAlbum = { albumId -> navController.navigateToAlbum(albumId, name) },
+            )
+        }
     }
     composable(
         route = ALBUM_ROUTE,
@@ -49,10 +52,12 @@ fun NavGraphBuilder.artistScreen(
             },
         ),
     ) { entry ->
-        AlbumScreen(
-            albumId = entry.arguments?.getLong(ALBUM_ID_ARG) ?: 0L,
-            artistName = entry.arguments?.getString(ARTIST_NAME_ARG).orEmpty(),
-            onBack = onBack,
-        )
+        BoomNavScreen(this) {
+            AlbumScreen(
+                albumId = entry.arguments?.getLong(ALBUM_ID_ARG) ?: 0L,
+                artistName = entry.arguments?.getString(ARTIST_NAME_ARG).orEmpty(),
+                onBack = onBack,
+            )
+        }
     }
 }

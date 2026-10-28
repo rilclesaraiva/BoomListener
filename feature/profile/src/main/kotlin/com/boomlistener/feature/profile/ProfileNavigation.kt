@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.profile
 
+import com.boomlistener.core.designsystem.component.BoomNavScreen
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
@@ -40,12 +41,14 @@ fun NavGraphBuilder.profileScreen(
                 remoteImage = DeezerData.repository(context)::image,
             )
         }
-        MyProfileScreen(
-            viewModel = viewModel,
-            onOpenArtist = onOpenArtist,
-            onOpenHistory = onOpenHistory,
-            onOpenSettings = onOpenSettings,
-            songMenu = songMenu,
-        )
+        BoomNavScreen(this) {
+            MyProfileScreen(
+                viewModel = viewModel,
+                onOpenArtist = onOpenArtist,
+                onOpenHistory = onOpenHistory,
+                onOpenSettings = onOpenSettings,
+                songMenu = songMenu,
+            )
+        }
     }
 }

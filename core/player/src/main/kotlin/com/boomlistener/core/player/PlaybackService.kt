@@ -108,7 +108,10 @@ class PlaybackService : MediaSessionService() {
         // MP3 e AAC (.aac) sem índice: pular para um ponto da música usa a taxa
         // de bits constante (sem isso, arrastar a barra caía no lugar errado ou nem ia).
         val extractors = DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
+        val settings = PlaybackSettingsData.internalGet(this)
         val player = ExoPlayer.Builder(this)
+            // Saída de som com o "sem pausa entre faixas" desligável (Ajustes → Reprodução).
+            .setRenderersFactory(BoomRenderersFactory(this) { settings.prefs.value.gapless })
             .setMediaSourceFactory(DefaultMediaSourceFactory(this, extractors))
             // "true": pausa quando outro app toca som (ligação, vídeo…) e volta depois.
             .setAudioAttributes(

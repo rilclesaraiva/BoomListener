@@ -92,7 +92,7 @@
     <string name="feature_settings_playback_fade">Fade ao tocar e pausar</string>
     <string name="feature_settings_playback_fade_summary">O volume sobe e desce suave em vez de cortar</string>
     <string name="feature_settings_playback_gapless">Sem pausa entre faixas (gapless)</string>
-    <string name="feature_settings_playback_gapless_summary">Sempre ativo: álbuns sem silêncio entre as faixas tocam emendados</string>
+    <string name="feature_settings_playback_gapless_summary">Álbuns sem silêncio entre as faixas tocam emendados. Vale a partir da próxima música</string>
     <string name="feature_settings_playback_speed">Velocidade</string>
     <string name="feature_settings_playback_speed_summary">A voz mantém o tom</string>
     <string name="feature_settings_playback_speed_reset">Voltar ao normal</string>
@@ -134,4 +134,8 @@
     <string name="feature_settings_playback_lyrics_online">Letra da internet primeiro</string>
     <string name="feature_settings_playback_lyrics_online_on">Busca primeiro no LRCLIB e usa a letra de dentro do arquivo se não achar.</string>
     <string name="feature_settings_playback_lyrics_online_off">Usa primeiro a letra de dentro do arquivo e só busca na internet (LRCLIB) quando o arquivo não tem.</string>
+    <string name="feature_settings_effects">Efeitos</string>
+    <string name="feature_settings_background_blur">Desfoque do fundo</string>
+    <string name="feature_settings_background_blur_summary">Desfoca a tela de trás quando outra abre por cima, como o player</string>
+    <string name="feature_settings_background_blur_unavailable">Precisa do Android 12 ou mais novo</string>
 </resources>

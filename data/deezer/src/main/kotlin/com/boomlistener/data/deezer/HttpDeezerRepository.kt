@@ -124,25 +124,36 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
     override suspend fun searchTrack(local: LocalTrackInfo): TrackSearchResult = withContext(Dispatchers.IO) {
         try {
             val title = searchableSongTitle(local.title)
-            val artist = local.artist?.let(::primaryArtistName)?.takeIf { it.isNotBlank() }
-            // Busca precisa (artista + título); se não vier nada, busca livre.
-            val queries = listOfNotNull(
-                artist?.let { "artist:\"$it\" track:\"$title\"" },
-                listOfNotNull(artist, title).joinToString(" "),
-            )
-            var ranked = emptyList<TrackCandidate>()
-            for (query in queries) {
-                val json = getJson("$API/search?q=" + URLEncoder.encode(query, "UTF-8") + "&limit=25")
-                val candidates = json.optJSONArray("data").objects().map { it.toCandidate() }
-                ranked = rankCandidates(local, candidates)
-                if (ranked.isNotEmpty()) break
+            // Nome inteiro primeiro e depois cada artista ("Salako, Ziahfyah y
+            // ELHAE" → Salako, Ziahfyah, ELHAE): com vários, o Deezer só acha
+            // a música pelo nome de um deles.
+            val artists = local.artist?.let(::artistSearchNames).orEmpty()
+            // Todas as buscas de uma vez (mais rápido que uma depois da outra):
+            // a precisa (artista + título) de cada nome e a livre do nome inteiro.
+            val queries = artists.map { "artist:\"$it\" track:\"$title\"" } +
+                listOfNotNull(artists.firstOrNull(), title).joinToString(" ")
+            val candidates = coroutineScope {
+                queries.map { query ->
+                    async {
+                        runCatching {
+                            getJson("$API/search?q=" + URLEncoder.encode(query, "UTF-8") + "&limit=25")
+                                .optJSONArray("data").objects().map { it.toCandidate() }
+                        }
+                    }
+                }.map { it.await() }
             }
+            // Só é falha (sem conexão) se nenhuma busca respondeu.
+            if (candidates.all { it.isFailure }) return@withContext TrackSearchResult.Failed
+            var ranked = rankCandidates(local, candidates.flatMap { it.getOrDefault(emptyList()) }.distinctBy { it.trackId })
             // Sem uma resposta segura na busca: procura também nas músicas da
-            // página do artista (populares e os álbuns que batem), como a página
-            // do artista faz para marcar o que você tem.
-            if ((ranked.firstOrNull()?.confidence ?: 0f) < AUTO_PICK_CONFIDENCE && artist != null) {
-                val fromArtist = runCatching { searchInArtistTracks(local, artist) }.getOrDefault(emptyList())
-                ranked = (fromArtist + ranked)
+            // página de cada artista (populares e os álbuns que batem), como a
+            // página do artista faz para marcar o que você tem.
+            if ((ranked.firstOrNull()?.confidence ?: 0f) < AUTO_PICK_CONFIDENCE && artists.isNotEmpty()) {
+                val fromArtists = coroutineScope {
+                    artists.map { name -> async { runCatching { searchInArtistTracks(local, name) }.getOrDefault(emptyList()) } }
+                        .flatMap { it.await() }
+                }
+                ranked = (fromArtists + ranked)
                     .sortedByDescending { it.confidence }
                     .distinctBy { it.trackId }
                     .take(6)
@@ -154,20 +165,23 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
     }
 
     /** As músicas do artista (achado do mesmo jeito que a página dele), comparadas com o arquivo. */
-    private fun searchInArtistTracks(local: LocalTrackInfo, artistName: String): List<TrackCandidate> {
+    private suspend fun searchInArtistTracks(local: LocalTrackInfo, artistName: String): List<TrackCandidate> = coroutineScope {
         val search = getJson("$API/search/artist?q=" + URLEncoder.encode(artistName, "UTF-8") + "&limit=10")
-        val found = pickArtist(artistName, search.optJSONArray("data").objects().map { it.toArtist() }) ?: return emptyList()
-        val top = getJson("$API/artist/${found.id}/top?limit=100").optJSONArray("data").objects().map { it.toCandidate() }
+        val found = pickArtist(artistName, search.optJSONArray("data").objects().map { it.toArtist() })
+            ?: return@coroutineScope emptyList()
+        val topJob = async { getJson("$API/artist/${found.id}/top?limit=100").optJSONArray("data").objects().map { it.toCandidate() } }
         val releases = getJson("$API/artist/${found.id}/albums?limit=200").optJSONArray("data").objects().map { it.toRelease() }
-        val fromAlbums = albumsForTrack(local, releases).flatMap { release ->
-            val album = getJson("$API/album/${release.id}")
-            val cover = album.str("cover_xl") ?: album.str("cover_big") ?: album.str("cover_medium")
-            // As músicas do álbum vêm sem o álbum dentro: completa com o do próprio álbum.
-            album.optJSONObject("tracks")?.optJSONArray("data").objects().map { track ->
-                track.toCandidate().copy(albumId = release.id, album = release.title, coverUrl = cover)
+        val fromAlbums = albumsForTrack(local, releases).map { release ->
+            async {
+                val album = getJson("$API/album/${release.id}")
+                val cover = album.str("cover_xl") ?: album.str("cover_big") ?: album.str("cover_medium")
+                // As músicas do álbum vêm sem o álbum dentro: completa com o do próprio álbum.
+                album.optJSONObject("tracks")?.optJSONArray("data").objects().map { track ->
+                    track.toCandidate().copy(albumId = release.id, album = release.title, coverUrl = cover)
+                }
             }
-        }
-        return rankArtistTracks(local, found.name, fromAlbums + top)
+        }.flatMap { it.await() }
+        rankArtistTracks(local, found.name, fromAlbums + topJob.await())
     }
 
     override suspend fun trackTags(candidate: TrackCandidate): TrackTagsResult = withContext(Dispatchers.IO) {
@@ -319,13 +333,18 @@ private fun JSONObject.toCandidate(): TrackCandidate {
  * mais preciso do Last.fm.
  */
 internal fun tagSuggestionOf(track: JSONObject, album: JSONObject, candidate: TrackCandidate): TagSuggestion {
-    val mainArtists = track.optJSONArray("contributors").objects()
-        .filter { it.optString("role").equals("Main", ignoreCase = true) }
+    val contributors = track.optJSONArray("contributors").objects()
+    fun namesWithRole(role: String) = contributors
+        .filter { it.optString("role").equals(role, ignoreCase = true) }
         .mapNotNull { it.str("name") }
         .distinct()
-    val artist = mainArtists.takeIf { it.size > 1 }?.joinToString(", ")
-        ?: track.optJSONObject("artist")?.str("name")
-        ?: candidate.artist
+    val mainArtists = namesWithRole("Main")
+    val title = track.str("title") ?: candidate.title
+    val artist = joinArtists(
+        main = mainArtists.ifEmpty { listOfNotNull(track.optJSONObject("artist")?.str("name") ?: candidate.artist) },
+        featured = namesWithRole("Featured") - mainArtists.toSet(),
+        title = title,
+    )
     val releaseDate = album.str("release_date") ?: track.str("release_date")
     val genre = album.optJSONObject("genres")?.optJSONArray("data").objects()
         .firstNotNullOfOrNull { it.str("name") }
@@ -335,7 +354,7 @@ internal fun tagSuggestionOf(track: JSONObject, album: JSONObject, candidate: Tr
     val totalTracks = album.optInt("nb_tracks").takeIf { it > 0 }?.toString().orEmpty()
     return TagSuggestion(
         tags = TrackTags(
-            title = track.str("title") ?: candidate.title,
+            title = title,
             artist = artist,
             album = album.str("title") ?: candidate.album,
             albumArtist = album.optJSONObject("artist")?.str("name").orEmpty(),

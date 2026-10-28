@@ -83,6 +83,10 @@ import com.boomlistener.feature.library.libraryScreen
 import com.boomlistener.feature.nowplaying.MiniPlayer
 import com.boomlistener.feature.nowplaying.PlayerSheet
 import com.boomlistener.feature.nowplaying.rememberPlayerSheetState
+import com.boomlistener.core.datastore.PreferencesData
+import com.boomlistener.core.designsystem.component.BackgroundBlurState
+import com.boomlistener.core.designsystem.component.LocalBackgroundBlur
+import com.boomlistener.core.designsystem.component.fractionBlur
 import com.boomlistener.feature.nowplaying.PlayerSheetState
 import com.boomlistener.feature.releases.navigateToReleases
 import com.boomlistener.feature.releases.releasesScreen
@@ -184,7 +188,18 @@ fun BoomListenerApp() {
     val backExit = slideOutHorizontally(slideSpec) { it }
     fun AnimatedContentTransitionScope<NavBackStackEntry>.goingBack(): Boolean =
         isBackNavigation(navController.currentBackStack.value, initialState, targetState)
+    // Desfoque do fundo: a tela que fica por baixo desfoca (Ajustes → Aparência).
+    val backgroundBlur = remember { BackgroundBlurState() }
+    val userPrefs by remember { PreferencesData.repository(context).preferences }
+        .collectAsStateWithLifecycle(initialValue = null)
+    backgroundBlur.enabled = userPrefs?.backgroundBlur ?: true
+    // Cada movimento conta ao desfoque qual tela fica por baixo (a direção é a mesma das animações).
+    fun AnimatedContentTransitionScope<NavBackStackEntry>.tellBlur() {
+        backgroundBlur.tabSwitch = isTabSwitch()
+        backgroundBlur.goingBack = goingBack()
+    }
     val enter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+        tellBlur()
         when {
             isTabSwitch() -> fadeIn(fadeSpec)
             goingBack() -> backEnter
@@ -192,6 +207,7 @@ fun BoomListenerApp() {
         }
     }
     val exit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+        tellBlur()
         when {
             isTabSwitch() -> fadeOut(fadeSpec)
             goingBack() -> backExit
@@ -342,6 +358,7 @@ fun BoomListenerApp() {
     CompositionLocalProvider(
         LocalTabReselect provides reselect,
         LocalFavoriteShare provides favoriteShare,
+        LocalBackgroundBlur provides backgroundBlur,
     ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
       val wide = isWideWindow(maxWidth, maxHeight)
@@ -380,7 +397,8 @@ fun BoomListenerApp() {
                     // O mini player flutua por cima das telas, sem faixa de fundo.
                     Box(Modifier.weight(1f).fillMaxHeight().windowInsetsPadding(centerInsets)) {
                         CompositionLocalProvider(LocalBottomOverlay provides miniPlayerHeight) {
-                            navGraph(Modifier.fillMaxSize())
+                            // Abrindo o player, o app por trás vai desfocando.
+                            navGraph(Modifier.fillMaxSize().fractionBlur(backgroundBlur.enabled, { playerSheet.fraction }))
                         }
                         // Função à parte: aqui dentro da Row, AnimatedVisibility viraria a versão de RowScope.
                         FloatingMiniPlayer(
@@ -448,7 +466,8 @@ fun BoomListenerApp() {
             val bottom = innerPadding.calculateBottomPadding()
             Box(Modifier.fillMaxSize()) {
                 CompositionLocalProvider(LocalBottomOverlay provides miniPlayerHeight) {
-                    navGraph(Modifier.padding(bottom = bottom))
+                    // Abrindo o player, o app por trás vai desfocando.
+                    navGraph(Modifier.padding(bottom = bottom).fractionBlur(backgroundBlur.enabled, { playerSheet.fraction }))
                 }
                 AnimatedVisibility(
                     visible = !inSettings && !inTagEditor,

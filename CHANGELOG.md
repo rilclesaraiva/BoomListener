@@ -4,6 +4,21 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.47.0] — 2026-10-27
+
+### ✨ New
+- Background blur: when a screen or the player opens on top, the screen behind it softly blurs. On by default; turn it off in Settings → Appearance → Effects (Android 12 and newer).
+- Gapless playback can now be turned off in Settings → Playback (it stays on by default).
+
+### 🐛 Fixes
+- A Bluetooth headphone you renamed in Android's settings now shows that name in the player, not the factory name.
+- Fix tags automatically finds more songs by several artists ("Artist A, Artist B y Artist C", "feat.", "x", "&"): it also searches each artist on their own, and hashtags in the title ("#JerseyClub") no longer get in the way. The artist field is filled with every artist of the song, with guests after "feat.".
+- Tag editor: fixing tags automatically is faster (searches run at the same time), and saving no longer waits for Android to finish re-reading the file.
+- Player: holding the cover no longer paints a color over it.
+
+### 🎨 Visual tweaks
+- Fade on play and pause is now on by default. If you had turned it off, it stays off.
+
 ## [0.46.5] — 2026-10-25
 
 ### 🐛 Fixes

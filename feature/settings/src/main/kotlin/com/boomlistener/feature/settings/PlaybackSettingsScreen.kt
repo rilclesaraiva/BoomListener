@@ -90,11 +90,13 @@ internal fun PlaybackSettingsScreen(onBack: () -> Unit, modifier: Modifier = Mod
                         onClick = { settings.setFadeOnPlayPause(!prefs.fadeOnPlayPause) },
                         trailing = { Switch(checked = prefs.fadeOnPlayPause, onCheckedChange = settings::setFadeOnPlayPause) },
                     )
-                    // Gapless: o ExoPlayer já faz sozinho (lê os atrasos do codificador do arquivo).
+                    // Gapless: corta o silêncio do codificador (vale a partir da próxima música).
                     BoomSettingsItem(
                         icon = null,
                         title = stringResource(R.string.feature_settings_playback_gapless),
                         subtitle = stringResource(R.string.feature_settings_playback_gapless_summary),
+                        onClick = { settings.setGapless(!prefs.gapless) },
+                        trailing = { Switch(checked = prefs.gapless, onCheckedChange = settings::setGapless) },
                     )
                 }
             }

@@ -71,4 +71,19 @@ class AudioOutputsTest {
         val outputs = buildOutputs(listOf(phone, wired), preferredId = 5, systemRouteId = 2)
         assertEquals(listOf(5), outputs.filter { it.active }.map { it.id })
     }
+
+    @Test
+    fun foneRenomeadoMostraONomeDaPessoa() {
+        val outputs = buildOutputs(listOf(phone, buds), null, null, bluetoothName = "TANGZU Wan'er")
+        assertEquals("TANGZU Wan'er", outputs.first { it.id == 10 }.name)
+        assertEquals("Pixel 9", outputs.first { it.id == 2 }.name)
+    }
+
+    @Test
+    fun doisFonesSoOQueTocaGanhaONome() {
+        val other = Candidate(20, "AZ09", AudioOutputKind.Bluetooth)
+        val outputs = buildOutputs(listOf(phone, buds, other), null, systemRouteId = 20, bluetoothName = "Meu fone")
+        assertEquals("Meu fone", outputs.first { it.id == 20 }.name)
+        assertEquals("X-LY4", outputs.first { it.id == 10 }.name)
+    }
 }

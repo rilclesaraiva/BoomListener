@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.tageditor
 
+import com.boomlistener.core.designsystem.component.BoomNavScreen
 import com.boomlistener.core.common.navigateOnce
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +52,8 @@ fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit) {
                 musicBrainz = MusicBrainzData.repository(context),
             )
         }
-        TagEditorScreen(viewModel = viewModel, onBack = onBack)
+        BoomNavScreen(this) {
+            TagEditorScreen(viewModel = viewModel, onBack = onBack)
+        }
     }
 }

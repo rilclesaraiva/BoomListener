@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.designsystem.component.BoomNavScreen
 import com.boomlistener.core.common.popBackStackOnce
 import com.boomlistener.core.common.navigateOnce
 import android.net.Uri
@@ -51,22 +52,24 @@ fun NavGraphBuilder.libraryScreen(
     onOpenSettings: () -> Unit,
 ) {
     composable(LIBRARY_ROUTE) {
-        LibraryScreen(
-            onOpenArtist = onOpenArtist,
-            onOpenAlbum = { navController.openCollection("album", it) },
-            onSeeAll = { kind ->
-                // Vai para a aba Biblioteca já na pílula escolhida (como tocar na aba).
-                CollectionsRequest.kind.value = kind
-                navController.navigateOnce(COLLECTIONS_ROUTE) {
-                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
-            onEditTags = onEditTags,
-            onOpenReleases = onOpenReleases,
-            onOpenSettings = onOpenSettings,
-        )
+        BoomNavScreen(this) {
+            LibraryScreen(
+                onOpenArtist = onOpenArtist,
+                onOpenAlbum = { navController.openCollection("album", it) },
+                onSeeAll = { kind ->
+                    // Vai para a aba Biblioteca já na pílula escolhida (como tocar na aba).
+                    CollectionsRequest.kind.value = kind
+                    navController.navigateOnce(COLLECTIONS_ROUTE) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onEditTags = onEditTags,
+                onOpenReleases = onOpenReleases,
+                onOpenSettings = onOpenSettings,
+            )
+        }
     }
 
     composable(COLLECTIONS_ROUTE) {
@@ -83,16 +86,18 @@ fun NavGraphBuilder.libraryScreen(
                 layout = CollectionsLayoutData.repository(context),
             )
         }
-        CollectionsScreen(
-            viewModel = viewModel,
-            onOpenGenre = { navController.openCollection("genre", it) },
-            onOpenArtist = onOpenArtist,
-            onOpenAlbum = { navController.openCollection("album", it) },
-            onOpenPlaylist = { navController.openCollection("playlist", it.toString()) },
-            onOpenFavorites = { navController.navigateToFavorites() },
-            onOpenReleases = onOpenReleases,
-            onOpenSettings = onOpenSettings,
-        )
+        BoomNavScreen(this) {
+            CollectionsScreen(
+                viewModel = viewModel,
+                onOpenGenre = { navController.openCollection("genre", it) },
+                onOpenArtist = onOpenArtist,
+                onOpenAlbum = { navController.openCollection("album", it) },
+                onOpenPlaylist = { navController.openCollection("playlist", it.toString()) },
+                onOpenFavorites = { navController.navigateToFavorites() },
+                onOpenReleases = onOpenReleases,
+                onOpenSettings = onOpenSettings,
+            )
+        }
     }
 
     val back: () -> Unit = { navController.popBackStackOnce() }
@@ -115,13 +120,15 @@ fun NavGraphBuilder.libraryScreen(
                     favorites = FavoritesData.repository(context).favorites,
                 )
             }
-            CollectionDetailScreen(
-                viewModel = viewModel,
-                onBack = back,
-                onOpenArtist = onOpenArtist,
-                onEditTags = onEditTags,
-                onOpenAlbum = if (route == ALBUM_ROUTE) null else { key -> navController.openCollection("album", key) },
-            )
+            BoomNavScreen(this) {
+                CollectionDetailScreen(
+                    viewModel = viewModel,
+                    onBack = back,
+                    onOpenArtist = onOpenArtist,
+                    onEditTags = onEditTags,
+                    onOpenAlbum = if (route == ALBUM_ROUTE) null else { key -> navController.openCollection("album", key) },
+                )
+            }
         }
     }
 }

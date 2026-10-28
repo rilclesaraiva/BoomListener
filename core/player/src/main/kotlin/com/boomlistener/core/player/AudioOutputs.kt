@@ -9,6 +9,8 @@ import android.media.AudioAttributes
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.media.MediaRoute2Info
+import android.media.MediaRouter
 import android.media.MediaRouter2
 import android.os.Build
 import android.os.Handler
@@ -90,7 +92,40 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
             },
             handler,
         )
+        // O nome do fone muda quando a pessoa o renomeia nos ajustes de Bluetooth.
+        handler.post {
+            runCatching {
+                context.getSystemService(MediaRouter::class.java)?.addCallback(
+                    MediaRouter.ROUTE_TYPE_LIVE_AUDIO,
+                    object : MediaRouter.SimpleCallback() {
+                        override fun onRouteChanged(router: MediaRouter?, info: MediaRouter.RouteInfo?) = refresh()
+                        override fun onRouteSelected(router: MediaRouter?, type: Int, info: MediaRouter.RouteInfo?) = refresh()
+                    },
+                )
+            }
+        }
         refresh()
+    }
+
+    /**
+     * O nome do fone Bluetooth tocando como aparece nos ajustes do Android,
+     * inclusive o que a pessoa deu a ele ao renomear (o [AudioDeviceInfo] só
+     * tem o nome de fábrica). Vem da rota de som do sistema, sem permissão.
+     */
+    private fun bluetoothRouteName(): String? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            runCatching {
+                MediaRouter2.getInstance(context).systemController.selectedRoutes
+                    .firstOrNull { it.type in BLUETOOTH_ROUTE_TYPES }
+                    ?.name?.toString()?.takeIf { it.isNotBlank() }
+            }.getOrNull()?.let { return it }
+        }
+        return runCatching {
+            context.getSystemService(MediaRouter::class.java)
+                ?.getSelectedRoute(MediaRouter.ROUTE_TYPE_LIVE_AUDIO)
+                ?.takeIf { it.deviceType == MediaRouter.RouteInfo.DEVICE_TYPE_BLUETOOTH }
+                ?.getName(context)?.toString()?.takeIf { it.isNotBlank() }
+        }.getOrNull()
     }
 
     /** Ligou ou desligou algo: o automático volta a valer (o sistema decide de novo). */
@@ -115,7 +150,7 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
         } else {
             null
         }
-        list.value = buildOutputs(devices, chosen ?: preferred.value, systemRoute)
+        list.value = buildOutputs(devices, chosen ?: preferred.value, systemRoute, bluetoothRouteName())
     }
 
     override fun choose(id: Int?) {
@@ -170,6 +205,12 @@ internal fun outputKind(type: Int): AudioOutputKind? = when (type) {
     else -> null
 }
 
+private val BLUETOOTH_ROUTE_TYPES = setOf(
+    MediaRoute2Info.TYPE_BLUETOOTH_A2DP,
+    MediaRoute2Info.TYPE_BLE_HEADSET,
+    MediaRoute2Info.TYPE_HEARING_AID,
+)
+
 // Constantes de versões novas do Android, escritas aqui para valerem em qualquer versão.
 private const val TYPE_BLE_HEADSET = 26
 private const val TYPE_BLE_SPEAKER = 27
@@ -178,9 +219,15 @@ private const val TYPE_HDMI_EARC = 29
 /**
  * Junta repetidos (o mesmo fone aparece mais de uma vez) e marca a ativa:
  * a escolhida na tela; senão a que o sistema informa (Android 13+); senão a
- * mais provável (Bluetooth > USB > fio > HDMI > celular).
+ * mais provável (Bluetooth > USB > fio > HDMI > celular). [bluetoothName] é o
+ * nome do fone nos ajustes do Android (com o que a pessoa deu ao renomear).
  */
-internal fun buildOutputs(devices: List<Candidate>, preferredId: Int?, systemRouteId: Int?): List<AudioOutput> {
+internal fun buildOutputs(
+    devices: List<Candidate>,
+    preferredId: Int?,
+    systemRouteId: Int?,
+    bluetoothName: String? = null,
+): List<AudioOutput> {
     val unique = devices.distinctBy { it.kind to (if (it.kind == AudioOutputKind.Phone) "" else it.name.orEmpty()) }
     val activeId = preferredId?.takeIf { id -> unique.any { it.id == id } }
         ?: systemRouteId?.let { route ->
@@ -189,9 +236,13 @@ internal fun buildOutputs(devices: List<Candidate>, preferredId: Int?, systemRou
             routed?.let { r -> unique.firstOrNull { it.kind == r.kind && (r.kind == AudioOutputKind.Phone || it.name == r.name) }?.id }
         }
         ?: unique.minByOrNull { priority(it.kind) }?.id
+    // O nome dado pela pessoa (do fone que o sistema usa): vai no único
+    // Bluetooth ligado ou, com mais de um, no que está tocando.
+    val bluetooth = unique.filter { it.kind == AudioOutputKind.Bluetooth }
+    val renamedId = bluetoothName?.let { bluetooth.singleOrNull()?.id ?: bluetooth.firstOrNull { it.id == activeId }?.id }
     return unique
         .sortedBy { priority(it.kind) }
-        .map { AudioOutput(it.id, it.name, it.kind, active = it.id == activeId) }
+        .map { AudioOutput(it.id, if (it.id == renamedId) bluetoothName else it.name, it.kind, active = it.id == activeId) }
 }
 
 internal fun priorityOf(kind: AudioOutputKind) = priority(kind)

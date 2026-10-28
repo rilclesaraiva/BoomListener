@@ -25,6 +25,7 @@ private class FakePreferences : UserPreferencesRepository {
     override val preferences = MutableStateFlow(UserPreferences())
     override suspend fun setThemeMode(mode: ThemeMode) = preferences.update { it.copy(themeMode = mode) }
     override suspend fun setDynamicColor(enabled: Boolean) = preferences.update { it.copy(dynamicColor = enabled) }
+    override suspend fun setBackgroundBlur(enabled: Boolean) = preferences.update { it.copy(backgroundBlur = enabled) }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -47,5 +48,15 @@ class AppearanceViewModelTest {
 
         assertEquals(ThemeMode.Amoled, viewModel.preferences.value.themeMode)
         assertFalse(viewModel.preferences.value.dynamicColor)
+    }
+
+    @Test
+    fun desfoqueLigadoPorPadraoEDesligavel() = runTest(dispatcher) {
+        val viewModel = AppearanceViewModel(FakePreferences())
+        backgroundScope.launch(dispatcher) { viewModel.preferences.collect {} }
+
+        assertEquals(true, viewModel.preferences.value.backgroundBlur)
+        viewModel.setBackgroundBlur(false)
+        assertFalse(viewModel.preferences.value.backgroundBlur)
     }
 }

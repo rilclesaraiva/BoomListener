@@ -89,7 +89,7 @@
     <string name="feature_settings_playback_fade">Fade on play and pause</string>
     <string name="feature_settings_playback_fade_summary">Volume rises and falls smoothly instead of cutting</string>
     <string name="feature_settings_playback_gapless">Gapless playback</string>
-    <string name="feature_settings_playback_gapless_summary">Always on: songs from albums without silence between tracks play seamlessly</string>
+    <string name="feature_settings_playback_gapless_summary">Albums without silence between tracks play seamlessly. Applies from the next song</string>
     <string name="feature_settings_playback_speed">Speed</string>
     <string name="feature_settings_playback_speed_summary">Voices keep their pitch</string>
     <string name="feature_settings_playback_speed_reset">Reset</string>
@@ -131,4 +131,8 @@
     <string name="feature_settings_playback_lyrics_online">Online lyrics first</string>
     <string name="feature_settings_playback_lyrics_online_on">Tries LRCLIB first and uses the lyrics inside the file if it finds nothing.</string>
     <string name="feature_settings_playback_lyrics_online_off">Uses the lyrics inside the file first and only looks online (LRCLIB) when the file has none.</string>
+    <string name="feature_settings_effects">Effects</string>
+    <string name="feature_settings_background_blur">Background blur</string>
+    <string name="feature_settings_background_blur_summary">Blurs the screen behind when another one opens on top, like the player</string>
+    <string name="feature_settings_background_blur_unavailable">Needs Android 12 or newer</string>
 </resources>

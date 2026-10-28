@@ -15,6 +15,8 @@ import com.boomlistener.data.deezer.LocalTrackInfo
 import com.boomlistener.data.deezer.TrackCandidate
 import com.boomlistener.data.deezer.TrackSearchResult
 import com.boomlistener.data.deezer.TrackTagsResult
+import com.boomlistener.data.deezer.artistSearchNames
+import com.boomlistener.data.deezer.splitArtistNames
 import com.boomlistener.data.lastfm.LastfmRepository
 import com.boomlistener.data.lastfm.pickGenre
 import com.boomlistener.data.deezer.rankCandidates
@@ -29,6 +31,8 @@ import com.boomlistener.data.tags.TagsReadResult
 import com.boomlistener.data.tags.TagsRepository
 import com.boomlistener.data.tags.TagsWriteResult
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -207,7 +211,13 @@ internal class TagEditorViewModel(
      * comparação. Só é "sem conexão" se nenhum dos dois respondeu.
      */
     private suspend fun searchMusicBrainz(local: LocalTrackInfo, deezerFailed: Boolean) {
-        val result = musicBrainz?.searchRecordings(local.title, local.artist)
+        // Com vários artistas, o nome inteiro primeiro e, sem nada, cada um deles.
+        val names = local.artist?.let(::artistSearchNames).orEmpty().ifEmpty { listOf(null) }
+        var result: MbSearchResult? = null
+        for (name in names) {
+            result = musicBrainz?.searchRecordings(local.title, name) ?: break
+            if (result is MbSearchResult.Found) break
+        }
         val candidates = (result as? MbSearchResult.Found)?.recordings.orEmpty().map { recording ->
             val candidate = TrackCandidate(
                 trackId = musicBrainzKey(recording.recordingId),
@@ -270,14 +280,20 @@ internal class TagEditorViewModel(
                 }
             }
         }
-        // Gênero: o do Last.fm é mais preciso ("Math Rock" em vez de "Rock").
         val official = suggestion.tags
-        val lastfmGenre = pickGenre(lastfm.trackTags(official.artist, official.title), official.artist)
-        // Capa: a do Cover Art Archive (lançamento, ou o álbum em qualquer edição) ou a do Deezer.
-        val coverBytes = if (fromMb != null) {
-            musicBrainz?.coverBytes(fromMb)
-        } else {
-            suggestion.coverUrl?.let { deezer.imageBytes(it) }
+        // Gênero e capa ao mesmo tempo (mais rápido que um depois do outro).
+        val (lastfmGenre, coverBytes) = coroutineScope {
+            // Gênero: o do Last.fm é mais preciso ("Math Rock" em vez de "Rock"),
+            // procurado pelo primeiro artista (com vários, o Last.fm não acha).
+            val genre = async {
+                val firstArtist = splitArtistNames(official.artist).firstOrNull() ?: official.artist
+                pickGenre(lastfm.trackTags(firstArtist, official.title), firstArtist)
+            }
+            // Capa: a do Cover Art Archive (lançamento, ou o álbum em qualquer edição) ou a do Deezer.
+            val cover = async {
+                if (fromMb != null) musicBrainz?.coverBytes(fromMb) else suggestion.coverUrl?.let { deezer.imageBytes(it) }
+            }
+            genre.await() to cover.await()
         }
 
         val current = _state.value

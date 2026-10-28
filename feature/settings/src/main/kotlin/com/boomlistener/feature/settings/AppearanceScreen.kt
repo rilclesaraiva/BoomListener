@@ -90,6 +90,28 @@ internal fun AppearanceScreen(
                     )
                 }
             }
+            item {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_effects)) {
+                    // Desfoque da tela de trás (o Android só desfoca a partir do 12).
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_background_blur),
+                        subtitle = stringResource(
+                            if (dynamicAvailable) R.string.feature_settings_background_blur_summary
+                            else R.string.feature_settings_background_blur_unavailable,
+                        ),
+                        enabled = dynamicAvailable,
+                        onClick = { viewModel.setBackgroundBlur(!prefs.backgroundBlur) },
+                        trailing = {
+                            Switch(
+                                checked = dynamicAvailable && prefs.backgroundBlur,
+                                onCheckedChange = { viewModel.setBackgroundBlur(it) },
+                                enabled = dynamicAvailable,
+                            )
+                        },
+                    )
+                }
+            }
         }
     }
 }

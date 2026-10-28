@@ -116,4 +116,18 @@ class TagMatchingTest {
         val withAlbum = local.copy(title = "Outra", album = "Montagem Delirante - EP")
         assertEquals(listOf(3L), albumsForTrack(withAlbum, releases).map { it.id })
     }
+
+    @Test
+    fun variosArtistasBatemComUmDeles() {
+        assertEquals(0.8f, artistSimilarity("Salako, Ziahfyah y ELHAE", "ELHAE"), 0.001f)
+        assertEquals(0.8f, artistSimilarity("Salako, Ziahfyah y ELHAE", "Ziahfyah"), 0.001f)
+        assertEquals(0f, artistSimilarity("Salako, Ziahfyah y ELHAE", "Anitta"), 0.001f)
+    }
+
+    @Test
+    fun hashtagNoTituloNaoAtrapalha() {
+        assertEquals("do tha thing", comparableSongTitle("Do Tha Thing #JerseyClub"))
+        assertEquals("Do Tha Thing", searchableSongTitle("Do Tha Thing #JerseyClub"))
+        assertEquals("we are 1", comparableSongTitle("We Are #1"))
+    }
 }

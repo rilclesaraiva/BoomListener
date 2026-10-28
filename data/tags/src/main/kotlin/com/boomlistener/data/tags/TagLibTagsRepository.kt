@@ -15,7 +15,10 @@ import android.provider.MediaStore
 import com.boomlistener.core.model.TrackTags
 import com.kyant.taglib.Picture
 import com.kyant.taglib.TagLib
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -35,6 +38,7 @@ private const val MAX_COVER_PX = 1200
 internal class TagLibTagsRepository(private val context: Context) : TagsRepository {
 
     private val resolver = context.contentResolver
+    private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override suspend fun read(uri: String): TagsReadResult = withContext(Dispatchers.IO) {
         try {
@@ -88,7 +92,9 @@ internal class TagLibTagsRepository(private val context: Context) : TagsReposito
                 false
             }
             if (!saved) return@withContext TagsWriteResult.Failed
-            rescan(parsed)
+            // O aviso ao Android corre por fora: a biblioteca se atualiza sozinha
+            // quando ele termina, e o editor não fica esperando (até 5 s).
+            background.launch { rescan(parsed) }
             TagsWriteResult.Success
         }
 

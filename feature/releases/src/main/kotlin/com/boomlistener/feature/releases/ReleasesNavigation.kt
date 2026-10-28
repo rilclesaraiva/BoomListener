@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.releases
 
+import com.boomlistener.core.designsystem.component.BoomNavScreen
 import com.boomlistener.core.common.navigateOnce
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,11 +26,13 @@ fun NavGraphBuilder.releasesScreen(
     composable(RELEASES_ROUTE) {
         val context = LocalContext.current.applicationContext
         val viewModel = viewModel { ReleasesViewModel(ReleasesData.follows(context), DeezerData.repository(context), ReleasesData.choices(context)) }
-        ReleasesScreen(
-            viewModel = viewModel,
-            onOpenAlbum = onOpenAlbum,
-            onOpenArtist = onOpenArtist,
-            onBack = onBack,
-        )
+        BoomNavScreen(this) {
+            ReleasesScreen(
+                viewModel = viewModel,
+                onOpenAlbum = onOpenAlbum,
+                onOpenArtist = onOpenArtist,
+                onBack = onBack,
+            )
+        }
     }
 }
