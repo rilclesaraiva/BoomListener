@@ -6,12 +6,36 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [0.51.2] — 2026-10-28
 
-### 🐛 Fixes
-- Update notice: it now shows up as soon as a new version is out, every time you open the app. Before, it could take up to an hour, or only appear after clearing the app's data.
-- Update notice: "Not now" only hides it until you open the app again (close it from recents and reopen, and it's back). To keep it quiet for longer, use the bell.
+> Everything since 0.45.1: Spanish, an audio visualizer over the cover, backup, background blur, a smoother player and many fixes. Still a beta: landscape and tablet screens may look rough in places.
 
 ### ✨ New
-- Settings → About → Update notices: see whether update notices are paused or skipping a version, and turn them back on (or pause them for a week or a month).
+- **Spanish:** the whole app is now in English, Portuguese and Spanish. On Android 13 and newer you can pick the app's language on its own (Settings → Appearance → Language).
+- **Audio visualizer over the cover:** bars (bass on the left, treble on the right) or a live wave of the sound, in the player's color. Turn it on in the player's ⋮ menu and pick the style in Settings → Appearance → Visualizer. It reads the sound from the player itself, so it needs no microphone permission.
+- **Backup** (Settings → System → Backup): save your playlists, favorites, history, stats, profile, followed artists and settings to a file and bring them back, even on a new phone. Your songs aren't included, and the file only goes where you save it.
+- **Background blur:** when a screen or the player opens on top, the one behind softly blurs (Android 12 and newer; Settings → Appearance → Effects).
+- **Songs by several artists:** tapping the artist opens a panel with each artist, with their photo, so you land on the right page.
+- **Artist page:** a bell next to "Following" turns release alerts off or on for just that artist, without unfollowing.
+- **Playback options** (Settings → Playback): even out volume with ReplayGain, resume when headphones reconnect, remember shuffle, choose which lyrics come first, and turn gapless playback off if you want.
+- **Stop when closed from recents** (Settings → System, off by default): swiping the app away stops the music and closes the app.
+- **Fix tags automatically** finds more songs by several artists, is faster, doesn't refill tags that are already right, and lets you compare your cover with the one it found.
+- **Profile color:** gradient or a solid color across the whole profile.
+- **Update notices** (Settings → About): see whether they're paused or skipping a version, and turn them back on or pause them.
+
+### 🐛 Fixes
+- A Bluetooth headphone you renamed in Android's settings now shows that name.
+- The fast-scroll bar no longer jumps, reaches the top in the Library and shows the right letter next to the thumb.
+- Holding the player's cover no longer paints a color over it.
+- Saving tags no longer waits for Android to re-read the file.
+- Opening the app and Settings is lighter.
+- The update notice shows up as soon as a new version is out, every time you open the app, and "Not now" only hides it until you open the app again.
+
+### 🎨 Visual tweaks
+- The player's progress dot glides smoothly with the song.
+- Settings are reorganized: every option lives in a category, in a clearer order, with a new System page.
+- Fade on play and pause is on by default.
+- Playlist covers with 4 or more albums never repeat a cover; smaller playlists use the first song's cover.
+- Sharing a song sends a YouTube Music search link (the service that found exact links shut down its free access).
+- Portuguese: "Tirar" became "Remover" across the app.
 
 ## [0.51.1] — 2026-10-28
 
