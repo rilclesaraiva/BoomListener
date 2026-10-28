@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.52.0] — 2026-10-28
+
+### ✨ New
+- **Oscilloscope visualizer:** a third style in Settings → Appearance → Visualizer. The left channel moves the beam sideways and the right one up and down, sample by sample, like a real XY oscilloscope with a glowing, fading trace. Music made for oscilloscopes draws its pictures; any other song draws the shapes of its own stereo sound. The cover slowly fades into a dark screen while it's on and fades back when you turn it off.
+
+### 🎨 Visual tweaks
+- Every visualizer now fades in and out when you turn it on or off.
+
 ## [0.51.2] — 2026-10-28
 
 > Everything since 0.45.1: Spanish, an audio visualizer over the cover, backup, background blur, a smoother player and many fixes. Still a beta: landscape and tablet screens may look rough in places.

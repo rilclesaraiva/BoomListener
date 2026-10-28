@@ -11,7 +11,7 @@ A **local** music player for Android. Free, open source, no ads, no account.
 - **Swipe to change songs** on the mini player or on the cover
 - **Queue** you can reorder, "Play next", shuffle and repeat, and a **Mix** that fills up next with similar songs from your library
 - **Synced lyrics** from the file or from LRCLIB (you choose which comes first)
-- **Audio visualizer over the cover** (bars or wave), turned on from the player menu. It reads the app's own audio, so it needs no microphone permission
+- **Audio visualizer over the cover**: bars, wave or an **XY oscilloscope** that draws the pictures of music made for oscilloscopes. Turned on from the player menu. It reads the app's own audio, so it needs no microphone permission
 - **Playback options:** crossfade between songs, fade on play/pause, gapless playback, ReplayGain, playback speed, sleep timer, resume when your headphones reconnect, and remember shuffle
 - **Picks up where you left off** after closing the app, or stops completely when you swipe it away from recents (optional)
 - **Choose the audio output** from the player, with your Bluetooth headphones' custom name

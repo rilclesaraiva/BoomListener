@@ -3,7 +3,10 @@
 
 package com.boomlistener.feature.nowplaying
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import com.boomlistener.core.designsystem.theme.boomScreenSpec
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,13 +40,40 @@ import com.boomlistener.core.player.VisualizerStyle
 import com.boomlistener.core.player.smoothVisualizer
 
 /**
+ * Visualizador sobre a capa. No osciloscópio a capa se esvai num fundo escuro
+ * sólido (o feixe precisa de tela escura) e volta esmaecendo ao trocar de
+ * tipo; ligar e desligar esmaece por quem chama (NowPlayingContent).
+ */
+@Composable
+internal fun CoverVisualizer(
+    style: VisualizerStyle,
+    playing: Boolean,
+    cover: ImageBitmap?,
+    modifier: Modifier = Modifier,
+) {
+    val scope = style == VisualizerStyle.Oscilloscope
+    val screen = MaterialTheme.colorScheme.scrim
+    val solid by animateFloatAsState(if (scope) 1f else 0f, boomScreenSpec(), label = "scopeBackground")
+    Box(modifier) {
+        if (solid > 0f) {
+            Canvas(Modifier.matchParentSize()) { drawRect(screen.copy(alpha = solid)) }
+        }
+        if (scope) {
+            ScopeVisualizer(playing, Modifier.matchParentSize())
+        } else {
+            SpectrumVisualizer(style, playing, cover, Modifier.matchParentSize())
+        }
+    }
+}
+
+/**
  * Visualizador por cima da parte de baixo da capa: barras (graves à esquerda,
  * agudos à direita) ou a onda do som, na cor de destaque do player, sobre um
  * escurecido suave para aparecer em qualquer capa. Acompanha o som que está
  * saindo agora ([AudioVisualizer]); pausado, as barras descem devagar.
  */
 @Composable
-internal fun CoverVisualizer(
+private fun SpectrumVisualizer(
     style: VisualizerStyle,
     playing: Boolean,
     cover: ImageBitmap?,
@@ -153,6 +183,7 @@ internal fun CoverVisualizer(
                 drawPath(path, accent.copy(alpha = 0.25f), style = Stroke(10.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
                 drawPath(path, accent, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
             }
+            VisualizerStyle.Oscilloscope -> Unit // desenhado pelo ScopeVisualizer
         }
     }
 }

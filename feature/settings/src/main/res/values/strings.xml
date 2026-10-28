@@ -140,6 +140,8 @@
     <string name="feature_settings_visualizer_bars_summary">Bass on the left, treble on the right</string>
     <string name="feature_settings_visualizer_wave">Wave</string>
     <string name="feature_settings_visualizer_wave_summary">The shape of the sound, live</string>
+    <string name="feature_settings_visualizer_scope">Oscilloscope</string>
+    <string name="feature_settings_visualizer_scope_summary">Left and right channels drawing on a dark screen. Music made for oscilloscopes draws pictures</string>
     <string name="feature_settings_system">System</string>
     <string name="feature_settings_system_summary">Offline mode, the app in the background and backup</string>
     <string name="feature_settings_system_internet">Internet</string>
