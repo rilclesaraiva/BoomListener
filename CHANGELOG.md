@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.52.2] — 2026-10-28
+
+### 🎨 Visual tweaks
+- The oscilloscope visualizer is gone for now: it was heavy and too noisy with most music. Bars and Wave work as before; if you had picked the oscilloscope, Bars is used.
+
 ## [0.52.1] — 2026-10-28
 
 ### 🐛 Fixes

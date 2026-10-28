@@ -143,8 +143,6 @@
     <string name="feature_settings_visualizer_bars_summary">Graves à esquerda, agudos à direita</string>
     <string name="feature_settings_visualizer_wave">Onda</string>
     <string name="feature_settings_visualizer_wave_summary">O desenho do som, ao vivo</string>
-    <string name="feature_settings_visualizer_scope">Osciloscópio</string>
-    <string name="feature_settings_visualizer_scope_summary">Os canais esquerdo e direito desenhando numa tela escura. Músicas feitas para osciloscópio formam imagens</string>
     <string name="feature_settings_system">Sistema</string>
     <string name="feature_settings_system_summary">Modo offline, o app em segundo plano e backup</string>
     <string name="feature_settings_system_internet">Internet</string>

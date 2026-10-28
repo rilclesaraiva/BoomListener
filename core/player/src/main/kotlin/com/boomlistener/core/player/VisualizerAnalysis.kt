@@ -16,8 +16,8 @@ import kotlin.math.sqrt
  * a onda (o desenho do próprio som).
  */
 
-/** Tipo do visualizador (Ajustes → Aparência). Oscilloscope: XY, esquerdo × direito. */
-enum class VisualizerStyle { Bars, Wave, Oscilloscope }
+/** Tipo do visualizador (Ajustes → Aparência). */
+enum class VisualizerStyle { Bars, Wave }
 
 /** Amostras analisadas de cada vez (≈ 23 ms a 44,1 kHz). */
 internal const val VISUALIZER_WINDOW = 1024

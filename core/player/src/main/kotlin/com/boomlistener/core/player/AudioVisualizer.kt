@@ -28,14 +28,6 @@ object AudioVisualizer {
     private val viewers = AtomicInteger(0)
     private val active: Boolean get() = viewers.get() > 0
 
-    // Osciloscópios na tela (guardam o som estéreo cru, não as barras).
-    private val scopeViewers = AtomicInteger(0)
-    private val scopeActive: Boolean get() = scopeViewers.get() > 0
-    private val scopeLock = Any()
-
-    // Criado só quando um osciloscópio aparece (≈ 2 MB).
-    private var stereo: StereoHistory? = null
-
     /** A tela avisa que um visualizador apareceu ([detach] quando sair). */
     fun attach() {
         viewers.incrementAndGet()
@@ -44,31 +36,6 @@ object AudioVisualizer {
     fun detach() {
         viewers.updateAndGet { (it - 1).coerceAtLeast(0) }
     }
-
-    /** Um osciloscópio apareceu ([detachScope] quando sair). */
-    fun attachScope() {
-        synchronized(scopeLock) { if (stereo == null) stereo = StereoHistory() }
-        scopeViewers.incrementAndGet()
-    }
-
-    fun detachScope() {
-        scopeViewers.updateAndGet { (it - 1).coerceAtLeast(0) }
-    }
-
-    /**
-     * A amostra estéreo que está saindo no fone agora (contagem que só sobe),
-     * ou -1 se ainda não há som guardado. Use com [scopeCopy].
-     */
-    fun scopeFrameNow(): Long {
-        val base = positionUs
-        if (base == C.TIME_UNSET) return -1
-        val now = if (playing) base + (SystemClock.elapsedRealtimeNanos() - positionAtNanos) / 1000 else base
-        return synchronized(scopeLock) { stereo?.frameAt(now) ?: -1 }
-    }
-
-    /** Copia as amostras de [from] até [to] (esquerdo e direito, de -1 a 1); devolve quantas. */
-    fun scopeCopy(from: Long, to: Long, outLeft: FloatArray, outRight: FloatArray): Int =
-        synchronized(scopeLock) { stereo?.copy(from, to, outLeft, outRight) ?: 0 }
 
     private const val HISTORY = 96
     private val lock = Any()
@@ -129,7 +96,6 @@ object AudioVisualizer {
         filled = 0
         lastBufferUs = Long.MIN_VALUE
         synchronized(lock) { times.fill(Long.MIN_VALUE) }
-        synchronized(scopeLock) { stereo?.clearMarks() }
     }
 
     internal fun onPosition(us: Long) {
@@ -143,9 +109,7 @@ object AudioVisualizer {
 
     /** Um pedaço de som decodificado; pode chegar repetido se a saída não aceitou tudo de uma vez. */
     internal fun onBuffer(buffer: ByteBuffer, presentationTimeUs: Long) {
-        val wantBands = active
-        val scope = scopeActive
-        if ((!wantBands && !scope) || presentationTimeUs == lastBufferUs) return
+        if (!active || presentationTimeUs == lastBufferUs) return
         lastBufferUs = presentationTimeUs
         val rate = sampleRate
         val count = channels
@@ -159,8 +123,6 @@ object AudioVisualizer {
         val data = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN)
         val frameBytes = bytesPerSample * count
         val frames = data.remaining() / frameBytes
-        if (scope) storeStereo(data, frames, frameBytes, bytesPerSample, count, presentationTimeUs, rate)
-        if (!wantBands) return
         var position = data.position()
         for (frame in 0 until frames) {
             var sum = 0f
@@ -173,29 +135,6 @@ object AudioVisualizer {
             if (filled == VISUALIZER_WINDOW) {
                 store(windowStartUs + VISUALIZER_WINDOW * 500_000L / rate, rate)
                 filled = 0
-            }
-        }
-    }
-
-    private fun storeStereo(
-        data: ByteBuffer,
-        frames: Int,
-        frameBytes: Int,
-        bytesPerSample: Int,
-        count: Int,
-        timeUs: Long,
-        rate: Int,
-    ) {
-        synchronized(scopeLock) {
-            val history = stereo ?: return
-            history.mark(timeUs, rate)
-            var position = data.position()
-            for (frame in 0 until frames) {
-                val left = sampleAt(data, position, encoding)
-                // Som mono: o mesmo nos dois lados (uma linha na diagonal, como num osciloscópio de verdade).
-                val right = if (count > 1) sampleAt(data, position + bytesPerSample, encoding) else left
-                history.push(left.coerceIn(-1f, 1f), right.coerceIn(-1f, 1f))
-                position += frameBytes
             }
         }
     }

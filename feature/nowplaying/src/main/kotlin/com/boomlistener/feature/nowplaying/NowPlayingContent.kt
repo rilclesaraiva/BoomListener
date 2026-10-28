@@ -78,7 +78,6 @@ import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
-import com.boomlistener.core.designsystem.theme.boomScreenSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import com.boomlistener.core.player.PlaybackSettingsData
 import com.boomlistener.core.player.PlaybackState
@@ -282,19 +281,12 @@ internal fun NowPlayingContent(
                                                 ),
                                         )
                                         // Visualizador (menu ⋮ do player): só na capa da música que toca.
-                                        // Liga e desliga esmaecendo (no osciloscópio, a capa volta aos poucos).
-                                        // Nome completo: dentro de Column/Row, o AnimatedVisibility "de escopo" não vale aqui.
-                                        androidx.compose.animation.AnimatedVisibility(
-                                            visible = playbackPrefs.visualizer && song.uri == item?.uri,
-                                            modifier = Modifier.matchParentSize(),
-                                            enter = fadeIn(boomScreenSpec()),
-                                            exit = fadeOut(boomScreenSpec()),
-                                        ) {
+                                        if (playbackPrefs.visualizer && song.uri == item?.uri) {
                                             CoverVisualizer(
                                                 style = playbackPrefs.visualizerStyle,
                                                 playing = state.isPlaying,
                                                 cover = cover,
-                                                modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.extraLarge),
+                                                modifier = Modifier.matchParentSize().clip(MaterialTheme.shapes.extraLarge),
                                             )
                                         }
                                     }

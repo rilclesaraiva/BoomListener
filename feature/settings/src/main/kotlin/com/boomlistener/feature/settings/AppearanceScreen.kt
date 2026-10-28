@@ -41,7 +41,6 @@ internal fun AppearanceScreen(
     val visualizerStyles = listOf(
         Triple(VisualizerStyle.Bars, R.string.feature_settings_visualizer_bars, R.string.feature_settings_visualizer_bars_summary),
         Triple(VisualizerStyle.Wave, R.string.feature_settings_visualizer_wave, R.string.feature_settings_visualizer_wave_summary),
-        Triple(VisualizerStyle.Oscilloscope, R.string.feature_settings_visualizer_scope, R.string.feature_settings_visualizer_scope_summary),
     )
 
     val themes = listOf(
@@ -132,12 +131,8 @@ internal fun AppearanceScreen(
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_visualizer)) {
                     visualizerStyles.forEach { (style, title, summary) ->
                         BoomSettingsItem(
-                            // Desenho pequeno de como ele fica: barrinhas, a onda em mola ou a figura do osciloscópio.
-                            icon = when (style) {
-                                VisualizerStyle.Bars -> BoomIcons.GraphicEq
-                                VisualizerStyle.Wave -> BoomIcons.Waveform
-                                VisualizerStyle.Oscilloscope -> BoomIcons.Oscilloscope
-                            },
+                            // Desenho pequeno de como ele fica: barrinhas ou a onda em mola.
+                            icon = if (style == VisualizerStyle.Bars) BoomIcons.GraphicEq else BoomIcons.Waveform,
                             title = stringResource(title),
                             subtitle = stringResource(summary),
                             onClick = { playback.setVisualizerStyle(style) },
