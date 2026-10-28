@@ -33,6 +33,12 @@ android {
         versionName = appVersion
     }
 
+    // Idiomas do app (inglês, português, espanhol): gera a lista para o Android 13+
+    // mostrar o app em Configurações → Idioma do app (o padrão está em res/resources.properties).
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     signingConfigs {
         // Chave de debug fixa, versionada no repositório: sem ela, cada build da
         // Action gerava uma chave nova e o APK de debug não atualizava por cima.

@@ -127,6 +127,7 @@ internal fun ArtistScreen(
             library = LibraryData.repository(context),
             deezer = DeezerData.repository(context),
             follows = ReleasesData.follows(context),
+            alerts = ReleasesData.alerts(context),
             player = PlayerConnection.controller(context),
             lastfm = LastfmData.repository(context),
             musicBrainz = MusicBrainzData.repository(context),
@@ -148,8 +149,10 @@ internal fun ArtistScreen(
                 Actions(
                     canFollow = ready != null && !fromMusicBrainz,
                     following = state.following,
+                    alertsOn = state.alertsOn,
                     hasLocal = state.localTracks.isNotEmpty(),
                     onFollow = viewModel::toggleFollow,
+                    onToggleAlerts = viewModel::toggleAlerts,
                     onShuffle = viewModel::shuffle,
                     onPlay = { viewModel.play() },
                 )
@@ -267,8 +270,10 @@ private fun Stats(state: ArtistUiState, profile: ArtistProfile?) {
 private fun Actions(
     canFollow: Boolean,
     following: Boolean,
+    alertsOn: Boolean,
     hasLocal: Boolean,
     onFollow: () -> Unit,
+    onToggleAlerts: () -> Unit,
     onShuffle: () -> Unit,
     onPlay: () -> Unit,
 ) {
@@ -281,6 +286,16 @@ private fun Actions(
                 Icon(BoomIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.feature_artist_following))
+            }
+            // Sino só deste artista: liga sozinho ao seguir; desligar não deixa de seguir.
+            Spacer(Modifier.width(8.dp))
+            FilledTonalIconButton(onClick = onToggleAlerts) {
+                Icon(
+                    if (alertsOn) BoomIcons.Releases else BoomIcons.NotificationsOff,
+                    contentDescription = stringResource(
+                        if (alertsOn) R.string.feature_artist_alerts_on else R.string.feature_artist_alerts_off,
+                    ),
+                )
             }
         } else {
             OutlinedButton(onClick = onFollow, enabled = canFollow) {

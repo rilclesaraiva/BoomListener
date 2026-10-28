@@ -22,6 +22,7 @@ import com.boomlistener.data.lastfm.LastfmRepository
 import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
+import com.boomlistener.data.releases.ReleaseAlertsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -106,6 +107,18 @@ private class FakeFollows : FollowRepository {
     override suspend fun unfollow(deezerId: Long) = followed.update { list -> list.filterNot { it.deezerId == deezerId } }
 }
 
+private class FakeAlerts : ReleaseAlertsRepository {
+    override val enabled = MutableStateFlow(true)
+    override fun setEnabled(enabled: Boolean) { this.enabled.value = enabled }
+    override fun known(): Map<Long, Set<Long>> = emptyMap()
+    override fun saveKnown(known: Map<Long, Set<Long>>) = Unit
+    override var askedPermission: Boolean = false
+    override val muted = MutableStateFlow<Set<Long>>(emptySet())
+    override fun setMuted(artistId: Long, muted: Boolean) {
+        this.muted.value = if (muted) this.muted.value + artistId else this.muted.value - artistId
+    }
+}
+
 private class FakeLastfm(private val result: BioResult = BioResult.NotFound) : LastfmRepository {
     var askedFor: String? = null
     override suspend fun artistBio(artistName: String, language: String): BioResult {
@@ -178,6 +191,38 @@ class ArtistViewModelTest {
 
         viewModel.shuffle()
         assertEquals(listOf(1L), player.shuffled.map { it.id })
+    }
+
+    @Test
+    fun sinoDoArtistaDesligaSemDeixarDeSeguir() = runTest(dispatcher) {
+        val follows = FakeFollows()
+        val alerts = FakeAlerts()
+        val viewModel = ArtistViewModel(
+            "Djavan",
+            FakeLibrary(listOf(track(1, "Açaí", "Djavan", "Luz"))),
+            FakeDeezer(ProfileResult.Found(profile)),
+            follows,
+            FakePlayer(),
+            FakeLastfm(),
+            "pt",
+            alerts = alerts,
+        )
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+
+        // Seguir já liga o sino.
+        viewModel.toggleFollow()
+        assertTrue(viewModel.uiState.value.alertsOn)
+
+        // Desligar o sino: continua seguindo, sem avisos dele.
+        viewModel.toggleAlerts()
+        assertTrue(viewModel.uiState.value.following)
+        assertFalse(viewModel.uiState.value.alertsOn)
+        assertEquals(setOf(27L), alerts.muted.value)
+
+        // Deixar de seguir e seguir de novo: o sino volta ligado.
+        viewModel.toggleFollow()
+        viewModel.toggleFollow()
+        assertTrue(viewModel.uiState.value.alertsOn)
     }
 }
 

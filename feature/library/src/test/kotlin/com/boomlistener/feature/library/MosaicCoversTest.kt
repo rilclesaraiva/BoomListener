@@ -14,33 +14,28 @@ class MosaicCoversTest {
     )
 
     @Test
-    fun ateTresMusicasFicaSoAPrimeiraCapa() {
-        val tracks = listOf(song(1, 10), song(2, 20), song(3, 30))
-        assertEquals(listOf(1L), mosaicCovers(tracks).map { it.id })
+    fun umaCapaPorAlbumSemRepetir() {
+        // Só uma música dos Mamonas: a capa deles aparece uma vez só.
+        val tracks = listOf(song(1, 10), song(2, 20), song(3, 20), song(4, 30))
+        assertEquals(listOf(1L, 2L, 4L), mosaicCovers(tracks).map { it.id })
     }
 
     @Test
-    fun maisDeTresComQuatroAlbunsDiferentesMontaOMosaico() {
+    fun quatroAlbunsOuMaisMontaO2x2() {
         val tracks = listOf(song(1, 10), song(2, 10), song(3, 20), song(4, 30), song(5, 40), song(6, 50))
         assertEquals(listOf(1L, 3L, 4L, 5L), mosaicCovers(tracks).map { it.id })
+    }
+
+    @Test
+    fun duasMusicasDeDoisAlbunsViramDuasMetades() {
+        val tracks = listOf(song(1, 10), song(2, 20))
+        assertEquals(listOf(1L, 2L), mosaicCovers(tracks).map { it.id })
     }
 
     @Test
     fun todasDoMesmoAlbumFicaComCapaUnica() {
         val tracks = listOf(song(1, 10), song(2, 10), song(3, 10), song(4, 10))
         assertEquals(listOf(1L), mosaicCovers(tracks).map { it.id })
-    }
-
-    @Test
-    fun doisAlbunsRepetemEmDiagonal() {
-        val tracks = listOf(song(1, 10), song(2, 10), song(3, 20), song(4, 20))
-        assertEquals(listOf(1L, 3L, 3L, 1L), mosaicCovers(tracks).map { it.id })
-    }
-
-    @Test
-    fun tresAlbunsRepeteSoAPrimeiraNoCanto() {
-        val tracks = listOf(song(1, 10), song(2, 20), song(3, 20), song(4, 30))
-        assertEquals(listOf(1L, 2L, 4L, 1L), mosaicCovers(tracks).map { it.id })
     }
 
     @Test

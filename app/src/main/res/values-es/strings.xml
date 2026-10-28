@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_collections">Biblioteca</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="wide_releases">Lanzamientos</string>
+    <string name="wide_new_playlist">Nueva playlist</string>
+    <string name="wide_favorites">Favoritas</string>
+    <string name="wide_collapse">Contraer</string>
+    <string name="wide_expand">Expandir</string>
+    <string name="wide_show_artist">Mostrar artista</string>
+    <string name="app_unsupported_format">No se pudo reproducir “%1$s”: este teléfono no puede leer su formato. Pasamos a la siguiente canción.</string>
+</resources>

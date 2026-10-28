@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.common.OfflineMode
+import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
@@ -23,11 +24,12 @@ import com.boomlistener.core.designsystem.component.BoomSettingsSection
 import com.boomlistener.core.player.PlaybackSettingsData
 
 /**
- * Ajustes → Sistema: como o app usa a internet (modo offline) e o que ele
- * faz em segundo plano (fechar de vez ao tirar dos apps recentes).
+ * Ajustes → Sistema: como o app usa a internet (modo offline), o que ele
+ * faz em segundo plano (fechar de vez ao tirar dos apps recentes) e o backup
+ * dos seus dados.
  */
 @Composable
-internal fun SystemSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
+internal fun SystemSettingsScreen(onBack: () -> Unit, onOpenBackup: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current.applicationContext
     val playback = remember { PlaybackSettingsData.get(context) }
     val prefs by playback.prefs.collectAsStateWithLifecycle()
@@ -65,6 +67,17 @@ internal fun SystemSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modif
                         subtitle = stringResource(R.string.feature_settings_stop_on_swipe_summary),
                         onClick = { playback.setStopOnTaskRemoved(!prefs.stopOnTaskRemoved) },
                         trailing = { Switch(checked = prefs.stopOnTaskRemoved, onCheckedChange = playback::setStopOnTaskRemoved) },
+                    )
+                }
+            }
+            item(key = "data") {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_system_data)) {
+                    // Backup dos dados do app num arquivo (e restaurar, inclusive num celular novo).
+                    BoomSettingsItem(
+                        icon = BoomIcons.Backup,
+                        title = stringResource(R.string.feature_settings_backup),
+                        subtitle = stringResource(R.string.feature_settings_backup_summary),
+                        onClick = onOpenBackup,
                     )
                 }
             }

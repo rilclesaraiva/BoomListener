@@ -144,9 +144,13 @@
     <string name="feature_settings_visualizer_wave">Onda</string>
     <string name="feature_settings_visualizer_wave_summary">O desenho do som, ao vivo</string>
     <string name="feature_settings_system">Sistema</string>
-    <string name="feature_settings_system_summary">Modo offline e o app em segundo plano</string>
+    <string name="feature_settings_system_summary">Modo offline, o app em segundo plano e backup</string>
     <string name="feature_settings_system_internet">Internet</string>
     <string name="feature_settings_system_background">Segundo plano</string>
     <string name="feature_settings_stop_on_swipe">Encerrar ao tirar dos recentes</string>
     <string name="feature_settings_stop_on_swipe_summary">Tirar o app dos apps recentes para a música e fecha o app. Desligado: a música continua tocando</string>
+    <string name="feature_settings_system_data">Seus dados</string>
+    <string name="feature_settings_language">Idioma</string>
+    <string name="feature_settings_language_app">Idioma do app</string>
+    <string name="feature_settings_language_follows_phone">Segue o idioma do celular (escolher por app precisa do Android 13 ou mais novo)</string>
 </resources>

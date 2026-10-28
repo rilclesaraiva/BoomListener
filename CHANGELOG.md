@@ -4,6 +4,19 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.51.0] — 2026-10-28
+
+### ✨ New
+- Spanish: the whole app is now in English, Portuguese and Spanish. On Android 13 and newer you can pick the app's language on its own (Settings → Appearance → Language).
+- Artist page: a bell next to "Following" turns release alerts off (or back on) for just that artist, without unfollowing. It turns on by itself when you follow someone. The bell on the Releases screen still turns all release alerts on or off.
+- Playlist covers have new shapes: 2 albums are split down the middle, 3 albums form a "Y" (one on top, two on the sides) and 4 or more make the 2 × 2 grid.
+
+### 🐛 Fixes
+- Playlist covers no longer repeat an album cover to fill the grid.
+
+### 🎨 Visual tweaks
+- Settings: the General list now follows a clearer order (Appearance, Playback, Library, Sharing, Wellbeing, System), and Backup moved inside System.
+
 ## [0.50.0] — 2026-10-28
 
 ### ✨ New

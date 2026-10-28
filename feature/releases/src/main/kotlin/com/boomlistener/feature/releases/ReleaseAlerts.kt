@@ -25,6 +25,7 @@ import androidx.work.WorkerParameters
 import com.boomlistener.data.deezer.ArtistReleasesResult
 import com.boomlistener.data.deezer.DeezerData
 import com.boomlistener.data.releases.ReleasesData
+import com.boomlistener.data.releases.alertsToSend
 import com.boomlistener.data.releases.findNewReleases
 import com.boomlistener.core.model.Release
 import java.time.LocalDate
@@ -128,7 +129,8 @@ class ReleaseCheckWorker(context: Context, params: WorkerParameters) : Coroutine
         alerts.saveKnown(check.known)
         if (alerts.enabled.value) {
             val names = followed.associate { it.deezerId to it.name }
-            ReleaseAlerts.notify(context, check.fresh.map { names[it.artistId].orEmpty() to it.release })
+            // Artistas com o sino desligado na página deles ficam de fora.
+            ReleaseAlerts.notify(context, alertsToSend(check.fresh, alerts.muted.value).map { names[it.artistId].orEmpty() to it.release })
         }
         return Result.success()
     }

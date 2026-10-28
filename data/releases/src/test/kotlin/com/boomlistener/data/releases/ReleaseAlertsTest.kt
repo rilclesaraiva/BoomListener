@@ -52,4 +52,11 @@ class ReleaseAlertsTest {
         val known = mapOf(1L to setOf(10L, 11L), 2L to emptySet())
         assertEquals(known, decodeKnown(encodeKnown(known)))
     }
+
+    @Test
+    fun sinoDesligadoNaoAvisaMasOutrosSim() {
+        val fresh = listOf(NewRelease(1, release(10, "2026-10-20")), NewRelease(2, release(20, "2026-10-21")))
+        assertEquals(listOf(2L), alertsToSend(fresh, muted = setOf(1L)).map { it.artistId })
+        assertEquals(2, alertsToSend(fresh, muted = emptySet()).size)
+    }
 }

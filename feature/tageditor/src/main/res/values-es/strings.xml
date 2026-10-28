@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_tageditor_title">Editar etiquetas</string>
+    <string name="feature_tageditor_save">Guardar</string>
+    <string name="feature_tageditor_saving">Guardando…</string>
+    <string name="feature_tageditor_saved">Etiquetas guardadas</string>
+    <string name="feature_tageditor_save_failed">No se pudo guardar. Puede que este tipo de archivo no admita etiquetas o que el archivo sea de solo lectura.</string>
+    <string name="feature_tageditor_permission_denied">Sin tu permiso no se pueden guardar las etiquetas</string>
+    <string name="feature_tageditor_load_failed_title">No se pudo leer este archivo</string>
+    <string name="feature_tageditor_load_failed_message">Puede que se haya movido, borrado o que esté en un formato que el editor no admite.</string>
+    <string name="feature_tageditor_retry">Reintentar</string>
+    <string name="feature_tageditor_cover">Portada</string>
+    <string name="feature_tageditor_cover_change">Cambiar portada</string>
+    <string name="feature_tageditor_cover_remove">Quitar portada</string>
+    <string name="feature_tageditor_field_title">Título</string>
+    <string name="feature_tageditor_field_artist">Artista</string>
+    <string name="feature_tageditor_field_album">Álbum</string>
+    <string name="feature_tageditor_field_album_artist">Artista del álbum</string>
+    <string name="feature_tageditor_field_year">Año</string>
+    <string name="feature_tageditor_field_track">Pista</string>
+    <string name="feature_tageditor_field_disc">Disco</string>
+    <string name="feature_tageditor_field_genre">Género</string>
+    <string name="feature_tageditor_field_composer">Compositor</string>
+    <string name="feature_tageditor_field_lyrics">Letra</string>
+    <string name="feature_tageditor_field_lyrics_hint">Texto simple, o LRC con tiempos [mm:ss.xx] para letras sincronizadas</string>
+    <string name="feature_tageditor_changed">Modificado</string>
+    <string name="feature_tageditor_reset">Deshacer todos los cambios</string>
+    <string name="feature_tageditor_auto_title">Corregir etiquetas automáticamente</string>
+    <string name="feature_tageditor_auto_message">Busca en Deezer, MusicBrainz y Last.fm el título, artista, álbum, año, género, número de pista y portada oficiales. Revisas todo antes de guardar.</string>
+    <string name="feature_tageditor_auto_search">Buscar</string>
+    <string name="feature_tageditor_auto_searching">Buscando en Deezer, MusicBrainz y Last.fm…</string>
+    <string name="feature_tageditor_auto_applied">Completado con %1$s. Revisa los campos y toca Guardar.</string>
+    <string name="feature_tageditor_auto_already_correct">Tus etiquetas ya coinciden con %1$s. No hay nada que cambiar.</string>
+    <string name="feature_tageditor_auto_other">Otras opciones</string>
+    <string name="feature_tageditor_auto_undo">Deshacer</string>
+    <string name="feature_tageditor_auto_not_found">No se encontró nada. Revisa el título y el artista y vuelve a buscar.</string>
+    <string name="feature_tageditor_auto_failed">No se pudo conectar con Deezer ni con MusicBrainz. ¿Estás en línea?</string>
+    <string name="feature_tageditor_auto_choose_title">¿Cuál es?</string>
+    <string name="feature_tageditor_auto_match">%1$d%% de coincidencia</string>
+    <string name="feature_tageditor_discard_title">¿Descartar los cambios?</string>
+    <string name="feature_tageditor_discard_message">Tus cambios en esta canción no se han guardado.</string>
+    <string name="feature_tageditor_discard">Descartar</string>
+    <string name="feature_tageditor_keep_editing">Seguir editando</string>
+    <string name="feature_tageditor_cover_yours">La tuya</string>
+    <string name="feature_tageditor_cover_found">Encontrada</string>
+    <string name="feature_tageditor_cover_use_found">Usar esta portada</string>
+</resources>

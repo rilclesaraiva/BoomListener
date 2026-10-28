@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_wellbeing_title">Bienestar</string>
+    <string name="feature_wellbeing_most_played">Más escuchadas</string>
+    <string name="feature_wellbeing_most_played_empty">Tus canciones más escuchadas aparecerán aquí. Una canción cuenta después de 30 segundos de escucha, cuando la elegiste o sonó en orden (las que aparecen solas en el modo aleatorio no cuentan).</string>
+    <string name="feature_wellbeing_most_played_rule">Cuenta después de 30 s de escucha, cuando elegiste la canción o sonó en orden.</string>
+    <plurals name="feature_wellbeing_plays">
+        <item quantity="one">%1$d reproducción</item>
+        <item quantity="other">%1$d reproducciones</item>
+    </plurals>
+    <string name="feature_wellbeing_history_title">Historial</string>
+    <string name="feature_wellbeing_history_today">Hoy</string>
+    <string name="feature_wellbeing_history_yesterday">Ayer</string>
+    <string name="feature_wellbeing_history_this_week">Antes esta semana</string>
+    <string name="feature_wellbeing_history_last_week">La semana pasada</string>
+    <string name="feature_wellbeing_history_empty_title">Todavía no hay nada</string>
+    <string name="feature_wellbeing_history_empty_message">Cada canción que escuchas durante 30 segundos o más aparece aquí, agrupada por día y semana. Tu historial se queda en tu teléfono.</string>
+    <string name="feature_wellbeing_history_clear">Borrar historial</string>
+    <string name="feature_wellbeing_history_clear_title">¿Borrar tu historial de escucha?</string>
+    <string name="feature_wellbeing_history_clear_message">Esto elimina la lista de canciones que escuchaste. Las más escuchadas no cambian.</string>
+    <string name="feature_wellbeing_cancel">Cancelar</string>
+    <string name="feature_wellbeing_add_to_playlist">Añadir a una playlist</string>
+    <string name="feature_wellbeing_go_to_artist">Ir al artista</string>
+    <string name="feature_wellbeing_edit_tags">Editar etiquetas</string>
+    <string name="feature_wellbeing_favorite">Añadir a favoritas</string>
+    <string name="feature_wellbeing_unfavorite">Quitar de favoritas</string>
+    <string name="feature_wellbeing_play_next">Añadir a la cola</string>
+    <string name="feature_wellbeing_play_next_done">Suena a continuación</string>
+</resources>

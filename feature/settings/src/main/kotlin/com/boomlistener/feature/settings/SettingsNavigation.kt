@@ -45,7 +45,6 @@ fun NavGraphBuilder.settingsScreen(
                 onOpenLibrary = { navController.navigateOnce(LIBRARY_SETTINGS_ROUTE) },
                 onOpenPlayback = { navController.navigateOnce(PLAYBACK_SETTINGS_ROUTE) },
                 onOpenShare = { navController.navigateOnce(SHARE_SETTINGS_ROUTE) },
-                onOpenBackup = { navController.navigateOnce(BACKUP_ROUTE) },
                 onOpenSystem = { navController.navigateOnce(SYSTEM_SETTINGS_ROUTE) },
                 onBack = back,
             )
@@ -56,7 +55,9 @@ fun NavGraphBuilder.settingsScreen(
     composable(PLAYBACK_SETTINGS_ROUTE) { BoomNavScreen(this) { PlaybackSettingsScreen(onBack = back) } }
     composable(SHARE_SETTINGS_ROUTE) { BoomNavScreen(this) { ShareSettingsScreen(onBack = back) } }
     composable(BACKUP_ROUTE) { BoomNavScreen(this) { BackupScreen(onBack = back) } }
-    composable(SYSTEM_SETTINGS_ROUTE) { BoomNavScreen(this) { SystemSettingsScreen(onBack = back) } }
+    composable(SYSTEM_SETTINGS_ROUTE) { BoomNavScreen(this) {
+            SystemSettingsScreen(onBack = back, onOpenBackup = { navController.navigateOnce(BACKUP_ROUTE) })
+        } }
     composable(ABOUT_ROUTE) { BoomNavScreen(this) { AboutScreen(onBack = back) } }
     composable(PRIVACY_ROUTE) { BoomNavScreen(this) { PrivacyScreen(onBack = back) } }
     composable(LICENSES_ROUTE) { BoomNavScreen(this) { LicensesScreen(onBack = back) } }

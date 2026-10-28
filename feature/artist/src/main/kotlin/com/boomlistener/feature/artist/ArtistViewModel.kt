@@ -21,10 +21,12 @@ import com.boomlistener.data.musicbrainz.MbArtistResult
 import com.boomlistener.data.musicbrainz.MusicBrainzRepository
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
+import com.boomlistener.data.releases.ReleaseAlertsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -49,6 +51,8 @@ internal data class ArtistUiState(
     val localAlbums: Int = 0,
     val profile: ProfileState = ProfileState.Loading,
     val following: Boolean = false,
+    /** Seguindo e com o sino ligado: lançamentos dele viram aviso. */
+    val alertsOn: Boolean = false,
     val ownedReleases: Set<Long> = emptySet(),
     val ownedPopular: Set<Long> = emptySet(),
     val bio: BioState = BioState.Loading,
@@ -64,6 +68,8 @@ internal class ArtistViewModel(
     private val language: String,
     /** Reserva quando o Deezer não acha o artista. */
     private val musicBrainz: MusicBrainzRepository? = null,
+    /** Sino de cada artista (avisos de lançamentos); null nos testes antigos. */
+    private val alerts: ReleaseAlertsRepository? = null,
 ) : ViewModel() {
 
     private val localTracks = MutableStateFlow<List<Track>>(emptyList())
@@ -71,14 +77,17 @@ internal class ArtistViewModel(
     private val bio = MutableStateFlow<BioState>(BioState.Loading)
 
     val uiState: StateFlow<ArtistUiState> =
-        combine(localTracks, profile, follows.followed, bio) { tracks, profileState, followed, bioState ->
+        combine(localTracks, profile, follows.followed, bio, alerts?.muted ?: flowOf(emptySet())) { tracks, profileState, followed, bioState, muted ->
             val ready = (profileState as? ProfileState.Ready)?.profile
+            val following = ready != null && (profileState as? ProfileState.Ready)?.fromMusicBrainz != true &&
+                followed.any { it.deezerId == ready.artist.id }
             ArtistUiState(
                 name = ready?.artist?.name ?: artistName,
                 localTracks = tracks,
                 localAlbums = localAlbumCount(tracks),
                 profile = profileState,
-                following = ready != null && (profileState as? ProfileState.Ready)?.fromMusicBrainz != true && followed.any { it.deezerId == ready.artist.id },
+                following = following,
+                alertsOn = following && ready != null && ready.artist.id !in muted,
                 ownedReleases = ready?.let { ownedReleaseIds(it.releases, tracks) }.orEmpty(),
                 ownedPopular = ready?.let { ownedPopularIds(it.topTracks, tracks) }.orEmpty(),
                 bio = bioState,
@@ -138,7 +147,16 @@ internal class ArtistViewModel(
             } else {
                 follows.follow(FollowedArtist(ready.artist.id, ready.artist.name))
             }
+            // Seguir (ou deixar de seguir) volta o sino ao padrão: ligado.
+            alerts?.setMuted(ready.artist.id, muted = false)
         }
+    }
+
+    /** Sino ao lado de "Seguindo": desliga ou religa os avisos só deste artista. */
+    fun toggleAlerts() {
+        val ready = (profile.value as? ProfileState.Ready)?.profile ?: return
+        if (!uiState.value.following) return
+        alerts?.setMuted(ready.artist.id, muted = uiState.value.alertsOn)
     }
 
     fun play(index: Int = 0) {

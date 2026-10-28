@@ -52,6 +52,13 @@ fun findNewReleases(
     return ReleaseCheck(next, fresh.sortedByDescending { it.release.releaseDate.orEmpty() })
 }
 
+/**
+ * Os lançamentos que viram aviso: tira os dos artistas com o sino desligado
+ * na página deles ([muted]); o artista continua seguido e no radar.
+ */
+fun alertsToSend(fresh: List<NewRelease>, muted: Set<Long>): List<NewRelease> =
+    fresh.filter { it.artistId !in muted }
+
 private fun isRecent(release: Release, today: LocalDate): Boolean {
     val date = release.releaseDate?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() } ?: return false
     return !date.isAfter(today) && !date.isBefore(today.minusDays(ALERT_MAX_AGE_DAYS))
@@ -65,6 +72,13 @@ interface ReleaseAlertsRepository {
     fun saveKnown(known: Map<Long, Set<Long>>)
     /** Já pediu a permissão de notificação uma vez (não pede de novo sozinho). */
     var askedPermission: Boolean
+
+    /**
+     * Artistas seguidos com o sino desligado (na página do artista): continuam
+     * seguidos, mas não geram aviso. Seguir de novo liga o sino.
+     */
+    val muted: StateFlow<Set<Long>>
+    fun setMuted(artistId: Long, muted: Boolean)
 }
 
 internal fun encodeKnown(known: Map<Long, Set<Long>>): Set<String> =
@@ -102,9 +116,21 @@ internal class PrefsReleaseAlerts(context: Context) : ReleaseAlertsRepository {
         get() = prefs.getBoolean(KEY_ASKED, false)
         set(value) = prefs.edit().putBoolean(KEY_ASKED, value).apply()
 
+    private val mutedState = MutableStateFlow(
+        prefs.getStringSet(KEY_MUTED, null).orEmpty().mapNotNull { it.toLongOrNull() }.toSet(),
+    )
+    override val muted: StateFlow<Set<Long>> = mutedState.asStateFlow()
+
+    override fun setMuted(artistId: Long, muted: Boolean) {
+        val next = if (muted) mutedState.value + artistId else mutedState.value - artistId
+        mutedState.value = next
+        prefs.edit().putStringSet(KEY_MUTED, next.map { it.toString() }.toSet()).apply()
+    }
+
     private companion object {
         const val KEY_ENABLED = "enabled"
         const val KEY_KNOWN = "known"
         const val KEY_ASKED = "asked_permission"
+        const val KEY_MUTED = "muted_artists"
     }
 }

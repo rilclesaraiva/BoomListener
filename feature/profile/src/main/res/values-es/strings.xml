@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_profile_name">Tu nombre</string>
+    <string name="feature_profile_my_profile">Tu perfil</string>
+    <string name="feature_profile_save">Guardar</string>
+    <string name="feature_profile_most_played">Más escuchadas</string>
+    <string name="feature_profile_most_played_sub">De siempre</string>
+    <string name="feature_profile_listening_time">Tiempo de escucha</string>
+    <string name="feature_profile_last_7_days">Últimos 7 días</string>
+    <string name="feature_profile_top_artists">Tus artistas</string>
+    <string name="feature_profile_last_30_days">Últimos 30 días</string>
+    <string name="feature_profile_history">Historial</string>
+    <string name="feature_profile_see_all">Ver todo</string>
+    <string name="feature_profile_this_month">Este mes</string>
+    <string name="feature_profile_hours_minutes">%1$d h %2$02d min</string>
+    <string name="feature_profile_minutes">%1$d min</string>
+    <string name="feature_profile_listened">de escucha</string>
+    <string name="feature_profile_daily">Por día</string>
+    <string name="feature_profile_today_short">Hoy</string>
+    <string name="feature_profile_hours_short">%1$dh%2$02d</string>
+    <string name="feature_profile_peak_hours">Horas pico</string>
+    <string name="feature_profile_morning">Mañana</string>
+    <string name="feature_profile_afternoon">Tarde</string>
+    <string name="feature_profile_night">Noche</string>
+    <string name="feature_profile_dawn">Madrugada</string>
+    <string name="feature_profile_today">Hoy</string>
+    <string name="feature_profile_yesterday">Ayer</string>
+    <plurals name="feature_profile_plays">
+        <item quantity="one">%1$d reproducción</item>
+        <item quantity="other">%1$d reproducciones</item>
+    </plurals>
+    <plurals name="feature_profile_songs">
+        <item quantity="one">canción</item>
+        <item quantity="other">canciones</item>
+    </plurals>
+    <plurals name="feature_profile_artists">
+        <item quantity="one">artista</item>
+        <item quantity="other">artistas</item>
+    </plurals>
+    <string name="feature_profile_edit_profile">Editar perfil</string>
+    <string name="feature_profile_bio">Descripción</string>
+    <string name="feature_profile_bio_hint">¿Qué te gusta escuchar?</string>
+    <string name="feature_profile_bio_add">+ Añadir una descripción</string>
+    <string name="feature_profile_banner_change">Cambiar portada</string>
+    <string name="feature_profile_banner_remove">Quitar portada</string>
+    <string name="feature_profile_photo_change">Cambiar foto</string>
+    <string name="feature_profile_photo_remove">Quitar foto</string>
+    <string name="feature_profile_gif_hint">Los GIF también sirven y siguen animados. Los GIF grandes o largos se reducen, y un video corto (hasta 15 s, sin sonido) se convierte en GIF.</string>
+    <string name="feature_profile_saving">Guardando…</string>
+    <string name="feature_profile_color">Color del perfil</string>
+    <string name="feature_profile_color_hex">O escribe un color (hex)</string>
+    <string name="feature_profile_color_none">Sin color</string>
+    <string name="feature_profile_settings">Ajustes</string>
+    <string name="feature_profile_make_it_yours">Hazlo tuyo</string>
+    <string name="feature_profile_save_failed">No se pudo guardar. Prueba con otra imagen.</string>
+    <string name="feature_profile_play">Reproducir</string>
+    <string name="feature_profile_shuffle">Aleatorio</string>
+    <string name="feature_profile_add_to_playlist">Añadir a una playlist</string>
+    <string name="feature_profile_favorite">Añadir a favoritas</string>
+    <string name="feature_profile_unfavorite">Quitar de favoritas</string>
+    <string name="feature_profile_go_to_artist">Ir al artista</string>
+    <string name="feature_profile_edit_tags">Editar etiquetas</string>
+    <string name="feature_profile_play_next">Añadir a la cola</string>
+    <string name="feature_profile_play_next_done">Suena a continuación</string>
+    <string name="feature_profile_color_gradient">Degradado</string>
+    <string name="feature_profile_color_solid">Sólido</string>
+</resources>

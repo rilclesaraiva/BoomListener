@@ -78,6 +78,7 @@ fun ArtistSidePanel(
             library = LibraryData.repository(context),
             deezer = DeezerData.repository(context),
             follows = ReleasesData.follows(context),
+            alerts = ReleasesData.alerts(context),
             player = PlayerConnection.controller(context),
             lastfm = LastfmData.repository(context),
             musicBrainz = MusicBrainzData.repository(context),

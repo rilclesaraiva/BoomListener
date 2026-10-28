@@ -37,7 +37,6 @@ internal fun SettingsScreen(
     onOpenLibrary: () -> Unit,
     onOpenPlayback: () -> Unit,
     onOpenShare: () -> Unit,
-    onOpenBackup: () -> Unit,
     onOpenSystem: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -75,6 +74,8 @@ internal fun SettingsScreen(
                 BoomPageTitle(stringResource(R.string.feature_settings_title), hasBack = true, large = true)
             }
             item {
+                // Ordem: como o app fica, como toca, o que toca, para onde vai,
+                // seus hábitos e, por último, o técnico (internet, segundo plano, backup).
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_section_general)) {
                     BoomSettingsItem(
                         icon = BoomIcons.Palette,
@@ -84,18 +85,18 @@ internal fun SettingsScreen(
                         onClick = onOpenAppearance,
                     )
                     BoomSettingsItem(
-                        icon = BoomIcons.Collection,
-                        accent = BoomAccent.Secondary,
-                        title = stringResource(R.string.feature_settings_library),
-                        subtitle = stringResource(R.string.feature_settings_library_summary),
-                        onClick = onOpenLibrary,
-                    )
-                    BoomSettingsItem(
                         icon = BoomIcons.MusicNote,
                         accent = BoomAccent.Tertiary,
                         title = stringResource(R.string.feature_settings_playback),
                         subtitle = stringResource(R.string.feature_settings_playback_summary),
                         onClick = onOpenPlayback,
+                    )
+                    BoomSettingsItem(
+                        icon = BoomIcons.Collection,
+                        accent = BoomAccent.Secondary,
+                        title = stringResource(R.string.feature_settings_library),
+                        subtitle = stringResource(R.string.feature_settings_library_summary),
+                        onClick = onOpenLibrary,
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.Send,
@@ -104,29 +105,20 @@ internal fun SettingsScreen(
                         subtitle = stringResource(R.string.feature_settings_share_summary),
                         onClick = onOpenShare,
                     )
-                    // Sistema: modo offline e o app em segundo plano. Nenhuma opção fica
-                    // solta aqui: toda opção mora numa categoria.
-                    BoomSettingsItem(
-                        icon = BoomIcons.Settings,
-                        accent = BoomAccent.Secondary,
-                        title = stringResource(R.string.feature_settings_system),
-                        subtitle = stringResource(R.string.feature_settings_system_summary),
-                        onClick = onOpenSystem,
-                    )
-                    // Backup dos dados do app num arquivo (e restaurar, inclusive num celular novo).
-                    BoomSettingsItem(
-                        icon = BoomIcons.Backup,
-                        accent = BoomAccent.Primary,
-                        title = stringResource(R.string.feature_settings_backup),
-                        subtitle = stringResource(R.string.feature_settings_backup_summary),
-                        onClick = onOpenBackup,
-                    )
                     BoomSettingsItem(
                         icon = BoomIcons.Wellbeing,
                         accent = BoomAccent.Tertiary,
                         title = stringResource(R.string.feature_settings_wellbeing),
                         subtitle = stringResource(R.string.feature_settings_wellbeing_summary),
                         onClick = onOpenWellbeing,
+                    )
+                    // Sistema: internet, segundo plano e backup.
+                    BoomSettingsItem(
+                        icon = BoomIcons.Settings,
+                        accent = BoomAccent.Secondary,
+                        title = stringResource(R.string.feature_settings_system),
+                        subtitle = stringResource(R.string.feature_settings_system_summary),
+                        onClick = onOpenSystem,
                     )
                 }
             }

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_artist_back">Atrás</string>
+    <string name="feature_artist_tab_songs">Canciones</string>
+    <string name="feature_artist_tab_discography">Discografía</string>
+    <string name="feature_artist_tab_about">Acerca de</string>
+    <string name="feature_artist_fans">%1$s fans en Deezer</string>
+    <string name="feature_artist_follow">Seguir</string>
+    <string name="feature_artist_following">Siguiendo</string>
+    <string name="feature_artist_shuffle">Aleatorio</string>
+    <string name="feature_artist_play">Reproducir</string>
+    <string name="feature_artist_not_found">No encontramos a este artista en Deezer ni en MusicBrainz.</string>
+    <string name="feature_artist_failed">No se pudo cargar el artista. ¿Estás en línea?</string>
+    <string name="feature_artist_retry">Reintentar</string>
+    <string name="feature_artist_on_device">En tu dispositivo</string>
+    <string name="feature_artist_popular">Populares en Deezer</string>
+    <string name="feature_artist_albums">Álbumes</string>
+    <string name="feature_artist_eps">EP</string>
+    <string name="feature_artist_singles">Sencillos</string>
+    <string name="feature_artist_compilations">Recopilatorios</string>
+    <string name="feature_artist_biography">Biografía</string>
+    <string name="feature_artist_related">Artistas similares</string>
+    <string name="feature_artist_source">Información del artista de Deezer</string>
+    <string name="feature_artist_owned">En tu biblioteca</string>
+    <string name="feature_artist_missing">No está en tu biblioteca</string>
+    <string name="feature_artist_open_external">Abrir fuera de la app</string>
+    <string name="feature_artist_type_album">Álbum</string>
+    <string name="feature_artist_type_ep">EP</string>
+    <string name="feature_artist_type_single">Sencillo</string>
+    <string name="feature_artist_type_compilation">Recopilatorio</string>
+    <plurals name="feature_artist_local_songs">
+        <item quantity="one">%1$d canción</item>
+        <item quantity="other">%1$d canciones</item>
+    </plurals>
+    <plurals name="feature_artist_local_albums">
+        <item quantity="one">%1$d álbum en tu dispositivo</item>
+        <item quantity="other">%1$d álbumes en tu dispositivo</item>
+    </plurals>
+    <string name="feature_artist_album_failed">No se pudo cargar este lanzamiento. ¿Estás en línea?</string>
+    <string name="feature_artist_album_owned">Tienes %1$d de %2$d canciones</string>
+    <string name="feature_artist_album_play_owned">Reproducir lo que tienes</string>
+    <string name="feature_artist_biography_missing">Last.fm todavía no tiene biografía de este artista.</string>
+    <string name="feature_artist_biography_failed">No se pudo cargar la biografía. ¿Estás en línea?</string>
+    <string name="feature_artist_read_more">Leer más</string>
+    <string name="feature_artist_read_less">Leer menos</string>
+    <string name="feature_artist_biography_source">Biografía de Last.fm</string>
+    <string name="feature_artist_listeners">%1$s oyentes en Last.fm</string>
+    <string name="feature_artist_source_musicbrainz">Información del artista de MusicBrainz · portadas del Cover Art Archive</string>
+    <string name="feature_artist_panel_title">Sobre el artista</string>
+    <string name="feature_artist_panel_hide">Ocultar panel</string>
+    <string name="feature_artist_panel_open">Ver página del artista</string>
+    <string name="feature_artist_alerts_on">Avisos de lanzamientos de este artista activados. Toca para desactivar</string>
+    <string name="feature_artist_alerts_off">Avisos de lanzamientos de este artista desactivados. Toca para activar</string>
+</resources>

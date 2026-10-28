@@ -141,9 +141,13 @@
     <string name="feature_settings_visualizer_wave">Wave</string>
     <string name="feature_settings_visualizer_wave_summary">The shape of the sound, live</string>
     <string name="feature_settings_system">System</string>
-    <string name="feature_settings_system_summary">Offline mode and the app in the background</string>
+    <string name="feature_settings_system_summary">Offline mode, the app in the background and backup</string>
     <string name="feature_settings_system_internet">Internet</string>
     <string name="feature_settings_system_background">Background</string>
     <string name="feature_settings_stop_on_swipe">Stop when closed from recents</string>
     <string name="feature_settings_stop_on_swipe_summary">Swiping the app away from recent apps stops the music and closes the app. Off: the music keeps playing</string>
+    <string name="feature_settings_system_data">Your data</string>
+    <string name="feature_settings_language">Language</string>
+    <string name="feature_settings_language_app">App language</string>
+    <string name="feature_settings_language_follows_phone">Follows your phone’s language (choosing per app needs Android 13 or newer)</string>
 </resources>

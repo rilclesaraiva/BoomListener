@@ -101,6 +101,32 @@ internal fun AppearanceScreen(
                 }
             }
             item {
+                // Idioma: inglês, português ou espanhol. O Android 13+ tem a escolha
+                // por app nos ajustes do sistema; antes disso, segue o idioma do celular.
+                val perAppLanguage = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_language)) {
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_language_app),
+                        subtitle = if (perAppLanguage) {
+                            java.util.Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar(Char::titlecase) }
+                        } else {
+                            stringResource(R.string.feature_settings_language_follows_phone)
+                        },
+                        enabled = perAppLanguage,
+                        onClick = {
+                            runCatching {
+                                context.startActivity(
+                                    android.content.Intent(android.provider.Settings.ACTION_APP_LOCALE_SETTINGS)
+                                        .setData(android.net.Uri.fromParts("package", context.packageName, null))
+                                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                                )
+                            }
+                        },
+                    )
+                }
+            }
+            item {
                 // Tipo do visualizador sobre a capa (liga e desliga no menu ⋮ do player).
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_visualizer)) {
                     visualizerStyles.forEach { (style, title, summary) ->
