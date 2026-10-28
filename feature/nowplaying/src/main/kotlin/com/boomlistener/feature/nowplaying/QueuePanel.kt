@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +62,7 @@ import com.boomlistener.core.designsystem.component.BoomMoreMenu
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.trackPress
 import com.boomlistener.core.player.QueueEntry
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -105,7 +107,27 @@ internal fun QueuePanel(
     var localQueue by remember { mutableStateOf(queue) }
     var dragging by remember { mutableStateOf(false) }
     var dragStartPosition by remember { mutableIntStateOf(-1) }
-    LaunchedEffect(queue) { if (!dragging) localQueue = queue }
+    // Ordem que a tela mostra desde que o dedo soltou, até o player confirmar.
+    // Sem ela, um aviso atrasado do player (com a ordem de antes) chegava
+    // depois do soltar e a música piscava no lugar antigo.
+    var pendingOrder by remember { mutableStateOf<List<String>?>(null) }
+    val latestQueue by rememberUpdatedState(queue)
+    LaunchedEffect(queue) {
+        if (dragging) return@LaunchedEffect
+        val pending = pendingOrder
+        if (pending != null) {
+            if (!sameOrder(queue, pending)) return@LaunchedEffect
+            pendingOrder = null
+        }
+        localQueue = queue
+    }
+    // Se o player não confirmar logo (mudou a fila por outro motivo), vale o dele.
+    LaunchedEffect(pendingOrder) {
+        if (pendingOrder == null) return@LaunchedEffect
+        delay(PENDING_ORDER_TIMEOUT_MS)
+        pendingOrder = null
+        localQueue = latestQueue
+    }
 
     val reorderState = rememberReorderableLazyListState(listState) { from, to ->
         if (from.index in localQueue.indices && to.index in localQueue.indices) {
@@ -208,8 +230,9 @@ internal fun QueuePanel(
                                                 onDragStopped = {
                                                     dragging = false
                                                     val end = localQueue.indexOfFirst { it.key == entry.key }
-                                                    if (dragStartPosition >= 0 && end >= 0) {
+                                                    if (dragStartPosition >= 0 && end >= 0 && dragStartPosition != end) {
                                                         // A fila na tela é a ordem real do player.
+                                                        pendingOrder = localQueue.map { it.key }
                                                         viewModel.moveQueueItem(dragStartPosition, end)
                                                     }
                                                 },
@@ -319,3 +342,9 @@ private fun QueueRow(
 
 /** Quanto o fundo escurece com a fila aberta (o mesmo dos painéis do M3). */
 private const val ScrimAlpha = 0.32f
+
+/** Depois de soltar uma música, quanto a tela espera o player confirmar a ordem nova. */
+private const val PENDING_ORDER_TIMEOUT_MS = 1_500L
+
+private fun sameOrder(queue: List<QueueEntry>, keys: List<String>): Boolean =
+    queue.size == keys.size && queue.indices.all { queue[it].key == keys[it] }

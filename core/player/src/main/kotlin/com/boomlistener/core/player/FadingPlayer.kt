@@ -79,7 +79,19 @@ internal class FadingPlayer(
     private val fadeEnabled: () -> Boolean,
 ) : ForwardingPlayer(exo) {
 
+    // Pausando com fade: o volume ainda está descendo, mas para quem pergunta
+    // (a tela, a notificação) já está pausado. Cada passo do volume faz a
+    // sessão mandar o estado do player para a tela; respondendo "tocando"
+    // nesse meio-tempo, o botão de pausar voltava ao play e trocava de novo
+    // no fim (piscava).
+    private var fadingOut = false
+
+    override fun getPlayWhenReady(): Boolean = if (fadingOut) false else super.getPlayWhenReady()
+
+    override fun isPlaying(): Boolean = if (fadingOut) false else super.isPlaying()
+
     override fun play() {
+        fadingOut = false
         if (fadeEnabled() && !exo.playWhenReady) {
             mixer.setFade(0f)
             super.play()
@@ -92,11 +104,14 @@ internal class FadingPlayer(
 
     override fun pause() {
         if (fadeEnabled() && exo.isPlaying) {
+            fadingOut = true
             mixer.fadeTo(0f) {
                 exo.pause()
+                fadingOut = false
                 mixer.setFade(1f)
             }
         } else {
+            fadingOut = false
             super.pause()
         }
     }

@@ -10,6 +10,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
+import com.boomlistener.data.deezer.artistPicture
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.profile.ProfileData
 import com.boomlistener.data.releases.ReleasesData
@@ -39,6 +40,7 @@ fun NavGraphBuilder.profileScreen(
                 follows = ReleasesData.follows(context),
                 player = PlayerConnection.controller(context),
                 remoteImage = DeezerData.repository(context)::image,
+                artistPhoto = { name, sizePx -> DeezerData.repository(context).artistPicture(name, sizePx) },
             )
         }
         BoomNavScreen(this) {

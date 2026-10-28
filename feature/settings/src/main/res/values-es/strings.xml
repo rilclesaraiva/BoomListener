@@ -135,6 +135,9 @@
     <string name="feature_settings_background_blur">Desenfoque del fondo</string>
     <string name="feature_settings_background_blur_summary">Desenfoca la pantalla de atrás cuando se abre otra encima, como el reproductor</string>
     <string name="feature_settings_background_blur_unavailable">Necesita Android 12 o posterior</string>
+    <string name="feature_settings_player_section">Reproductor</string>
+    <string name="feature_settings_artwork_buttons">Botones del color de la portada</string>
+    <string name="feature_settings_artwork_buttons_summary">Los botones del reproductor y del mini reproductor toman el color de la portada de la canción</string>
     <string name="feature_settings_visualizer">Visualizador</string>
     <string name="feature_settings_visualizer_bars">Barras</string>
     <string name="feature_settings_visualizer_bars_summary">Graves a la izquierda, agudos a la derecha</string>

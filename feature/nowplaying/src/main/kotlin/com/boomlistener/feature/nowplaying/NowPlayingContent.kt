@@ -48,6 +48,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.boomlistener.core.designsystem.component.BoomArtworkButtons
 import com.boomlistener.core.designsystem.component.BoomButtonGroupSpacing
 import com.boomlistener.core.designsystem.component.BoomGroupButtonStyle
 import com.boomlistener.core.designsystem.component.BoomGroupButton
@@ -336,16 +337,19 @@ internal fun NowPlayingContent(
                     }
 
                     Spacer(Modifier.height(16.dp))
-                    Controls(
-                        isPlaying = state.isPlaying,
-                        shuffle = state.shuffle,
-                        repeatMode = state.repeatMode,
-                        onShuffle = viewModel::toggleShuffle,
-                        onPrevious = viewModel::previous,
-                        onPlayPause = viewModel::togglePlayPause,
-                        onNext = viewModel::next,
-                        onRepeat = viewModel::cycleRepeatMode,
-                    )
+                    // Opção de Aparência: botões na cor da capa.
+                    BoomArtworkButtons(seed = artworkColor, enabled = playbackPrefs.artworkButtons) {
+                        Controls(
+                            isPlaying = state.isPlaying,
+                            shuffle = state.shuffle,
+                            repeatMode = state.repeatMode,
+                            onShuffle = viewModel::toggleShuffle,
+                            onPrevious = viewModel::previous,
+                            onPlayPause = viewModel::togglePlayPause,
+                            onNext = viewModel::next,
+                            onRepeat = viewModel::cycleRepeatMode,
+                        )
+                    }
                     Spacer(Modifier.height(12.dp))
                     UpNextHandle(state = state, queueState = queueState)
                     // Folga para o puxador da fila não ficar colado no gesto de

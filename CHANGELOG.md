@@ -4,6 +4,17 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.53.0] — 2026-10-28
+
+### ✨ New
+- **Buttons in the cover's color** (Settings → Appearance → Player): the play, previous and next buttons, and Shuffle and Repeat when on, take the color of the song's cover, in the player and the mini player. Off by default.
+- **About:** the developer card now shows the developer's GitHub photo. It's downloaded once and kept on your phone, and only checked for changes about once a week.
+
+### 🐛 Fixes
+- **Your artists** on the profile shows each artist's Deezer photo, not only for artists you follow.
+- Pausing no longer makes the play/pause button flicker before it changes.
+- Moving a song in the queue no longer flashes it back in its old place for a moment.
+
 ## [0.52.4] — 2026-10-28
 
 ### 🎨 Visual tweaks

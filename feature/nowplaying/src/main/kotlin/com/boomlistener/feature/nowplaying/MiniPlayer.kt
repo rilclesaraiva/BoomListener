@@ -3,6 +3,8 @@
 
 package com.boomlistener.feature.nowplaying
 
+import com.boomlistener.core.player.PlaybackSettingsData
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.expandVertically
@@ -42,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boomlistener.core.designsystem.component.BoomArtworkButtons
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomArtworkSurface
@@ -80,6 +83,8 @@ fun MiniPlayer(
     val artwork = rememberArtwork(viewModel, item?.uri, sizePx)
     // O mini player ganha o tom pastel da capa, para se destacar da barra de baixo.
     val artworkColor = rememberPlayerTint(viewModel, item?.uri)
+    val context = LocalContext.current.applicationContext
+    val playbackPrefs by remember { PlaybackSettingsData.get(context) }.prefs.collectAsStateWithLifecycle()
 
     val returnSpec = boomFastSpatialSpec<Float>()
     // Quanto o mini player foi puxado para baixo (px), no gesto de encerrar.
@@ -162,11 +167,14 @@ fun MiniPlayer(
                     IconButton(onClick = viewModel::previous) {
                         Icon(BoomIcons.SkipPrevious, stringResource(R.string.feature_nowplaying_previous))
                     }
-                    FilledIconButton(onClick = viewModel::togglePlayPause) {
-                        if (state.isPlaying) {
-                            Icon(BoomIcons.Pause, stringResource(R.string.feature_nowplaying_pause))
-                        } else {
-                            Icon(BoomIcons.Play, stringResource(R.string.feature_nowplaying_play))
+                    // Opção de Aparência: o botão de tocar na cor da capa.
+                    BoomArtworkButtons(seed = artworkColor, enabled = playbackPrefs.artworkButtons) {
+                        FilledIconButton(onClick = viewModel::togglePlayPause) {
+                            if (state.isPlaying) {
+                                Icon(BoomIcons.Pause, stringResource(R.string.feature_nowplaying_pause))
+                            } else {
+                                Icon(BoomIcons.Play, stringResource(R.string.feature_nowplaying_play))
+                            }
                         }
                     }
                     IconButton(onClick = viewModel::next) {

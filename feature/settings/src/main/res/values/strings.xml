@@ -135,6 +135,9 @@
     <string name="feature_settings_background_blur">Background blur</string>
     <string name="feature_settings_background_blur_summary">Blurs the screen behind when another one opens on top, like the player</string>
     <string name="feature_settings_background_blur_unavailable">Needs Android 12 or newer</string>
+    <string name="feature_settings_player_section">Player</string>
+    <string name="feature_settings_artwork_buttons">Buttons in the cover’s color</string>
+    <string name="feature_settings_artwork_buttons_summary">The player and mini player buttons take the color of the song’s cover</string>
     <string name="feature_settings_visualizer">Visualizer</string>
     <string name="feature_settings_visualizer_bars">Bars</string>
     <string name="feature_settings_visualizer_bars_summary">Bass on the left, treble on the right</string>

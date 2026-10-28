@@ -139,6 +139,29 @@ class MyProfileViewModelTest {
     }
 
     @Test
+    fun fotoDeArtistaNaoSeguidoVemDoDeezerPeloNome() = runTest(dispatcher) {
+        val byName = mutableListOf<String>()
+        val byUrl = mutableListOf<String>()
+        val vm = MyProfileViewModel(
+            FakeProfile(), FakeHistory(emptyList()), FakeStats(emptyList()), FakeLibrary(), FakeFollows(), FakePlayer(),
+            remoteImage = { url, _ -> byUrl += url; null },
+            artistPhoto = { name, _ -> byName += name; null },
+            zone = zone, today = { LocalDate.of(2026, 10, 17) },
+        )
+        backgroundScope.launch(dispatcher) { vm.state.collect {} }
+
+        // Não seguido: procura pelo nome.
+        vm.artistImage("Sh0tty", 120)
+        assertEquals(listOf("Sh0tty"), byName)
+        assertTrue(byUrl.isEmpty())
+
+        // Seguido: vai direto pelo id, sem procurar.
+        vm.artistImage("Djavan", 120)
+        assertEquals(listOf("Sh0tty"), byName)
+        assertEquals(1, byUrl.size)
+    }
+
+    @Test
     fun nadaMudaAteSalvar() = runTest(dispatcher) {
         val profile = FakeProfile()
         val vm = MyProfileViewModel(

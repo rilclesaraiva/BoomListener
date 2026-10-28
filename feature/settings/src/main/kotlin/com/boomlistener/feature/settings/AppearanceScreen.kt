@@ -127,6 +127,23 @@ internal fun AppearanceScreen(
                 }
             }
             item {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_player_section)) {
+                    // Botões do player e do mini player na cor da capa que toca.
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_artwork_buttons),
+                        subtitle = stringResource(R.string.feature_settings_artwork_buttons_summary),
+                        onClick = { playback.setArtworkButtons(!playbackPrefs.artworkButtons) },
+                        trailing = {
+                            Switch(
+                                checked = playbackPrefs.artworkButtons,
+                                onCheckedChange = { playback.setArtworkButtons(it) },
+                            )
+                        },
+                    )
+                }
+            }
+            item {
                 // Tipo do visualizador sobre a capa (liga e desliga no menu ⋮ do player).
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_visualizer)) {
                     visualizerStyles.forEach { (style, title, summary) ->

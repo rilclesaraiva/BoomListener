@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.settings
 
+import com.boomlistener.data.updates.DEVELOPER_AVATAR_PREFS
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
@@ -37,7 +38,7 @@ import org.json.JSONObject
 private val USER_DIRS = listOf("favorites", "playlists", "profile", "stats")
 
 /** Ajustes que não são da pessoa (avisos de atualização) ou nem são do app. */
-private val SKIPPED_PREFS = setOf("update_prompt")
+private val SKIPPED_PREFS = setOf("update_prompt", DEVELOPER_AVATAR_PREFS)
 private val SKIPPED_PREF_PREFIXES = listOf("androidx", "WebView", "com.google")
 
 private const val MANIFEST = "manifest.json"

@@ -66,6 +66,8 @@ internal class MyProfileViewModel(
     private val player: PlaybackController,
     /** Foto do artista no Deezer (pela URL); null nos testes. */
     private val remoteImage: suspend (url: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
+    /** Foto do artista no Deezer pelo nome (o mesmo que a página dele acha); null nos testes. */
+    private val artistPhoto: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val today: () -> LocalDate = { LocalDate.now(zone) },
 ) : ViewModel() {
@@ -162,14 +164,17 @@ internal class MyProfileViewModel(
     suspend fun artwork(uri: String, sizePx: Int): Bitmap? = library.loadArtwork(uri, sizePx)
 
     /**
-     * Foto de um artista: a do Deezer, se você o segue; senão a capa de uma
-     * música dele que está no aparelho.
+     * Foto de um artista: a do Deezer (pelo id, se você o segue; senão
+     * procurando pelo nome, como a página dele); sem ela (sem internet, artista
+     * que o Deezer não conhece), a capa de uma música dele que está no aparelho.
      */
     suspend fun artistImage(name: String, sizePx: Int): Bitmap? {
         val key = name.normalizedForSearch()
         val followed = state.value?.following?.firstOrNull { it.name.normalizedForSearch() == key }
         if (followed != null) {
             remoteImage(deezerArtistImageUrl(followed.deezerId), sizePx)?.let { return it }
+        } else {
+            artistPhoto(name, sizePx)?.let { return it }
         }
         val track = tracks.value.firstOrNull { track ->
             track.artist?.let { artistOf(it).normalizedForSearch() == key } == true

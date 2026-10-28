@@ -3,6 +3,11 @@
 
 package com.boomlistener.feature.settings
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.boomlistener.data.updates.DeveloperAvatarData
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.getValue
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -50,6 +55,13 @@ private const val ISSUES_URL = "https://github.com/rilclesaraiva/BoomListener/is
 @Composable
 internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    // Foto do GitHub do desenvolvedor: a guardada aparece na hora; o GitHub só
+    // é consultado de vez em quando, para ver se ela mudou.
+    val developerPhoto by produceState<ImageBitmap?>(null) {
+        val avatars = DeveloperAvatarData.repository(context)
+        value = withContext(Dispatchers.IO) { avatars.cached() }?.asImageBitmap()
+        avatars.refresh()?.let { value = it.asImageBitmap() }
+    }
     BoomScreenScaffold(
         title = stringResource(R.string.feature_settings_about_short),
         onBack = onBack,
@@ -79,6 +91,7 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                         title = "rilclesaraiva",
                         subtitle = stringResource(R.string.feature_settings_about_developer_summary),
                         onClick = { context.openUrl(DEVELOPER_URL) },
+                        image = developerPhoto,
                     )
                 }
             }
