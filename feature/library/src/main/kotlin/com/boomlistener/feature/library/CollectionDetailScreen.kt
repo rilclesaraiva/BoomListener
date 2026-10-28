@@ -326,7 +326,7 @@ private fun Header(
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             Box(Modifier.fillMaxWidth().height(minOf(maxWidth, HeaderMaxHeight))) {
                 when {
-                    covers.size >= MOSAIC_MIN -> BoomMosaicArtwork(images, size = null, shape = RectangleShape, modifier = Modifier.fillMaxSize())
+                    covers.size >= MOSAIC_SIZE -> BoomMosaicArtwork(images, size = null, shape = RectangleShape, modifier = Modifier.fillMaxSize())
                     images.firstOrNull() != null -> Image(
                         bitmap = images.first()!!,
                         contentDescription = null,

@@ -6,20 +6,14 @@ package com.boomlistener.feature.library
 import com.boomlistener.core.model.Track
 
 /**
- * As músicas cujas capas montam a capa de uma playlist: uma por álbum
- * diferente, na ordem da playlist, sem repetir capa nenhuma.
- *
- * - 1 álbum (ou vazia): a capa única da primeira música.
- * - 2 álbuns: as duas lado a lado, cortadas na vertical.
- * - 3 álbuns: em "Y", uma em cima e duas dos lados.
- * - 4 ou mais: o mosaico 2 × 2 com as quatro primeiras.
- *
- * O desenho de cada forma fica no `BoomMosaicArtwork`.
+ * As músicas cujas capas montam a capa de uma playlist: com 4 ou mais álbuns
+ * diferentes, o mosaico 2 × 2 com uma capa de cada um dos 4 primeiros (na
+ * ordem da playlist, sem repetir). Com menos de 4 álbuns, a capa única da
+ * primeira música (as formas de 2 e 3 capas saíram na 0.51.1: não ficaram boas).
  */
-internal fun mosaicCovers(tracks: List<Track>): List<Track> =
-    tracks.distinctBy { it.albumId }.take(MOSAIC_SIZE).ifEmpty { listOfNotNull(tracks.firstOrNull()) }
+internal fun mosaicCovers(tracks: List<Track>): List<Track> {
+    val distinct = tracks.distinctBy { it.albumId }
+    return if (distinct.size >= MOSAIC_SIZE) distinct.take(MOSAIC_SIZE) else listOfNotNull(tracks.firstOrNull())
+}
 
 internal const val MOSAIC_SIZE = 4
-
-/** A partir de quantas capas diferentes a playlist ganha a capa montada. */
-internal const val MOSAIC_MIN = 2

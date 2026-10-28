@@ -147,8 +147,8 @@
     <string name="feature_settings_system_summary">Modo offline, o app em segundo plano e backup</string>
     <string name="feature_settings_system_internet">Internet</string>
     <string name="feature_settings_system_background">Segundo plano</string>
-    <string name="feature_settings_stop_on_swipe">Encerrar ao tirar dos recentes</string>
-    <string name="feature_settings_stop_on_swipe_summary">Tirar o app dos apps recentes para a música e fecha o app. Desligado: a música continua tocando</string>
+    <string name="feature_settings_stop_on_swipe">Encerrar ao remover dos recentes</string>
+    <string name="feature_settings_stop_on_swipe_summary">Remover o app dos apps recentes para a música e fecha o app. Desligado: a música continua tocando</string>
     <string name="feature_settings_system_data">Seus dados</string>
     <string name="feature_settings_language">Idioma</string>
     <string name="feature_settings_language_app">Idioma do app</string>

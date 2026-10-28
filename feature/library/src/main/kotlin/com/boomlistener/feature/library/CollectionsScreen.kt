@@ -361,7 +361,7 @@ private fun GroupRow(
     ListItem(
         modifier = if (menu != null) modifier.clickableWithMenu(menuOpen, onClick = onClick) else modifier.clickable(onClick = onClick),
         leadingContent = {
-            if (image == null && fallbackIcon != null && covers.size < MOSAIC_MIN) {
+            if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -370,7 +370,7 @@ private fun GroupRow(
                 ) {
                     Box(contentAlignment = Alignment.Center) { Icon(fallbackIcon, contentDescription = null) }
                 }
-            } else if (covers.size >= MOSAIC_MIN) {
+            } else if (covers.size >= MOSAIC_SIZE) {
                 BoomMosaicArtwork(images)
             } else {
                 BoomArtwork(
@@ -407,7 +407,7 @@ private fun AlbumTile(
     menu(menuOpen, image)
     // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
     Column(modifier.clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = 8.dp)) {
-        if (image == null && fallbackIcon != null && covers.size < MOSAIC_MIN) {
+        if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
             Surface(
                 color = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -416,7 +416,7 @@ private fun AlbumTile(
             ) {
                 Box(contentAlignment = Alignment.Center) { Icon(fallbackIcon, contentDescription = null, modifier = Modifier.size(48.dp)) }
             }
-        } else if (covers.size >= MOSAIC_MIN) {
+        } else if (covers.size >= MOSAIC_SIZE) {
             BoomMosaicArtwork(images, size = null, modifier = Modifier.fillMaxWidth().aspectRatio(1f))
         } else {
             BoomArtwork(

@@ -68,7 +68,7 @@
         <item quantity="other">%1$s fãs</item>
     </plurals>
     <string name="feature_library_favorite">Favoritar</string>
-    <string name="feature_library_unfavorite">Tirar dos favoritos</string>
+    <string name="feature_library_unfavorite">Remover dos favoritos</string>
     <string name="feature_library_favorites">Favoritas</string>
     <string name="feature_library_show_grid">Mostrar em grade</string>
     <string name="feature_library_show_list">Mostrar em lista</string>

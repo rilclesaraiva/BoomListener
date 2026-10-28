@@ -4,6 +4,12 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.51.1] — 2026-10-28
+
+### 🎨 Visual tweaks
+- Playlist covers: the 2- and 3-album shapes are gone. Playlists with fewer than 4 different albums use the cover of their first song; 4 or more still make the 2 × 2 grid, with no cover repeated.
+- Portuguese: "Tirar" became "Remover" across the app (for example, "Remover dos favoritos").
+
 ## [0.51.0] — 2026-10-28
 
 ### ✨ New
