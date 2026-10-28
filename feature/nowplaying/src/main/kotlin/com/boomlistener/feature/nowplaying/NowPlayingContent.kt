@@ -75,7 +75,6 @@ import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMenuHeader
 import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
-import com.boomlistener.core.designsystem.component.BoomSeekBar
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
@@ -104,6 +103,8 @@ internal fun NowPlayingContent(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val item = state.item
+    // Música com vários artistas: escolhe qual abrir num painel.
+    val openArtist = rememberArtistOpener(onOpenArtist)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val sizePx = with(LocalDensity.current) { ArtworkSizeForLoading.roundToPx() }
@@ -196,7 +197,7 @@ internal fun NowPlayingContent(
                                     onAddToPlaylist(item.uri)
                                 },
                                 item.artist?.let { name ->
-                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist), kind = BoomMenuKind.GoToArtist) { onOpenArtist(name) }
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist), kind = BoomMenuKind.GoToArtist) { openArtist(name) }
                                 },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags), kind = BoomMenuKind.EditTags) { onEditTags(item.uri) },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_details), kind = BoomMenuKind.Details) {
@@ -284,6 +285,7 @@ internal fun NowPlayingContent(
                                             CoverVisualizer(
                                                 style = playbackPrefs.visualizerStyle,
                                                 playing = state.isPlaying,
+                                                cover = cover,
                                                 modifier = Modifier.matchParentSize().clip(MaterialTheme.shapes.extraLarge),
                                             )
                                         }
@@ -316,7 +318,7 @@ internal fun NowPlayingContent(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.then(
-                            item.artist?.let { name -> Modifier.clickable { onOpenArtist(name) } } ?: Modifier,
+                            item.artist?.let { name -> Modifier.clickable { openArtist(name) } } ?: Modifier,
                         ),
                     )
                     }
@@ -325,9 +327,11 @@ internal fun NowPlayingContent(
 
                     Spacer(Modifier.height(24.dp))
                     // Arrastando a bolinha: o balão mostra onde ela está.
-                    BoomSeekBar(
-                        progress = state.progress,
+                    SmoothSeekBar(
+                        positionMs = state.positionMs,
+                        durationMs = state.durationMs,
                         isPlaying = state.isPlaying,
+                        speed = playbackPrefs.speed,
                         onSeek = viewModel::seekToFraction,
                         // O tempo do alvo fica no balão; o da esquerda segue a música.
                         dragLabel = { fraction -> formatTime((fraction * state.durationMs).toLong()) },
@@ -380,7 +384,7 @@ internal fun NowPlayingContent(
             queueSize = state.queueSize,
             queueState = queueState,
             viewModel = viewModel,
-            onOpenArtist = onOpenArtist,
+            onOpenArtist = openArtist,
             onEditTags = onEditTags,
             onAddToPlaylist = onAddToPlaylist,
             onDelete = deleteSong,

@@ -82,4 +82,6 @@
     <string name="feature_nowplaying_share_card_chooser">Compartilhar com</string>
     <string name="feature_nowplaying_show_visualizer">Mostrar visualizador</string>
     <string name="feature_nowplaying_hide_visualizer">Esconder visualizador</string>
+    <string name="feature_nowplaying_artists_title">Artistas desta música</string>
+    <string name="feature_nowplaying_artist_full_name">Nome completo, como na tag</string>
 </resources>

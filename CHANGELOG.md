@@ -4,6 +4,16 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.49.0] — 2026-10-28
+
+### ✨ New
+- Songs by several artists ("Artist A, Artist B", "feat."): tapping the artist name in the player now opens a panel with each artist on their own, so you land on the right page. The full name is still there at the end, for bands with a comma or "&" in their name.
+
+### 🎨 Visual tweaks
+- The player's progress dot now glides smoothly along with the song, instead of hopping every half second.
+- Visualizer: on covers with colors close to the visualizer's, the shade behind it gets darker so the bars and the wave stay easy to see.
+- Settings → Appearance → Visualizer: each style now has a small drawing of how it looks.
+
 ## [0.48.0] — 2026-10-28
 
 ### ✨ New

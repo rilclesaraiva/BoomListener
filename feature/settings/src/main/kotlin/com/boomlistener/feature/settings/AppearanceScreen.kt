@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.datastore.PreferencesData
+import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
@@ -104,7 +105,8 @@ internal fun AppearanceScreen(
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_visualizer)) {
                     visualizerStyles.forEach { (style, title, summary) ->
                         BoomSettingsItem(
-                            icon = null,
+                            // Desenho pequeno de como ele fica: barrinhas ou a onda em mola.
+                            icon = if (style == VisualizerStyle.Bars) BoomIcons.GraphicEq else BoomIcons.Waveform,
                             title = stringResource(title),
                             subtitle = stringResource(summary),
                             onClick = { playback.setVisualizerStyle(style) },

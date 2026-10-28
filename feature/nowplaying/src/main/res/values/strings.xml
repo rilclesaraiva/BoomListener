@@ -80,4 +80,6 @@
     <string name="feature_nowplaying_share_card_chooser">Share with</string>
     <string name="feature_nowplaying_show_visualizer">Show visualizer</string>
     <string name="feature_nowplaying_hide_visualizer">Hide visualizer</string>
+    <string name="feature_nowplaying_artists_title">Artists on this song</string>
+    <string name="feature_nowplaying_artist_full_name">Full name, as in the tag</string>
 </resources>

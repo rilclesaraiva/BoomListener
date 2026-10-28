@@ -21,7 +21,14 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import android.graphics.Bitmap
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.boomlistener.core.player.AudioVisualizer
 import com.boomlistener.core.player.VISUALIZER_BANDS
@@ -36,9 +43,21 @@ import com.boomlistener.core.player.smoothVisualizer
  * saindo agora ([AudioVisualizer]); pausado, as barras descem devagar.
  */
 @Composable
-internal fun CoverVisualizer(style: VisualizerStyle, playing: Boolean, modifier: Modifier = Modifier) {
+internal fun CoverVisualizer(
+    style: VisualizerStyle,
+    playing: Boolean,
+    cover: ImageBitmap?,
+    modifier: Modifier = Modifier,
+) {
     val accent = MaterialTheme.colorScheme.primary
     val scrim = MaterialTheme.colorScheme.scrim
+    // Capa de cor parecida com a do visualizador (embaixo, onde ele fica): escurece mais.
+    val scrimAlpha by produceState(VISUALIZER_SCRIM_MIN, cover, accent) {
+        value = withContext(Dispatchers.Default) {
+            cover?.let { runCatching { visualizerScrimAlpha(sampleBottom(it), accent.toArgb()) }.getOrNull() }
+                ?: VISUALIZER_SCRIM_MIN
+        }
+    }
     val bands = remember { FloatArray(VISUALIZER_BANDS) }
     val wave = remember { FloatArray(VISUALIZER_WAVE_POINTS) }
     val shownBands = remember { FloatArray(VISUALIZER_BANDS) }
@@ -79,7 +98,7 @@ internal fun CoverVisualizer(style: VisualizerStyle, playing: Boolean, modifier:
         drawRect(
             brush = Brush.verticalGradient(
                 0f to scrim.copy(alpha = 0f),
-                1f to scrim.copy(alpha = 0.55f),
+                1f to scrim.copy(alpha = scrimAlpha),
                 startY = h * 0.45f,
                 endY = h,
             ),
@@ -135,5 +154,20 @@ internal fun CoverVisualizer(style: VisualizerStyle, playing: Boolean, modifier:
                 drawPath(path, accent, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
             }
         }
+    }
+}
+
+/** Amostras (10 × 6) da parte de baixo da capa, onde o visualizador fica. */
+private fun sampleBottom(cover: ImageBitmap): IntArray {
+    val source = cover.asAndroidBitmap()
+    // Capas na memória de vídeo não deixam ler pixel: lê de uma cópia.
+    val bitmap = if (source.config == Bitmap.Config.HARDWARE) source.copy(Bitmap.Config.ARGB_8888, false) else source
+    val columns = 10
+    val rows = 6
+    val top = bitmap.height * 0.5f
+    return IntArray(columns * rows) { i ->
+        val x = ((i % columns + 0.5f) / columns * bitmap.width).toInt().coerceIn(0, bitmap.width - 1)
+        val y = (top + (i / columns + 0.5f) / rows * (bitmap.height - top)).toInt().coerceIn(0, bitmap.height - 1)
+        bitmap.getPixel(x, y)
     }
 }
