@@ -18,10 +18,10 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
@@ -39,13 +39,16 @@ private const val MAX_SHEET_FRACTION = 0.88f
  * A diferença é o "voltar": o do M3 encolhe o painel com a animação do
  * sistema enquanto o gesto acontece. Aqui o voltar é nosso: o painel fecha
  * descendo, com a mesma animação de fechar de sempre.
+ *
+ * O estado do painel (experimental no M3) fica só aqui dentro: quem usa não
+ * precisa de `@OptIn`. Para fechar descendo a partir de um botão do
+ * conteúdo, use [BoomSheetScope.dismiss].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BoomModalSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     sheetGesturesEnabled: Boolean = true,
     containerColor: Color = BottomSheetDefaults.ContainerColor,
     contentColor: Color = contentColorFor(containerColor),
@@ -57,10 +60,13 @@ fun BoomModalSheet(
      * (ex.: Editar perfil), que fechavam fácil demais.
      */
     dragOnlyFromTop: Boolean = false,
-    content: @Composable ColumnScope.() -> Unit,
+    content: @Composable BoomSheetScope.() -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val dismiss by rememberUpdatedState(onDismissRequest)
+    // Desce o painel e só então fecha.
+    val hideThenDismiss: () -> Unit = { scope.launch { sheetState.hide() }.invokeOnCompletion { dismiss() } }
     ModalBottomSheet(
         onDismissRequest = { if (dismissEnabled) dismiss() },
         modifier = modifier,
@@ -72,9 +78,7 @@ fun BoomModalSheet(
         properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
     ) {
         // Voltar (botão ou gesto concluído): desce o painel e só então fecha.
-        BackHandler(enabled = dismissEnabled) {
-            scope.launch { sheetState.hide() }.invokeOnCompletion { dismiss() }
-        }
+        BackHandler(enabled = dismissEnabled, onBack = hideThenDismiss)
         // Nunca chega ao topo da tela: a faixa de cima que sobra mostra que o
         // painel é de puxar (para baixo, fecha).
         val maxHeight = LocalConfiguration.current.screenHeightDp.dp * MAX_SHEET_FRACTION
@@ -82,8 +86,22 @@ fun BoomModalSheet(
             Modifier
                 .heightIn(max = maxHeight)
                 .then(if (dragOnlyFromTop) Modifier.nestedScroll(KeepScrollInside) else Modifier),
-        ) { content() }
+        ) {
+            val sheetScope = remember(this) { BoomSheetScopeImpl(this, hideThenDismiss) }
+            sheetScope.content()
+        }
     }
+}
+
+/** O conteúdo do [BoomModalSheet]: uma coluna que também sabe fechar o painel descendo. */
+interface BoomSheetScope : ColumnScope {
+    /** Fecha o painel com a animação de descer (e chama o `onDismissRequest` no fim). */
+    fun dismiss()
+}
+
+private class BoomSheetScopeImpl(column: ColumnScope, private val close: () -> Unit) :
+    BoomSheetScope, ColumnScope by column {
+    override fun dismiss() = close()
 }
 
 /**

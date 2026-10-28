@@ -84,6 +84,7 @@ import com.boomlistener.feature.library.libraryScreen
 import com.boomlistener.feature.nowplaying.MiniPlayer
 import com.boomlistener.feature.nowplaying.PlayerSheet
 import com.boomlistener.feature.nowplaying.rememberPlayerSheetState
+import com.boomlistener.feature.nowplaying.rememberArtistOpener
 import com.boomlistener.core.datastore.PreferencesData
 import com.boomlistener.core.designsystem.component.BackgroundBlurState
 import com.boomlistener.core.designsystem.component.LocalBackgroundBlur
@@ -253,6 +254,9 @@ fun BoomListenerApp() {
         val same = current?.destination?.route == ARTIST_ROUTE && current.arguments?.getString(ARTIST_NAME_ARG) == name
         if (!same) navController.navigateToArtist(name)
     }
+    // Nos menus das telas (Início, Biblioteca, Perfil…), música com vários
+    // artistas abre um painel com cada um; o player tem o dele.
+    val openSongArtist = rememberArtistOpener(openArtist)
     // Música num formato que o aparelho não lê: avisa (o player já pulou para a próxima).
     LaunchedEffect(Unit) {
         PlayerConnection.controller(context).unsupported.collect { title ->
@@ -315,17 +319,17 @@ fun BoomListenerApp() {
             val openSettings: () -> Unit = { navController.navigateToSettings() }
             libraryScreen(
                 navController = navController,
-                onOpenArtist = openArtist,
+                onOpenArtist = openSongArtist,
                 onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
                 onOpenReleases = openReleases,
                 onOpenSettings = openSettings,
             )
             profileScreen(
-                onOpenArtist = openArtist,
+                onOpenArtist = openSongArtist,
                 onOpenHistory = openHistory,
                 onOpenSettings = openSettings,
                 songMenu = ProfileSongMenu(
-                    onOpenArtist = openArtist,
+                    onOpenArtist = openSongArtist,
                     onEditTags = { uri -> navController.navigateToTagEditor(uri) },
                     onAddToPlaylist = { uri -> addToPlaylistUri = uri },
                 ),
@@ -333,13 +337,13 @@ fun BoomListenerApp() {
             artistScreen(
                 navController = navController,
                 onBack = back,
-                onOpenArtist = openArtist,
+                onOpenArtist = openSongArtist,
             )
             tageditorScreen(onBack = back)
             releasesScreen(
                 onBack = back,
                 onOpenAlbum = navController::navigateToAlbum,
-                onOpenArtist = openArtist,
+                onOpenArtist = openSongArtist,
             )
             settingsScreen(
                 navController = navController,
@@ -348,7 +352,7 @@ fun BoomListenerApp() {
             wellbeingScreen(
                 onBack = back,
                 songMenu = HistorySongMenu(
-                    onOpenArtist = openArtist,
+                    onOpenArtist = openSongArtist,
                     onEditTags = { uri -> navController.navigateToTagEditor(uri) },
                     onAddToPlaylist = { uri -> addToPlaylistUri = uri },
                 ),
@@ -394,7 +398,7 @@ fun BoomListenerApp() {
                         onOpenReleases = { navController.navigateToReleases() },
                         onNewPlaylist = { creatingPlaylist = true },
                         onOpenFavorites = { navController.navigateToFavorites() },
-                        onOpenArtist = openArtist,
+                        onOpenArtist = openSongArtist,
                     )
                     // Sem o painel à direita, a margem do sistema daquele lado fica com as telas.
                     val centerInsets = if (playback.item?.artist.isNullOrBlank() || onArtistPage) {
@@ -427,7 +431,7 @@ fun BoomListenerApp() {
                         if (artistPanelOpen) {
                             ArtistSidePanel(
                                 artistName = playingArtist,
-                                onOpenArtist = openArtist,
+                                onOpenArtist = openSongArtist,
                                 onCollapse = { artistPanelOpen = false },
                                 modifier = Modifier
                                     .width(if (roomy) 340.dp else 300.dp)

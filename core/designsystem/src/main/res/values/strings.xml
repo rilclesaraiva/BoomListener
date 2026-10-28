@@ -20,4 +20,6 @@
     <string name="core_designsystem_details_modified">Modified</string>
     <string name="core_designsystem_details_close">Close</string>
     <string name="core_designsystem_releases">New releases</string>
+    <string name="core_designsystem_artists_title">Artists on this song</string>
+    <string name="core_designsystem_artist_full_name">Full name, as in the tag</string>
 </resources>

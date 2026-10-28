@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -26,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,18 +54,16 @@ import kotlinx.coroutines.launch
  * tocar adiciona ou tira (dá para desfazer na hora). Também cria uma nova.
  * Pública porque o :app também usa (menu do player).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
     val context = LocalContext.current.applicationContext
     val repository = remember { PlaylistData.repository(context) }
     val playlists by repository.playlists.collectAsStateWithLifecycle(initialValue = emptyList())
     val scope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var creating by remember { mutableStateOf(false) }
     val effects = boomEffectsSpec<Float>()
 
-    BoomModalSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    BoomModalSheet(onDismissRequest = onDismiss) {
         Text(
             text = stringResource(R.string.feature_library_add_to_playlist),
             style = MaterialTheme.typography.titleLarge,
@@ -121,10 +117,8 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
         }
         Button(
             onClick = {
-                scope.launch {
-                    sheetState.hide()
-                    onDismiss()
-                }
+                // Desce o painel e só então fecha.
+                dismiss()
             },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
         ) { Text(stringResource(R.string.feature_library_done)) }
@@ -148,7 +142,6 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
  * "Adicionar músicas" dentro de uma playlist: todas as músicas do aparelho,
  * com busca; marcar adiciona, desmarcar tira.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AddSongsSheet(viewModel: CollectionDetailViewModel, onDismiss: () -> Unit) {
     val all by viewModel.libraryTracks.collectAsStateWithLifecycle()
@@ -156,9 +149,8 @@ internal fun AddSongsSheet(viewModel: CollectionDetailViewModel, onDismiss: () -
     var query by remember { mutableStateOf("") }
     val shown = remember(all, query) { filterTracks(all, query) }
     val scope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    BoomModalSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    BoomModalSheet(onDismissRequest = onDismiss) {
         Text(
             text = stringResource(R.string.feature_library_add_songs),
             style = MaterialTheme.typography.titleLarge,
@@ -190,10 +182,8 @@ internal fun AddSongsSheet(viewModel: CollectionDetailViewModel, onDismiss: () -
         }
         Button(
             onClick = {
-                scope.launch {
-                    sheetState.hide()
-                    onDismiss()
-                }
+                // Desce o painel e só então fecha.
+                dismiss()
             },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
         ) { Text(stringResource(R.string.feature_library_done)) }

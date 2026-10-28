@@ -26,7 +26,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -143,7 +142,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
     var failed by remember { mutableStateOf(false) }
     val chooser = stringResource(R.string.feature_nowplaying_share_card_chooser)
 
-    BoomModalSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    BoomModalSheet(onDismissRequest = onDismiss) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier

@@ -48,6 +48,8 @@ class PlaybackService : MediaSessionService() {
     /** Quando a música pausou porque o fone saiu (null = não foi isso). */
     private var pausedByHeadphonesAt: Long? = null
     private var exo: ExoPlayer? = null
+    /** Fechar o processo do app ao terminar (tirado dos recentes com a opção ligada). */
+    private var closeAppOnDestroy = false
 
     // Transição entre músicas: o volume acompanha o ponto da música (sobe no
     // começo e desce no fim) enquanto toca.
@@ -360,6 +362,13 @@ class PlaybackService : MediaSessionService() {
     /** App removido dos recentes: se não estiver tocando, encerra o serviço. */
     override fun onTaskRemoved(rootIntent: Intent?) {
         saveSnapshot()
+        // "Encerrar ao tirar dos recentes" (Ajustes → Sistema): para a música
+        // e fecha o app de vez, guardando antes onde parou.
+        if (PlaybackSettingsData.internalGet(this).prefs.value.stopOnTaskRemoved) {
+            closeAppOnDestroy = true
+            pauseAllPlayersAndStopSelf()
+            return
+        }
         val player = mediaSession?.player
         if (player == null || !player.playWhenReady || player.mediaItemCount == 0) {
             stopSelf()
@@ -379,6 +388,11 @@ class PlaybackService : MediaSessionService() {
         }
         mediaSession = null
         super.onDestroy()
+        // Tirado dos recentes com a opção ligada: nada fica rodando por trás.
+        if (closeAppOnDestroy) {
+            snapshots.flush()
+            android.os.Process.killProcess(android.os.Process.myPid())
+        }
     }
 
     /** Tocar na notificação abre o app (sem este módulo conhecer o :app). */

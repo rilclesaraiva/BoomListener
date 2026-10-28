@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.50.0] — 2026-10-28
+
+### ✨ New
+- Settings → System: a new "Stop when closed from recents" option (off by default). With it on, swiping the app away from your recent apps stops the music and closes the app completely.
+- Songs by several artists: the panel with each artist now shows their photo in a circle, and it also opens from the song menus on Home, Library, Profile and History, not only in the player.
+
+### 🎨 Visual tweaks
+- Settings: every option now lives inside a category. Offline mode moved to the new Settings → System page.
+
 ## [0.49.0] — 2026-10-28
 
 ### ✨ New

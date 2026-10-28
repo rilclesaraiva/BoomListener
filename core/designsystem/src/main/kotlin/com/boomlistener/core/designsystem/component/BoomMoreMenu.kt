@@ -17,8 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -26,7 +24,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -197,16 +194,8 @@ fun BoomMenuSheet(
         onDeezer?.let { add(BoomMenuAction(stringResource(R.string.core_designsystem_open_deezer), kind = BoomMenuKind.Deezer, onClick = it)) }
     }.inMenuOrder()
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
-    // Fecha com a animação de descer e só então some de vez.
-    fun close(then: () -> Unit = {}) {
-        scope.launch { sheetState.hide() }.invokeOnCompletion { open = false }
-        then()
-    }
     BoomModalSheet(
         onDismissRequest = { open = false },
-        sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
@@ -245,7 +234,11 @@ fun BoomMenuSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(enabled = action.enabled) { close(action.onClick) }
+                        .clickable(enabled = action.enabled) {
+                            // Fecha com a animação de descer e só então some de vez.
+                            action.onClick()
+                            dismiss()
+                        }
                         .padding(horizontal = 24.dp, vertical = 14.dp)
                         .alpha(if (action.enabled) 1f else 0.38f),
                 ) {

@@ -53,7 +53,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -473,8 +472,7 @@ private fun CandidateSheet(
     onChoose: (TrackCandidate) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    BoomModalSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    BoomModalSheet(onDismissRequest = onDismiss) {
         Text(
             text = stringResource(R.string.feature_tageditor_auto_choose_title),
             style = MaterialTheme.typography.titleLarge,

@@ -100,6 +100,11 @@ internal class PlaybackSnapshotStore(context: Context) {
     fun read(): PlaybackSnapshot? = runCatching { if (file.exists()) decodeSnapshot(file.readText()) else null }.getOrNull()
 
     /** null apaga (fila vazia: o usuário encerrou a música). */
+    /** Espera as gravações pendentes (até [timeoutMs]); usado antes de fechar o app de vez. */
+    fun flush(timeoutMs: Long = 1_000) {
+        runCatching { writer.submit {}.get(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS) }
+    }
+
     fun save(snapshot: PlaybackSnapshot?) {
         val text = snapshot?.let(::encodeSnapshot)
         writer.execute {

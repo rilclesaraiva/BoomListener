@@ -23,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberModalBottomSheetState
 import com.boomlistener.data.profile.ProfileImage
 import com.boomlistener.data.profile.MAX_BIO
 import com.boomlistener.data.profile.MyProfile
@@ -362,7 +361,6 @@ private fun EditProfileSheet(profile: MyProfile, viewModel: MyProfileViewModel, 
     BoomModalSheet(
         onDismissRequest = onDismiss,
         dismissEnabled = !saving,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         // Fecha puxando para baixo, mas só pela faixa de cima (do puxador):
         // rolar o formulário até o topo e continuar puxando fechava sem querer.
         dragOnlyFromTop = true,

@@ -11,14 +11,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,11 +58,10 @@ internal fun sleepTimerLabel(timer: SleepTimer?): String {
 }
 
 /** Timer para dormir: 15 min a 1 h 30, ou no fim desta música. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SleepTimerSheet(settings: PlaybackSettings, onDismiss: () -> Unit) {
     val timer by settings.sleepTimer.collectAsStateWithLifecycle()
-    BoomModalSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    BoomModalSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(bottom = 24.dp)) {
             Text(
                 stringResource(R.string.feature_nowplaying_sleep),
@@ -109,13 +106,12 @@ internal fun SleepTimerSheet(settings: PlaybackSettings, onDismiss: () -> Unit) 
 internal fun formatSpeed(speed: Float): String = String.format(Locale.getDefault(), "%.2f×", speed)
 
 /** Velocidade de reprodução (a mesma dos Ajustes → Reprodução). */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SpeedSheet(settings: PlaybackSettings, onDismiss: () -> Unit) {
     val prefs by settings.prefs.collectAsStateWithLifecycle()
     var dragging by remember { mutableFloatStateOf(-1f) }
     val speed = if (dragging >= 0f) dragging else prefs.speed
-    BoomModalSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    BoomModalSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.feature_nowplaying_speed), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))

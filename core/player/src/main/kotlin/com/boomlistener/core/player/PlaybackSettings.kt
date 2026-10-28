@@ -34,6 +34,8 @@ data class PlaybackPrefs(
     val visualizer: Boolean = false,
     /** Tipo do visualizador (Ajustes → Aparência). */
     val visualizerStyle: VisualizerStyle = VisualizerStyle.Bars,
+    /** Tirar o app dos recentes encerra a música e o app (Ajustes → Sistema). */
+    val stopOnTaskRemoved: Boolean = false,
 ) {
     companion object {
         const val MAX_TRANSITION_SECONDS = 12
@@ -57,6 +59,7 @@ interface PlaybackSettings {
     fun setGapless(enabled: Boolean)
     fun setVisualizer(enabled: Boolean)
     fun setVisualizerStyle(style: VisualizerStyle)
+    fun setStopOnTaskRemoved(enabled: Boolean)
 
     /** null = sem timer. Não é guardado: fechar o app desliga. */
     val sleepTimer: StateFlow<SleepTimer?>
@@ -94,6 +97,7 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
             visualizer = store.getBoolean(KEY_VISUALIZER, false),
             visualizerStyle = VisualizerStyle.entries.firstOrNull { it.name == store.getString(KEY_VISUALIZER_STYLE, null) }
                 ?: VisualizerStyle.Bars,
+            stopOnTaskRemoved = store.getBoolean(KEY_STOP_ON_SWIPE, false),
         ),
     )
     override val prefs: StateFlow<PlaybackPrefs> = state.asStateFlow()
@@ -153,6 +157,11 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
         state.value = state.value.copy(visualizerStyle = style)
     }
 
+    override fun setStopOnTaskRemoved(enabled: Boolean) {
+        store.edit().putBoolean(KEY_STOP_ON_SWIPE, enabled).apply()
+        state.value = state.value.copy(stopOnTaskRemoved = enabled)
+    }
+
     override fun startSleepTimer(minutes: Int, nowMs: Long) {
         sleep.value = SleepTimer(endsAtMs = nowMs + minutes.coerceAtLeast(1) * 60_000L)
     }
@@ -176,6 +185,7 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
         const val KEY_GAPLESS = "gapless"
         const val KEY_VISUALIZER = "visualizer"
         const val KEY_VISUALIZER_STYLE = "visualizer_style"
+        const val KEY_STOP_ON_SWIPE = "stop_on_task_removed"
     }
 }
 
