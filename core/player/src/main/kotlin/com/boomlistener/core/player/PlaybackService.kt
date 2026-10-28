@@ -199,8 +199,7 @@ class PlaybackService : MediaSessionService() {
         snapshots.read()?.let { restore(player, it) }
 
         // Ajustes de reprodução: fade ao tocar/pausar, transição entre músicas,
-        // velocidade e timer para dormir.
-        val settings = PlaybackSettingsData.internalGet(this)
+        // velocidade e timer para dormir (o mesmo `settings` do gapless, lá em cima).
         mixer = VolumeMixer(player, tickHandler)
         val sessionPlayer = FadingPlayer(player, mixer) { settings.prefs.value.fadeOnPlayPause }
         exo = player
