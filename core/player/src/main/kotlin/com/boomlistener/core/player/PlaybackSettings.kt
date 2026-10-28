@@ -30,6 +30,10 @@ data class PlaybackPrefs(
     val lyricsOnlineFirst: Boolean = false,
     /** Sem pausa entre faixas: corta o silêncio que o codificador põe no começo e no fim. */
     val gapless: Boolean = true,
+    /** Visualizador sobre a capa do player (liga e desliga no menu do player). */
+    val visualizer: Boolean = false,
+    /** Tipo do visualizador (Ajustes → Aparência). */
+    val visualizerStyle: VisualizerStyle = VisualizerStyle.Bars,
 ) {
     companion object {
         const val MAX_TRANSITION_SECONDS = 12
@@ -51,6 +55,8 @@ interface PlaybackSettings {
     fun setKeepShuffle(enabled: Boolean)
     fun setLyricsOnlineFirst(enabled: Boolean)
     fun setGapless(enabled: Boolean)
+    fun setVisualizer(enabled: Boolean)
+    fun setVisualizerStyle(style: VisualizerStyle)
 
     /** null = sem timer. Não é guardado: fechar o app desliga. */
     val sleepTimer: StateFlow<SleepTimer?>
@@ -85,6 +91,9 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
             keepShuffle = store.getBoolean(KEY_KEEP_SHUFFLE, false),
             lyricsOnlineFirst = store.getBoolean(KEY_LYRICS_ONLINE, false),
             gapless = store.getBoolean(KEY_GAPLESS, true),
+            visualizer = store.getBoolean(KEY_VISUALIZER, false),
+            visualizerStyle = VisualizerStyle.entries.firstOrNull { it.name == store.getString(KEY_VISUALIZER_STYLE, null) }
+                ?: VisualizerStyle.Bars,
         ),
     )
     override val prefs: StateFlow<PlaybackPrefs> = state.asStateFlow()
@@ -134,6 +143,16 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
         state.value = state.value.copy(gapless = enabled)
     }
 
+    override fun setVisualizer(enabled: Boolean) {
+        store.edit().putBoolean(KEY_VISUALIZER, enabled).apply()
+        state.value = state.value.copy(visualizer = enabled)
+    }
+
+    override fun setVisualizerStyle(style: VisualizerStyle) {
+        store.edit().putString(KEY_VISUALIZER_STYLE, style.name).apply()
+        state.value = state.value.copy(visualizerStyle = style)
+    }
+
     override fun startSleepTimer(minutes: Int, nowMs: Long) {
         sleep.value = SleepTimer(endsAtMs = nowMs + minutes.coerceAtLeast(1) * 60_000L)
     }
@@ -155,6 +174,8 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
         const val KEY_KEEP_SHUFFLE = "keep_shuffle"
         const val KEY_LYRICS_ONLINE = "lyrics_online_first"
         const val KEY_GAPLESS = "gapless"
+        const val KEY_VISUALIZER = "visualizer"
+        const val KEY_VISUALIZER_STYLE = "visualizer_style"
     }
 }
 

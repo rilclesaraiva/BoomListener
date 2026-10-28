@@ -138,4 +138,9 @@
     <string name="feature_settings_background_blur">Desfoque do fundo</string>
     <string name="feature_settings_background_blur_summary">Desfoca a tela de trás quando outra abre por cima, como o player</string>
     <string name="feature_settings_background_blur_unavailable">Precisa do Android 12 ou mais novo</string>
+    <string name="feature_settings_visualizer">Visualizador</string>
+    <string name="feature_settings_visualizer_bars">Barras</string>
+    <string name="feature_settings_visualizer_bars_summary">Graves à esquerda, agudos à direita</string>
+    <string name="feature_settings_visualizer_wave">Onda</string>
+    <string name="feature_settings_visualizer_wave_summary">O desenho do som, ao vivo</string>
 </resources>

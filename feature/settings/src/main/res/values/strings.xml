@@ -135,4 +135,9 @@
     <string name="feature_settings_background_blur">Background blur</string>
     <string name="feature_settings_background_blur_summary">Blurs the screen behind when another one opens on top, like the player</string>
     <string name="feature_settings_background_blur_unavailable">Needs Android 12 or newer</string>
+    <string name="feature_settings_visualizer">Visualizer</string>
+    <string name="feature_settings_visualizer_bars">Bars</string>
+    <string name="feature_settings_visualizer_bars_summary">Bass on the left, treble on the right</string>
+    <string name="feature_settings_visualizer_wave">Wave</string>
+    <string name="feature_settings_visualizer_wave_summary">The shape of the sound, live</string>
 </resources>

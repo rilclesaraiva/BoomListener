@@ -89,6 +89,10 @@ object BoomIcons {
         "SystemUpdate",
         "M17,1.01L7,1C5.9,1 5,1.9 5,3v18c0,1.1 0.9,2 2,2h10c1.1,0 2,-0.9 2,-2V3C19,1.9 18.1,1.01 17,1.01zM17,19H7V5h10V19zM16,13h-3V8h-2v5H8l4,4L16,13z",
     )
+    val GraphicEq: ImageVector = materialIcon(
+        "GraphicEq",
+        "M7,18h2V6H7v12zM11,22h2V2h-2v20zM3,14h2v-4H3v4zM15,18h2V6h-2v12zM19,10v4h2v-4h-2z",
+    )
     val DragHandle: ImageVector = materialIcon("DragHandle", "M20,9H4v2h16V9zM4,15h16v-2H4v2z")
     val Article: ImageVector = materialIcon(
         "Article",

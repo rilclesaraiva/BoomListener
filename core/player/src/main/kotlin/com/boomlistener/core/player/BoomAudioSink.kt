@@ -9,15 +9,21 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.ForwardingAudioSink
+import java.nio.ByteBuffer
 
 /*
- * "Sem pausa entre faixas" (gapless) desligável. O ExoPlayer corta sozinho o
+ * A saída de som do app, por cima da do ExoPlayer. Faz duas coisas:
+ *
+ * 1. Passa o som decodificado (e o ponto que está tocando) ao
+ *    [AudioVisualizer], para o visualizador sobre a capa.
+ *
+ * 2. "Sem pausa entre faixas" (gapless) desligável. O ExoPlayer corta sozinho o
  * silêncio que o codificador põe no começo e no fim de MP3/AAC (encoderDelay
  * e encoderPadding, lidos do arquivo). Desligado, o app zera esses números
  * antes de o som chegar à saída: o silêncio fica, como num player comum.
  */
 
-/** Fábrica de renderizadores com a saída de som que respeita o ajuste de gapless. */
+/** Fábrica de renderizadores com a saída de som do app ([BoomAudioSink]). */
 @OptIn(UnstableApi::class)
 internal class BoomRenderersFactory(
     context: Context,
@@ -28,15 +34,39 @@ internal class BoomRenderersFactory(
         enableFloatOutput: Boolean,
         enableAudioOutputPlaybackParams: Boolean,
     ): AudioSink? = super.buildAudioSink(context, enableFloatOutput, enableAudioOutputPlaybackParams)
-        ?.let { GaplessToggleSink(it, gapless) }
+        ?.let { BoomAudioSink(it, gapless) }
 }
 
-/** Vale a partir da próxima música (o ajuste é lido a cada formato novo). */
+/** O gapless vale a partir da próxima música (o ajuste é lido a cada formato novo). */
 @OptIn(UnstableApi::class)
-private class GaplessToggleSink(sink: AudioSink, private val gapless: () -> Boolean) : ForwardingAudioSink(sink) {
+private class BoomAudioSink(sink: AudioSink, private val gapless: () -> Boolean) : ForwardingAudioSink(sink) {
+    override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
+        AudioVisualizer.onBuffer(buffer, presentationTimeUs)
+        return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
+    }
+
+    override fun getCurrentPositionUs(sourceEnded: Boolean): Long =
+        super.getCurrentPositionUs(sourceEnded).also { if (it != AudioSink.CURRENT_POSITION_NOT_SET) AudioVisualizer.onPosition(it) }
+
+    override fun play() {
+        super.play()
+        AudioVisualizer.onPlaying(true)
+    }
+
+    override fun pause() {
+        super.pause()
+        AudioVisualizer.onPlaying(false)
+    }
+
+    override fun flush() {
+        super.flush()
+        AudioVisualizer.onFlush()
+    }
+
     @Suppress("DEPRECATION") // preferredBufferSizeOverride ainda é repassado como veio.
     override fun configure(audioSinkConfig: AudioSink.AudioSinkConfig) {
         val format = audioSinkConfig.format
+        AudioVisualizer.onConfigure(format)
         if (gapless() || (format.encoderDelay == 0 && format.encoderPadding == 0)) {
             super.configure(audioSinkConfig)
             return

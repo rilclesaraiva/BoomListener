@@ -41,4 +41,7 @@
     <string name="feature_tageditor_discard_message">O que você mudou nesta música ainda não foi salvo.</string>
     <string name="feature_tageditor_discard">Descartar</string>
     <string name="feature_tageditor_keep_editing">Continuar editando</string>
+    <string name="feature_tageditor_cover_yours">A sua</string>
+    <string name="feature_tageditor_cover_found">Encontrada</string>
+    <string name="feature_tageditor_cover_use_found">Usar esta capa</string>
 </resources>

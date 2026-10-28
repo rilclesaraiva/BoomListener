@@ -68,6 +68,7 @@ enum class BoomMenuKind {
     ShareWithFavorite,
     ShareCard,
     Lyrics,
+    Visualizer,
     PlayNow,
     PlayNext,
     Mix,
@@ -95,6 +96,7 @@ internal val BoomMenuKind.icon: ImageVector?
         BoomMenuKind.ShareWithFavorite -> BoomIcons.Send
         BoomMenuKind.ShareCard -> BoomIcons.Image
         BoomMenuKind.Lyrics -> BoomIcons.Article
+        BoomMenuKind.Visualizer -> BoomIcons.GraphicEq
         BoomMenuKind.PlayNow -> BoomIcons.Play
         BoomMenuKind.PlayNext -> BoomIcons.QueuePlayNext
         BoomMenuKind.Mix -> BoomIcons.Shuffle

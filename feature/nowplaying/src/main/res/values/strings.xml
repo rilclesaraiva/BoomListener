@@ -78,4 +78,6 @@
     <string name="feature_nowplaying_share_card_making">Making the video…</string>
     <string name="feature_nowplaying_share_card_error">Couldn\'t make the video for this song. You can still share the image.</string>
     <string name="feature_nowplaying_share_card_chooser">Share with</string>
+    <string name="feature_nowplaying_show_visualizer">Show visualizer</string>
+    <string name="feature_nowplaying_hide_visualizer">Hide visualizer</string>
 </resources>

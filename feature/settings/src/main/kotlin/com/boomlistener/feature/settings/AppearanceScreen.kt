@@ -9,6 +9,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -20,6 +21,8 @@ import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
 import com.boomlistener.core.model.ThemeMode
+import com.boomlistener.core.player.PlaybackSettingsData
+import com.boomlistener.core.player.VisualizerStyle
 
 @Composable
 internal fun AppearanceScreen(
@@ -32,6 +35,12 @@ internal fun AppearanceScreen(
     }
     val prefs by viewModel.preferences.collectAsStateWithLifecycle()
     val dynamicAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val playback = remember { PlaybackSettingsData.get(context) }
+    val playbackPrefs by playback.prefs.collectAsStateWithLifecycle()
+    val visualizerStyles = listOf(
+        Triple(VisualizerStyle.Bars, R.string.feature_settings_visualizer_bars, R.string.feature_settings_visualizer_bars_summary),
+        Triple(VisualizerStyle.Wave, R.string.feature_settings_visualizer_wave, R.string.feature_settings_visualizer_wave_summary),
+    )
 
     val themes = listOf(
         Triple(ThemeMode.System, R.string.feature_settings_theme_system, R.string.feature_settings_theme_system_summary),
@@ -88,6 +97,25 @@ internal fun AppearanceScreen(
                             )
                         },
                     )
+                }
+            }
+            item {
+                // Tipo do visualizador sobre a capa (liga e desliga no menu ⋮ do player).
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_visualizer)) {
+                    visualizerStyles.forEach { (style, title, summary) ->
+                        BoomSettingsItem(
+                            icon = null,
+                            title = stringResource(title),
+                            subtitle = stringResource(summary),
+                            onClick = { playback.setVisualizerStyle(style) },
+                            trailing = {
+                                RadioButton(
+                                    selected = playbackPrefs.visualizerStyle == style,
+                                    onClick = { playback.setVisualizerStyle(style) },
+                                )
+                            },
+                        )
+                    }
                 }
             }
             item {

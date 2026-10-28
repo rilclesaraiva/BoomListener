@@ -80,4 +80,6 @@
     <string name="feature_nowplaying_share_card_making">Fazendo o vídeo…</string>
     <string name="feature_nowplaying_share_card_error">Não deu para fazer o vídeo desta música. A imagem ainda pode ser compartilhada.</string>
     <string name="feature_nowplaying_share_card_chooser">Compartilhar com</string>
+    <string name="feature_nowplaying_show_visualizer">Mostrar visualizador</string>
+    <string name="feature_nowplaying_hide_visualizer">Esconder visualizador</string>
 </resources>

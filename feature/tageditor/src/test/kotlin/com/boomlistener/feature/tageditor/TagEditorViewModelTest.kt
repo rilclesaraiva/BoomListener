@@ -283,6 +283,14 @@ class TagEditorViewModelTest {
         assertTrue(state.autoTag is AutoTagState.AlreadyCorrect)
         assertFalse(state.hasChanges)
         assertArrayEquals(byteArrayOf(5), state.shownCover)
+
+        // A pessoa compara e prefere a capa encontrada: só a capa muda (e dá para desfazer).
+        vm.useFoundCover()
+        assertTrue(vm.state.value.autoTag is AutoTagState.Applied)
+        assertArrayEquals(byteArrayOf(1, 2, 3), vm.state.value.shownCover)
+        assertEquals(complete, vm.state.value.tags)
+        vm.undoAutoTag()
+        assertArrayEquals(byteArrayOf(5), vm.state.value.shownCover)
     }
 
     @Test

@@ -4,6 +4,15 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.48.0] — 2026-10-28
+
+### ✨ New
+- Audio visualizer over the cover: bars (bass on the left, treble on the right) or a live wave of the sound, in the player's accent color. Turn it on or off in the player's ⋮ menu, and pick the style in Settings → Appearance → Visualizer. It reads the sound straight from the player, so it needs no microphone permission.
+- Fix tags automatically: when your tags already match but the song has a cover, you now see your cover next to the one it found and can tap "Use this cover" to swap just the cover.
+
+### 🐛 Fixes
+- Opening the app is lighter: the headphone name is looked up once after the system settles, instead of on every audio route update.
+
 ## [0.47.1] — 2026-10-27
 
 ### 🐛 Fixes

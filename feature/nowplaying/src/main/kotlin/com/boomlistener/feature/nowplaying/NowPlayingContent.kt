@@ -172,6 +172,14 @@ internal fun NowPlayingContent(
                                     ),
                                     kind = BoomMenuKind.Lyrics,
                                 ) { viewModel.toggleLyrics() },
+                                // Visualizador sobre a capa (o tipo fica em Ajustes → Aparência).
+                                BoomMenuAction(
+                                    stringResource(
+                                        if (playbackPrefs.visualizer) R.string.feature_nowplaying_hide_visualizer
+                                        else R.string.feature_nowplaying_show_visualizer,
+                                    ),
+                                    kind = BoomMenuKind.Visualizer,
+                                ) { playbackSettings.setVisualizer(!playbackPrefs.visualizer) },
                                 // Banner para stories/status: imagem ou vídeo com 30 s da música.
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_share_card), kind = BoomMenuKind.ShareCard) {
                                     showShareCard = true
@@ -255,21 +263,31 @@ internal fun NowPlayingContent(
                                 // fazia a capa anterior piscar na página nova ao trocar).
                                 val cover = rememberArtwork(viewModel, song.uri, sizePx)
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    BoomArtwork(
-                                        image = cover,
-                                        fallbackText = song.title,
-                                        size = null,
-                                        // Quadrada no maior tamanho que cabe (em pé, a largura;
-                                        // deitado, a altura).
-                                        modifier = Modifier
-                                            .aspectRatio(1f, matchHeightConstraintsFirst = true)
-                                            // Sem a cor por cima ao segurar: a capa é a arte, não um botão.
-                                            .clickable(
-                                                interactionSource = null,
-                                                indication = null,
-                                                onClick = viewModel::toggleLyrics,
-                                            ),
-                                    )
+                                    // Quadrada no maior tamanho que cabe (em pé, a largura;
+                                    // deitado, a altura).
+                                    Box(Modifier.aspectRatio(1f, matchHeightConstraintsFirst = true)) {
+                                        BoomArtwork(
+                                            image = cover,
+                                            fallbackText = song.title,
+                                            size = null,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                // Sem a cor por cima ao segurar: a capa é a arte, não um botão.
+                                                .clickable(
+                                                    interactionSource = null,
+                                                    indication = null,
+                                                    onClick = viewModel::toggleLyrics,
+                                                ),
+                                        )
+                                        // Visualizador (menu ⋮ do player): só na capa da música que toca.
+                                        if (playbackPrefs.visualizer && song.uri == item?.uri) {
+                                            CoverVisualizer(
+                                                style = playbackPrefs.visualizerStyle,
+                                                playing = state.isPlaying,
+                                                modifier = Modifier.matchParentSize().clip(MaterialTheme.shapes.extraLarge),
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

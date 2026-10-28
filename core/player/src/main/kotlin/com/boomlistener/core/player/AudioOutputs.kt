@@ -84,6 +84,19 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
      */
     private var chosen: Int? = null
 
+    // Ao abrir o app o sistema avisa várias mudanças de rota seguidas: junta
+    // todas numa atualização só, um pouco depois, sem pesar na abertura.
+    private val refreshRunnable = Runnable { refresh() }
+
+    private fun refreshSoon() {
+        handler.removeCallbacks(refreshRunnable)
+        handler.postDelayed(refreshRunnable, ROUTE_REFRESH_DELAY_MS)
+    }
+
+    private val router2: MediaRouter2? by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) runCatching { MediaRouter2.getInstance(context) }.getOrNull() else null
+    }
+
     init {
         audioManager?.registerAudioDeviceCallback(
             object : AudioDeviceCallback() {
@@ -98,8 +111,8 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
                 context.getSystemService(MediaRouter::class.java)?.addCallback(
                     MediaRouter.ROUTE_TYPE_LIVE_AUDIO,
                     object : MediaRouter.SimpleCallback() {
-                        override fun onRouteChanged(router: MediaRouter?, info: MediaRouter.RouteInfo?) = refresh()
-                        override fun onRouteSelected(router: MediaRouter?, type: Int, info: MediaRouter.RouteInfo?) = refresh()
+                        override fun onRouteChanged(router: MediaRouter?, info: MediaRouter.RouteInfo?) = refreshSoon()
+                        override fun onRouteSelected(router: MediaRouter?, type: Int, info: MediaRouter.RouteInfo?) = refreshSoon()
                     },
                 )
             }
@@ -115,7 +128,7 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
     private fun bluetoothRouteName(): String? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             runCatching {
-                MediaRouter2.getInstance(context).systemController.selectedRoutes
+                router2?.systemController?.selectedRoutes.orEmpty()
                     .firstOrNull { it.type in BLUETOOTH_ROUTE_TYPES }
                     ?.name?.toString()?.takeIf { it.isNotBlank() }
             }.getOrNull()?.let { return it }
@@ -204,6 +217,8 @@ internal fun outputKind(type: Int): AudioOutputKind? = when (type) {
     -> AudioOutputKind.Hdmi
     else -> null
 }
+
+private const val ROUTE_REFRESH_DELAY_MS = 300L
 
 private val BLUETOOTH_ROUTE_TYPES = setOf(
     MediaRoute2Info.TYPE_BLUETOOTH_A2DP,

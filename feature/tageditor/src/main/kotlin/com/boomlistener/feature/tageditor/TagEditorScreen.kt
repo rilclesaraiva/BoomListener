@@ -390,6 +390,15 @@ private fun AutoTagCard(state: TagEditorUiState, viewModel: TagEditorViewModel) 
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
                             )
+                            // A capa não dá para comparar sozinho: a sua ao lado da encontrada, e você decide.
+                            auto.foundCover?.let { found ->
+                                CoverComparison(
+                                    yours = state.shownCover,
+                                    found = found,
+                                    title = state.tags.title,
+                                    onUseFound = viewModel::useFoundCover,
+                                )
+                            }
                             if (auto.others.isNotEmpty()) {
                                 OutlinedButton(onClick = viewModel::showOtherMatches) {
                                     Text(stringResource(R.string.feature_tageditor_auto_other))
@@ -506,6 +515,33 @@ private fun CandidateRow(candidate: TrackCandidate, viewModel: TagEditorViewMode
         },
     )
 }
+
+/** A capa do arquivo ao lado da encontrada, com o botão para usar a encontrada. */
+@Composable
+private fun CoverComparison(yours: ByteArray?, found: ByteArray, title: String, onUseFound: () -> Unit) {
+    val sizePx = with(LocalDensity.current) { CompareCoverSize.roundToPx() }
+    val yourCover by produceState<ImageBitmap?>(initialValue = null, yours) {
+        value = yours?.let { bytes -> withContext(Dispatchers.Default) { decodeSampled(bytes, sizePx) } }
+    }
+    val foundCover by produceState<ImageBitmap?>(initialValue = null, found) {
+        value = withContext(Dispatchers.Default) { decodeSampled(found, sizePx) }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            BoomArtwork(image = yourCover, fallbackText = title, size = CompareCoverSize)
+            Text(stringResource(R.string.feature_tageditor_cover_yours), style = MaterialTheme.typography.labelMedium)
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            BoomArtwork(image = foundCover, fallbackText = title, size = CompareCoverSize)
+            Text(stringResource(R.string.feature_tageditor_cover_found), style = MaterialTheme.typography.labelMedium)
+        }
+    }
+    OutlinedButton(onClick = onUseFound) {
+        Text(stringResource(R.string.feature_tageditor_cover_use_found))
+    }
+}
+
+private val CompareCoverSize = 88.dp
 
 /** Decodifica a capa já reduzida para ~[sizePx] (não carrega a imagem inteira na memória). */
 private fun decodeSampled(bytes: ByteArray, sizePx: Int): ImageBitmap? {

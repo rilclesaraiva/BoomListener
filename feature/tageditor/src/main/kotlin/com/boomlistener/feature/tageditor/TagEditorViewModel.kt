@@ -58,8 +58,16 @@ internal sealed interface AutoTagState {
     data class Choosing(val candidates: List<TrackCandidate>) : AutoTagState
     /** Preencheu o formulário com [chosen]; [others] são as outras opções. */
     data class Applied(val chosen: TrackCandidate, val others: List<TrackCandidate>) : AutoTagState
-    /** Achou [chosen], e o arquivo já está igual: nada a trocar. */
-    data class AlreadyCorrect(val chosen: TrackCandidate, val others: List<TrackCandidate>) : AutoTagState
+    /**
+     * Achou [chosen], e as tags do arquivo já estão iguais: nada é trocado.
+     * [foundCover] é a capa encontrada, para a pessoa comparar com a dela e
+     * escolher se troca ([TagEditorViewModel.useFoundCover]).
+     */
+    class AlreadyCorrect(
+        val chosen: TrackCandidate,
+        val others: List<TrackCandidate>,
+        val foundCover: ByteArray?,
+    ) : AutoTagState
     data object NotFound : AutoTagState
     data object Failed : AutoTagState
 }
@@ -242,6 +250,15 @@ internal class TagEditorViewModel(
         }
     }
 
+    /** As tags já estavam certas, mas a pessoa quer a capa encontrada no lugar da dela. */
+    fun useFoundCover() {
+        val auto = _state.value.autoTag as? AutoTagState.AlreadyCorrect ?: return
+        val cover = auto.foundCover ?: return
+        val current = _state.value
+        beforeAuto = current.tags to current.cover
+        _state.update { it.copy(cover = CoverState.New(cover), autoTag = AutoTagState.Applied(auto.chosen, auto.others)) }
+    }
+
     /** Mostra de novo as opções encontradas (para trocar a escolhida). */
     fun showOtherMatches() {
         val (chosen, others) = when (val auto = _state.value.autoTag) {
@@ -308,11 +325,12 @@ internal class TagEditorViewModel(
             beforeAuto?.first ?: current.tags,
             official.copy(genre = lastfmGenre ?: official.genre),
         )
-        // O arquivo já tem exatamente isso (e já tem capa): não troca nada, só avisa.
+        // O arquivo já tem exatamente essas tags (e já tem capa): não troca nada,
+        // só avisa e mostra a capa encontrada ao lado da dela, para comparar.
         if (beforeAuto == null && current.tags == current.original && merged == current.original &&
             current.cover == CoverState.Original && current.originalCover != null
         ) {
-            _state.update { it.copy(autoTag = AutoTagState.AlreadyCorrect(candidate, others)) }
+            _state.update { it.copy(autoTag = AutoTagState.AlreadyCorrect(candidate, others, coverBytes)) }
             return
         }
         if (beforeAuto == null) beforeAuto = current.tags to current.cover

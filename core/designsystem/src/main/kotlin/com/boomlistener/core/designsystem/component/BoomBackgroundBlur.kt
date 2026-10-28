@@ -63,6 +63,8 @@ fun BoomNavScreen(scope: AnimatedVisibilityScope, content: @Composable () -> Uni
 @Composable
 private fun Modifier.recedeBlur(scope: AnimatedVisibilityScope): Modifier {
     val blur = LocalBackgroundBlur.current ?: return this
+    // Desligado: nem cria a animação nem a camada.
+    if (!blur.enabled) return this
     // Abrindo: a que sai fica por baixo. Voltando: a que entra estava por baixo.
     val amount by scope.transition.animateFloat(transitionSpec = { boomScreenSpec() }, label = "recedeBlur") { state ->
         val underneath = when (state) {
