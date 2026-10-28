@@ -183,6 +183,7 @@ Todo APK entregue ao usuário se chama `boomlistener_v{versão}.apk` (ex.: `boom
 - O AGP 9 tem **Kotlin embutido**: nunca aplique `org.jetbrains.kotlin.android` num módulo (ele só é declarado na raiz para fixar a versão do Kotlin). `kapt` não funciona; use KSP.
 - Plugins de convenção usam a DSL nova: `CommonExtension` **sem** parâmetros de tipo, `ApplicationExtension` e `LibraryExtension`. Nada de `BaseExtension` ou `applicationVariants`.
 - Todo módulo é uma biblioteca Android (inclusive `core/model`), para não misturar alvos de JVM. `core/model` continua sem nenhum `import android.*`, por regra.
+- **R8 ligado no release** (0.52.4: `isMinifyEnabled` + `isShrinkResources`, regras em `app/proguard-rules.pro`). APK caía de 19,6 MB sem ele. Com `-dontobfuscate`: encolhe e otimiza, mas os nomes ficam legíveis nos erros (o `mapping.txt` da Action não baixa daqui). O TagLib (JNI) tem `-keep`. Código novo que use reflexão, busca de classe pelo nome ou recurso por `getIdentifier` **precisa** de regra nesse arquivo. Se algo só quebrar no release, a suspeita é o R8.
 
 ## Segurança
 

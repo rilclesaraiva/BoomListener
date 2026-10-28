@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.52.4] — 2026-10-28
+
+### 🎨 Visual tweaks
+- The app is now built with Android's optimizer: a much smaller download, and screens and animations should feel smoother.
+
 ## [0.52.3] — 2026-10-28
 
 ### 🐛 Fixes

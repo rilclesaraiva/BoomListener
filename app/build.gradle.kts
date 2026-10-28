@@ -60,7 +60,14 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: tira do APK o que o app não usa e otimiza o código (o Compose
+            // roda bem mais leve assim). Regras próprias em proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
