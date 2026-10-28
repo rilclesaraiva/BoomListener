@@ -4,6 +4,14 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.52.3] — 2026-10-28
+
+### 🐛 Fixes
+- The Privacy text in Settings now matches what the app really does: it mentions the release checks for artists you follow, the artist search, the update check when the app opens, offline mode and the notification permission, and no longer promises Last.fm scrobbling.
+
+### 🎨 Visual tweaks
+- Behind the scenes cleanup: leftover code from features that were removed is gone.
+
 ## [0.52.2] — 2026-10-28
 
 ### 🎨 Visual tweaks

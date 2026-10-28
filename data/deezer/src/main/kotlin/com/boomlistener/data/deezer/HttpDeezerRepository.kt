@@ -27,7 +27,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.security.MessageDigest
-import java.util.Locale
 
 private const val API = "https://api.deezer.com"
 // Respostas da API ficam guardadas por um dia (discografia muda pouco).

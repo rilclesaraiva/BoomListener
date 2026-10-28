@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
 
 private const val PROFILE_TOP_ALPHA = 0.55f
 
@@ -51,15 +50,6 @@ fun Modifier.profileBackground(hex: String?, solid: Boolean = false): Modifier {
             1f to Color.Transparent,
         ),
     )
-}
-
-/**
- * A cor do topo do fundo do perfil, opaca, sobre [base] (o fundo da página):
- * é a cor da barra de cima do perfil. Sem cor, null.
- */
-fun profileTopColor(hex: String?, base: Color): Color? {
-    val color = parseProfileColor(hex) ?: return null
-    return color.copy(alpha = PROFILE_TOP_ALPHA).compositeOver(base)
 }
 
 /**

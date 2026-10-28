@@ -9,8 +9,6 @@ import com.boomlistener.core.common.navigateOnce
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 const val SETTINGS_ROUTE = "settings"
 internal const val APPEARANCE_ROUTE = "settings/appearance"

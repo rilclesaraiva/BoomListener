@@ -67,7 +67,6 @@
     <string name="feature_nowplaying_unfavorite">Quitar de favoritas</string>
     <string name="feature_nowplaying_share_card">Compartir banner</string>
     <string name="feature_nowplaying_share_card_label">Escuchando ahora</string>
-    <string name="feature_nowplaying_share_card_colors">Colores</string>
     <string name="feature_nowplaying_share_card_color_cover">Color de la portada</string>
     <string name="feature_nowplaying_share_card_color_theme">Color de la app</string>
     <string name="feature_nowplaying_share_card_color_dark">Oscuro</string>

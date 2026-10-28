@@ -46,7 +46,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.data.library.PlaylistData
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**

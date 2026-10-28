@@ -16,8 +16,6 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
                 val bom = platform(libs.findLibrary("androidx-compose-bom").get().get())
                 add("implementation", bom)
                 add("implementation", libs.findLibrary("androidx-compose-ui").get())
-                add("implementation", libs.findLibrary("androidx-compose-ui-tooling-preview").get())
-                add("debugImplementation", libs.findLibrary("androidx-compose-ui-tooling").get())
             }
         }
     }

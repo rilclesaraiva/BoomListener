@@ -8,7 +8,6 @@ package com.boomlistener.feature.library
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
@@ -38,14 +36,9 @@ import androidx.compose.ui.unit.Dp
 import com.boomlistener.data.library.TrackGroup
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,7 +58,6 @@ import com.boomlistener.core.designsystem.component.tuckUnderStickyHeader
 import com.boomlistener.core.designsystem.component.rememberStickyHeaderStuck
 import com.boomlistener.core.designsystem.component.BoomStickyHeader
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -109,7 +101,6 @@ import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
-import com.boomlistener.data.deezer.DeezerData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.boomlistener.data.library.LibraryData
