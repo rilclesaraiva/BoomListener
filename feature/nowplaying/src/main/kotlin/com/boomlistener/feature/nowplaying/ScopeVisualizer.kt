@@ -63,7 +63,8 @@ private class ScopeTrail {
 internal fun ScopeVisualizer(playing: Boolean, modifier: Modifier = Modifier) {
     val beam = MaterialTheme.colorScheme.primary.toArgb()
     val trails = remember { Array(SCOPE_TRAILS) { ScopeTrail() } }
-    val cursor = remember { LongArray(2) { -1L } } // [0] = última amostra lida, [1] = próximo rastro
+    // [0] = última amostra lida (-1: nenhuma), [1] = quantos rastros já foram guardados (começa em 0).
+    val cursor = remember { longArrayOf(-1L, 0L) }
     var frame by remember { mutableLongStateOf(0L) }
 
     // Só guarda o som estéreo enquanto o osciloscópio está na tela (com o app aberto).
@@ -81,7 +82,7 @@ internal fun ScopeVisualizer(playing: Boolean, modifier: Modifier = Modifier) {
                     val last = cursor[0]
                     // Começa uma amostra antes do fim do quadro anterior, para o feixe não ter emendas.
                     val from = if (last < 0 || end < last || end - last > SCOPE_MAX_FRAMES) end - SCOPE_FIRST_READ else last - 1
-                    val trail = trails[(cursor[1] % SCOPE_TRAILS).toInt()]
+                    val trail = trails[Math.floorMod(cursor[1], SCOPE_TRAILS.toLong()).toInt()]
                     val count = AudioVisualizer.scopeCopy(from, end, trail.left, trail.right)
                     if (count > 1) {
                         trail.count = count

@@ -4,6 +4,11 @@ All notable changes to **Boom, listener!** are recorded here, by version. This f
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
+## [0.52.1] — 2026-10-28
+
+### 🐛 Fixes
+- Turning on the oscilloscope visualizer no longer closes the app.
+
 ## [0.52.0] — 2026-10-28
 
 ### ✨ New
