@@ -107,24 +107,22 @@ internal fun QueuePanel(
     var localQueue by remember { mutableStateOf(queue) }
     var dragging by remember { mutableStateOf(false) }
     var dragStartPosition by remember { mutableIntStateOf(-1) }
-    // Ordem que a tela mostra desde que o dedo soltou, até o player confirmar.
-    // Sem ela, um aviso atrasado do player (com a ordem de antes) chegava
-    // depois do soltar e a música piscava no lugar antigo.
+    // Ordem que a tela mostra por um tempo depois que o dedo soltou. Nesse
+    // tempo, fila com outra ordem é ignorada: o player confirma a ordem nova,
+    // mas às vezes ainda chega um aviso atrasado com a de antes (depois da
+    // confirmação), e a música piscava no lugar antigo.
     var pendingOrder by remember { mutableStateOf<List<String>?>(null) }
     val latestQueue by rememberUpdatedState(queue)
     LaunchedEffect(queue) {
         if (dragging) return@LaunchedEffect
         val pending = pendingOrder
-        if (pending != null) {
-            if (!sameOrder(queue, pending)) return@LaunchedEffect
-            pendingOrder = null
-        }
+        if (pending != null && !sameOrder(queue, pending)) return@LaunchedEffect
         localQueue = queue
     }
-    // Se o player não confirmar logo (mudou a fila por outro motivo), vale o dele.
+    // Passado o tempo, vale a fila do player (se ela mudou por outro motivo).
     LaunchedEffect(pendingOrder) {
         if (pendingOrder == null) return@LaunchedEffect
-        delay(PENDING_ORDER_TIMEOUT_MS)
+        delay(PENDING_ORDER_HOLD_MS)
         pendingOrder = null
         localQueue = latestQueue
     }
@@ -343,8 +341,8 @@ private fun QueueRow(
 /** Quanto o fundo escurece com a fila aberta (o mesmo dos painéis do M3). */
 private const val ScrimAlpha = 0.32f
 
-/** Depois de soltar uma música, quanto a tela espera o player confirmar a ordem nova. */
-private const val PENDING_ORDER_TIMEOUT_MS = 1_500L
+/** Depois de soltar uma música, por quanto tempo a tela ignora filas com outra ordem. */
+private const val PENDING_ORDER_HOLD_MS = 1_000L
 
 private fun sameOrder(queue: List<QueueEntry>, keys: List<String>): Boolean =
     queue.size == keys.size && queue.indices.all { queue[it].key == keys[it] }

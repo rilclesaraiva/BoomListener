@@ -6,6 +6,11 @@ package com.boomlistener.core.player
 import android.os.Handler
 import android.os.SystemClock
 import androidx.media3.common.ForwardingPlayer
+import java.util.concurrent.CopyOnWriteArraySet
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.FlagSet
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 
 /**
@@ -80,18 +85,40 @@ internal class FadingPlayer(
 ) : ForwardingPlayer(exo) {
 
     // Pausando com fade: o volume ainda está descendo, mas para quem pergunta
-    // (a tela, a notificação) já está pausado. Cada passo do volume faz a
-    // sessão mandar o estado do player para a tela; respondendo "tocando"
-    // nesse meio-tempo, o botão de pausar voltava ao play e trocava de novo
-    // no fim (piscava).
+    // (a tela, a notificação) já está pausado.
     private var fadingOut = false
+
+    // Quem escuta o player (a sessão de mídia). A sessão guarda o último estado
+    // e só o atualiza quando chega um evento; como o ExoPlayer só pausa no fim
+    // da descida, ela continuava achando "tocando" e reenviava isso à tela a
+    // cada passo do volume: o botão ia e voltava (piscava). Por isso o aviso
+    // de "pausei" (e de "voltou a tocar", se tocar no meio da descida) sai
+    // daqui, na hora.
+    private val listeners = CopyOnWriteArraySet<Player.Listener>()
+
+    override fun addListener(listener: Player.Listener) {
+        listeners += listener
+        super.addListener(listener)
+    }
+
+    override fun removeListener(listener: Player.Listener) {
+        listeners -= listener
+        super.removeListener(listener)
+    }
 
     override fun getPlayWhenReady(): Boolean = if (fadingOut) false else super.getPlayWhenReady()
 
     override fun isPlaying(): Boolean = if (fadingOut) false else super.isPlaying()
 
     override fun play() {
-        fadingOut = false
+        if (fadingOut) {
+            // Tocar no meio da descida: o ExoPlayer nem chegou a pausar, então
+            // é só subir o volume de volta e avisar que voltou a tocar.
+            fadingOut = false
+            mixer.fadeTo(1f)
+            announce(playing = true)
+            return
+        }
         if (fadeEnabled() && !exo.playWhenReady) {
             mixer.setFade(0f)
             super.play()
@@ -105,14 +132,29 @@ internal class FadingPlayer(
     override fun pause() {
         if (fadeEnabled() && exo.isPlaying) {
             fadingOut = true
+            announce(playing = false)
             mixer.fadeTo(0f) {
-                exo.pause()
                 fadingOut = false
+                exo.pause()
                 mixer.setFade(1f)
             }
-        } else {
-            fadingOut = false
+        } else if (!fadingOut) {
             super.pause()
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun announce(playing: Boolean) {
+        val events = Player.Events(
+            FlagSet.Builder()
+                .add(Player.EVENT_PLAY_WHEN_READY_CHANGED)
+                .add(Player.EVENT_IS_PLAYING_CHANGED)
+                .build(),
+        )
+        for (listener in listeners) {
+            listener.onPlayWhenReadyChanged(playing, Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+            listener.onIsPlayingChanged(playing)
+            listener.onEvents(this, events)
         }
     }
 

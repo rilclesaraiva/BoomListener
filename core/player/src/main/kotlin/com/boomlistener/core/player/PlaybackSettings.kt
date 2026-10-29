@@ -37,7 +37,7 @@ data class PlaybackPrefs(
     /** Tirar o app dos recentes encerra a música e o app (Ajustes → Sistema). */
     val stopOnTaskRemoved: Boolean = false,
     /** Botões do player e do mini player na cor da capa (Ajustes → Aparência). */
-    val artworkButtons: Boolean = false,
+    val artworkButtons: Boolean = true,
 ) {
     companion object {
         const val MAX_TRANSITION_SECONDS = 12
@@ -101,7 +101,7 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
             visualizerStyle = VisualizerStyle.entries.firstOrNull { it.name == store.getString(KEY_VISUALIZER_STYLE, null) }
                 ?: VisualizerStyle.Bars,
             stopOnTaskRemoved = store.getBoolean(KEY_STOP_ON_SWIPE, false),
-            artworkButtons = store.getBoolean(KEY_ARTWORK_BUTTONS, false),
+            artworkButtons = store.getBoolean(KEY_ARTWORK_BUTTONS, true),
         ),
     )
     override val prefs: StateFlow<PlaybackPrefs> = state.asStateFlow()
