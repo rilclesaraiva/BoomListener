@@ -15,6 +15,7 @@ keystore.properties
 *.jks
 *.keystore
 *.p12
+*-github-secrets.txt
 
 # Exceção: chave de DEBUG fixa (não é segredo; senha pública "android").
 # Ela existe só para o APK de debug atualizar por cima sem desinstalar.

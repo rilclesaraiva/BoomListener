@@ -70,6 +70,13 @@
     <string name="feature_settings_update_prompt_skip">Pular esta versão</string>
     <string name="feature_settings_update_prompt_no_notes">Correções e melhorias.</string>
     <string name="feature_settings_about_short">Sobre</string>
+    <string name="feature_settings_about_legal">Legal</string>
+    <string name="feature_settings_about_privacy_policy">Política de privacidade</string>
+    <string name="feature_settings_about_privacy_policy_summary">O que o app faz com as informações, por completo</string>
+    <string name="feature_settings_about_terms">Termos de uso</string>
+    <string name="feature_settings_about_terms_summary">As regras para usar o app</string>
+    <string name="feature_settings_about_support">Quer apoiar o projeto?</string>
+    <string name="feature_settings_about_support_summary">Entre no repositório do projeto.</string>
     <string name="feature_settings_about_developer">Desenvolvedor</string>
     <string name="feature_settings_about_developer_summary">Feito no Brasil · github.com/rilclesaraiva</string>
     <string name="feature_settings_about_project">Projeto</string>

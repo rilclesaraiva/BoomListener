@@ -68,6 +68,13 @@
     <string name="feature_settings_update_prompt_skip">Skip this version</string>
     <string name="feature_settings_update_prompt_no_notes">Bug fixes and improvements.</string>
     <string name="feature_settings_about_short">About</string>
+    <string name="feature_settings_about_legal">Legal</string>
+    <string name="feature_settings_about_privacy_policy">Privacy policy</string>
+    <string name="feature_settings_about_privacy_policy_summary">What the app does with information, in full</string>
+    <string name="feature_settings_about_terms">Terms of use</string>
+    <string name="feature_settings_about_terms_summary">The rules for using the app</string>
+    <string name="feature_settings_about_support">Want to support the project?</string>
+    <string name="feature_settings_about_support_summary">Visit the project repository.</string>
     <string name="feature_settings_about_developer">Developer</string>
     <string name="feature_settings_about_developer_summary">Made in Brazil · github.com/rilclesaraiva</string>
     <string name="feature_settings_about_project">Project</string>

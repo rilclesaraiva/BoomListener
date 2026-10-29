@@ -14,6 +14,7 @@ A **local** music player for Android. Free, open source, no ads, no account.
 - **Audio visualizer over the cover** (bars or wave), turned on from the player menu. It reads the app's own audio, so it needs no microphone permission
 - **Playback options:** crossfade between songs, fade on play/pause, gapless playback, ReplayGain, playback speed, sleep timer, resume when your headphones reconnect, and remember shuffle
 - **Picks up where you left off** after closing the app, or stops completely when you swipe it away from recents (optional)
+- **Buttons in the cover's color**: the player and mini player buttons take the color of the song's cover (can be turned off)
 - **Choose the audio output** from the player, with your Bluetooth headphones' custom name
 - Background playback with notification, lock screen and headphone controls
 - Plays MP3, AAC/M4A, OGG, Opus, WAV and FLAC (ALAC depends on your phone)
@@ -57,35 +58,54 @@ A **local** music player for Android. Free, open source, no ads, no account.
 
 The app **never streams** from external services. Deezer, MusicBrainz and Last.fm are used only for information, and outside links open in the service you choose.
 
-## Privacy
+## Privacy and permissions
 
-Your library, playlists, favorites, profile, followed artists and stats stay **on your phone only**. There is no account and no server of ours keeping your data. The app only goes online for:
+Your library, playlists, favorites, profile, followed artists and stats stay **on your phone only**. There is no account, no ads, no analytics and no server of ours keeping your data. The app only goes online for:
 
 - public artist, album and lyrics information (Deezer, MusicBrainz, Cover Art Archive, Last.fm and LRCLIB), unless offline mode is on
 - checking GitHub for a new version
 
-It asks for access to your music and audio, and (on Android 13 and newer) for permission to show release alerts, which you can turn off.
+It asks for access to your music and audio, and (on Android 13 and newer) for permission to show release alerts, which you can turn off. The full details are in the [Privacy Policy](https://rilclesaraiva.github.io/BoomListener/privacy).
+
+## 🤖 Built with AI ("vibe coding")
+
+In the spirit of transparency: **Boom, listener! is developed with heavy use of AI.**
+Most of the code is written by [Claude](https://claude.ai) (Anthropic) under the
+direction of the human maintainer, a workflow often called *vibe coding*.
+We take care that it doesn't turn into AI slop:
+
+- **The maintainer decides, the AI executes.** Every feature starts from a real
+  need, and every build is tested on a real Android phone before the next round.
+- **Written rules the AI has to follow.** [`CLAUDE.md`](CLAUDE.md) and
+  [`ARCHITECTURE.md`](ARCHITECTURE.md) (in Portuguese) set the architecture,
+  privacy limits and process, and are updated with every decision.
+- **Tests and automated builds.** Every change goes through GitHub Actions,
+  and a failing test means no build.
+- **No release without approval.** Nothing is published without the
+  maintainer's explicit approval.
+- **Honest changelogs.** [`CHANGELOG.md`](CHANGELOG.md) says what changed,
+  including what is still broken.
+
+If AI-assisted code is a concern for you, now you know, and you are welcome to
+read every line. Found something careless? Please [open an issue](../../issues).
 
 ## Download
 
-Get the APK from [Releases](../../releases). The app tells you when a new version is out.
+Get the APK from [Releases](../../releases) and install it on your phone (Android 8.0 or newer). The app tells you when a new version is out.
 
-## How it's made: AI-assisted, on purpose
-
-Boom, listener! is built with heavy use of AI. Most of the code is written by Claude (Anthropic), working from the author's ideas, sketches, screenshots and bug reports. You could call it "vibe coding". We take care that it doesn't turn into AI slop:
-
-- **The author decides, the AI executes.** Every feature starts from a real need, and every build is tested on a real phone before the next round. What looks or feels wrong goes back to be fixed.
-- **Written rules the AI has to follow.** [`CLAUDE.md`](CLAUDE.md) and [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) (in Portuguese) set the architecture, design system, privacy limits and process. They are updated with every decision.
-- **Tests and automated builds.** The logic that matters (shuffle, play counts, tag matching, artist matching, stats, releases) has unit tests. Every change goes through GitHub Actions, and a failing test means no build.
-- **Cleanup on purpose.** Features that didn't fit get removed for real, including old code nobody uses, instead of piling up. One example is the social features, which were dropped.
-- **Honest changelogs.** [`CHANGELOG.md`](CHANGELOG.md) says what changed, including what is still broken.
-
-If you find something that feels careless, please open an issue.
-
-## Tech
-
-Kotlin, Jetpack Compose and Material 3, split into modules (`core`, `data`, `feature`, `app`). Media3 (ExoPlayer) for playback. Every update is built and signed automatically by GitHub Actions.
+Built with Kotlin, Jetpack Compose (Material 3) and Media3, and signed automatically by GitHub Actions.
 
 ## License
 
 [GNU GPL v3](LICENSE).
+
+## Legal
+
+- [Privacy Policy](https://rilclesaraiva.github.io/BoomListener/privacy)
+- [Terms of Use](https://rilclesaraiva.github.io/BoomListener/terms)
+
+## ☕ Support the project
+
+Boom, listener! is free and maintained independently. The best way to support it is to use it, star the repository and report what breaks.
+
+**Contact:** [open an issue](../../issues).

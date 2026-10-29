@@ -52,6 +52,10 @@ private const val DEVELOPER_URL = "https://github.com/rilclesaraiva"
 private const val CHANGELOG_URL = "https://github.com/rilclesaraiva/BoomListener/blob/main/CHANGELOG.md"
 private const val ISSUES_URL = "https://github.com/rilclesaraiva/BoomListener/issues"
 
+// Páginas legais (docs/ no GitHub Pages).
+private const val PRIVACY_URL = "https://rilclesaraiva.github.io/BoomListener/privacy"
+private const val TERMS_URL = "https://rilclesaraiva.github.io/BoomListener/terms"
+
 @Composable
 internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -123,6 +127,34 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                         title = stringResource(R.string.feature_settings_license),
                         subtitle = stringResource(R.string.feature_settings_license_summary),
                         onClick = { context.openUrl(LICENSE_URL) },
+                    )
+                }
+            }
+            item(key = "legal") {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_about_legal)) {
+                    BoomSettingsItem(
+                        icon = BoomIcons.Privacy,
+                        title = stringResource(R.string.feature_settings_about_privacy_policy),
+                        subtitle = stringResource(R.string.feature_settings_about_privacy_policy_summary),
+                        onClick = { context.openUrl(PRIVACY_URL) },
+                    )
+                    BoomSettingsItem(
+                        icon = BoomIcons.Article,
+                        title = stringResource(R.string.feature_settings_about_terms),
+                        subtitle = stringResource(R.string.feature_settings_about_terms_summary),
+                        onClick = { context.openUrl(TERMS_URL) },
+                    )
+                }
+            }
+            item(key = "support") {
+                // Convite de apoio: só leva ao repositório (no app, nada de doação ou pagamento).
+                BoomSettingsSection(title = null) {
+                    BoomSettingsItem(
+                        icon = BoomIcons.Favorite,
+                        accent = BoomAccent.Tertiary,
+                        title = stringResource(R.string.feature_settings_about_support),
+                        subtitle = stringResource(R.string.feature_settings_about_support_summary),
+                        onClick = { context.openUrl(SOURCE_URL) },
                     )
                 }
             }

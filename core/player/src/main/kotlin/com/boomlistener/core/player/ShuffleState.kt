@@ -6,7 +6,7 @@ package com.boomlistener.core.player
 import kotlin.random.Random
 
 /**
- * O embaralhamento próprio do app (ver docs/ARQUITETURA.md). Classe pura, sem
+ * O embaralhamento próprio do app (ver ARCHITECTURE.md). Classe pura, sem
  * Android, para ser testada à parte.
  *
  * - Embaralha com Fisher-Yates: cada item aparece **uma vez** por rodada.

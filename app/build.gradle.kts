@@ -1,8 +1,6 @@
 // Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.boomlistener.android.application)
     alias(libs.plugins.boomlistener.android.compose)
@@ -15,13 +13,10 @@ val appVersionCode: Int = appVersion.split(".").map { it.toInt() }.let { (major,
     major * 10000 + minor * 100 + patch
 }
 
-// Assinatura: "keystore.properties" NUNCA vai para o Git. Ele é criado na hora
-// pela Action a partir dos Secrets do repositório. Sem ele, o build de release
-// sai sem assinatura (normal para quem só compila para testar).
-val keystorePropertiesFile = rootProject.file("keystore.properties")
-val keystoreProperties = Properties().apply {
-    if (keystorePropertiesFile.exists()) keystorePropertiesFile.inputStream().use { load(it) }
-}
+// Assinatura de release: a Action decodifica a keystore dos Secrets e passa o
+// caminho em ANDROID_KEYSTORE_PATH (com a senha e o alias). Nada disso vai para
+// o Git; sem a variável, o release sai sem assinatura.
+val releaseKeystorePath: String? = System.getenv("ANDROID_KEYSTORE_PATH")
 
 android {
     namespace = "com.boomlistener.app"
@@ -48,12 +43,12 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
-        if (keystorePropertiesFile.exists()) {
+        if (releaseKeystorePath != null) {
             create("release") {
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(releaseKeystorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
             }
         }
     }
@@ -68,7 +63,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            if (keystorePropertiesFile.exists()) {
+            if (releaseKeystorePath != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }

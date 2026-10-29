@@ -6,6 +6,10 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Added
+- **Privacy policy and terms of use**, published on the project's site and linked in Settings → About.
+- Settings → About invites you to visit the project repository if you want to support it.
+
 ### Changed
 - **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).
 

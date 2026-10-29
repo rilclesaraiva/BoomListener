@@ -1,0 +1,123 @@
+name: CI
+
+# Todo push na main: testes + APK de release (R8 + assinatura) como "build para
+# vistoria", nos artefatos desta execução. O mantenedor instala e testa.
+# Release público só por tag vX.Y.Z, criada depois da vistoria e de
+# "confirmo release vX.Y.Z" do mantenedor (ver CLAUDE.md).
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+# Escrita: para criar a Release e para comentar no commit quando o build falha.
+permissions:
+  contents: write
+
+env:
+  # ── Ajuste da stack (Android) ──
+  VERSION_FILE: gradle.properties                     # APP_VERSION=X.Y.Z
+  TEST_CMD: ./gradlew testDebugUnitTest assembleRelease --no-daemon --stacktrace
+  RELEASE_CMD: ./gradlew assembleRelease --no-daemon --stacktrace
+  APK: app/build/outputs/apk/release/app-release.apk
+  # ── Assinatura (os Secrets ficam só no GitHub; sem eles o APK sai sem assinatura) ──
+  KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+  ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+  ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+  ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # JDK 21 roda o Gradle (o app compila para Java 17). O SDK do Android já
+      # vem no runner (sem android-actions/setup-android, que quebrou o BusBus).
+      - uses: actions/setup-java@v6
+        with: { distribution: temurin, java-version: '21' }
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Assinatura (pulada se não houver secrets)
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
+
+      - name: Versão
+        id: version
+        run: echo "version=$(grep '^APP_VERSION=' "$VERSION_FILE" | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
+      # A saída vai para build.log: os logs da Action não são legíveis pela
+      # sessão do Claude, então, se falhar, o passo seguinte posta o resumo do
+      # erro como comentário no commit.
+      - name: Testes + build de release
+        shell: bash
+        run: |
+          set -o pipefail
+          eval "$TEST_CMD" 2>&1 | tee build.log
+
+      - name: Postar o erro no commit (só se falhar)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          {
+            echo "### ❌ Build falhou (run ${{ github.run_id }})"
+            echo
+            echo "**Erros encontrados:**"
+            echo '```'
+            grep -E "^e: |error:|What went wrong|Could not|FAILED" -A4 build.log | head -n 120 || true
+            echo '```'
+            echo
+            echo "**Fim do log:**"
+            echo '```'
+            tail -n 80 build.log || true
+            echo '```'
+          } > comment.md
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@comment.md
+
+      - name: Nome do APK (boomlistener_v{versão}.apk)
+        run: cp "$APK" "boomlistener_v${{ steps.version.outputs.version }}.apk"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-para-vistoria-v${{ steps.version.outputs.version }}-${{ github.sha }}
+          path: boomlistener_v${{ steps.version.outputs.version }}.apk
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v6
+        with: { distribution: temurin, java-version: '21' }
+      - uses: gradle/actions/setup-gradle@v6
+
+      # A tag, o APP_VERSION e o CHANGELOG têm que bater; a nota da Release é
+      # a seção da versão no CHANGELOG.
+      - name: Conferir versão e CHANGELOG
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          grep -qx "APP_VERSION=$V" "$VERSION_FILE" || { echo "v$V não está em $VERSION_FILE"; exit 1; }
+          awk -v v="$V" 'index($0, "## [" v "]") == 1 {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
+          [ -s notes.md ] || { echo "v$V não está no CHANGELOG"; exit 1; }
+
+      - name: Assinatura (pulada se não houver secrets)
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
+
+      - name: Build de release
+        run: |
+          eval "$RELEASE_CMD"
+          cp "$APK" "boomlistener_${GITHUB_REF_NAME}.apk"
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: Boom, listener! ${{ github.ref_name }}
+          body_path: notes.md
+          files: boomlistener_${{ github.ref_name }}.apk
