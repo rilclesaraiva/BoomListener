@@ -75,6 +75,8 @@ internal class CollectionsViewModel(
     /** Busca de artistas no Deezer (null = falhou). */
     private val searchArtistsOnline: suspend (String) -> List<ExternalArtist>? = { emptyList() },
     private val remoteImage: suspend (String, Int) -> Bitmap? = { _, _ -> null },
+    /** Foto do artista no Deezer pelo nome (null nos testes ou sem achar). */
+    private val artistPhoto: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
     favoriteUris: Flow<List<String>> = flowOf(emptyList()),
     /** Para tocar um álbum direto do menu dele (null nos testes). */
     private val player: PlaybackController? = null,
@@ -161,6 +163,10 @@ internal class CollectionsViewModel(
     }
 
     suspend fun artwork(uri: String, sizePx: Int): Bitmap? = library.loadArtwork(uri, sizePx)
+
+    /** Foto do artista: a do Deezer pelo nome (null sem internet ou sem achar; aí vale a capa). */
+    suspend fun artistPhoto(name: String, sizePx: Int): Bitmap? =
+        if (name.isBlank()) null else runCatching { artistPhoto.invoke(name, sizePx) }.getOrNull()
 }
 
 /** Busca de artistas na pílula Artistas. */

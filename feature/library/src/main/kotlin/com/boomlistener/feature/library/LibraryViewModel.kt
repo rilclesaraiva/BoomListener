@@ -22,6 +22,8 @@ import kotlinx.coroutines.launch
 internal class LibraryViewModel(
     private val repository: LibraryRepository,
     private val player: PlaybackController,
+    /** Foto do artista no Deezer pelo nome (null nos testes ou sem achar). */
+    private val artistPhoto: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
 ) : ViewModel() {
 
     // null = ainda não carregou.
@@ -106,4 +108,8 @@ internal class LibraryViewModel(
 
     suspend fun artwork(track: Track, sizePx: Int): Bitmap? =
         repository.loadArtwork(track.uri, sizePx)
+
+    /** Foto do artista: a do Deezer pelo nome (null sem internet ou sem achar; aí vale a capa). */
+    suspend fun artistPhoto(name: String, sizePx: Int): Bitmap? =
+        if (name.isBlank()) null else runCatching { artistPhoto.invoke(name, sizePx) }.getOrNull()
 }

@@ -70,6 +70,27 @@ class LibraryViewModelTest {
     }
 
     @Test
+    fun fotoDoArtistaPeloNomeNoDeezer() = runTest(dispatcher) {
+        val asked = mutableListOf<String>()
+        val viewModel = LibraryViewModel(
+            FakeLibraryRepository(emptyList()),
+            FakePlaybackController(),
+            artistPhoto = { name, _ -> asked += name; null },
+        )
+        viewModel.artistPhoto("Sh0tty", 120)
+        assertEquals(listOf("Sh0tty"), asked)
+        // Sem nome não pergunta nada; e uma falha vira "sem foto" (fica a capa).
+        viewModel.artistPhoto("  ", 120)
+        assertEquals(listOf("Sh0tty"), asked)
+        val failing = LibraryViewModel(
+            FakeLibraryRepository(emptyList()),
+            FakePlaybackController(),
+            artistPhoto = { _, _ -> error("sem internet") },
+        )
+        assertEquals(null, failing.artistPhoto("Djavan", 120))
+    }
+
+    @Test
     fun carregaEFiltra() = runTest(dispatcher) {
         val player = FakePlaybackController()
         val viewModel = LibraryViewModel(

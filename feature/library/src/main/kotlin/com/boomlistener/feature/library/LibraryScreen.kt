@@ -104,6 +104,8 @@ import com.boomlistener.core.player.PlayerConnection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.boomlistener.data.library.LibraryData
+import com.boomlistener.data.deezer.DeezerData
+import com.boomlistener.data.deezer.artistPicture
 
 @Composable
 internal fun LibraryScreen(
@@ -120,9 +122,11 @@ internal fun LibraryScreen(
     // Álbum inteiro (menu do álbum) a caminho de uma playlist.
     var addManyToPlaylist by remember { mutableStateOf<List<String>?>(null) }
     val viewModel: LibraryViewModel = viewModel {
+        val deezer = DeezerData.repository(context.applicationContext)
         LibraryViewModel(
             LibraryData.repository(context.applicationContext),
             PlayerConnection.controller(context.applicationContext),
+            artistPhoto = { name, sizePx -> deezer.artistPicture(name, sizePx) },
         )
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -185,6 +189,7 @@ internal fun LibraryScreen(
                     onOpenAlbum = onOpenAlbum,
                     onSeeAll = onSeeAll,
                     loadArtwork = viewModel::artwork,
+                    loadArtistPhoto = viewModel::artistPhoto,
                     shareUrl = viewModel::shareUrl,
                     onOpenTrack = viewModel::play,
                     onOpenArtist = onOpenArtist,
@@ -223,6 +228,7 @@ private fun TrackList(
     onOpenAlbum: (String) -> Unit,
     onSeeAll: (CollectionKind) -> Unit,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    loadArtistPhoto: suspend (String, Int) -> android.graphics.Bitmap?,
     shareUrl: suspend (Track) -> String,
     onOpenTrack: (Track) -> Unit,
     onOpenArtist: (String) -> Unit,
@@ -332,7 +338,7 @@ private fun TrackList(
                             contentPadding = PaddingValues(horizontal = 16.dp),
                         ) {
                             items(home.artists, key = { it.key }) { artist ->
-                                HomeArtist(artist, state.version, loadArtwork, albumMenu, onClick = { onOpenArtist(artist.name) })
+                                HomeArtist(artist, state.version, loadArtwork, loadArtistPhoto, albumMenu, onClick = { onOpenArtist(artist.name) })
                             }
                         }
                     }
@@ -582,10 +588,15 @@ private fun HomeArtist(
     artist: TrackGroup,
     version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    loadArtistPhoto: suspend (String, Int) -> android.graphics.Bitmap?,
     menu: AlbumMenuActions,
     onClick: () -> Unit,
 ) {
-    val cover = rememberHomeCover(artist.tracks.firstOrNull(), version, HomeTile, loadArtwork)
+    // A foto do artista no Deezer; sem ela (sem internet, artista que o Deezer
+    // não conhece), a capa de uma música dele.
+    val songCover = rememberHomeCover(artist.tracks.firstOrNull(), version, HomeTile, loadArtwork)
+    val photo = rememberArtistPhoto(artist.name, HomeTile, loadArtistPhoto)
+    val cover = photo ?: songCover
     // Segurar o artista abre o menu dele.
     val menuOpen = remember { mutableStateOf(false) }
     val count = artist.tracks.size

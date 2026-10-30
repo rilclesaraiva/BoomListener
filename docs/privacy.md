@@ -34,7 +34,7 @@ Each request goes directly from your phone to the service (except Last.fm, see b
 
 | Service | When | What is sent |
 |---|---|---|
-| **Deezer** (api.deezer.com and its image servers) | Opening an artist page (or the artist panel on wide screens), choosing between the artists of a song, the profile's "Your artists", searching artists in the Library, fixing tags, and the release check for artists you follow (about twice a day, in the background) | Artist names, song title, artist and length, what you type in the artist search, Deezer IDs of artists you follow |
+| **Deezer** (api.deezer.com and its image servers) | Showing artists on Home and in Library → Artists (their photos), opening an artist page (or the artist panel on wide screens), choosing between the artists of a song, the profile's "Your artists", searching artists in the Library, fixing tags, and the release check for artists you follow (about twice a day, in the background) | Artist names, song title, artist and length, what you type in the artist search, Deezer IDs of artists you follow |
 | **MusicBrainz** and **Cover Art Archive** | When Deezer doesn't know an artist or song | Artist names, song title, artist and length |
 | **Last.fm**, through the project's own Cloudflare Worker | Artist biography and song genres | Artist name (and song title for genres). The Worker only adds the project's access key and forwards the request; it runs on Cloudflare, which can see your IP address |
 | **LRCLIB** | When you open the lyrics of a song, or pick "Lyrics" for the share banner | Song title, artist, album and length |

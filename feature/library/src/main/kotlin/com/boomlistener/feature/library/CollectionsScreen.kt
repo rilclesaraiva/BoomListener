@@ -347,10 +347,13 @@ private fun GroupRow(
     fallbackIcon: ImageVector? = null,
     /** O menu do grupo, aberto ao segurar a linha. */
     menu: (@Composable (open: MutableState<Boolean>, image: ImageBitmap?) -> Unit)? = null,
+    /** Artista: a foto do Deezer no lugar da capa. */
+    artistName: String? = null,
 ) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
-    val image = images.firstOrNull()
+    val photo = rememberArtistPhoto(artistName, BoomListArtworkSize, viewModel::artistPhoto)
+    val image = photo ?: images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu?.invoke(menuOpen, image)
     ListItem(
@@ -394,10 +397,13 @@ private fun AlbumTile(
     round: Boolean = false,
     /** Ícone no lugar da capa quando o grupo não tem nenhuma (playlist vazia, Favoritas). */
     fallbackIcon: ImageVector? = null,
+    /** Artista: a foto do Deezer no lugar da capa. */
+    artistName: String? = null,
 ) {
     val px = with(LocalDensity.current) { 200.dp.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
-    val image = images.firstOrNull()
+    val photo = rememberArtistPhoto(artistName, 200.dp, viewModel::artistPhoto)
+    val image = photo ?: images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu(menuOpen, image)
     // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
@@ -581,6 +587,8 @@ private class GroupEntry(
     val fallbackIcon: ImageVector? = null,
     /** Playlists: capa montada com as de quatro álbuns ([mosaicCovers]). */
     val mosaic: Boolean = false,
+    /** Artistas: a foto do Deezer no lugar da capa (a capa fica de reserva). */
+    val artistName: String? = null,
     val onClick: () -> Unit,
     val menu: @Composable (open: MutableState<Boolean>, image: ImageBitmap?) -> Unit,
 )
@@ -609,6 +617,7 @@ private fun collectionEntries(
             local.map { group ->
                 GroupEntry(
                     "a:" + group.key, group.name, countOf(group.tracks.size), group.tracks, round = true,
+                    artistName = group.name,
                     onClick = { onOpenArtist(group.name) },
                 ) { open, image ->
                     GroupMenuSheet(
@@ -665,6 +674,7 @@ private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, v
                         fallbackIcon = entry.fallbackIcon,
                         menu = entry.menu,
                         onClick = entry.onClick,
+                        artistName = entry.artistName,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -682,6 +692,7 @@ private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, v
                 fallbackIcon = entry.fallbackIcon,
                 menu = entry.menu,
                 onClick = entry.onClick,
+                artistName = entry.artistName,
                 modifier = Modifier.animateItem(),
             )
         }
