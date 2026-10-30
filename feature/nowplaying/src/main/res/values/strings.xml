@@ -79,4 +79,9 @@
     <string name="feature_nowplaying_share_card_chooser">Share with</string>
     <string name="feature_nowplaying_show_visualizer">Show visualizer</string>
     <string name="feature_nowplaying_hide_visualizer">Hide visualizer</string>
+    <string name="feature_nowplaying_share_card_content_cover">Cover</string>
+    <string name="feature_nowplaying_share_card_content_lyrics">Lyrics</string>
+    <string name="feature_nowplaying_share_card_lyrics_loading">Looking for the lyrics…</string>
+    <string name="feature_nowplaying_share_card_lyrics_unsynced">These lyrics have no timing for each line, so they can\'t scroll with the song. The banner keeps the cover.</string>
+    <string name="feature_nowplaying_share_card_lyrics_missing">No lyrics found for this song. The banner keeps the cover.</string>
 </resources>

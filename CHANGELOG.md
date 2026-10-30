@@ -7,6 +7,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ## [Unreleased]
 
 ### Added
+- **Lyrics banner:** when sharing a banner, pick **Lyrics** instead of **Cover**. In the video, the synced lyrics scroll with the 30-second clip, the line being sung lit up, like the app's lyrics screen; the image shows the first line of the clip. Only songs with synced lyrics; the lyrics are looked up only when you pick this.
 - **Privacy policy and terms of use**, published on the project's site and linked in Settings → About.
 - Settings → About invites you to visit the project repository if you want to support it.
 

@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.PorterDuff
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -62,7 +63,8 @@ internal suspend fun saveShareImage(context: Context, card: Bitmap): File = with
  * Faz o vídeo: o banner durante o trecho, com o som da música desse trecho.
  * Com [spectrum], [card] vem sem as barrinhas e elas são desenhadas por cima a
  * cada quadro, como um equalizador ([spectrumBars]: graves à esquerda, agudos
- * à direita); sem, o banner fica parado.
+ * à direita); sem, o banner fica parado. Com [lyrics] (banner com letra), a
+ * letra rola na área dela, sincronizada com o trecho.
  * Roda no Transformer do Media3 (que precisa da thread principal).
  */
 @OptIn(UnstableApi::class)
@@ -73,6 +75,8 @@ internal suspend fun exportShareVideo(
     barColor: Int,
     audioUri: String,
     clip: ShareClip,
+    lyrics: ShareLyricsLayout? = null,
+    lyricsColor: Int = Color.WHITE,
 ): File {
     val image = saveShareImage(context, card.bitmap)
     val output = File(image.parentFile, image.nameWithoutExtension + ".mp4")
@@ -84,8 +88,10 @@ internal suspend fun exportShareVideo(
             .build(),
     ).setFrameRate(VIDEO_FRAME_RATE)
         .apply {
-            if (spectrum != null) {
-                setEffects(Effects(emptyList(), listOf(OverlayEffect(listOf(PulseOverlay(spectrum, card.waveCenterY, barColor))))))
+            val area = card.lyricsArea
+            if (spectrum != null || (lyrics != null && area != null)) {
+                val overlay = BannerOverlay(spectrum, card.waveCenterY, barColor, lyrics?.takeIf { area != null }, area, lyricsColor, clip.startMs)
+                setEffects(Effects(emptyList(), listOf(OverlayEffect(listOf(overlay)))))
             }
         }
         .build()
@@ -150,22 +156,33 @@ internal fun Context.shareFile(file: File, mimeType: String, chooserTitle: Strin
 }
 
 /**
- * As barrinhas do vídeo: a cada quadro, limpa e desenha as alturas daquele
- * instante do trecho, no mesmo lugar em que a imagem as desenharia.
+ * O que se mexe no vídeo, redesenhado a cada quadro no mesmo lugar em que a
+ * imagem desenharia: as barrinhas do instante do trecho ([spectrum]) e a
+ * letra rolando ([lyrics], no tempo da música: começo do trecho + quadro).
  */
 @OptIn(UnstableApi::class)
-private class PulseOverlay(
-    private val spectrum: Array<FloatArray>,
+private class BannerOverlay(
+    private val spectrum: Array<FloatArray>?,
     private val centerY: Float,
-    private val color: Int,
+    private val barColor: Int,
+    private val lyrics: ShareLyricsLayout?,
+    private val lyricsArea: RectF?,
+    private val lyricsColor: Int,
+    private val clipStartMs: Long,
 ) : CanvasOverlay(true) {
     override fun onDraw(canvas: Canvas, presentationTimeUs: Long) {
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
         // O quadro pode ter outro tamanho que o banner: desenha na escala dele.
         val scale = canvas.width.toFloat() / SHARE_CARD_WIDTH
+        val clipMs = presentationTimeUs / 1000
         canvas.save()
         canvas.scale(scale, scale)
-        drawWaveBars(canvas, SHARE_CARD_WIDTH / 2f, centerY, spectrumBars(spectrum, presentationTimeUs / 1000), color)
+        if (spectrum != null) {
+            drawWaveBars(canvas, SHARE_CARD_WIDTH / 2f, centerY, spectrumBars(spectrum, clipMs), barColor)
+        }
+        if (lyrics != null && lyricsArea != null) {
+            lyrics.draw(canvas, lyricsArea, shareLyricsFrame(lyrics.times, clipStartMs + clipMs), lyricsColor)
+        }
         canvas.restore()
     }
 }

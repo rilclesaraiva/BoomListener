@@ -5,6 +5,13 @@ package com.boomlistener.feature.nowplaying
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,6 +84,9 @@ import com.boomlistener.core.designsystem.component.BoomClipSelector
 
 private enum class CardStyle { Cover, Theme, Dark }
 
+/** O que vai no meio do banner: a capa grande ou a letra rolando. */
+private enum class CardContent { Cover, Lyrics }
+
 /** A capa já procurada (pode não ter capa nenhuma). */
 private class LoadedCover(val bitmap: Bitmap?)
 
@@ -99,6 +109,20 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
     val seed = rememberArtworkColor(remember(cover) { cover?.asImageBitmap() })
 
     var style by rememberSaveable { mutableStateOf(CardStyle.Cover) }
+    var content by rememberSaveable { mutableStateOf(CardContent.Cover) }
+
+    // Banner com letra: a letra só é buscada quando a pessoa escolhe "Letra".
+    DisposableEffect(content) {
+        viewModel.setShareLyrics(content == CardContent.Lyrics)
+        onDispose { viewModel.setShareLyrics(false) }
+    }
+    val lyricsState by viewModel.lyrics.collectAsStateWithLifecycle()
+    // Só a letra sincronizada rola com a música; sem ela o banner fica com a capa.
+    val syncedLyrics = (lyricsState as? LyricsUiState.Ready)
+        ?.takeIf { it.uri == item.uri && it.lyrics.synced && it.lyrics.lines.isNotEmpty() }
+        ?.lyrics
+    val previewLyrics = remember(syncedLyrics) { syncedLyrics?.let { ShareLyricsLayout(it.lines, SHARE_LYRICS_WIDTH) } }
+    val showLyrics = content == CardContent.Lyrics && previewLyrics != null
     val scheme = MaterialTheme.colorScheme
     val seedArgb = (seed ?: scheme.primary).toArgb()
     val colorsFor: (CardStyle) -> ShareCardColors = { option ->
@@ -125,7 +149,8 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
     // Trecho "assentado" (depois de soltar o dedo): é o que toca e o que dá o desenho.
     var chosenStart by remember(item.uri) { mutableLongStateOf(0L) }
     val chosenClip = ShareClip.at(chosenStart, durationMs)
-    val playheadMs = sharePreview(item.uri, chosenClip, viewModel)
+    val preview = sharePreview(item.uri, chosenClip, viewModel)
+    val playheadMs = preview.positionMs
 
     // A força do som do trecho escolhido (as barrinhas saem dela).
     val levels by produceState<ClipLevelsResult?>(initialValue = null, item.uri, chosenClip) {
@@ -133,8 +158,13 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
         value = ClipLevelsResult(chosenClip, loadClipLevels(context, item.uri, chosenClip))
     }
     val bars = remember(levels) { levels?.sound?.levels?.let(::waveformBars) }
-    val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text, bars) {
-        if (loaded != null) value = withContext(Dispatchers.Default) { renderShareCard(cover, text, colors, bars).bitmap }
+    // Com letra, a prévia vem sem ela: a letra rola por cima, junto com o trecho.
+    val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text, bars, showLyrics, previewLyrics) {
+        if (loaded != null) {
+            value = withContext(Dispatchers.Default) {
+                renderShareCard(cover, text, colors, bars, lyrics = previewLyrics?.takeIf { showLyrics }).bitmap
+            }
+        }
     }
     val maxStart = ShareClip.maxStart(durationMs)
 
@@ -170,6 +200,15 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
                     )
+                    if (showLyrics && previewLyrics != null) {
+                        PreviewLyrics(
+                            layout = previewLyrics,
+                            clipStartMs = chosenClip.startMs,
+                            livePositionMs = preview.livePositionMs,
+                            color = colors.content,
+                            modifier = Modifier.matchParentSize(),
+                        )
+                    }
                 } else {
                     Surface(color = scheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth().height(PREVIEW_HEIGHT)) {
                         BoomLoading()
@@ -177,6 +216,45 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                 }
             }
 
+            Spacer(Modifier.height(16.dp))
+            // Capa grande ou a letra rolando no meio do banner.
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CardContent.entries.forEach { option ->
+                    FilterChip(
+                        selected = content == option,
+                        onClick = { content = option },
+                        label = {
+                            Text(
+                                stringResource(
+                                    when (option) {
+                                        CardContent.Cover -> R.string.feature_nowplaying_share_card_content_cover
+                                        CardContent.Lyrics -> R.string.feature_nowplaying_share_card_content_lyrics
+                                    },
+                                ),
+                            )
+                        },
+                        enabled = making == null,
+                    )
+                }
+            }
+            if (content == CardContent.Lyrics && previewLyrics == null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(
+                        when (val state = lyricsState) {
+                            LyricsUiState.Idle, LyricsUiState.Loading -> R.string.feature_nowplaying_share_card_lyrics_loading
+                            is LyricsUiState.Ready ->
+                                if (state.uri == item.uri) R.string.feature_nowplaying_share_card_lyrics_unsynced
+                                else R.string.feature_nowplaying_share_card_lyrics_loading
+                            LyricsUiState.NotFound, LyricsUiState.Failed -> R.string.feature_nowplaying_share_card_lyrics_missing
+                        },
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 CardStyle.entries.forEach { option ->
@@ -250,9 +328,24 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                     FilledTonalButton(
                         onClick = {
                             val image = card ?: return@FilledTonalButton
+                            val lyricsLines = syncedLyrics?.lines?.takeIf { showLyrics }
                             making = scope.launch {
-                                runCatching { saveShareImage(context, image) }
-                                    .onSuccess { context.shareFile(it, "image/png", chooser) }
+                                runCatching {
+                                    // Com letra, a imagem mostra o primeiro verso do trecho em destaque.
+                                    val still = if (lyricsLines != null) {
+                                        withContext(Dispatchers.Default) {
+                                            val layout = ShareLyricsLayout(lyricsLines, SHARE_LYRICS_WIDTH)
+                                            renderShareCard(
+                                                cover, text, colors, bars,
+                                                lyrics = layout,
+                                                lyricsTimeMs = staticLyricsTime(layout.times, clip),
+                                            ).bitmap
+                                        }
+                                    } else {
+                                        image
+                                    }
+                                    saveShareImage(context, still)
+                                }.onSuccess { context.shareFile(it, "image/png", chooser) }
                                 making = null
                             }
                         },
@@ -263,16 +356,27 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                         onClick = {
                             if (card == null) return@Button
                             failed = false
+                            val lyricsLines = syncedLyrics?.lines?.takeIf { showLyrics }
                             making = scope.launch {
                                 try {
                                     // As barrinhas do vídeo pulsam com o som: o banner vai sem elas
                                     // e elas são desenhadas a cada quadro.
                                     val clipSound = levels?.takeIf { it.clip == clip }?.sound
                                         ?: loadClipLevels(context, item.uri, clip)
+                                    // A letra do vídeo é desenhada à parte da prévia (outra thread).
+                                    val videoLyrics = lyricsLines?.let { ShareLyricsLayout(it, SHARE_LYRICS_WIDTH) }
                                     val base = withContext(Dispatchers.Default) {
-                                        renderShareCard(cover, text, colors, clipSound?.levels?.let(::waveformBars), drawBars = clipSound == null)
+                                        renderShareCard(
+                                            cover, text, colors, clipSound?.levels?.let(::waveformBars),
+                                            drawBars = clipSound == null,
+                                            lyrics = videoLyrics,
+                                        )
                                     }
-                                    val video = exportShareVideo(context, base, clipSound?.spectrum, colors.accent, item.uri, clip)
+                                    val video = exportShareVideo(
+                                        context, base, clipSound?.spectrum, colors.accent, item.uri, clip,
+                                        lyrics = videoLyrics,
+                                        lyricsColor = colors.content,
+                                    )
                                     context.shareFile(video, "video/mp4", chooser)
                                 } catch (cancel: CancellationException) {
                                     throw cancel
@@ -303,8 +407,11 @@ private val BUTTON_ROW_HEIGHT = 48.dp
  * pausa ao abrir e volta ao fechar; a prévia é um player à parte (não mexe na
  * fila nem no ponto da música) e pausa quando o app sai da tela.
  */
+/** O ponto da prévia: [positionMs] algumas vezes por segundo e [livePositionMs] na hora (para animar a cada quadro). */
+private class SharePreviewState(val positionMs: Long, val livePositionMs: () -> Long)
+
 @Composable
-private fun sharePreview(uri: String, clip: ShareClip, viewModel: NowPlayingViewModel): Long {
+private fun sharePreview(uri: String, clip: ShareClip, viewModel: NowPlayingViewModel): SharePreviewState {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val player = remember {
@@ -355,7 +462,38 @@ private fun sharePreview(uri: String, clip: ShareClip, viewModel: NowPlayingView
             delay(POSITION_TICK_MS)
         }
     }
-    return position
+    return SharePreviewState(position) { player.currentPosition.coerceIn(0, clip.lengthMs) }
+}
+
+/**
+ * A letra rolando por cima da prévia, a cada quadro, no ponto que a prévia
+ * está tocando: o mesmo desenho do vídeo, na escala da prévia.
+ */
+@Composable
+private fun PreviewLyrics(
+    layout: ShareLyricsLayout,
+    clipStartMs: Long,
+    livePositionMs: () -> Long,
+    color: Int,
+    modifier: Modifier = Modifier,
+) {
+    val latestPosition by rememberUpdatedState(livePositionMs)
+    var timeMs by remember { mutableLongStateOf(clipStartMs) }
+    LaunchedEffect(clipStartMs) {
+        while (true) {
+            withFrameNanos { timeMs = clipStartMs + latestPosition() }
+        }
+    }
+    Canvas(modifier) {
+        val scale = size.width / SHARE_CARD_WIDTH
+        drawIntoCanvas { canvas ->
+            val native = canvas.nativeCanvas
+            native.save()
+            native.scale(scale, scale)
+            layout.draw(native, SHARE_LYRICS_AREA, shareLyricsFrame(layout.times, timeMs), color)
+            native.restore()
+        }
+    }
 }
 
 private const val POSITION_TICK_MS = 50L

@@ -48,13 +48,26 @@ internal data class ShareCardText(
 internal const val SHARE_CARD_WIDTH = 1080
 internal const val SHARE_CARD_HEIGHT = 1920
 
-/** O banner desenhado e onde ficam as barrinhas (para o vídeo redesenhá-las a cada quadro). */
-internal class ShareCardImage(val bitmap: Bitmap, val waveCenterY: Float)
+/**
+ * O banner desenhado e onde ficam as barrinhas e a letra (para o vídeo e a
+ * prévia redesenharem a cada quadro). [lyricsArea] só no banner com letra.
+ */
+internal class ShareCardImage(val bitmap: Bitmap, val waveCenterY: Float, val lyricsArea: RectF? = null)
+
+/** Onde fica a letra no banner com letra (a prévia e o vídeo desenham nela). */
+internal val SHARE_LYRICS_AREA = RectF(120f, 560f, 960f, 1460f)
+
+/** Largura do texto da letra (a de [SHARE_LYRICS_AREA]). */
+internal const val SHARE_LYRICS_WIDTH = 840
 
 /**
  * Desenha o banner. [bars] são as alturas das barrinhas (0–1, do som do
  * trecho; nulo enquanto não carregou, ou sem leitura: barras genéricas).
  * Com [drawBars] falso o lugar delas fica vazio (o vídeo as desenha por cima).
+ *
+ * Com [lyrics], é o banner com letra: capa pequena no alto e a letra no meio,
+ * no momento [lyricsTimeMs] da música (nulo: o lugar fica vazio, para a
+ * prévia e o vídeo desenharem a letra rolando por cima).
  */
 internal fun renderShareCard(
     cover: Bitmap?,
@@ -62,6 +75,8 @@ internal fun renderShareCard(
     colors: ShareCardColors,
     bars: FloatArray?,
     drawBars: Boolean = true,
+    lyrics: ShareLyricsLayout? = null,
+    lyricsTimeMs: Long? = null,
 ): ShareCardImage {
     val bitmap = Bitmap.createBitmap(SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
@@ -86,6 +101,19 @@ internal fun renderShareCard(
         typeface = bold
         letterSpacing = 0.12f
         textAlign = Paint.Align.CENTER
+    }
+    if (lyrics != null) {
+        canvas.drawText(text.label.uppercase(), w / 2, 260f, labelPaint)
+        drawLyricsHeader(canvas, cover, text, colors, variant, regular, bold)
+        if (lyricsTimeMs != null) {
+            lyrics.draw(canvas, SHARE_LYRICS_AREA, shareLyricsFrame(lyrics.times, lyricsTimeMs), colors.content)
+        }
+        val waveCenterY = SHARE_LYRICS_AREA.bottom + 120f
+        if (drawBars) {
+            drawWaveBars(canvas, w / 2, waveCenterY, bars ?: genericBars(text.title.hashCode() * 31 + text.artist.hashCode()), colors.accent)
+        }
+        drawAppName(canvas, text.appName, variant, bold)
+        return ShareCardImage(bitmap, waveCenterY, SHARE_LYRICS_AREA)
     }
     canvas.drawText(text.label.uppercase(), w / 2, 330f, labelPaint)
 
@@ -153,16 +181,88 @@ internal fun renderShareCard(
         drawWaveBars(canvas, w / 2, waveCenterY, bars ?: genericBars(text.title.hashCode() * 31 + text.artist.hashCode()), colors.accent)
     }
 
-    // Nome do app embaixo.
+    drawAppName(canvas, text.appName, variant, bold)
+    return ShareCardImage(bitmap, waveCenterY)
+}
+
+/** Nome do app embaixo. */
+private fun drawAppName(canvas: Canvas, appName: String, color: Int, bold: Typeface) {
     val appPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = variant
+        this.color = color
         textSize = 42f
         typeface = bold
         textAlign = Paint.Align.CENTER
     }
-    canvas.drawText(text.appName, w / 2, h - 150f, appPaint)
-    return ShareCardImage(bitmap, waveCenterY)
+    canvas.drawText(appName, SHARE_CARD_WIDTH / 2f, SHARE_CARD_HEIGHT - 150f, appPaint)
 }
+
+/** Banner com letra: capa pequena à esquerda, nome da música e artista ao lado. */
+private fun drawLyricsHeader(
+    canvas: Canvas,
+    cover: Bitmap?,
+    text: ShareCardText,
+    colors: ShareCardColors,
+    variant: Int,
+    regular: Typeface,
+    bold: Typeface,
+) {
+    val size = 160f
+    val left = 120f
+    val top = 330f
+    val rect = RectF(left, top, left + size, top + size)
+    val radius = 28f
+    if (cover != null) {
+        val shader = BitmapShader(cover, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        val scale = maxOf(size / cover.width, size / cover.height)
+        shader.setLocalMatrix(
+            Matrix().apply {
+                setScale(scale, scale)
+                postTranslate(left + (size - cover.width * scale) / 2, top + (size - cover.height * scale) / 2)
+            },
+        )
+        canvas.drawRoundRect(rect, radius, radius, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { this.shader = shader })
+    } else {
+        canvas.drawRoundRect(rect, radius, radius, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colors.accent })
+        val initial = text.title.trim().firstOrNull()?.uppercase() ?: "♪"
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = colors.background
+            textSize = 80f
+            typeface = bold
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText(initial, rect.centerX(), rect.centerY() - (paint.ascent() + paint.descent()) / 2, paint)
+    }
+    val textLeft = rect.right + 36f
+    val textWidth = (SHARE_CARD_WIDTH - 120f - textLeft).toInt()
+    val title = singleLine(text.title, textWidth, TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = colors.content
+        textSize = 54f
+        typeface = bold
+    })
+    val artist = singleLine(text.artist, textWidth, TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = variant
+        textSize = 40f
+        typeface = regular
+    })
+    // Os dois textos centrados na altura da capa.
+    var y = rect.centerY() - (title.height + 10f + artist.height) / 2
+    canvas.save()
+    canvas.translate(textLeft, y)
+    title.draw(canvas)
+    canvas.restore()
+    y += title.height + 10f
+    canvas.save()
+    canvas.translate(textLeft, y)
+    artist.draw(canvas)
+    canvas.restore()
+}
+
+private fun singleLine(text: String, width: Int, paint: TextPaint): StaticLayout =
+    StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
+        .setMaxLines(1)
+        .setEllipsize(TextUtils.TruncateAt.END)
+        .setIncludePad(false)
+        .build()
 
 private fun centeredLayout(text: String, width: Int, maxLines: Int, paint: TextPaint): StaticLayout =
     StaticLayout.Builder.obtain(text, 0, text.length, paint, width)

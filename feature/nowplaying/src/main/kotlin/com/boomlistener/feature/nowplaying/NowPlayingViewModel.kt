@@ -55,6 +55,9 @@ internal class NowPlayingViewModel(
     private val _showLyrics = MutableStateFlow(false)
     val showLyrics: StateFlow<Boolean> = _showLyrics.asStateFlow()
 
+    // O banner de compartilhar com a letra também precisa dela (a pessoa pediu).
+    private val shareWantsLyrics = MutableStateFlow(false)
+
     private val _lyrics = MutableStateFlow<LyricsUiState>(LyricsUiState.Idle)
     // Cada "tentar de novo" muda este número e dispara uma nova busca.
     private val retries = MutableStateFlow(0)
@@ -63,15 +66,17 @@ internal class NowPlayingViewModel(
     val lyrics: StateFlow<LyricsUiState> = _lyrics.asStateFlow()
 
     init {
-        // A letra só é buscada com a letra aberta (privacidade: nada sai do
-        // aparelho sem o usuário pedir) e de novo a cada troca de música.
+        // A letra só é buscada com a letra aberta ou o banner com letra
+        // escolhido (privacidade: nada sai do aparelho sem o usuário pedir) e
+        // de novo a cada troca de música.
         viewModelScope.launch {
             combine(
                 _showLyrics,
+                shareWantsLyrics,
                 controller.state.map { it.item }.distinctUntilChanged(),
                 retries,
                 library.version,
-            ) { show, item, _, version -> Triple(show, item, version) }.collectLatest { (show, item, version) ->
+            ) { show, share, item, _, version -> Triple(show || share, item, version) }.collectLatest { (show, item, version) ->
                 if (!show || item == null) return@collectLatest
                 val current = _lyrics.value
                 if (current is LyricsUiState.Ready && current.uri == item.uri && version == lyricsVersion) {
@@ -114,6 +119,11 @@ internal class NowPlayingViewModel(
     /** Link para compartilhar a música atual: no YouTube Music, ou a busca por ela. */
     suspend fun shareUrl(item: NowPlayingItem): String =
         ExternalLinks.youtubeMusicSearch(item.title, item.artist)
+
+    /** O banner de compartilhar quer (ou não quer mais) a letra da música. */
+    fun setShareLyrics(wanted: Boolean) {
+        shareWantsLyrics.value = wanted
+    }
 
     fun toggleLyrics() {
         _showLyrics.value = !_showLyrics.value

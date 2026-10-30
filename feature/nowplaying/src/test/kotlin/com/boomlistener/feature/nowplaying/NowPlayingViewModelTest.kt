@@ -87,6 +87,19 @@ class NowPlayingViewModelTest {
     }
 
     @Test
+    fun bannerComLetraBuscaALetraSemAbrirATela() {
+        val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
+        val online = Lyrics(listOf(LyricLine(1_000, "Açaí, guardiã")), synced = true, source = "LRCLIB")
+        val repo = FakeLyrics(LyricsResult.Found(online))
+        val viewModel = NowPlayingViewModel(FakeController(duration = 200_000, item = song), NoLibrary, repo)
+        // Nada é buscado enquanto ninguém pede a letra.
+        assertEquals(0, repo.calls)
+        viewModel.setShareLyrics(true)
+        assertEquals(1, repo.calls)
+        assertEquals(LyricsUiState.Ready("content://1", online), viewModel.lyrics.value)
+    }
+
+    @Test
     fun letraDoArquivoVemAntesDaInternet() {
         val song = NowPlayingItem("content://1", "Açaí", "Djavan", "Luz")
         val repo = FakeLyrics(LyricsResult.NotFound)
