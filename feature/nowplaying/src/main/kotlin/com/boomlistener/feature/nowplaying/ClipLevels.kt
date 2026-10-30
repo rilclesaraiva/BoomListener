@@ -25,7 +25,14 @@ import kotlinx.coroutines.withContext
  * O som de um trecho: a força a cada 50 ms, as faixas de frequência (graves →
  * agudos) e o desenho da onda (o mesmo do visualizador do player).
  */
-internal class ClipSound(val levels: FloatArray, val spectrum: Array<FloatArray>, val wave: Array<FloatArray>)
+internal class ClipSound(
+    val levels: FloatArray,
+    val spectrum: Array<FloatArray>,
+    val wave: Array<FloatArray>,
+    /** O trecho em mono (−1 a 1), para o vídeo tirar a onda no instante exato de cada quadro. */
+    val mono: FloatArray,
+    val sampleRate: Int,
+)
 
 internal suspend fun loadClipLevels(context: Context, uri: String, clip: ShareClip): ClipSound? =
     withContext(Dispatchers.IO) {
@@ -125,7 +132,7 @@ private suspend fun decodeLevels(context: Context, uri: String, clip: ShareClip)
     if (samples.all { it == 0 }) return null
     val levels = FloatArray(count) { if (samples[it] == 0) 0f else sqrt(sums[it] / samples[it]).toFloat() }
     val clipMono = mono.copyOf(monoSize)
-    return ClipSound(levels, spectrumFrames(clipMono, monoRate), soundWaveFrames(clipMono, monoRate))
+    return ClipSound(levels, spectrumFrames(clipMono, monoRate), soundWaveFrames(clipMono, monoRate), clipMono, monoRate)
 }
 
 private const val TIMEOUT_US = 10_000L

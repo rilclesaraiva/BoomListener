@@ -124,6 +124,9 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
         ?.lyrics
     val previewLyrics = remember(syncedLyrics) { syncedLyrics?.let { ShareLyricsLayout(it.lines, SHARE_LYRICS_WIDTH) } }
     val showLyrics = content == CardContent.Lyrics && previewLyrics != null
+    // "Letra" escolhida sem letra que role (procurando, sem letra ou sem tempo):
+    // não dá para fazer o banner com letra, então os botões ficam cinza.
+    val lyricsBlocked = content == CardContent.Lyrics && previewLyrics == null
     val scheme = MaterialTheme.colorScheme
     val seedArgb = (seed ?: scheme.primary).toArgb()
     val colorsFor: (CardStyle) -> ShareCardColors = { option ->
@@ -384,7 +387,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                 making = null
                             }
                         },
-                        enabled = card != null,
+                        enabled = card != null && !lyricsBlocked,
                         modifier = Modifier.weight(1f),
                     ) { Text(stringResource(R.string.feature_nowplaying_share_card_image)) }
                     Button(
@@ -409,11 +412,10 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                         )
                                     }
                                     val video = exportShareVideo(
-                                        context, base, clipSound?.spectrum, colors.accent, item.uri, clip,
+                                        context, base, clipSound, colors.accent, item.uri, clip,
                                         lyrics = videoLyrics,
                                         lyricsColor = colors.content,
                                         visualizer = visualizer,
-                                        wave = clipSound?.wave,
                                     )
                                     context.shareFile(video, "video/mp4", chooser)
                                 } catch (cancel: CancellationException) {
@@ -425,7 +427,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                 }
                             }
                         },
-                        enabled = card != null,
+                        enabled = card != null && !lyricsBlocked,
                         modifier = Modifier.weight(1f),
                     ) { Text(stringResource(R.string.feature_nowplaying_share_card_video)) }
                 }

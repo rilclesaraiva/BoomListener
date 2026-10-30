@@ -36,11 +36,19 @@ class ShareSoundWaveTest {
     }
 
     @Test
-    fun quadroEntreDuasMedidasMistura() {
-        val frames = arrayOf(FloatArray(SOUND_WAVE_POINTS) { 0f }, FloatArray(SOUND_WAVE_POINTS) { 1f })
-        assertEquals(0.5f, soundWaveAt(frames, LEVEL_WINDOW_MS / 2)[10], 0.001f)
-        // Depois da última medida, fica nela.
-        assertEquals(1f, soundWaveAt(frames, 10_000)[10], 0.001f)
+    fun ondaNoInstanteExatoDoQuadro() {
+        // Meio segundo de silêncio e depois meio segundo no máximo.
+        val mono = FloatArray(rate) { if (it < rate / 2) 0f else 0.5f }
+        val gain = soundWaveGain(mono)
+        assertEquals(2f, gain, 0.001f)
+        val out = FloatArray(SOUND_WAVE_POINTS)
+        soundWaveAtTime(mono, rate, gain, 100, out)
+        assertTrue(out.all { it == 0f })
+        soundWaveAtTime(mono, rate, gain, 600, out)
+        assertTrue(out.all { it == 1f })
+        // Depois do fim do trecho: silêncio, sem estourar.
+        soundWaveAtTime(mono, rate, gain, 5_000, out)
+        assertTrue(out.all { it == 0f })
     }
 
     @Test

@@ -16,6 +16,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).
 
 ### Fixed
+- **Banner video:** the Wave now looks like the player's (a soft glow around the line, no dark solid edge) and moves as smoothly as it: the wave is taken from the sound at each frame's exact moment, and the video now runs at 30 frames per second.
+- With **Lyrics** picked for a song without synced lyrics, the Image and Video buttons are now grayed out and the panel says the song has no lyrics (or that they aren't synced), instead of quietly using the cover.
 - Artists on Home and in Library → Artists now show their photo from Deezer instead of a song cover (the cover is only used when there's no internet or Deezer doesn't know the artist).
 - Dragging the 30-second clip window no longer scrolls the share panel behind it.
 - Moving a song in the queue no longer makes the "now playing" highlight flash on the song next to it.

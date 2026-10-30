@@ -13,8 +13,9 @@ import kotlin.math.abs
  * A onda do banner: o mesmo desenho do som que o visualizador "Onda" do
  * player mostra sobre a capa (as próprias amostras do áudio, não as faixas de
  * frequência). A cada [LEVEL_WINDOW_MS] do trecho guarda-se o desenho de uma
- * janela de [SOUND_WAVE_WINDOW] amostras em [SOUND_WAVE_POINTS] pontos; cada
- * quadro do vídeo mistura as medidas vizinhas.
+ * janela de [SOUND_WAVE_WINDOW] amostras em [SOUND_WAVE_POINTS] pontos (a
+ * imagem parada usa a mais forte); o vídeo tira a onda das amostras no
+ * instante exato de cada quadro ([soundWaveAtTime]).
  */
 
 /** Amostras de cada medida (as mesmas do visualizador do player). */
@@ -31,26 +32,31 @@ internal fun soundWaveFrames(mono: FloatArray, sampleRate: Int): Array<FloatArra
     if (mono.isEmpty() || sampleRate <= 0) return emptyArray()
     val hop = (sampleRate * LEVEL_WINDOW_MS / 1000).toInt().coerceAtLeast(1)
     val count = (mono.size / hop).coerceAtLeast(1)
-    var peak = 0f
-    for (v in mono) peak = maxOf(peak, abs(v))
-    val gain = 1f / peak.coerceAtLeast(MIN_PEAK)
-    return Array(count) { frame ->
-        val start = frame * hop
-        FloatArray(SOUND_WAVE_POINTS) { i ->
-            val index = start + (i.toLong() * (SOUND_WAVE_WINDOW - 1) / (SOUND_WAVE_POINTS - 1)).toInt()
-            (if (index < mono.size) mono[index] * gain else 0f).coerceIn(-1f, 1f)
-        }
-    }
+    val gain = soundWaveGain(mono)
+    return Array(count) { frame -> FloatArray(SOUND_WAVE_POINTS).also { soundWaveFromSample(mono, frame * hop, gain, it) } }
 }
 
-/** A onda no instante [timeMs] do trecho: mistura das duas medidas vizinhas. */
-internal fun soundWaveAt(frames: Array<FloatArray>, timeMs: Long): FloatArray {
-    if (frames.isEmpty()) return FloatArray(SOUND_WAVE_POINTS)
-    val position = (timeMs.toFloat() / LEVEL_WINDOW_MS).coerceIn(0f, (frames.size - 1).toFloat())
-    val a = frames[position.toInt()]
-    val b = frames[(position.toInt() + 1).coerceAtMost(frames.size - 1)]
-    val t = position - position.toInt()
-    return FloatArray(SOUND_WAVE_POINTS) { i -> a[i] + (b[i] - a[i]) * t }
+/** Quanto ampliar a onda do trecho para o pico chegar perto de 1. */
+internal fun soundWaveGain(mono: FloatArray): Float {
+    var peak = 0f
+    for (v in mono) peak = maxOf(peak, abs(v))
+    return 1f / peak.coerceAtLeast(MIN_PEAK)
+}
+
+/**
+ * A onda no instante exato [timeMs] do trecho, tirada das amostras (como o
+ * visualizador do player faz a cada pedaço que toca), em [out].
+ */
+internal fun soundWaveAtTime(mono: FloatArray, sampleRate: Int, gain: Float, timeMs: Long, out: FloatArray) {
+    val start = (timeMs * sampleRate / 1000).toInt().coerceAtLeast(0)
+    soundWaveFromSample(mono, start, gain, out)
+}
+
+private fun soundWaveFromSample(mono: FloatArray, start: Int, gain: Float, out: FloatArray) {
+    for (i in out.indices) {
+        val index = start + (i.toLong() * (SOUND_WAVE_WINDOW - 1) / (out.size - 1).coerceAtLeast(1)).toInt()
+        out[i] = (if (index < mono.size) mono[index] * gain else 0f).coerceIn(-1f, 1f)
+    }
 }
 
 /** A medida mais forte do trecho (a imagem parada mostra a onda nela). */

@@ -82,8 +82,8 @@
     <string name="feature_nowplaying_share_card_content_cover">Portada</string>
     <string name="feature_nowplaying_share_card_content_lyrics">Letra</string>
     <string name="feature_nowplaying_share_card_lyrics_loading">Buscando la letra…</string>
-    <string name="feature_nowplaying_share_card_lyrics_unsynced">Esta letra no tiene el tiempo de cada verso, así que no puede avanzar con la canción. El banner se queda con la portada.</string>
-    <string name="feature_nowplaying_share_card_lyrics_missing">No encontramos la letra de esta canción. El banner se queda con la portada.</string>
+    <string name="feature_nowplaying_share_card_lyrics_unsynced">La letra de esta canción no está sincronizada, así que no puede avanzar con ella. Elige Portada para compartirla.</string>
+    <string name="feature_nowplaying_share_card_lyrics_missing">Esta canción no tiene letra disponible, así que no hay banner con letra. Elige Portada para compartirla.</string>
     <string name="feature_nowplaying_share_card_visualizer">Visualizador</string>
     <string name="feature_nowplaying_share_card_visualizer_bars">Barras</string>
     <string name="feature_nowplaying_share_card_visualizer_wave">Onda</string>
