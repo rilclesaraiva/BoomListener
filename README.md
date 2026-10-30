@@ -4,6 +4,21 @@ A **local** music player for Android. Free, open source, no ads, no account.
 
 > 🧪 **Beta.** The app works day to day, but it is still being polished. The phone in portrait is the main target today. **Landscape and tablet layouts still have broken spots** that we know about and are fixing. Bug reports are welcome in [Issues](../../issues).
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/home.png" width="260" alt="Home: recently added, albums and artists"></td>
+    <td><img src="docs/screenshots/player.png" width="260" alt="Full-screen player with the wave visualizer over the cover"></td>
+    <td><img src="docs/screenshots/lyrics.png" width="260" alt="Synced lyrics in the player"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/artist.png" width="260" alt="Artist page with popular songs on Deezer"></td>
+    <td><img src="docs/screenshots/profile.png" width="260" alt="Your profile with listening stats"></td>
+    <td><img src="docs/screenshots/home-sections.png" width="260" alt="Home: albums, artists and song search"></td>
+  </tr>
+</table>
+
 ## What it does
 
 ### Playing music
