@@ -21,8 +21,11 @@ import kotlinx.coroutines.withContext
  * decodificadores do aparelho) e mede o RMS a cada [LEVEL_WINDOW_MS]. Nulo se
  * o arquivo não puder ser lido; aí o banner usa barras genéricas.
  */
-/** O som de um trecho: a força a cada 50 ms e as faixas de frequência (graves → agudos). */
-internal class ClipSound(val levels: FloatArray, val spectrum: Array<FloatArray>)
+/**
+ * O som de um trecho: a força a cada 50 ms, as faixas de frequência (graves →
+ * agudos) e o desenho da onda (o mesmo do visualizador do player).
+ */
+internal class ClipSound(val levels: FloatArray, val spectrum: Array<FloatArray>, val wave: Array<FloatArray>)
 
 internal suspend fun loadClipLevels(context: Context, uri: String, clip: ShareClip): ClipSound? =
     withContext(Dispatchers.IO) {
@@ -121,7 +124,8 @@ private suspend fun decodeLevels(context: Context, uri: String, clip: ShareClip)
     }
     if (samples.all { it == 0 }) return null
     val levels = FloatArray(count) { if (samples[it] == 0) 0f else sqrt(sums[it] / samples[it]).toFloat() }
-    return ClipSound(levels, spectrumFrames(mono.copyOf(monoSize), monoRate))
+    val clipMono = mono.copyOf(monoSize)
+    return ClipSound(levels, spectrumFrames(clipMono, monoRate), soundWaveFrames(clipMono, monoRate))
 }
 
 private const val TIMEOUT_US = 10_000L

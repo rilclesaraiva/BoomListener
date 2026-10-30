@@ -88,5 +88,4 @@
     <string name="feature_nowplaying_share_card_visualizer_bars">Barras</string>
     <string name="feature_nowplaying_share_card_visualizer_wave">Onda</string>
     <string name="feature_nowplaying_share_card_visualizer_none">Ninguno</string>
-    <string name="feature_nowplaying_share_card_playing_at">Sonando %1$s</string>
 </resources>

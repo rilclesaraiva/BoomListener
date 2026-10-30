@@ -159,11 +159,15 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
         value = ClipLevelsResult(chosenClip, loadClipLevels(context, item.uri, chosenClip))
     }
     val bars = remember(levels) { levels?.sound?.levels?.let(::waveformBars) }
+    // A onda da imagem parada: a do momento mais forte do trecho.
+    val stillWave = remember(levels) {
+        levels?.sound?.let { sound -> sound.wave.getOrNull(loudestFrame(sound.levels).coerceAtMost(sound.wave.lastIndex)) }
+    }
     // Com letra, a prévia vem sem ela: a letra rola por cima, junto com o trecho.
-    val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text, bars, showLyrics, previewLyrics, visualizer) {
+    val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text, bars, stillWave, showLyrics, previewLyrics, visualizer) {
         if (loaded != null) {
             value = withContext(Dispatchers.Default) {
-                renderShareCard(cover, text, colors, bars, visualizer = visualizer, lyrics = previewLyrics?.takeIf { showLyrics }).bitmap
+                renderShareCard(cover, text, colors, bars, visualizer = visualizer, wave = stillWave, lyrics = previewLyrics?.takeIf { showLyrics }).bitmap
             }
         }
     }
@@ -309,21 +313,11 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
             }
 
             Spacer(Modifier.height(20.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    stringResource(R.string.feature_nowplaying_share_card_clip, formatTime(clip.startMs), formatTime(clip.endMs)),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                // O ponto exato que a prévia está tocando (só com o trecho assentado).
-                if (clip == chosenClip) {
-                    Text(
-                        stringResource(R.string.feature_nowplaying_share_card_playing_at, formatTime(chosenClip.startMs + playheadMs)),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = scheme.primary,
-                    )
-                }
-            }
+            Text(
+                stringResource(R.string.feature_nowplaying_share_card_clip, formatTime(clip.startMs), formatTime(clip.endMs)),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth(),
+            )
             if (maxStart > 0) {
                 Spacer(Modifier.height(8.dp))
                 BoomClipSelector(
@@ -377,6 +371,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                             renderShareCard(
                                                 cover, text, colors, bars,
                                                 visualizer = visualizer,
+                                                wave = stillWave,
                                                 lyrics = layout,
                                                 lyricsTimeMs = staticLyricsTime(layout.times, clip),
                                             ).bitmap
@@ -418,6 +413,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                         lyrics = videoLyrics,
                                         lyricsColor = colors.content,
                                         visualizer = visualizer,
+                                        wave = clipSound?.wave,
                                     )
                                     context.shareFile(video, "video/mp4", chooser)
                                 } catch (cancel: CancellationException) {

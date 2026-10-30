@@ -88,5 +88,4 @@
     <string name="feature_nowplaying_share_card_visualizer_bars">Bars</string>
     <string name="feature_nowplaying_share_card_visualizer_wave">Wave</string>
     <string name="feature_nowplaying_share_card_visualizer_none">None</string>
-    <string name="feature_nowplaying_share_card_playing_at">Playing %1$s</string>
 </resources>

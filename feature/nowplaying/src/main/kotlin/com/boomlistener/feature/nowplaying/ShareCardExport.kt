@@ -29,6 +29,7 @@ import androidx.media3.transformer.Effects
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
+import com.boomlistener.core.player.smoothVisualizer
 import java.io.File
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -78,6 +79,7 @@ internal suspend fun exportShareVideo(
     lyrics: ShareLyricsLayout? = null,
     lyricsColor: Int = Color.WHITE,
     visualizer: ShareVisualizer = ShareVisualizer.Bars,
+    wave: Array<FloatArray>? = null,
 ): File {
     val image = saveShareImage(context, card.bitmap)
     val output = File(image.parentFile, image.nameWithoutExtension + ".mp4")
@@ -90,9 +92,16 @@ internal suspend fun exportShareVideo(
     ).setFrameRate(VIDEO_FRAME_RATE)
         .apply {
             val area = card.lyricsArea
-            val sound = spectrum?.takeIf { visualizer != ShareVisualizer.None }
-            if (sound != null || (lyrics != null && area != null)) {
-                val overlay = BannerOverlay(sound, visualizer, card.waveCenterY, barColor, lyrics?.takeIf { area != null }, area, lyricsColor, clip.startMs)
+            val moving = when (visualizer) {
+                ShareVisualizer.Bars -> spectrum != null
+                ShareVisualizer.Wave -> wave != null
+                ShareVisualizer.None -> false
+            }
+            if (moving || (lyrics != null && area != null)) {
+                val overlay = BannerOverlay(
+                    spectrum.takeIf { moving }, wave.takeIf { moving }, visualizer, card.waveCenterY, barColor,
+                    lyrics?.takeIf { area != null }, area, lyricsColor, clip.startMs,
+                )
                 setEffects(Effects(emptyList(), listOf(OverlayEffect(listOf(overlay)))))
             }
         }
@@ -165,6 +174,7 @@ internal fun Context.shareFile(file: File, mimeType: String, chooserTitle: Strin
 @OptIn(UnstableApi::class)
 private class BannerOverlay(
     private val spectrum: Array<FloatArray>?,
+    private val wave: Array<FloatArray>?,
     private val visualizer: ShareVisualizer,
     private val centerY: Float,
     private val barColor: Int,
@@ -173,6 +183,9 @@ private class BannerOverlay(
     private val lyricsColor: Int,
     private val clipStartMs: Long,
 ) : CanvasOverlay(true) {
+    // A onda mostrada no quadro anterior (os quadros vêm em ordem).
+    private val shownWave = FloatArray(SOUND_WAVE_POINTS)
+
     override fun onDraw(canvas: Canvas, presentationTimeUs: Long) {
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
         // O quadro pode ter outro tamanho que o banner: desenha na escala dele.
@@ -180,8 +193,15 @@ private class BannerOverlay(
         val clipMs = presentationTimeUs / 1000
         canvas.save()
         canvas.scale(scale, scale)
-        if (spectrum != null) {
-            drawShareVisualizer(canvas, visualizer, SHARE_CARD_WIDTH / 2f, centerY, spectrumBars(spectrum, clipMs), barColor)
+        when {
+            visualizer == ShareVisualizer.Bars && spectrum != null ->
+                drawWaveBars(canvas, SHARE_CARD_WIDTH / 2f, centerY, spectrumBars(spectrum, clipMs), barColor)
+            visualizer == ShareVisualizer.Wave && wave != null -> {
+                // Suavizada de um quadro para o outro, como no player (sobe rápido, desce devagar).
+                val target = soundWaveAt(wave, clipMs)
+                for (i in shownWave.indices) shownWave[i] = smoothVisualizer(shownWave[i], target[i], rise = 0.5f, fall = 0.3f)
+                drawSoundWave(canvas, SHARE_CARD_WIDTH / 2f, centerY, shownWave, barColor)
+            }
         }
         if (lyrics != null && lyricsArea != null) {
             lyrics.draw(canvas, lyricsArea, shareLyricsFrame(lyrics.times, clipStartMs + clipMs), lyricsColor)
