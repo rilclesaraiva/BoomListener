@@ -84,4 +84,9 @@
     <string name="feature_nowplaying_share_card_lyrics_loading">Buscando la letra…</string>
     <string name="feature_nowplaying_share_card_lyrics_unsynced">Esta letra no tiene el tiempo de cada verso, así que no puede avanzar con la canción. El banner se queda con la portada.</string>
     <string name="feature_nowplaying_share_card_lyrics_missing">No encontramos la letra de esta canción. El banner se queda con la portada.</string>
+    <string name="feature_nowplaying_share_card_visualizer">Visualizador</string>
+    <string name="feature_nowplaying_share_card_visualizer_bars">Barras</string>
+    <string name="feature_nowplaying_share_card_visualizer_wave">Onda</string>
+    <string name="feature_nowplaying_share_card_visualizer_none">Ninguno</string>
+    <string name="feature_nowplaying_share_card_playing_at">Sonando %1$s</string>
 </resources>

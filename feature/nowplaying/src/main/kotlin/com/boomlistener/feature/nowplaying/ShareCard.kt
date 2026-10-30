@@ -45,6 +45,9 @@ internal data class ShareCardText(
     val appName: String,
 )
 
+/** O desenho do som no banner (a pessoa escolhe no painel). */
+internal enum class ShareVisualizer { Bars, Wave, None }
+
 internal const val SHARE_CARD_WIDTH = 1080
 internal const val SHARE_CARD_HEIGHT = 1920
 
@@ -75,6 +78,7 @@ internal fun renderShareCard(
     colors: ShareCardColors,
     bars: FloatArray?,
     drawBars: Boolean = true,
+    visualizer: ShareVisualizer = ShareVisualizer.Bars,
     lyrics: ShareLyricsLayout? = null,
     lyricsTimeMs: Long? = null,
 ): ShareCardImage {
@@ -110,7 +114,7 @@ internal fun renderShareCard(
         }
         val waveCenterY = SHARE_LYRICS_AREA.bottom + 120f
         if (drawBars) {
-            drawWaveBars(canvas, w / 2, waveCenterY, bars ?: genericBars(text.title.hashCode() * 31 + text.artist.hashCode()), colors.accent)
+            drawShareVisualizer(canvas, visualizer, w / 2, waveCenterY, bars ?: genericBars(text.title.hashCode() * 31 + text.artist.hashCode()), colors.accent)
         }
         drawAppName(canvas, text.appName, variant, bold)
         return ShareCardImage(bitmap, waveCenterY, SHARE_LYRICS_AREA)
@@ -178,7 +182,7 @@ internal fun renderShareCard(
     // Barrinhas: o desenho do som do trecho.
     val waveCenterY = y + 50f
     if (drawBars) {
-        drawWaveBars(canvas, w / 2, waveCenterY, bars ?: genericBars(text.title.hashCode() * 31 + text.artist.hashCode()), colors.accent)
+        drawShareVisualizer(canvas, visualizer, w / 2, waveCenterY, bars ?: genericBars(text.title.hashCode() * 31 + text.artist.hashCode()), colors.accent)
     }
 
     drawAppName(canvas, text.appName, variant, bold)
@@ -271,6 +275,55 @@ private fun centeredLayout(text: String, width: Int, maxLines: Int, paint: TextP
         .setEllipsize(TextUtils.TruncateAt.END)
         .setIncludePad(false)
         .build()
+
+/** Desenha o visualizador escolhido centrado em ([centerX], [centerY]), com alturas de 0 a 1. */
+internal fun drawShareVisualizer(
+    canvas: Canvas,
+    style: ShareVisualizer,
+    centerX: Float,
+    centerY: Float,
+    heights: FloatArray,
+    color: Int,
+) {
+    when (style) {
+        ShareVisualizer.Bars -> drawWaveBars(canvas, centerX, centerY, heights, color)
+        ShareVisualizer.Wave -> drawWaveCurve(canvas, centerX, centerY, heights, color)
+        ShareVisualizer.None -> Unit
+    }
+}
+
+/**
+ * A onda: uma curva lisa passando pelas mesmas alturas das barrinhas,
+ * espelhada para cima e para baixo do centro, com as pontas afinando.
+ */
+private fun drawWaveCurve(canvas: Canvas, centerX: Float, centerY: Float, heights: FloatArray, color: Int) {
+    if (heights.size < 2) return
+    val width = heights.size * 14f + (heights.size - 1) * 12f
+    val left = centerX - width / 2
+    val step = width / (heights.size - 1)
+    val maxHalf = 55f
+    fun half(i: Int): Float {
+        // As pontas afinam até o centro, para a onda nascer e morrer nas bordas.
+        val edge = minOf(i, heights.lastIndex - i).coerceAtMost(3) / 3f
+        return (maxHalf * heights[i] * edge).coerceAtLeast(2f)
+    }
+    val path = android.graphics.Path()
+    path.moveTo(left, centerY - half(0))
+    for (i in 1 until heights.size) {
+        val px = left + (i - 1) * step
+        val x = left + i * step
+        path.quadTo(px, centerY - half(i - 1), (px + x) / 2, centerY - (half(i - 1) + half(i)) / 2)
+    }
+    path.lineTo(left + width, centerY - half(heights.lastIndex))
+    for (i in heights.lastIndex - 1 downTo 0) {
+        val px = left + (i + 1) * step
+        val x = left + i * step
+        path.quadTo(px, centerY + half(i + 1), (px + x) / 2, centerY + (half(i + 1) + half(i)) / 2)
+    }
+    path.lineTo(left, centerY + half(0))
+    path.close()
+    canvas.drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color })
+}
 
 /** Desenha as barrinhas centradas em ([centerX], [centerY]), com alturas de 0 a 1. */
 internal fun drawWaveBars(canvas: Canvas, centerX: Float, centerY: Float, heights: FloatArray, color: Int) {

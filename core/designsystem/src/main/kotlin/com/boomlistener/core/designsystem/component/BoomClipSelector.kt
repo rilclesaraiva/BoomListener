@@ -6,7 +6,6 @@ package com.boomlistener.core.designsystem.component
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -66,9 +65,18 @@ fun BoomClipSelector(
                         }
                     }
                     down.consume()
-                    horizontalDrag(down.id) { move ->
+                    // Fica com todo movimento do dedo até soltar, inclusive o
+                    // vertical: senão o desvio para cima ou para baixo rolava o
+                    // painel por trás (a página descia enquanto arrastava).
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val move = event.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!move.pressed) {
+                            move.consume()
+                            break
+                        }
                         change(msAt(move.position.x - grab).coerceIn(0, maxStart))
-                        move.consume()
+                        event.changes.forEach { it.consume() }
                     }
                     finished()
                 }

@@ -77,6 +77,7 @@ internal suspend fun exportShareVideo(
     clip: ShareClip,
     lyrics: ShareLyricsLayout? = null,
     lyricsColor: Int = Color.WHITE,
+    visualizer: ShareVisualizer = ShareVisualizer.Bars,
 ): File {
     val image = saveShareImage(context, card.bitmap)
     val output = File(image.parentFile, image.nameWithoutExtension + ".mp4")
@@ -89,8 +90,9 @@ internal suspend fun exportShareVideo(
     ).setFrameRate(VIDEO_FRAME_RATE)
         .apply {
             val area = card.lyricsArea
-            if (spectrum != null || (lyrics != null && area != null)) {
-                val overlay = BannerOverlay(spectrum, card.waveCenterY, barColor, lyrics?.takeIf { area != null }, area, lyricsColor, clip.startMs)
+            val sound = spectrum?.takeIf { visualizer != ShareVisualizer.None }
+            if (sound != null || (lyrics != null && area != null)) {
+                val overlay = BannerOverlay(sound, visualizer, card.waveCenterY, barColor, lyrics?.takeIf { area != null }, area, lyricsColor, clip.startMs)
                 setEffects(Effects(emptyList(), listOf(OverlayEffect(listOf(overlay)))))
             }
         }
@@ -163,6 +165,7 @@ internal fun Context.shareFile(file: File, mimeType: String, chooserTitle: Strin
 @OptIn(UnstableApi::class)
 private class BannerOverlay(
     private val spectrum: Array<FloatArray>?,
+    private val visualizer: ShareVisualizer,
     private val centerY: Float,
     private val barColor: Int,
     private val lyrics: ShareLyricsLayout?,
@@ -178,7 +181,7 @@ private class BannerOverlay(
         canvas.save()
         canvas.scale(scale, scale)
         if (spectrum != null) {
-            drawWaveBars(canvas, SHARE_CARD_WIDTH / 2f, centerY, spectrumBars(spectrum, clipMs), barColor)
+            drawShareVisualizer(canvas, visualizer, SHARE_CARD_WIDTH / 2f, centerY, spectrumBars(spectrum, clipMs), barColor)
         }
         if (lyrics != null && lyricsArea != null) {
             lyrics.draw(canvas, lyricsArea, shareLyricsFrame(lyrics.times, clipStartMs + clipMs), lyricsColor)

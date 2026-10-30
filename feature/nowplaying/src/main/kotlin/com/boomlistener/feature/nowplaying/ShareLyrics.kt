@@ -26,7 +26,7 @@ import com.boomlistener.core.model.LyricLine
  */
 
 /** Quanto dura a passagem de uma linha para a seguinte (rolagem e destaque). */
-internal const val LYRIC_TRANSITION_MS = 450L
+internal const val LYRIC_TRANSITION_MS = 600L
 
 /**
  * O que mostrar num instante: a linha atual ([current], -1 antes da primeira),

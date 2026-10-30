@@ -8,6 +8,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ### Added
 - **Lyrics banner:** when sharing a banner, pick **Lyrics** instead of **Cover**. In the video, the synced lyrics scroll with the 30-second clip, the line being sung lit up, like the app's lyrics screen; the image shows the first line of the clip. Only songs with synced lyrics; the lyrics are looked up only when you pick this.
+- **Banner visualizer:** pick Bars, Wave or None for the sound under the banner, in the image and the video.
+- The share panel shows the exact moment of the clip that is playing, next to the clip times.
 - **Privacy policy and terms of use**, published on the project's site and linked in Settings → About.
 - Settings → About invites you to visit the project repository if you want to support it.
 
@@ -15,6 +17,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).
 
 ### Fixed
+- Dragging the 30-second clip window no longer scrolls the share panel behind it.
 - Moving a song in the queue no longer makes the "now playing" highlight flash on the song next to it.
 - Pausing no longer flips the play/pause button back for a moment before it changes (the fix in 0.53.0 wasn't enough).
 - Moving a song in the queue no longer flashes it back in its old place (the fix in 0.53.0 wasn't enough).

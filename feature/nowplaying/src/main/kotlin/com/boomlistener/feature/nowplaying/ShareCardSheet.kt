@@ -110,6 +110,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
 
     var style by rememberSaveable { mutableStateOf(CardStyle.Cover) }
     var content by rememberSaveable { mutableStateOf(CardContent.Cover) }
+    var visualizer by rememberSaveable { mutableStateOf(ShareVisualizer.Bars) }
 
     // Banner com letra: a letra só é buscada quando a pessoa escolhe "Letra".
     DisposableEffect(content) {
@@ -159,10 +160,10 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
     }
     val bars = remember(levels) { levels?.sound?.levels?.let(::waveformBars) }
     // Com letra, a prévia vem sem ela: a letra rola por cima, junto com o trecho.
-    val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text, bars, showLyrics, previewLyrics) {
+    val card by produceState<Bitmap?>(initialValue = null, loaded, colors, text, bars, showLyrics, previewLyrics, visualizer) {
         if (loaded != null) {
             value = withContext(Dispatchers.Default) {
-                renderShareCard(cover, text, colors, bars, lyrics = previewLyrics?.takeIf { showLyrics }).bitmap
+                renderShareCard(cover, text, colors, bars, visualizer = visualizer, lyrics = previewLyrics?.takeIf { showLyrics }).bitmap
             }
         }
     }
@@ -255,6 +256,34 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            Spacer(Modifier.height(12.dp))
+            // O desenho do som no banner.
+            Text(
+                stringResource(R.string.feature_nowplaying_share_card_visualizer),
+                style = MaterialTheme.typography.labelLarge,
+                color = scheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ShareVisualizer.entries.forEach { option ->
+                    FilterChip(
+                        selected = visualizer == option,
+                        onClick = { visualizer = option },
+                        label = {
+                            Text(
+                                stringResource(
+                                    when (option) {
+                                        ShareVisualizer.Bars -> R.string.feature_nowplaying_share_card_visualizer_bars
+                                        ShareVisualizer.Wave -> R.string.feature_nowplaying_share_card_visualizer_wave
+                                        ShareVisualizer.None -> R.string.feature_nowplaying_share_card_visualizer_none
+                                    },
+                                ),
+                            )
+                        },
+                        enabled = making == null,
+                    )
+                }
+            }
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 CardStyle.entries.forEach { option ->
@@ -280,11 +309,21 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
             }
 
             Spacer(Modifier.height(20.dp))
-            Text(
-                stringResource(R.string.feature_nowplaying_share_card_clip, formatTime(clip.startMs), formatTime(clip.endMs)),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    stringResource(R.string.feature_nowplaying_share_card_clip, formatTime(clip.startMs), formatTime(clip.endMs)),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                // O ponto exato que a prévia está tocando (só com o trecho assentado).
+                if (clip == chosenClip) {
+                    Text(
+                        stringResource(R.string.feature_nowplaying_share_card_playing_at, formatTime(chosenClip.startMs + playheadMs)),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = scheme.primary,
+                    )
+                }
+            }
             if (maxStart > 0) {
                 Spacer(Modifier.height(8.dp))
                 BoomClipSelector(
@@ -337,6 +376,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                             val layout = ShareLyricsLayout(lyricsLines, SHARE_LYRICS_WIDTH)
                                             renderShareCard(
                                                 cover, text, colors, bars,
+                                                visualizer = visualizer,
                                                 lyrics = layout,
                                                 lyricsTimeMs = staticLyricsTime(layout.times, clip),
                                             ).bitmap
@@ -369,6 +409,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                         renderShareCard(
                                             cover, text, colors, clipSound?.levels?.let(::waveformBars),
                                             drawBars = clipSound == null,
+                                            visualizer = visualizer,
                                             lyrics = videoLyrics,
                                         )
                                     }
@@ -376,6 +417,7 @@ internal fun ShareCardSheet(viewModel: NowPlayingViewModel, item: NowPlayingItem
                                         context, base, clipSound?.spectrum, colors.accent, item.uri, clip,
                                         lyrics = videoLyrics,
                                         lyricsColor = colors.content,
+                                        visualizer = visualizer,
                                     )
                                     context.shareFile(video, "video/mp4", chooser)
                                 } catch (cancel: CancellationException) {
@@ -480,8 +522,32 @@ private fun PreviewLyrics(
     val latestPosition by rememberUpdatedState(livePositionMs)
     var timeMs by remember { mutableLongStateOf(clipStartMs) }
     LaunchedEffect(clipStartMs) {
+        // O player só atualiza o ponto aos pulinhos: entre um e outro, a letra
+        // segue o relógio (o mesmo cálculo da bolinha do player), senão a
+        // passagem de um verso para o outro andava em degraus.
+        var shown = latestPosition().toFloat()
+        var reported = latestPosition()
+        var reportedAt = System.nanoTime()
+        var last = reportedAt
         while (true) {
-            withFrameNanos { timeMs = clipStartMs + latestPosition() }
+            withFrameNanos {
+                val now = System.nanoTime()
+                val position = latestPosition()
+                if (position != reported) {
+                    reported = position
+                    reportedAt = now
+                }
+                shown = nextSmoothPositionMs(
+                    shownMs = shown,
+                    reportedMs = reported,
+                    sinceReportMs = (now - reportedAt) / 1_000_000f,
+                    frameMs = (now - last) / 1_000_000f,
+                    speed = 1f,
+                    durationMs = ShareClip.MAX_MS,
+                )
+                last = now
+                timeMs = clipStartMs + shown.toLong()
+            }
         }
     }
     Canvas(modifier) {

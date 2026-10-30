@@ -84,4 +84,9 @@
     <string name="feature_nowplaying_share_card_lyrics_loading">Looking for the lyrics…</string>
     <string name="feature_nowplaying_share_card_lyrics_unsynced">These lyrics have no timing for each line, so they can\'t scroll with the song. The banner keeps the cover.</string>
     <string name="feature_nowplaying_share_card_lyrics_missing">No lyrics found for this song. The banner keeps the cover.</string>
+    <string name="feature_nowplaying_share_card_visualizer">Visualizer</string>
+    <string name="feature_nowplaying_share_card_visualizer_bars">Bars</string>
+    <string name="feature_nowplaying_share_card_visualizer_wave">Wave</string>
+    <string name="feature_nowplaying_share_card_visualizer_none">None</string>
+    <string name="feature_nowplaying_share_card_playing_at">Playing %1$s</string>
 </resources>
