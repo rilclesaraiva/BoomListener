@@ -8,7 +8,7 @@ _Last updated: October 29, 2026_
 
 Boom, listener! ("the app") is a free, open-source music player for Android that plays the music files stored on your phone. This policy explains what the app does with information, based on what its [source code](https://github.com/rilclesaraiva/BoomListener) actually does.
 
-**Who is responsible:** the app is maintained by **rilclesaraiva** ([github.com/rilclesaraiva](https://github.com/rilclesaraiva)). Contact: [open an issue](https://github.com/rilclesaraiva/BoomListener/issues) on the project repository.
+**Who is responsible:** the app is maintained by **rilclesaraiva** ([github.com/rilclesaraiva](https://github.com/rilclesaraiva)). Contact: [saraivarilcle@gmail.com](mailto:saraivarilcle@gmail.com), or [open an issue](https://github.com/rilclesaraiva/BoomListener/issues) on the project repository.
 
 ## In short
 
@@ -56,7 +56,7 @@ The app doesn't ask for photos, videos, contacts, location, microphone or Blueto
 
 ## How long data is kept and how to delete it
 
-Everything stays on your phone until you delete it: remove items inside the app, clear the app's data in Android's settings, or uninstall the app. Cached public information is kept for a limited time and is also removed by clearing the app's cache or data. Because the maintainer holds no copy of your data, there is nothing to request from us; if you have a question, [open an issue](https://github.com/rilclesaraiva/BoomListener/issues).
+Everything stays on your phone until you delete it: remove items inside the app, clear the app's data in Android's settings, or uninstall the app. Cached public information is kept for a limited time and is also removed by clearing the app's cache or data. Because the maintainer holds no copy of your data, there is nothing to request from us; if you have a question, write to [saraivarilcle@gmail.com](mailto:saraivarilcle@gmail.com) or [open an issue](https://github.com/rilclesaraiva/BoomListener/issues).
 
 ## Your rights (LGPD and GDPR)
 

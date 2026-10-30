@@ -106,6 +106,9 @@ Built with Kotlin, Jetpack Compose (Material 3) and Media3, and signed automatic
 
 ## ☕ Support the project
 
-Boom, listener! is free and maintained independently. The best way to support it is to use it, star the repository and report what breaks.
+Boom, listener! is free and maintained independently. If it's useful to you, you can
+support its development with a coffee:
 
-**Contact:** [open an issue](../../issues).
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/saraivarilcle)
+
+**Contact:** [saraivarilcle@gmail.com](mailto:saraivarilcle@gmail.com)

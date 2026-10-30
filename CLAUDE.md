@@ -6,8 +6,8 @@ Lido no início de cada sessão: é como o Claude recupera o contexto do projeto
 **Boom, listener!** (trocadilho com *sonic boom* + ouvinte; no ícone, **BoomListener**): reprodutor de música **local** para Android, em Material 3 Expressive, com edição de tags, página de artista (Deezer + Last.fm) e radar de lançamentos dos artistas seguidos. Gratuito, sem anúncios, sem conta. Público: **global** (beta pública desde a 0.36.2).
 
 ## Mantenedor
-- Nome: **rilclesaraiva** · Contato: issues do GitHub (sem e-mail público)
-- Apoio: nenhum link de doação · Licença: GPL-3.0 (cabeçalho de licença no topo de cada arquivo-fonte)
+- Nome: **rilclesaraiva** · Contato: saraivarilcle@gmail.com (e as issues do GitHub)
+- Apoio: https://buymeacoffee.com/saraivarilcle (só no README, nunca no app) · Licença: GPL-3.0 (cabeçalho de licença no topo de cada arquivo-fonte)
 - Segredos ficam em: Google Drive (pasta privada do mantenedor)
 
 ## Stack
@@ -77,7 +77,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Nenhuma afirmação sem respaldo: o que README, páginas legais e notas dizem precisa ser verdade no código. Na dúvida, não afirmar.
 
 ## Apoio e contato
-- README termina com a seção de apoio e contato (hoje só o contato pelas issues).
+- README termina com a seção de apoio (botão do Buy Me a Coffee) e contato (e-mail do Mantenedor).
 - No app: nunca citar doação ou pagamento. Só "Quer apoiar o projeto? Entre no repositório do projeto" (Ajustes → Sobre), com link para o repositório.
 
 ## Decisões recusadas (não propor de novo sem o mantenedor pedir)

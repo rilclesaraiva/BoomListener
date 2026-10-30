@@ -38,4 +38,4 @@ These terms may change with new versions of the app. The current version is alwa
 
 ## Contact
 
-[Open an issue](https://github.com/rilclesaraiva/BoomListener/issues) on the project repository.
+[saraivarilcle@gmail.com](mailto:saraivarilcle@gmail.com), or [open an issue](https://github.com/rilclesaraiva/BoomListener/issues) on the project repository.

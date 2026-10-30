@@ -132,7 +132,15 @@ internal fun QueuePanel(
             localQueue = localQueue.toMutableList().apply { add(to.index, removeAt(from.index)) }
         }
     }
-    val currentPosition = localQueue.indexOfFirst { it.index == queueIndex }
+    // A música que toca, pela identidade (key), tirada da mesma fila que o
+    // player mandou junto com queueIndex. Comparar a posição (index) com a
+    // cópia local errava por um quadro depois de mover uma música por cima da
+    // que toca (a posição dela muda), e o destaque piscava na vizinha.
+    val currentKey = queue.firstOrNull { it.index == queueIndex }?.key
+    val currentPosition = localQueue.indexOfFirst { it.key == currentKey }
+    // Posição atual no player de uma música da tela (a cópia local pode estar
+    // um instante atrasada depois de mover).
+    fun playerIndexOf(entry: QueueEntry): Int = latestQueue.firstOrNull { it.key == entry.key }?.index ?: entry.index
 
     // Ao abrir, a lista já começa na música que está tocando.
     LaunchedEffect(queueState.isExpanded) {
@@ -206,13 +214,13 @@ internal fun QueuePanel(
             LazyColumn(state = listState, overscrollEffect = null, modifier = Modifier.fillMaxSize()) {
                 items(localQueue, key = { it.key }) { entry ->
                     ReorderableItem(reorderState, key = entry.key) { isDragging ->
-                        val isCurrent = entry.index == queueIndex
+                        val isCurrent = entry.key == currentKey
                         Surface(shadowElevation = if (isDragging) 8.dp else 0.dp) {
                             QueueRow(
                                 entry = entry,
                                 isCurrent = isCurrent,
                                 viewModel = viewModel,
-                                onClick = { viewModel.playQueueItem(entry.index) },
+                                onClick = { viewModel.playQueueItem(playerIndexOf(entry)) },
                                 // Puxador ao lado da capa: segurar e arrastar
                                 // move a música para qualquer ponto da fila.
                                 dragHandle = {
@@ -244,14 +252,14 @@ internal fun QueuePanel(
                                 menuActions = listOfNotNull(
                                     if (!isCurrent) {
                                         BoomMenuAction(stringResource(R.string.feature_nowplaying_play_now), kind = BoomMenuKind.PlayNow) {
-                                            viewModel.playQueueItem(entry.index)
+                                            viewModel.playQueueItem(playerIndexOf(entry))
                                         }
                                     } else {
                                         null
                                     },
                                     if (!isCurrent) {
                                         BoomMenuAction(stringResource(R.string.feature_nowplaying_remove), kind = BoomMenuKind.RemoveFromPlaylist) {
-                                            viewModel.removeQueueItem(entry.index)
+                                            viewModel.removeQueueItem(playerIndexOf(entry))
                                         }
                                     } else {
                                         null

@@ -14,6 +14,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).
 
 ### Fixed
+- Moving a song in the queue no longer makes the "now playing" highlight flash on the song next to it.
 - Pausing no longer flips the play/pause button back for a moment before it changes (the fix in 0.53.0 wasn't enough).
 - Moving a song in the queue no longer flashes it back in its old place (the fix in 0.53.0 wasn't enough).
 
