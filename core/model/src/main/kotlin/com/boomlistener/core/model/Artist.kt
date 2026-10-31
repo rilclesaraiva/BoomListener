@@ -9,7 +9,6 @@ data class ExternalArtist(
     val name: String,
     val pictureUrl: String?,
     val fans: Long,
-    val albumCount: Int,
     val link: String?,
 )
 

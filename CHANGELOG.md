@@ -14,6 +14,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ### Changed
 - The app is no longer called a beta.
+- The app does a little less work while music plays: the main screen no longer follows the player's state, which only the removed tablet layout needed.
 - **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).
 
 ### Fixed

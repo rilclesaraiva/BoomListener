@@ -11,7 +11,6 @@ android {
 
 dependencies {
     api(project(":core:model"))
-    implementation(project(":core:common"))
     implementation(libs.kotlinx.coroutines.android)
     // Leitura e gravação de tags (TagLib nativo, funciona com o descritor de
     // arquivo do MediaStore, que é o que o Android 10+ permite).

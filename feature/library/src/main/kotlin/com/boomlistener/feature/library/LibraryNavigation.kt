@@ -36,10 +36,7 @@ private const val ALBUM_ROUTE = "collections/album?$ARG_KEY={$ARG_KEY}"
 private const val PLAYLIST_ROUTE = "collections/playlist?$ARG_KEY={$ARG_KEY}"
 private const val FAVORITES_ROUTE = "collections/favorites?$ARG_KEY={$ARG_KEY}"
 
-/** Abre uma playlist pelo id (ex.: logo depois de criar pela barra lateral). */
-fun NavController.navigateToPlaylist(id: Long) = openCollection("playlist", id.toString())
-
-/** Abre a lista de favoritas (Biblioteca → Playlists, ou a barra lateral em tela larga). */
+/** Abre a lista de favoritas (Biblioteca → Playlists). */
 fun NavController.navigateToFavorites() = openCollection("favorites", "all")
 
 private fun NavController.openCollection(base: String, key: String) =

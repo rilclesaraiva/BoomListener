@@ -90,7 +90,6 @@ internal class HttpMusicBrainzRepository(context: Context) : MusicBrainzReposito
                             name = chosen.name,
                             pictureUrl = null,
                             fans = 0,
-                            albumCount = releases.size,
                             link = "https://musicbrainz.org/artist/${chosen.id}",
                         ),
                         topTracks = emptyList(),

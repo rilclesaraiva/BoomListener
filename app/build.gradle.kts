@@ -82,8 +82,6 @@ dependencies {
     implementation(project(":core:player"))
     implementation(project(":data:wellbeing"))
     implementation(project(":data:profile"))
-    // Tipo dos artistas seguidos na barra lateral (tela larga).
-    implementation(project(":data:releases"))
 
     implementation(project(":feature:library"))
     implementation(project(":feature:nowplaying"))
@@ -94,7 +92,6 @@ dependencies {
     implementation(project(":feature:wellbeing"))
     implementation(project(":feature:profile"))
 
-    implementation(libs.androidx.core)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

@@ -128,8 +128,6 @@ fun BoomListenerApp() {
     // Música do player a adicionar numa playlist (a folha aparece por cima de tudo).
     var addToPlaylistUri by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current.applicationContext
-    // O que está tocando (o painel do artista, na tela larga, depende disso).
-    val playback by remember { PlayerConnection.controller(context) }.state.collectAsStateWithLifecycle()
     // Tocar de novo na aba aberta: a lista dela sobe até o topo.
     val reselect = remember { MutableSharedFlow<String>(extraBufferCapacity = 1) }
 
@@ -193,7 +191,7 @@ fun BoomListenerApp() {
     val favoriteShare = remember(favoriteShareApp) {
         favoriteShareApp?.let { app -> FavoriteShare(app.label) { ShareTarget.shareNextWith(app.packageName) } }
     }
-    // Ir para uma aba (barra de baixo no celular, barra lateral na tela larga).
+    // Ir para uma aba (barra de baixo).
     fun openTab(destination: TopLevelDestination) {
         val selected = currentDestination?.hierarchy?.any { node ->
             node.route == destination.route || node.route?.startsWith(destination.route + "/") == true

@@ -285,7 +285,6 @@ private fun JSONObject.toArtist() = ExternalArtist(
     name = optString("name"),
     pictureUrl = str("picture_xl") ?: str("picture_big"),
     fans = optLong("nb_fan"),
-    albumCount = optInt("nb_album"),
     link = str("link"),
 )
 
