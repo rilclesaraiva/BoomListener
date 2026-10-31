@@ -6,75 +6,34 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+## [0.54.0] - 2026-10-31
+
 ### Added
-- **Lyrics banner:** when sharing a banner, pick **Lyrics** instead of **Cover**. In the video, the synced lyrics scroll with the 30-second clip, the line being sung lit up, like the app's lyrics screen; the image shows the first line of the clip. Only songs with synced lyrics; the lyrics are looked up only when you pick this.
-- **Banner visualizer:** pick Bars, Wave or None for the sound under the banner, in the image and the video. Wave is the same live sound wave as the player's visualizer.
+- **Lyrics banner:** when sharing a banner, pick **Lyrics** instead of **Cover**. In the video, the synced lyrics scroll with the 30-second clip, the line being sung lit up, like the app's lyrics screen; the image shows the first line of the clip. Only songs with synced lyrics; the lyrics are looked up only when you pick this. Without synced lyrics, the Image and Video buttons are grayed out and the panel tells you why.
+- **Banner visualizer:** pick Bars, Wave or None for the sound under the banner, in the image and the video. Wave is the same sound wave as the player's visualizer, and the video now runs at 30 frames per second.
+- **Buttons in the cover's color** (Settings → Appearance → Player): the play, previous and next buttons, and Shuffle and Repeat when on, take the color of the song's cover, in the player and the mini player. On by default.
+- **About** shows the developer's GitHub photo. It's downloaded once, kept on your phone and checked for changes about once a week.
 - **Privacy policy and terms of use**, published on the project's site and linked in Settings → About.
 - Settings → About invites you to visit the project repository if you want to support it.
 
 ### Changed
-- The player shows only the artist under the song title. The album name repeated the title on singles.
-- On phones the app now always stays upright, since landscape uses the same layout and left little room. Tablets and open foldables still rotate.
 - The app is no longer called a beta.
-- The app does a little less work while music plays: the main screen no longer follows the player's state, which only the removed tablet layout needed.
-- **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).
+- The app is now built with Android's optimizer: a much smaller download, and screens and animations should feel smoother.
+- On phones the app now always stays upright. Tablets and open foldables still rotate, with the same layout as a phone.
+- The player shows only the artist under the song title. The album name repeated the title on singles.
+- The app does a little less work while music plays, and leftover code from removed features is gone.
 
 ### Fixed
-- The privacy text in Settings now also mentions that About downloads the developer's photo from GitHub.
+- Artists on Home, in Library → Artists and in your profile's **Your artists** show their photo from Deezer instead of a song cover (the cover is only used when there's no internet or Deezer doesn't know the artist).
+- Pausing no longer makes the play/pause button flip back for a moment before it changes.
+- Moving a song in the queue no longer flashes it back in its old place or flashes the "now playing" highlight on the song next to it.
 - A Bluetooth device you renamed could show its original name in the player until the app was closed. The name now updates on Android 14 and newer.
-- **Banner video:** the Wave now looks like the player's (a soft glow around the line, no dark solid edge) and moves as smoothly as it: the wave is taken from the sound at each frame's exact moment, and the video now runs at 30 frames per second.
-- With **Lyrics** picked for a song without synced lyrics, the Image and Video buttons are now grayed out and the panel says the song has no lyrics (or that they aren't synced), instead of quietly using the cover.
-- Artists on Home and in Library → Artists now show their photo from Deezer instead of a song cover (the cover is only used when there's no internet or Deezer doesn't know the artist).
 - Dragging the 30-second clip window no longer scrolls the share panel behind it.
-- Moving a song in the queue no longer makes the "now playing" highlight flash on the song next to it.
-- Pausing no longer flips the play/pause button back for a moment before it changes (the fix in 0.53.0 wasn't enough).
-- Moving a song in the queue no longer flashes it back in its old place (the fix in 0.53.0 wasn't enough).
+- The privacy text in Settings now matches what the app really does: release checks for artists you follow, the artist search, the update check, the developer's photo in About, offline mode and the notification permission. It no longer promises Last.fm scrobbling.
 
 ### Removed
 - **Settings → Wellbeing.** It only had a list of your most played songs, which your profile already shows. Your stats and listening history stay as they are, in your profile.
-- The separate layout for tablets and landscape (side bar, artist panel, player with the cover on the side), which had broken spots. Tablets and landscape now use the same layout as a phone held upright.
-
-## [0.53.0] — 2026-10-28
-
-### ✨ New
-- **Buttons in the cover's color** (Settings → Appearance → Player): the play, previous and next buttons, and Shuffle and Repeat when on, take the color of the song's cover, in the player and the mini player. Off by default.
-- **About:** the developer card now shows the developer's GitHub photo. It's downloaded once and kept on your phone, and only checked for changes about once a week.
-
-### 🐛 Fixes
-- **Your artists** on the profile shows each artist's Deezer photo, not only for artists you follow.
-- Pausing no longer makes the play/pause button flicker before it changes.
-- Moving a song in the queue no longer flashes it back in its old place for a moment.
-
-## [0.52.4] — 2026-10-28
-
-### 🎨 Visual tweaks
-- The app is now built with Android's optimizer: a much smaller download, and screens and animations should feel smoother.
-
-## [0.52.3] — 2026-10-28
-
-### 🐛 Fixes
-- The Privacy text in Settings now matches what the app really does: it mentions the release checks for artists you follow, the artist search, the update check when the app opens, offline mode and the notification permission, and no longer promises Last.fm scrobbling.
-
-### 🎨 Visual tweaks
-- Behind the scenes cleanup: leftover code from features that were removed is gone.
-
-## [0.52.2] — 2026-10-28
-
-### 🎨 Visual tweaks
-- The oscilloscope visualizer is gone for now: it was heavy and too noisy with most music. Bars and Wave work as before; if you had picked the oscilloscope, Bars is used.
-
-## [0.52.1] — 2026-10-28
-
-### 🐛 Fixes
-- Turning on the oscilloscope visualizer no longer closes the app.
-
-## [0.52.0] — 2026-10-28
-
-### ✨ New
-- **Oscilloscope visualizer:** a third style in Settings → Appearance → Visualizer. The left channel moves the beam sideways and the right one up and down, sample by sample, like a real XY oscilloscope with a glowing, fading trace. Music made for oscilloscopes draws its pictures; any other song draws the shapes of its own stereo sound. The cover slowly fades into a dark screen while it's on and fades back when you turn it off.
-
-### 🎨 Visual tweaks
-- Every visualizer now fades in and out when you turn it on or off.
+- The separate layout for tablets and landscape (side bar, artist panel, player with the cover on the side), which had broken spots.
 
 ## [0.51.2] — 2026-10-28
 
