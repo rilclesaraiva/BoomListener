@@ -85,17 +85,9 @@ fun BoomScreenScaffold(
         // (e no topo da página ela sempre aparece).
         TopAppBarDefaults.enterAlwaysScrollBehavior(topBarState)
     }
-    // Tela larga: a barra não muda de cor ao rolar (a faixa colorida só no
-    // meio, entre as barras laterais, ficava estranha) e as margens dos lados
-    // já ficam com as barras laterais.
-    val wide = LocalWideLayout.current
     val barColor = topBarColor ?: MaterialTheme.colorScheme.surface
-    val barScrolledColor = when {
-        topBarColor != null -> topBarColor
-        wide -> MaterialTheme.colorScheme.surface
-        else -> MaterialTheme.colorScheme.surfaceContainer
-    }
-    val barInsets = if (wide) TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Top) else TopAppBarDefaults.windowInsets
+    val barScrolledColor = topBarColor ?: MaterialTheme.colorScheme.surfaceContainer
+    val barInsets = TopAppBarDefaults.windowInsets
     val navigationIcon: @Composable () -> Unit = {
         if (onBack != null) {
             BoomBackButton(onClick = onBack, modifier = Modifier.padding(start = 4.dp))
@@ -143,7 +135,7 @@ fun BoomScreenScaffold(
                     navigationIcon = navigationIcon,
                     actions = actions,
                     windowInsets = barInsets,
-                    colors = if (wide) TopAppBarDefaults.largeTopAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface) else TopAppBarDefaults.largeTopAppBarColors(),
+                    colors = TopAppBarDefaults.largeTopAppBarColors(),
                     scrollBehavior = scrollBehavior,
                 )
             } else {

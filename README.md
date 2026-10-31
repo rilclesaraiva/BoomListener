@@ -2,8 +2,6 @@
 
 A **local** music player for Android. Free, open source, no ads, no account.
 
-> 🧪 **Beta.** The app works day to day, but it is still being polished. The phone in portrait is the main target today. **Landscape and tablet layouts still have broken spots** that we know about and are fixing. Bug reports are welcome in [Issues](../../issues).
-
 ## Screenshots
 
 <table>
@@ -69,7 +67,7 @@ A **local** music player for Android. Free, open source, no ads, no account.
 - Background blur behind screens and the player (Android 12+, can be turned off)
 - **English, Portuguese and Spanish**, with per-app language on Android 13+
 - Tells you when a new version is out, with the release notes. You can pause these notices or skip a version
-- Wide layout with a sidebar and an artist panel for tablets and landscape (still rough, see above)
+- Made for phones: tablets and landscape use the same layout as a phone in portrait
 
 The app **never streams** from external services. Deezer, MusicBrainz and Last.fm are used only for information, and outside links open in the service you choose.
 

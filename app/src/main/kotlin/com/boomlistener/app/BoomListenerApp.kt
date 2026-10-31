@@ -6,31 +6,9 @@ package com.boomlistener.app
 import android.widget.Toast
 import com.boomlistener.feature.artist.ARTIST_NAME_ARG
 import com.boomlistener.feature.artist.ARTIST_ROUTE
-import com.boomlistener.feature.profile.ProfileAvatarButton
-import com.boomlistener.feature.library.navigateToPlaylist
-import com.boomlistener.feature.library.navigateToFavorites
-import com.boomlistener.feature.library.NewPlaylistDialog
-import com.boomlistener.feature.artist.ArtistSidePanel
 import com.boomlistener.core.player.PlayerConnection
-import com.boomlistener.core.designsystem.component.LocalWideLayout
-import com.boomlistener.core.designsystem.component.LocalProfileButton
-import com.boomlistener.core.designsystem.component.BoomIcons
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.material3.Surface
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.IconButton
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.BoxWithConstraints
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.runtime.collectAsState
 import androidx.activity.compose.BackHandler
@@ -44,7 +22,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -54,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.boomlistener.feature.nowplaying.playerSheetAnchor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -85,7 +63,6 @@ import com.boomlistener.core.datastore.PreferencesData
 import com.boomlistener.core.designsystem.component.BackgroundBlurState
 import com.boomlistener.core.designsystem.component.LocalBackgroundBlur
 import com.boomlistener.core.designsystem.component.fractionBlur
-import com.boomlistener.feature.nowplaying.PlayerSheetState
 import com.boomlistener.feature.releases.navigateToReleases
 import com.boomlistener.feature.releases.releasesScreen
 import com.boomlistener.feature.settings.SETTINGS_ROUTE
@@ -119,7 +96,6 @@ import com.boomlistener.feature.settings.navigateToSettings
 import com.boomlistener.feature.library.AddToPlaylistSheet
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.boomlistener.feature.wellbeing.wellbeingScreen
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
@@ -240,7 +216,6 @@ fun BoomListenerApp() {
             node.route == destination.route || node.route?.startsWith(destination.route + "/") == true
         } == true
     }
-    var creatingPlaylist by remember { mutableStateOf(false) }
     // Abrir um artista que já está aberto não empilha outra página igual.
     val openArtist: (String) -> Unit = { name ->
         val current = navController.currentBackStackEntry
@@ -288,9 +263,6 @@ fun BoomListenerApp() {
             navController.currentBackStack.value.none { it.id == target } -> reopenPlayerOn = null
         }
     }
-    // Na página de um artista (ou num álbum dele), a tela larga dá o espaço
-    // todo para ela: a barra lateral recolhe e o painel do artista some.
-    val onArtistPage = route == ARTIST_ROUTE || route.startsWith("album/")
 
     val navGraph: @Composable (Modifier) -> Unit = { navModifier ->
         NavHost(
@@ -358,13 +330,7 @@ fun BoomListenerApp() {
         LocalFavoriteShare provides favoriteShare,
         LocalBackgroundBlur provides backgroundBlur,
     ) {
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-      val wide = isWideWindow(maxWidth, maxHeight)
-      val roomy = maxWidth >= 1000.dp
-      // Na primeira vez numa tela larga: tablet abre tudo; celular deitado
-      // (pouca largura) começa com a barra e o painel recolhidos.
-      var sidebarExpanded by rememberSaveable { mutableStateOf(maxWidth >= 840.dp) }
-      var artistPanelOpen by rememberSaveable { mutableStateOf(maxWidth >= 1000.dp) }
+    Box(Modifier.fillMaxSize()) {
       // Altura do mini player (0 sem música), que as telas usam como folga no fim.
       // Medida no próprio mini player (não no que anima a entrada e a saída):
       // assim ela não muda a cada quadro ao entrar nos Ajustes, o que fazia as
@@ -375,74 +341,6 @@ fun BoomListenerApp() {
       // Altura da barra de abas, medida nela mesma pelo mesmo motivo.
       var navBarMeasured by remember { mutableStateOf<Dp?>(null) }
       val density = LocalDensity.current
-      CompositionLocalProvider(
-          LocalWideLayout provides wide,
-          LocalProfileButton provides { ProfileAvatarButton(onClick = { openTab(TopLevelDestination.Profile) }) },
-      ) {
-        if (wide) {
-            // Tela larga: barra lateral | telas + mini player | artista tocando.
-            Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
-                Row(Modifier.fillMaxSize()) {
-                    WideSidebar(
-                        expanded = sidebarExpanded && !onArtistPage,
-                        onToggle = { sidebarExpanded = !(sidebarExpanded && !onArtistPage) },
-                        selected = selectedTab,
-                        onOpenTab = ::openTab,
-                        onOpenReleases = { navController.navigateToReleases() },
-                        onNewPlaylist = { creatingPlaylist = true },
-                        onOpenFavorites = { navController.navigateToFavorites() },
-                        onOpenArtist = openSongArtist,
-                    )
-                    // Sem o painel à direita, a margem do sistema daquele lado fica com as telas.
-                    val centerInsets = if (playback.item?.artist.isNullOrBlank() || onArtistPage) {
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.End)
-                    } else {
-                        WindowInsets(0, 0, 0, 0)
-                    }
-                    // O mini player flutua por cima das telas, sem faixa de fundo.
-                    Box(Modifier.weight(1f).fillMaxHeight().windowInsetsPadding(centerInsets)) {
-                        CompositionLocalProvider(LocalBottomOverlay provides miniPlayerHeight) {
-                            // Abrindo o player, o app por trás vai desfocando.
-                            navGraph(Modifier.fillMaxSize().fractionBlur(backgroundBlur.enabled, { playerSheet.fraction }))
-                        }
-                        // Função à parte: aqui dentro da Row, AnimatedVisibility viraria a versão de RowScope.
-                        FloatingMiniPlayer(
-                            visible = miniPlayerVisible,
-                            sheetState = playerSheet,
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .playerSheetAnchor(playerSheet),
-                            playerModifier = Modifier
-                                .onSizeChanged { miniPlayerMeasured = with(density) { it.height.toDp() } }
-                                .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
-                        )
-                    }
-                    // Só com música tocando: o artista dela (recolhível).
-                    val playingArtist = playback.item?.artist?.takeIf { it.isNotBlank() && !onArtistPage }
-                    if (playingArtist != null) {
-                        val panelInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.End + WindowInsetsSides.Vertical)
-                        if (artistPanelOpen) {
-                            ArtistSidePanel(
-                                artistName = playingArtist,
-                                onOpenArtist = openSongArtist,
-                                onCollapse = { artistPanelOpen = false },
-                                modifier = Modifier
-                                    .width(if (roomy) 340.dp else 300.dp)
-                                    .fillMaxHeight()
-                                    .windowInsetsPadding(panelInsets)
-                                    .padding(top = 8.dp, end = 8.dp, bottom = 8.dp),
-                            )
-                        } else {
-                            Column(Modifier.fillMaxHeight().windowInsetsPadding(panelInsets).padding(top = 8.dp, end = 4.dp)) {
-                                IconButton(onClick = { artistPanelOpen = true }) {
-                                    Icon(BoomIcons.ChevronLeft, contentDescription = stringResource(R.string.wide_show_artist))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
         Scaffold(
             bottomBar = {
                     AnimatedVisibility(
@@ -498,7 +396,6 @@ fun BoomListenerApp() {
                 }
             }
         }
-        }
 
         // Enquanto uma tela ainda está entrando ou saindo, o "voltar" espera:
         // um segundo voltar no meio da animação deixava as duas telas
@@ -530,36 +427,8 @@ fun BoomListenerApp() {
             AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
         }
 
-        if (creatingPlaylist) {
-            NewPlaylistDialog(
-                onCreated = { id -> navController.navigateToPlaylist(id) },
-                onDismiss = { creatingPlaylist = false },
-            )
-        }
-
         // Versão nova no GitHub: aviso em tela cheia ao abrir o app (no máximo uma consulta por hora).
         UpdatePromptHost()
-      }
     }
 }
-}
-
-/** O mini player flutuando sobre as telas, com a entrada e a saída animadas. */
-@Composable
-private fun FloatingMiniPlayer(
-    visible: Boolean,
-    sheetState: PlayerSheetState,
-    modifier: Modifier = Modifier,
-    playerModifier: Modifier = Modifier,
-) {
-    val barSpec = boomSpatialSpec<IntSize>()
-    val barFade = boomEffectsSpec<Float>()
-    AnimatedVisibility(
-        visible = visible,
-        enter = expandVertically(barSpec) + fadeIn(barFade),
-        exit = shrinkVertically(barSpec) + fadeOut(barFade),
-        modifier = modifier,
-    ) {
-        MiniPlayer(sheetState = sheetState, modifier = playerModifier)
-    }
 }

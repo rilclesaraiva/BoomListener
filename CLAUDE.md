@@ -3,7 +3,7 @@
 Lido no início de cada sessão: é como o Claude recupera o contexto do projeto. Detalhes técnicos de cada parte (player, ajustes, perfil, build) ficam no [`ARCHITECTURE.md`](ARCHITECTURE.md); o histórico, no [`CHANGELOG.md`](CHANGELOG.md). Em conflito entre uma instrução antiga do chat e este arquivo, **vale este arquivo**. Decisão nova que mude algo aqui entra neste arquivo no mesmo commit.
 
 ## Projeto
-**Boom, listener!** (trocadilho com *sonic boom* + ouvinte; no ícone, **BoomListener**): reprodutor de música **local** para Android, em Material 3 Expressive, com edição de tags, página de artista (Deezer + Last.fm) e radar de lançamentos dos artistas seguidos. Gratuito, sem anúncios, sem conta. Público: **global** (beta pública desde a 0.36.2).
+**Boom, listener!** (trocadilho com *sonic boom* + ouvinte; no ícone, **BoomListener**): reprodutor de música **local** para Android, em Material 3 Expressive, com edição de tags, página de artista (Deezer + Last.fm) e radar de lançamentos dos artistas seguidos. Gratuito, sem anúncios, sem conta. Público: **global** (pública desde a 0.36.2; deixou de se chamar beta em 30/10/2026).
 
 ## Mantenedor
 - Nome: **rilclesaraiva** · Contato: saraivarilcle@gmail.com (e as issues do GitHub)
@@ -63,7 +63,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Sem confirmação: nada de tag, bump de versão, mover `[Unreleased]` ou Release.
 - Toda atualização vai para os artefatos do Actions (build para vistoria) e o Claude avisa com o link da execução. O mantenedor vistoria e só então pede o release.
 - Com a confirmação: (0) revisão com contexto limpo (subagente que lê só este arquivo e o diff desde o último release, procurando falhas de segurança, quebra das regras e itens do CHANGELOG que não estão no código), achados vão ao mantenedor; (1) mover `[Unreleased]` para `## [X.Y.Z] - AAAA-MM-DD`, juntando o que veio desde a última Release pública; (2) `APP_VERSION=X.Y.Z`; (3) commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`, push do commit e da tag; (4) o CI confere e publica.
-- Entre a vistoria e a tag só mudam versão e CHANGELOG; mudou código, nova vistoria. Notas honestas: avisar o que ainda está quebrado (tela larga, por exemplo).
+- Entre a vistoria e a tag só mudam versão e CHANGELOG; mudou código, nova vistoria. Notas honestas: avisar o que ainda está quebrado.
 - Esta sessão não apaga Releases nem tags (403): se sair algo por engano, pedir ao mantenedor.
 
 ## Segredos
@@ -86,6 +86,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Capas de playlist em 2 (metades) ou 3 ("Y") partes: só o mosaico 2 × 2 (0.51.1).
 - Onda saindo do centro no vídeo do banner (0.45.0). Esconder o resto da página para disfarçar a busca (0.43.3).
 - FFmpeg para formatos extras (22/10/2026).
+- **Layout próprio de tela larga** (barra lateral, painel do artista, player deitado; removido em 30/10/2026): tablet e celular deitado usam o layout do retrato.
 
 ## Limitações desta sessão
 - Artefatos da Action não baixam daqui (403); assets de Release baixam pela API (`releases/assets/<id>`).
@@ -95,4 +96,4 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 
 ## Contexto atual
 - Foco: polimento do player e da fila; seguir o documento de estrutura do mantenedor (adotado em 29/10/2026).
-- Problemas conhecidos: telas em celular deitado e tablet ainda quebradas em alguns pontos. Última Release pública: v0.51.2; `APP_VERSION` está em 0.53.0 (subiu antes da regra nova).
+- Tablet e celular deitado usam o mesmo layout do celular em pé (o layout próprio de tela larga saiu em 30/10/2026). Última Release pública: v0.51.2; `APP_VERSION` está em 0.53.0 (subiu antes da regra nova).

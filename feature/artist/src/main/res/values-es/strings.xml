@@ -45,9 +45,6 @@
     <string name="feature_artist_biography_source">Biografía de Last.fm</string>
     <string name="feature_artist_listeners">%1$s oyentes en Last.fm</string>
     <string name="feature_artist_source_musicbrainz">Información del artista de MusicBrainz · portadas del Cover Art Archive</string>
-    <string name="feature_artist_panel_title">Sobre el artista</string>
-    <string name="feature_artist_panel_hide">Ocultar panel</string>
-    <string name="feature_artist_panel_open">Ver página del artista</string>
     <string name="feature_artist_alerts_on">Avisos de lanzamientos de este artista activados. Toca para desactivar</string>
     <string name="feature_artist_alerts_off">Avisos de lanzamientos de este artista desactivados. Toca para activar</string>
 </resources>

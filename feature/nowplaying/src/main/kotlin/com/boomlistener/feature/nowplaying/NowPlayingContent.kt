@@ -4,8 +4,6 @@
 package com.boomlistener.feature.nowplaying
 
 import com.boomlistener.data.library.FavoritesData
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -356,21 +354,9 @@ internal fun NowPlayingContent(
                     // "ir para a tela inicial" do Android, que fica logo abaixo.
                     Spacer(Modifier.height(20.dp))
                 }
-                // Na horizontal (celular deitado, tablet): capa à esquerda, o resto à direita.
-                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                    val wide = maxWidth > maxHeight && maxWidth >= 560.dp
-                    if (wide) {
-                        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                            artworkArea(Modifier.weight(1f).fillMaxHeight())
-                            Spacer(Modifier.width(32.dp))
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) { details() }
-                        }
-                    } else {
-                        Column(Modifier.fillMaxSize()) {
-                            artworkArea(Modifier.weight(1f).fillMaxWidth())
-                            details()
-                        }
-                    }
+                Column(Modifier.weight(1f).fillMaxWidth()) {
+                    artworkArea(Modifier.weight(1f).fillMaxWidth())
+                    details()
                 }
             }
           }

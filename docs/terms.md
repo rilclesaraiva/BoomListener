@@ -26,7 +26,7 @@ Artist photos, biographies, discographies, tags, lyrics and release dates come f
 
 ## No warranty
 
-The app is a beta and is provided **"as is", without warranty of any kind**, as stated in the GPL-3.0. Some screens, such as landscape and tablet layouts, still have known problems. To the extent the law allows, the maintainer is not liable for loss of data or other damage from using the app.
+The app is provided **"as is", without warranty of any kind**, as stated in the GPL-3.0. To the extent the law allows, the maintainer is not liable for loss of data or other damage from using the app.
 
 ## Privacy
 

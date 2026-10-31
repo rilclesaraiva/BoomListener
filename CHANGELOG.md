@@ -13,6 +13,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - Settings → About invites you to visit the project repository if you want to support it.
 
 ### Changed
+- The app is no longer called a beta.
 - **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).
 
 ### Fixed
@@ -23,6 +24,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - Moving a song in the queue no longer makes the "now playing" highlight flash on the song next to it.
 - Pausing no longer flips the play/pause button back for a moment before it changes (the fix in 0.53.0 wasn't enough).
 - Moving a song in the queue no longer flashes it back in its old place (the fix in 0.53.0 wasn't enough).
+
+### Removed
+- The separate layout for tablets and landscape (side bar, artist panel, player with the cover on the side), which had broken spots. Tablets and landscape now use the same layout as a phone held upright.
 
 ## [0.53.0] — 2026-10-28
 
