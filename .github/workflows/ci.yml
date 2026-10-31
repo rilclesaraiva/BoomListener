@@ -105,9 +105,11 @@ jobs:
           awk -v v="$V" 'index($0, "## [" v "]") == 1 {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
           [ -s notes.md ] || { echo "v$V não está no CHANGELOG"; exit 1; }
 
-      - name: Assinatura (pulada se não houver secrets)
-        if: env.KEYSTORE_B64 != ''
+      # Na Release a assinatura é obrigatória: um APK sem assinatura não
+      # instala por cima do app e não pode ser publicado.
+      - name: Assinatura (obrigatória na Release)
         run: |
+          [ -n "$KEYSTORE_B64" ] || { echo "Sem os Secrets da keystore: a Release não sai sem assinatura"; exit 1; }
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
 

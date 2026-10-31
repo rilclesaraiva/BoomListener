@@ -4,7 +4,7 @@ title: Privacy Policy
 
 # Privacy Policy — Boom, listener!
 
-_Last updated: October 30, 2026_
+_Last updated: October 31, 2026_
 
 Boom, listener! ("the app") is a free, open-source music player for Android that plays the music files stored on your phone. This policy explains what the app does with information, based on what its [source code](https://github.com/rilclesaraiva/BoomListener) actually does.
 
@@ -38,7 +38,7 @@ Each request goes directly from your phone to the service (except Last.fm, see b
 | **MusicBrainz** and **Cover Art Archive** | When Deezer doesn't know an artist or song | Artist names, song title, artist and length |
 | **Last.fm**, through the project's own Cloudflare Worker | Artist biography and song genres | Artist name (and song title for genres). The Worker only adds the project's access key and forwards the request; it runs on Cloudflare, which can see your IP address |
 | **LRCLIB** | When you open the lyrics of a song, or pick "Lyrics" for the share banner | Song title, artist, album and length |
-| **GitHub** | When the app opens (new version check) and in Settings → About (the developer's photo, at most about once a week) | Only a request for the latest release and for the photo |
+| **GitHub** | When the app opens (new version check) and in Settings → About (the developer's photo: usually once a week; if it couldn't be downloaded, it tries again when you open About, at most every 10 minutes) | Only a request for the latest release and for the photo |
 
 The app identifies itself to MusicBrainz, LRCLIB and GitHub with its name ("BoomListener"), as those services ask. These services have their own privacy policies.
 
