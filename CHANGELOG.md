@@ -13,12 +13,14 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - Settings → About invites you to visit the project repository if you want to support it.
 
 ### Changed
+- The player shows only the artist under the song title. The album name repeated the title on singles.
 - On phones the app now always stays upright, since landscape uses the same layout and left little room. Tablets and open foldables still rotate.
 - The app is no longer called a beta.
 - The app does a little less work while music plays: the main screen no longer follows the player's state, which only the removed tablet layout needed.
 - **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).
 
 ### Fixed
+- A Bluetooth device you renamed could show its original name in the player until the app was closed. The name now updates on Android 14 and newer.
 - **Banner video:** the Wave now looks like the player's (a soft glow around the line, no dark solid edge) and moves as smoothly as it: the wave is taken from the sound at each frame's exact moment, and the video now runs at 30 frames per second.
 - With **Lyrics** picked for a song without synced lyrics, the Image and Video buttons are now grayed out and the panel says the song has no lyrics (or that they aren't synced), instead of quietly using the cover.
 - Artists on Home and in Library → Artists now show their photo from Deezer instead of a song cover (the cover is only used when there's no internet or Deezer doesn't know the artist).

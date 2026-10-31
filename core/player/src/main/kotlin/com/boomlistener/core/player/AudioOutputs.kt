@@ -12,10 +12,12 @@ import android.media.AudioManager
 import android.media.MediaRoute2Info
 import android.media.MediaRouter
 import android.media.MediaRouter2
+import android.media.RouteDiscoveryPreference
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -117,7 +119,35 @@ internal class SystemAudioOutputs(private val context: Context) : AudioOutputs {
                 )
             }
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) handler.post { listenToSystemRoutes() }
         refresh()
+    }
+
+    /**
+     * Sem um aviso registrado, o MediaRouter2 não atualiza as rotas que
+     * guardou: depois de renomear o fone (ou religá-lo) o nome velho ficava
+     * até o app ser fechado. Com os avisos, cada mudança refaz a lista.
+     */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun listenToSystemRoutes() {
+        val router = router2 ?: return
+        val executor = context.mainExecutor
+        runCatching {
+            router.registerRouteCallback(
+                executor,
+                object : MediaRouter2.RouteCallback() {
+                    override fun onRoutesUpdated(routes: List<MediaRoute2Info>) = refreshSoon()
+                },
+                // Nenhuma rota de outros apps: só as do sistema (alto-falante, fones).
+                RouteDiscoveryPreference.Builder(emptyList(), false).build(),
+            )
+            router.registerControllerCallback(
+                executor,
+                object : MediaRouter2.ControllerCallback() {
+                    override fun onControllerUpdated(controller: MediaRouter2.RoutingController) = refreshSoon()
+                },
+            )
+        }
     }
 
     /**

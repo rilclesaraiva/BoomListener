@@ -302,10 +302,8 @@ internal fun NowPlayingContent(
                     )
                     // Tocar no nome do artista abre o perfil dele.
                     Text(
-                        text = listOfNotNull(
-                            item.artist ?: stringResource(R.string.feature_nowplaying_unknown_artist),
-                            item.album,
-                        ).joinToString(" • "),
+                        // Só o artista: o álbum repetia o nome da música nos singles.
+                        text = item.artist ?: stringResource(R.string.feature_nowplaying_unknown_artist),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
