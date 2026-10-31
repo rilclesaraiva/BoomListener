@@ -1,7 +1,7 @@
 // Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
-package com.boomlistener.feature.wellbeing
+package com.boomlistener.feature.history
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,7 +25,7 @@ internal fun favoriteAction(uri: String): BoomMenuAction {
     val scope = rememberCoroutineScope()
     val favorite = uri in favorites
     return BoomMenuAction(
-        stringResource(if (favorite) R.string.feature_wellbeing_unfavorite else R.string.feature_wellbeing_favorite),
+        stringResource(if (favorite) R.string.feature_history_unfavorite else R.string.feature_history_favorite),
         kind = BoomMenuKind.Favorite,
         icon = if (favorite) BoomIcons.Favorite else BoomIcons.FavoriteBorder,
     ) { scope.launch { repository.toggle(uri) } }

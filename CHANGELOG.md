@@ -13,6 +13,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - Settings → About invites you to visit the project repository if you want to support it.
 
 ### Changed
+- On phones the app now always stays upright, since landscape uses the same layout and left little room. Tablets and open foldables still rotate.
 - The app is no longer called a beta.
 - The app does a little less work while music plays: the main screen no longer follows the player's state, which only the removed tablet layout needed.
 - **Buttons in the cover's color** is now on by default (Settings → Appearance → Player).

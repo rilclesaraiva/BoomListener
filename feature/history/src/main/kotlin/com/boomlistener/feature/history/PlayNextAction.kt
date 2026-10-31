@@ -1,7 +1,7 @@
 // Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
-package com.boomlistener.feature.wellbeing
+package com.boomlistener.feature.history
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable
@@ -25,8 +25,8 @@ internal fun playNextAction(uri: String): BoomMenuAction {
     val controller = remember { PlayerConnection.controller(context) }
     val library = remember { LibraryData.repository(context) }
     val scope = rememberCoroutineScope()
-    val done = stringResource(R.string.feature_wellbeing_play_next_done)
-    return BoomMenuAction(stringResource(R.string.feature_wellbeing_play_next), kind = BoomMenuKind.PlayNext) {
+    val done = stringResource(R.string.feature_history_play_next_done)
+    return BoomMenuAction(stringResource(R.string.feature_history_play_next), kind = BoomMenuKind.PlayNext) {
         scope.launch {
             val track = library.getTracks().firstOrNull { it.uri == uri } ?: return@launch
             controller.playNext(track)

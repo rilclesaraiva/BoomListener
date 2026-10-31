@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.boomlistener.feature.wellbeing"
+    namespace = "com.boomlistener.feature.history"
 }
 
 dependencies {

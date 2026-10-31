@@ -89,7 +89,7 @@ dependencies {
     implementation(project(":feature:tageditor"))
     implementation(project(":feature:releases"))
     implementation(project(":feature:settings"))
-    implementation(project(":feature:wellbeing"))
+    implementation(project(":feature:history"))
     implementation(project(":feature:profile"))
 
     implementation(libs.androidx.activity.compose)

@@ -67,7 +67,7 @@ import com.boomlistener.feature.releases.navigateToReleases
 import com.boomlistener.feature.releases.releasesScreen
 import com.boomlistener.feature.settings.SETTINGS_ROUTE
 import com.boomlistener.feature.settings.UpdatePromptHost
-import com.boomlistener.feature.wellbeing.HistorySongMenu
+import com.boomlistener.feature.history.HistorySongMenu
 import com.boomlistener.feature.settings.settingsScreen
 import com.boomlistener.core.designsystem.component.LocalTabReselect
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
@@ -89,12 +89,12 @@ import com.boomlistener.core.designsystem.component.LocalFavoriteShare
 import com.boomlistener.core.common.ShareTarget
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
-import com.boomlistener.feature.wellbeing.navigateToHistory
+import com.boomlistener.feature.history.navigateToHistory
 import com.boomlistener.feature.settings.navigateToSettings
 import com.boomlistener.feature.library.AddToPlaylistSheet
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.boomlistener.feature.wellbeing.historyScreen
+import com.boomlistener.feature.history.historyScreen
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
 

@@ -1,7 +1,7 @@
 // Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
-package com.boomlistener.feature.wellbeing
+package com.boomlistener.feature.history
 
 import com.boomlistener.core.designsystem.component.BoomNavScreen
 import com.boomlistener.core.common.navigateOnce

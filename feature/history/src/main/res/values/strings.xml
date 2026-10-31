@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_history_title">History</string>
+    <string name="feature_history_today">Today</string>
+    <string name="feature_history_yesterday">Yesterday</string>
+    <string name="feature_history_this_week">Earlier this week</string>
+    <string name="feature_history_last_week">Last week</string>
+    <string name="feature_history_empty_title">Nothing here yet</string>
+    <string name="feature_history_empty_message">Every song you listen to for 30 seconds or more shows up here, grouped by day and week. Your history stays on your phone.</string>
+    <string name="feature_history_clear">Clear history</string>
+    <string name="feature_history_clear_title">Clear your listening history?</string>
+    <string name="feature_history_clear_message">This removes the list of songs you listened to. Most played isn’t affected.</string>
+    <string name="feature_history_cancel">Cancel</string>
+    <string name="feature_history_add_to_playlist">Add to playlist</string>
+    <string name="feature_history_go_to_artist">Go to artist</string>
+    <string name="feature_history_edit_tags">Edit tags</string>
+    <string name="feature_history_favorite">Add to favorites</string>
+    <string name="feature_history_unfavorite">Remove from favorites</string>
+    <string name="feature_history_play_next">Add to queue</string>
+    <string name="feature_history_play_next_done">Plays next</string>
+</resources>

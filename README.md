@@ -67,7 +67,7 @@ A **local** music player for Android. Free, open source, no ads, no account.
 - Background blur behind screens and the player (Android 12+, can be turned off)
 - **English, Portuguese and Spanish**, with per-app language on Android 13+
 - Tells you when a new version is out, with the release notes. You can pause these notices or skip a version
-- Made for phones: tablets and landscape use the same layout as a phone in portrait
+- Made for phones held upright: on phones the app stays in portrait, and tablets use the same layout
 
 The app **never streams** from external services. Deezer, MusicBrainz and Last.fm are used only for information, and outside links open in the service you choose.
 

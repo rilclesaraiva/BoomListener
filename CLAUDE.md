@@ -87,7 +87,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Onda saindo do centro no vídeo do banner (0.45.0). Esconder o resto da página para disfarçar a busca (0.43.3).
 - FFmpeg para formatos extras (22/10/2026).
 - **Área Bem-estar** (removida em 31/10/2026): as mais ouvidas ficam só no Perfil; nada de tempo de escuta nem avisos de pausa.
-- **Layout próprio de tela larga** (barra lateral, painel do artista, player deitado; removido em 30/10/2026): tablet e celular deitado usam o layout do retrato.
+- **Layout próprio de tela larga** (barra lateral, painel do artista, player deitado; removido em 30/10/2026): tablet usa o layout do retrato e o celular fica em pé.
 
 ## Limitações desta sessão
 - Artefatos da Action não baixam daqui (403); assets de Release baixam pela API (`releases/assets/<id>`).
@@ -97,4 +97,4 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 
 ## Contexto atual
 - Foco: polimento do player e da fila; seguir o documento de estrutura do mantenedor (adotado em 29/10/2026).
-- Tablet e celular deitado usam o mesmo layout do celular em pé (o layout próprio de tela larga saiu em 30/10/2026). Última Release pública: v0.51.2; `APP_VERSION` está em 0.53.0 (subiu antes da regra nova).
+- Celular travado em pé (31/10/2026); tablet gira e usa o mesmo layout do celular em pé (o layout próprio de tela larga saiu em 30/10/2026). Última Release pública: v0.51.2; `APP_VERSION` está em 0.53.0 (subiu antes da regra nova).

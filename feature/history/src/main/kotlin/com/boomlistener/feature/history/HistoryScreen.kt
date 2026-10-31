@@ -1,7 +1,7 @@
 // Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
-package com.boomlistener.feature.wellbeing
+package com.boomlistener.feature.history
 
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.common.ExternalLinks
@@ -69,14 +69,14 @@ internal fun HistoryScreen(
     val hasEntries = (state as? HistoryUiState.Ready)?.sections?.isNotEmpty() == true
 
     BoomScreenScaffold(
-        title = stringResource(R.string.feature_wellbeing_history_title),
+        title = stringResource(R.string.feature_history_title),
         onBack = onBack,
         modifier = modifier,
         actions = {
             if (hasEntries) {
                 BoomMoreMenu(
                     actions = listOf(
-                        BoomMenuAction(stringResource(R.string.feature_wellbeing_history_clear), kind = BoomMenuKind.Delete) { confirmClear = true },
+                        BoomMenuAction(stringResource(R.string.feature_history_clear), kind = BoomMenuKind.Delete) { confirmClear = true },
                     ),
                 )
             }
@@ -86,8 +86,8 @@ internal fun HistoryScreen(
             HistoryUiState.Loading -> BoomLoading(Modifier.padding(padding))
             is HistoryUiState.Ready -> if (current.sections.isEmpty()) {
                 BoomPlaceholder(
-                    title = stringResource(R.string.feature_wellbeing_history_empty_title),
-                    message = stringResource(R.string.feature_wellbeing_history_empty_message),
+                    title = stringResource(R.string.feature_history_empty_title),
+                    message = stringResource(R.string.feature_history_empty_message),
                     modifier = Modifier.padding(padding),
                 )
             } else {
@@ -130,16 +130,16 @@ internal fun HistoryScreen(
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text(stringResource(R.string.feature_wellbeing_history_clear_title)) },
-            text = { Text(stringResource(R.string.feature_wellbeing_history_clear_message)) },
+            title = { Text(stringResource(R.string.feature_history_clear_title)) },
+            text = { Text(stringResource(R.string.feature_history_clear_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmClear = false
                     viewModel.clear()
-                }) { Text(stringResource(R.string.feature_wellbeing_history_clear)) }
+                }) { Text(stringResource(R.string.feature_history_clear)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.feature_wellbeing_cancel)) }
+                TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.feature_history_cancel)) }
             },
         )
     }
@@ -161,10 +161,10 @@ private fun SectionHeader(section: HistorySection) {
 @Composable
 private fun sectionTitle(section: HistorySection): String =
     when (section.period) {
-        HistoryPeriod.Today -> stringResource(R.string.feature_wellbeing_history_today)
-        HistoryPeriod.Yesterday -> stringResource(R.string.feature_wellbeing_history_yesterday)
-        HistoryPeriod.ThisWeek -> stringResource(R.string.feature_wellbeing_history_this_week)
-        HistoryPeriod.LastWeek -> stringResource(R.string.feature_wellbeing_history_last_week)
+        HistoryPeriod.Today -> stringResource(R.string.feature_history_today)
+        HistoryPeriod.Yesterday -> stringResource(R.string.feature_history_yesterday)
+        HistoryPeriod.ThisWeek -> stringResource(R.string.feature_history_this_week)
+        HistoryPeriod.LastWeek -> stringResource(R.string.feature_history_last_week)
         HistoryPeriod.Earlier -> section.month
             ?.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault()))
             ?.replaceFirstChar { it.titlecase(Locale.getDefault()) }
@@ -211,12 +211,12 @@ private fun HistoryRow(
             BoomMoreMenu(
                 actions = listOfNotNull(
                     playNextAction(entry.uri),
-                    BoomMenuAction(stringResource(R.string.feature_wellbeing_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { songMenu.onAddToPlaylist(entry.uri) },
+                    BoomMenuAction(stringResource(R.string.feature_history_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { songMenu.onAddToPlaylist(entry.uri) },
                     favoriteAction(entry.uri),
                     entry.artist?.let { name ->
-                        BoomMenuAction(stringResource(R.string.feature_wellbeing_go_to_artist), kind = BoomMenuKind.GoToArtist) { songMenu.onOpenArtist(name) }
+                        BoomMenuAction(stringResource(R.string.feature_history_go_to_artist), kind = BoomMenuKind.GoToArtist) { songMenu.onOpenArtist(name) }
                     },
-                    BoomMenuAction(stringResource(R.string.feature_wellbeing_edit_tags), kind = BoomMenuKind.EditTags) { songMenu.onEditTags(entry.uri) },
+                    BoomMenuAction(stringResource(R.string.feature_history_edit_tags), kind = BoomMenuKind.EditTags) { songMenu.onEditTags(entry.uri) },
                 ),
                 header = BoomMenuHeader(entry.title, entry.artist, artwork),
                 onYoutubeMusic = { context.openUrl(ExternalLinks.youtubeMusicSearch(entry.title, entry.artist)) },

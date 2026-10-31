@@ -4,6 +4,7 @@
 package com.boomlistener.app
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import com.boomlistener.feature.releases.ReleaseAlerts
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,10 +22,21 @@ internal object AppRequests {
     val openReleases = MutableStateFlow(false)
 }
 
+/** Menor largura (dp) a partir da qual a tela é de tablet (a mesma divisa do Android). */
+private const val PHONE_MAX_WIDTH_DP = 600
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Celular fica sempre em pé (o layout é o do retrato). Tablet e
+        // dobrável aberto giram à vontade; dobrar ou abrir recria a tela e
+        // isto é decidido de novo.
+        requestedOrientation = if (resources.configuration.smallestScreenWidthDp < PHONE_MAX_WIDTH_DP) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
         if (savedInstanceState == null) handle(intent)
         val preferences = PreferencesData.repository(applicationContext).preferences
         setContent {
