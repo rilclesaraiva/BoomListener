@@ -156,7 +156,7 @@ class ArtistViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private val profile = ArtistProfile(
-        artist = ExternalArtist(27, "Djavan", null, 1000, 30, null),
+        artist = ExternalArtist(27, "Djavan", null, 1000, null),
         topTracks = emptyList(),
         releases = listOf(release(10, "Luz")),
         related = emptyList(),

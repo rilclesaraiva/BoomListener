@@ -9,7 +9,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ArtistMatchingTest {
-    private fun artist(id: Long, name: String, fans: Long = 0) = ExternalArtist(id, name, null, fans, 0, null)
+    private fun artist(id: Long, name: String, fans: Long = 0) = ExternalArtist(id, name, null, fans, null)
 
     @Test
     fun tiraParticipacaoDoNome() {

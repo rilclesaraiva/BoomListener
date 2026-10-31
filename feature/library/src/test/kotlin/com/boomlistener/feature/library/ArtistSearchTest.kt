@@ -10,7 +10,7 @@ import org.junit.Test
 
 class ArtistSearchTest {
     private fun group(name: String) = TrackGroup(name.lowercase(), name, null, null, emptyList())
-    private fun online(id: Long, name: String) = ExternalArtist(id, name, null, 0, 0, null)
+    private fun online(id: Long, name: String) = ExternalArtist(id, name, null, 0, null)
 
     private val mine = listOf(group("Djavan"), group("Céu"), group("Gal Costa"))
 

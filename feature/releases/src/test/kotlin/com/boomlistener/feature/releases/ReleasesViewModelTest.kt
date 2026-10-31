@@ -33,7 +33,7 @@ import org.junit.Test
 import java.time.LocalDate
 
 private fun release(id: Long, type: ReleaseType, date: String) = Release(id, "R$id", type, date, null, null)
-private fun artist(id: Long, name: String) = ExternalArtist(id, name, null, 0, 0, null)
+private fun artist(id: Long, name: String) = ExternalArtist(id, name, null, 0, null)
 
 private class FakeFollows(initial: List<FollowedArtist>) : FollowRepository {
     override val followed = MutableStateFlow(initial)
