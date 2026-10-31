@@ -42,7 +42,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Componentes do `androidx.compose.material3`; componente próprio só sem equivalente, em `core/designsystem`. APIs experimentais só dentro de `core/designsystem`, embrulhadas.
 - Edge-to-edge, temas claro, escuro e AMOLED, cor dinâmica no Android 12+.
 - Todo movimento usa `boomSpatialSpec`/`boomFastSpatialSpec`/`boomEffectsSpec`/`boomScreenSpec` (nada de `tween(300)` à mão). Tela/painel novo tem transição e "voltar" que fecha só ele; tela nova da navegação usa `BoomNavScreen`. Painéis de baixo sempre `BoomModalSheet`.
-- Toda opção dos Ajustes mora numa categoria (Aparência, Reprodução, Biblioteca, Compartilhamento, Bem-estar, Sistema). Se nenhuma serve, perguntar.
+- Toda opção dos Ajustes mora numa categoria (Aparência, Reprodução, Biblioteca, Compartilhamento, Sistema). Se nenhuma serve, perguntar.
 
 ## Idiomas do app
 - Inglês (padrão, `res/values`), português e espanhol: **toda** chave nova nos três. Nenhum texto visível escrito no Kotlin (inclusive `contentDescription`).
@@ -86,6 +86,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Capas de playlist em 2 (metades) ou 3 ("Y") partes: só o mosaico 2 × 2 (0.51.1).
 - Onda saindo do centro no vídeo do banner (0.45.0). Esconder o resto da página para disfarçar a busca (0.43.3).
 - FFmpeg para formatos extras (22/10/2026).
+- **Área Bem-estar** (removida em 31/10/2026): as mais ouvidas ficam só no Perfil; nada de tempo de escuta nem avisos de pausa.
 - **Layout próprio de tela larga** (barra lateral, painel do artista, player deitado; removido em 30/10/2026): tablet e celular deitado usam o layout do retrato.
 
 ## Limitações desta sessão

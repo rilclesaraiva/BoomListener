@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 object BoomIcons {
     val Library: ImageVector = Icons.Filled.Home
     val Releases: ImageVector = Icons.Filled.Notifications
-    val Wellbeing: ImageVector = Icons.Filled.Favorite
     val Settings: ImageVector = Icons.Filled.Settings
     val Search: ImageVector = Icons.Filled.Search
     val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack

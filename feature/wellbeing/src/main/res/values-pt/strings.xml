@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_wellbeing_title">Bem-estar</string>
-    <string name="feature_wellbeing_most_played">Mais ouvidas</string>
-    <string name="feature_wellbeing_most_played_empty">Suas músicas mais ouvidas aparecem aqui. Uma música conta depois de 30 segundos ouvidos, quando você escolheu ela ou ela tocou na ordem (as que entram sozinhas no aleatório não contam).</string>
-    <string name="feature_wellbeing_most_played_rule">Conta depois de 30 s ouvidos, quando você escolheu a música ou ela tocou na ordem.</string>
-    <plurals name="feature_wellbeing_plays">
-        <item quantity="one">%1$d vez</item>
-        <item quantity="other">%1$d vezes</item>
-    </plurals>
     <string name="feature_wellbeing_history_title">Histórico</string>
     <string name="feature_wellbeing_history_today">Hoje</string>
     <string name="feature_wellbeing_history_yesterday">Ontem</string>

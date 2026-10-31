@@ -23,20 +23,13 @@ internal const val SYSTEM_SETTINGS_ROUTE = "settings/system"
 
 fun NavController.navigateToSettings() = navigateOnce(SETTINGS_ROUTE) { launchSingleTop = true }
 
-/**
- * Ajustes e suas telas internas. [onOpenWellbeing] é ligado pelo :app (uma
- * feature não conhece a outra).
- */
-fun NavGraphBuilder.settingsScreen(
-    navController: NavController,
-    onOpenWellbeing: () -> Unit,
-) {
+/** Ajustes e suas telas internas. */
+fun NavGraphBuilder.settingsScreen(navController: NavController) {
     val back: () -> Unit = { navController.popBackStackOnce() }
     composable(SETTINGS_ROUTE) {
         BoomNavScreen(this) {
             SettingsScreen(
                 onOpenAppearance = { navController.navigateOnce(APPEARANCE_ROUTE) },
-                onOpenWellbeing = onOpenWellbeing,
                 onOpenAbout = { navController.navigateOnce(ABOUT_ROUTE) },
                 onOpenPrivacy = { navController.navigateOnce(PRIVACY_ROUTE) },
                 onOpenLicenses = { navController.navigateOnce(LICENSES_ROUTE) },

@@ -5,8 +5,6 @@
     <string name="feature_settings_section_about">About</string>
     <string name="feature_settings_appearance">Appearance</string>
     <string name="feature_settings_appearance_summary">Theme, colors and AMOLED mode</string>
-    <string name="feature_settings_wellbeing">Wellbeing</string>
-    <string name="feature_settings_wellbeing_summary">Most played, listening time and break reminders</string>
     <string name="feature_settings_about">About Boom, listener!</string>
     <string name="feature_settings_about_summary">Version %1$s, license and source code</string>
     <string name="feature_settings_privacy">Privacy</string>

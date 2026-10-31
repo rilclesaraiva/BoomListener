@@ -27,6 +27,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - Moving a song in the queue no longer flashes it back in its old place (the fix in 0.53.0 wasn't enough).
 
 ### Removed
+- **Settings → Wellbeing.** It only had a list of your most played songs, which your profile already shows. Your stats and listening history stay as they are, in your profile.
 - The separate layout for tablets and landscape (side bar, artist panel, player with the cover on the side), which had broken spots. Tablets and landscape now use the same layout as a phone held upright.
 
 ## [0.53.0] — 2026-10-28

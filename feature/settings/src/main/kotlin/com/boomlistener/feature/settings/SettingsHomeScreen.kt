@@ -35,7 +35,6 @@ import com.boomlistener.core.designsystem.component.BoomSettingsSection
 @Composable
 internal fun SettingsScreen(
     onOpenAppearance: () -> Unit,
-    onOpenWellbeing: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
@@ -118,13 +117,6 @@ internal fun SettingsScreen(
                         title = stringResource(R.string.feature_settings_share),
                         subtitle = stringResource(R.string.feature_settings_share_summary),
                         onClick = onOpenShare,
-                    )
-                    BoomSettingsItem(
-                        icon = BoomIcons.Wellbeing,
-                        accent = BoomAccent.Tertiary,
-                        title = stringResource(R.string.feature_settings_wellbeing),
-                        subtitle = stringResource(R.string.feature_settings_wellbeing_summary),
-                        onClick = onOpenWellbeing,
                     )
                     // Sistema: internet, segundo plano e backup.
                     BoomSettingsItem(

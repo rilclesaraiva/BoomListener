@@ -69,7 +69,6 @@ import com.boomlistener.feature.settings.SETTINGS_ROUTE
 import com.boomlistener.feature.settings.UpdatePromptHost
 import com.boomlistener.feature.wellbeing.HistorySongMenu
 import com.boomlistener.feature.settings.settingsScreen
-import com.boomlistener.feature.wellbeing.WELLBEING_ROUTE
 import com.boomlistener.core.designsystem.component.LocalTabReselect
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import androidx.compose.animation.AnimatedVisibility
@@ -91,12 +90,11 @@ import com.boomlistener.core.common.ShareTarget
 import com.boomlistener.feature.tageditor.navigateToTagEditor
 import com.boomlistener.feature.tageditor.tageditorScreen
 import com.boomlistener.feature.wellbeing.navigateToHistory
-import com.boomlistener.feature.wellbeing.navigateToWellbeing
 import com.boomlistener.feature.settings.navigateToSettings
 import com.boomlistener.feature.library.AddToPlaylistSheet
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.boomlistener.feature.wellbeing.wellbeingScreen
+import com.boomlistener.feature.wellbeing.historyScreen
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
 
@@ -136,7 +134,7 @@ fun BoomListenerApp() {
     // editor de tags também escondem o mini player.
     val route = currentDestination?.route.orEmpty()
     val onTab = route.isEmpty() || route in topLevelRoutes
-    val inSettings = route == SETTINGS_ROUTE || route.startsWith("$SETTINGS_ROUTE/") || route == WELLBEING_ROUTE
+    val inSettings = route == SETTINGS_ROUTE || route.startsWith("$SETTINGS_ROUTE/")
     val inTagEditor = route.startsWith("tageditor")
     val barSpec = boomSpatialSpec<IntSize>()
     val barFade = boomEffectsSpec<Float>()
@@ -308,11 +306,8 @@ fun BoomListenerApp() {
                 onOpenAlbum = navController::navigateToAlbum,
                 onOpenArtist = openSongArtist,
             )
-            settingsScreen(
-                navController = navController,
-                onOpenWellbeing = navController::navigateToWellbeing,
-            )
-            wellbeingScreen(
+            settingsScreen(navController = navController)
+            historyScreen(
                 onBack = back,
                 songMenu = HistorySongMenu(
                     onOpenArtist = openSongArtist,

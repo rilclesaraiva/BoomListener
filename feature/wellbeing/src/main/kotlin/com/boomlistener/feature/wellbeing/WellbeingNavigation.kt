@@ -16,10 +16,7 @@ import com.boomlistener.data.wellbeing.HistoryData
 import java.time.temporal.WeekFields
 import java.util.Locale
 
-const val WELLBEING_ROUTE = "wellbeing"
 const val HISTORY_ROUTE = "history"
-
-fun NavController.navigateToWellbeing() = navigateOnce(WELLBEING_ROUTE)
 
 fun NavController.navigateToHistory() = navigateOnce(HISTORY_ROUTE) { launchSingleTop = true }
 
@@ -27,8 +24,7 @@ fun NavController.navigateToHistory() = navigateOnce(HISTORY_ROUTE) { launchSing
  * [songMenu] liga o menu das músicas do histórico ao resto do app (o :app
  * fornece; uma feature não conhece a outra).
  */
-fun NavGraphBuilder.wellbeingScreen(onBack: () -> Unit, songMenu: HistorySongMenu = HistorySongMenu()) {
-    composable(WELLBEING_ROUTE) { BoomNavScreen(this) { WellbeingScreen(onBack = onBack) } }
+fun NavGraphBuilder.historyScreen(onBack: () -> Unit, songMenu: HistorySongMenu = HistorySongMenu()) {
     composable(HISTORY_ROUTE) {
         val context = LocalContext.current.applicationContext
         val viewModel = viewModel {
