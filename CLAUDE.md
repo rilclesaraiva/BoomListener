@@ -15,7 +15,7 @@ Lido no início de cada sessão: é como o Claude recupera o contexto do projeto
 - Build: `./gradlew assembleRelease` · Testes: `./gradlew testDebugUnitTest`. **Nada do Gradle compila nesta sessão** (repositórios Maven fora da rede liberada): a única prova é o CI.
 - Mapa (módulos Gradle): core → `core/*` · data → `data/*` · features → `feature/*` (no singular, decisão do mantenedor) · entrada → `app`.
 - Versão: `APP_VERSION` em `gradle.properties` (`versionCode = MAJOR*10000 + MINOR*100 + PATCH`; nunca editar `versionCode`/`versionName` direto).
-- Release: tag `vX.Y.Z` → `.github/workflows/ci.yml` → `boomlistener_vX.Y.Z.apk` na Release do GitHub. Build para vistoria: artefato `build-para-vistoria-…` de cada push.
+- Release: commit de release na main (APP_VERSION novo + seção no CHANGELOG, sem tag ainda) → `.github/workflows/ci.yml` cria a tag `vX.Y.Z` e publica `boomlistener_vX.Y.Z.apk` na Release do GitHub. Build para vistoria: artefato `build-para-vistoria-…` de cada push.
 - Pacote: `com.boomlistener.app`, fixo para sempre · R8 ativo no release, nunca desligar (com `-dontobfuscate`: os nomes ficam legíveis nos erros, decisão do mantenedor; problema só no release → regra `-keep` em `app/proguard-rules.pro`).
 - Ícone: `app/src/main/res/mipmap-anydpi*/` e `drawable/ic_launcher_*`; só muda se o mantenedor pedir.
 
@@ -62,7 +62,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Só com confirmação explícita do mantenedor citando a versão ("confirmo release v1.2.0"), na conversa. "Ok", "beleza", "pode lançar" sem versão ou silêncio não contam.
 - Sem confirmação: nada de tag, bump de versão, mover `[Unreleased]` ou Release.
 - Toda atualização vai para os artefatos do Actions (build para vistoria) e o Claude avisa com o link da execução. O mantenedor vistoria e só então pede o release.
-- Com a confirmação: (0) revisão com contexto limpo (subagente que lê só este arquivo e o diff desde o último release, procurando falhas de segurança, quebra das regras e itens do CHANGELOG que não estão no código), achados vão ao mantenedor; (1) mover `[Unreleased]` para `## [X.Y.Z] - AAAA-MM-DD`, juntando o que veio desde a última Release pública; (2) `APP_VERSION=X.Y.Z`; (3) commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`, push do commit e da tag; (4) o CI confere e publica.
+- Com a confirmação: (0) revisão com contexto limpo (subagente que lê só este arquivo e o diff desde o último release, procurando falhas de segurança, quebra das regras e itens do CHANGELOG que não estão no código), achados vão ao mantenedor; (1) mover `[Unreleased]` para `## [X.Y.Z] - AAAA-MM-DD`, juntando o que veio desde a última Release pública; (2) `APP_VERSION=X.Y.Z`; (3) commit `chore(release): vX.Y.Z` e push na main; (4) o CI confere, **cria a tag `vX.Y.Z`** (token do Actions) e publica. Push de tag à mão só como reserva (feito pelo mantenedor).
 - Entre a vistoria e a tag só mudam versão e CHANGELOG; mudou código, nova vistoria. Notas honestas: avisar o que ainda está quebrado.
 - Esta sessão não apaga Releases nem tags (403): se sair algo por engano, pedir ao mantenedor.
 
@@ -93,6 +93,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Artefatos da Action não baixam daqui (403); assets de Release baixam pela API (`releases/assets/<id>`).
 - Logs da Action não são legíveis (`gh run view --log` dá 403): o workflow posta o erro no commit.
 - Secrets do GitHub dão 403 (o mantenedor cadastra). Deletar branches remotas é bloqueado.
+- Enviar tag (git ou API) dá 403 no proxy desde out/2026 (issue anthropics/claude-code#95576): por isso o CI cria a tag do release.
 - A API do GitHub só alcança este repositório; para outras coisas (versões de actions etc.), pesquisar na web.
 
 ## Contexto atual

@@ -2,8 +2,9 @@ name: CI
 
 # Todo push na main: testes + APK de release (R8 + assinatura) como "build para
 # vistoria", nos artefatos desta execução. O mantenedor instala e testa.
-# Release público só por tag vX.Y.Z, criada depois da vistoria e de
-# "confirmo release vX.Y.Z" do mantenedor (ver CLAUDE.md).
+# Release pública: o commit "chore(release): vX.Y.Z" (só depois da vistoria e
+# de "confirmo release vX.Y.Z" do mantenedor, ver CLAUDE.md) faz o job
+# release criar a tag e publicar.
 on:
   push:
     branches: [main]
@@ -86,40 +87,69 @@ jobs:
           path: boomlistener_v${{ steps.version.outputs.version }}.apk
           if-no-files-found: error
 
+  # Release pública. Caminho normal: o commit "chore(release): vX.Y.Z" chega
+  # na main com APP_VERSION=X.Y.Z e a seção [X.Y.Z] no CHANGELOG; como a tag
+  # ainda não existe, este job cria a tag (com o token do Actions) e publica.
+  # A sessão do Claude não consegue enviar tags (403 no proxy). Um push de
+  # tag vX.Y.Z feito à mão continua funcionando como reserva.
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
     needs: ci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      # Decide se há Release a publicar. Na main: só se a tag da versão ainda
+      # não existe e o CHANGELOG já tem a seção dela (a versão só sobe com
+      # "confirmo release vX.Y.Z"); fora disso, nada acontece.
+      - name: Decidir se publica
+        id: decide
+        shell: bash
+        run: |
+          V="$(grep '^APP_VERSION=' "$VERSION_FILE" | cut -d= -f2)"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            [ "$TAG" = "v$V" ] || { echo "$TAG não bate com APP_VERSION=$V"; exit 1; }
+          else
+            TAG="v$V"
+            if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+              echo "$TAG já existe: nada a publicar"; echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          fi
+          awk -v v="$V" 'index($0, "## [" v "]") == 1 {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            [[ "$GITHUB_REF" == refs/tags/v* ]] && { echo "$TAG não está no CHANGELOG"; exit 1; }
+            echo "Sem seção [$V] no CHANGELOG: nada a publicar"; echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-java@v6
+        if: steps.decide.outputs.publish == 'true'
         with: { distribution: temurin, java-version: '21' }
       - uses: gradle/actions/setup-gradle@v6
-
-      # A tag, o APP_VERSION e o CHANGELOG têm que bater; a nota da Release é
-      # a seção da versão no CHANGELOG.
-      - name: Conferir versão e CHANGELOG
-        run: |
-          V="${GITHUB_REF_NAME#v}"
-          grep -qx "APP_VERSION=$V" "$VERSION_FILE" || { echo "v$V não está em $VERSION_FILE"; exit 1; }
-          awk -v v="$V" 'index($0, "## [" v "]") == 1 {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
-          [ -s notes.md ] || { echo "v$V não está no CHANGELOG"; exit 1; }
+        if: steps.decide.outputs.publish == 'true'
 
       # Na Release a assinatura é obrigatória: um APK sem assinatura não
       # instala por cima do app e não pode ser publicado.
       - name: Assinatura (obrigatória na Release)
+        if: steps.decide.outputs.publish == 'true'
         run: |
           [ -n "$KEYSTORE_B64" ] || { echo "Sem os Secrets da keystore: a Release não sai sem assinatura"; exit 1; }
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
 
       - name: Build de release
+        if: steps.decide.outputs.publish == 'true'
         run: |
           eval "$RELEASE_CMD"
-          cp "$APK" "boomlistener_${GITHUB_REF_NAME}.apk"
+          cp "$APK" "boomlistener_${{ steps.decide.outputs.tag }}.apk"
 
+      # Cria a tag neste commit (se ainda não existe) e publica a Release.
       - uses: softprops/action-gh-release@v3
+        if: steps.decide.outputs.publish == 'true'
         with:
-          name: Boom, listener! ${{ github.ref_name }}
+          tag_name: ${{ steps.decide.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Boom, listener! ${{ steps.decide.outputs.tag }}
           body_path: notes.md
-          files: boomlistener_${{ github.ref_name }}.apk
+          files: boomlistener_${{ steps.decide.outputs.tag }}.apk
