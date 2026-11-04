@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Fixed
+- **Keyboard:** typing in the tag editor (like the Lyrics field) no longer leaves a big empty gap between the field and the keyboard, hiding the rest of the page. The app now tells Android to leave the keyboard spacing to the screens themselves, instead of letting the system also move the whole page.
+
 ### Added
 - **Tag editor → Synced lyrics:** when a song's lyrics have no times, a new card offers **Find synced lyrics**. The app looks the song up on LRCLIB and, if it has the timed version, puts it in the Lyrics field (replacing the text there; you can undo). Tap Save and the synced lyrics are stored in the file itself, so the player shows them synced even offline and the file keeps them in other apps. Nothing changes until you save. If LRCLIB only has the lyrics without times, nothing is touched. The card doesn't show on songs whose lyrics are already synced.
 
