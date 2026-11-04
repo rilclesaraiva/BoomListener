@@ -232,7 +232,9 @@ private fun ProfileTitleBar(onEdit: () -> Unit, onOpenSettings: () -> Unit) {
 
 /**
  * Cabeçalho: a capa (ou o tom da sua mais ouvida, se ainda não tiver capa),
- * a foto encaixada na borda, nome e descrição. Tocar abre o "Editar perfil".
+ * a foto encaixada na borda, nome e descrição. A capa e a foto não são toques:
+ * trocar é só pelo lápis ("Editar perfil"); os convites "Deixe do seu jeito" e
+ * "Adicionar descrição" também abrem o editar.
  */
 @Composable
 private fun Header(state: MyProfileUiState, viewModel: MyProfileViewModel, onEdit: () -> Unit) {
@@ -247,7 +249,7 @@ private fun Header(state: MyProfileUiState, viewModel: MyProfileViewModel, onEdi
             if (banner != null) {
                 ProfileBanner(
                     banner,
-                    Modifier.padding(bottom = 44.dp).clip(MaterialTheme.shapes.extraLarge).clickable(onClick = onEdit),
+                    Modifier.padding(bottom = 44.dp).clip(MaterialTheme.shapes.extraLarge),
                 )
             } else {
                 // Sem capa: o tom da sua música mais ouvida.
@@ -257,8 +259,7 @@ private fun Header(state: MyProfileUiState, viewModel: MyProfileViewModel, onEdi
                         .fillMaxWidth()
                         .aspectRatio(BANNER_RATIO)
                         .clip(MaterialTheme.shapes.extraLarge)
-                        .artworkTintedBackground(seed)
-                        .clickable(onClick = onEdit),
+                        .artworkTintedBackground(seed),
                 )
             }
             Avatar(
@@ -268,8 +269,7 @@ private fun Header(state: MyProfileUiState, viewModel: MyProfileViewModel, onEdi
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape)
-                    .clip(CircleShape)
-                    .clickable(onClick = onEdit),
+                    .clip(CircleShape),
             )
         }
         Spacer(Modifier.height(8.dp))

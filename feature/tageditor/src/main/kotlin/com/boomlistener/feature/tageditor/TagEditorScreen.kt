@@ -22,7 +22,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,12 +31,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -162,45 +159,35 @@ internal fun TagEditorScreen(
         onBack = leave,
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbar) },
-        // Sem barra presa na tela: o título é o topo da página e sobe junto ao
-        // rolar; o voltar e o Salvar ficam parados nos cantos, por cima da página.
+        // Sem barra presa na tela: o título (com o Salvar) é o topo da página e
+        // sobe junto ao rolar; o voltar fica parado no canto, por cima da página.
         topBar = {},
     ) { padding ->
         val contentModifier = Modifier.padding(padding)
-        Box(Modifier.fillMaxSize()) {
-            when {
-                state.loading -> Column(contentModifier) {
-                    BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true)
-                    BoomLoading(Modifier.weight(1f))
-                }
-                state.loadFailed -> Column(contentModifier) {
-                    BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true)
-                    BoomPlaceholder(
-                        title = stringResource(R.string.feature_tageditor_load_failed_title),
-                        message = stringResource(R.string.feature_tageditor_load_failed_message),
-                        modifier = Modifier.weight(1f),
-                        actions = {
-                            TextButton(onClick = viewModel::load) { Text(stringResource(R.string.feature_tageditor_retry)) }
-                        },
-                    )
-                }
-                else -> EditorForm(
-                    state = state,
-                    viewModel = viewModel,
-                    onPickCover = {
-                        pickCover.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        when {
+            state.loading -> Column(contentModifier) {
+                BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true)
+                BoomLoading(Modifier.weight(1f))
+            }
+            state.loadFailed -> Column(contentModifier) {
+                BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true)
+                BoomPlaceholder(
+                    title = stringResource(R.string.feature_tageditor_load_failed_title),
+                    message = stringResource(R.string.feature_tageditor_load_failed_message),
+                    modifier = Modifier.weight(1f),
+                    actions = {
+                        TextButton(onClick = viewModel::load) { Text(stringResource(R.string.feature_tageditor_retry)) }
                     },
-                    modifier = contentModifier,
                 )
             }
-            if (!state.loading && !state.loadFailed) {
-                FloatingSave(
-                    saving = state.saving,
-                    enabled = state.hasChanges,
-                    onSave = viewModel::save,
-                    modifier = Modifier.align(Alignment.TopEnd),
-                )
-            }
+            else -> EditorForm(
+                state = state,
+                viewModel = viewModel,
+                onPickCover = {
+                    pickCover.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+                modifier = contentModifier,
+            )
         }
     }
 
@@ -249,7 +236,9 @@ private fun EditorForm(
             .imePadding()
             .verticalScroll(rememberScrollState()),
     ) {
-      BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true)
+      BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true) {
+          SaveAction(saving = state.saving, enabled = state.hasChanges, onSave = viewModel::save)
+      }
       Column(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -297,34 +286,26 @@ private fun EditorForm(
 }
 
 /**
- * O Salvar do editor: parado no canto de cima, por cima da página, como o
- * voltar (a tela não tem barra presa). Salvando, vira o aviso "Salvando…".
+ * O Salvar do editor, na linha do título (parte da página, sobe junto ao
+ * rolar). Salvando, vira o aviso "Salvando…".
  */
 @Composable
-private fun FloatingSave(saving: Boolean, enabled: Boolean, onSave: () -> Unit, modifier: Modifier = Modifier) {
+private fun SaveAction(saving: Boolean, enabled: Boolean, onSave: () -> Unit) {
     val effects = boomEffectsSpec<Float>()
-    Box(modifier.statusBarsPadding().padding(top = 12.dp, end = 16.dp)) {
-        AnimatedContent(
-            targetState = saving,
-            transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
-            label = "save",
-        ) { busy ->
-            if (busy) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ) {
-                    Text(
-                        text = stringResource(R.string.feature_tageditor_saving),
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    )
-                }
-            } else {
-                FilledTonalButton(onClick = onSave, enabled = enabled) {
-                    Text(stringResource(R.string.feature_tageditor_save))
-                }
+    AnimatedContent(
+        targetState = saving,
+        transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
+        label = "save",
+    ) { busy ->
+        if (busy) {
+            Text(
+                text = stringResource(R.string.feature_tageditor_saving),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        } else {
+            FilledTonalButton(onClick = onSave, enabled = enabled, modifier = Modifier.padding(end = 8.dp)) {
+                Text(stringResource(R.string.feature_tageditor_save))
             }
         }
     }
