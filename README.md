@@ -50,6 +50,7 @@ A **local** music player for Android. Free, open source, no ads, no account.
 - Songs with more than one artist let you pick which one to open, with their photos
 - **Releases**: follow artists and see their new albums, EPs and singles in one place, filtered by type and time
 - **Release alerts** on your phone, which you can turn off for everything or just for one artist
+  - To look for new releases, the app asks Deezer about the artists you follow about twice a day, in the background, sending only their Deezer IDs. This happens only if you follow artists, and offline mode stops it
 
 ### Your profile
 - Just for you: name, description, photo, cover (GIFs and short videos too) and color, as a gradient or solid page
