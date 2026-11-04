@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Changed
+- **Releases** no longer has a bar stuck at the top: the title (and the bell for release alerts) scrolls up with the page, and the back button stays in the corner, like in the other screens.
+
 ## [0.54.0] - 2026-10-31
 
 ### Added

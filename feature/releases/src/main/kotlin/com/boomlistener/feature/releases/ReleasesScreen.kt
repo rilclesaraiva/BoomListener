@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
@@ -79,31 +80,46 @@ internal fun ReleasesScreen(
         title = stringResource(R.string.feature_releases_title),
         onBack = onBack,
         modifier = modifier,
-        // Sino: liga e desliga os avisos de lançamentos no celular.
-        actions = {
-            ReleaseAlertsButton(onMessage = { text ->
-                scope.launch {
-                    snackbar.currentSnackbarData?.dismiss()
-                    snackbar.showSnackbar(text)
-                }
-            })
-        },
+        // Sem barra presa na tela: o título é o topo da página e sobe junto ao
+        // rolar; o voltar fica parado no canto, por cima da página.
+        topBar = {},
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
+        // Sino: liga e desliga os avisos de lançamentos no celular.
+        val pageTitle: @Composable () -> Unit = {
+            BoomPageTitle(stringResource(R.string.feature_releases_title), hasBack = true) {
+                ReleaseAlertsButton(onMessage = { text ->
+                    scope.launch {
+                        snackbar.currentSnackbarData?.dismiss()
+                        snackbar.showSnackbar(text)
+                    }
+                })
+            }
+        }
         when (val current = state) {
-            ReleasesUiState.Loading -> BoomLoading(Modifier.padding(padding))
-            ReleasesUiState.NoFollows -> BoomPlaceholder(
-                title = stringResource(R.string.feature_releases_no_follows_title),
-                message = stringResource(R.string.feature_releases_no_follows_message),
-                modifier = Modifier.padding(padding),
-            )
-            ReleasesUiState.Failed -> BoomPlaceholder(
-                title = stringResource(R.string.feature_releases_failed_title),
-                message = stringResource(R.string.feature_releases_failed_message),
-                modifier = Modifier.padding(padding),
-                actions = { TextButton(onClick = viewModel::refresh) { Text(stringResource(R.string.feature_releases_retry)) } },
-            )
+            ReleasesUiState.Loading -> Column(Modifier.padding(padding)) {
+                pageTitle()
+                BoomLoading(Modifier.weight(1f))
+            }
+            ReleasesUiState.NoFollows -> Column(Modifier.padding(padding)) {
+                pageTitle()
+                BoomPlaceholder(
+                    title = stringResource(R.string.feature_releases_no_follows_title),
+                    message = stringResource(R.string.feature_releases_no_follows_message),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            ReleasesUiState.Failed -> Column(Modifier.padding(padding)) {
+                pageTitle()
+                BoomPlaceholder(
+                    title = stringResource(R.string.feature_releases_failed_title),
+                    message = stringResource(R.string.feature_releases_failed_message),
+                    modifier = Modifier.weight(1f),
+                    actions = { TextButton(onClick = viewModel::refresh) { Text(stringResource(R.string.feature_releases_retry)) } },
+                )
+            }
             is ReleasesUiState.Ready -> LazyColumn(state = listState, contentPadding = padding) {
+                item(key = "pageTitle") { pageTitle() }
                 item(key = "filters") { Filters(current, viewModel) }
                 if (current.failed > 0) {
                     item(key = "partial") {
