@@ -6,6 +6,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+## [0.54.1] - 2026-11-04
+
 ### Fixed
 - **Player:** when you open it, the buttons (previous, next, play) already come in the cover's color. Before, they started in the app's color and switched a moment later.
 
