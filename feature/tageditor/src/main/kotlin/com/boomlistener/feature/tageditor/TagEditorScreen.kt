@@ -22,6 +22,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,10 +32,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -76,6 +79,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomLoading
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
@@ -158,52 +162,45 @@ internal fun TagEditorScreen(
         onBack = leave,
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbar) },
-        actions = {
-            if (!state.loading && !state.loadFailed) {
-                val effects = boomEffectsSpec<Float>()
-                AnimatedContent(
-                    targetState = state.saving,
-                    transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
-                    label = "save",
-                ) { saving ->
-                    if (saving) {
-                        Text(
-                            text = stringResource(R.string.feature_tageditor_saving),
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                        )
-                    } else {
-                        FilledTonalButton(
-                            onClick = viewModel::save,
-                            enabled = state.hasChanges,
-                            modifier = Modifier.padding(end = 8.dp),
-                        ) {
-                            Text(stringResource(R.string.feature_tageditor_save))
-                        }
-                    }
-                }
-            }
-        },
+        // Sem barra presa na tela: o título é o topo da página e sobe junto ao
+        // rolar; o voltar e o Salvar ficam parados nos cantos, por cima da página.
+        topBar = {},
     ) { padding ->
         val contentModifier = Modifier.padding(padding)
-        when {
-            state.loading -> BoomLoading(contentModifier)
-            state.loadFailed -> BoomPlaceholder(
-                title = stringResource(R.string.feature_tageditor_load_failed_title),
-                message = stringResource(R.string.feature_tageditor_load_failed_message),
-                modifier = contentModifier,
-                actions = {
-                    TextButton(onClick = viewModel::load) { Text(stringResource(R.string.feature_tageditor_retry)) }
-                },
-            )
-            else -> EditorForm(
-                state = state,
-                viewModel = viewModel,
-                onPickCover = {
-                    pickCover.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                },
-                modifier = contentModifier,
-            )
+        Box(Modifier.fillMaxSize()) {
+            when {
+                state.loading -> Column(contentModifier) {
+                    BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true)
+                    BoomLoading(Modifier.weight(1f))
+                }
+                state.loadFailed -> Column(contentModifier) {
+                    BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true)
+                    BoomPlaceholder(
+                        title = stringResource(R.string.feature_tageditor_load_failed_title),
+                        message = stringResource(R.string.feature_tageditor_load_failed_message),
+                        modifier = Modifier.weight(1f),
+                        actions = {
+                            TextButton(onClick = viewModel::load) { Text(stringResource(R.string.feature_tageditor_retry)) }
+                        },
+                    )
+                }
+                else -> EditorForm(
+                    state = state,
+                    viewModel = viewModel,
+                    onPickCover = {
+                        pickCover.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                    modifier = contentModifier,
+                )
+            }
+            if (!state.loading && !state.loadFailed) {
+                FloatingSave(
+                    saving = state.saving,
+                    enabled = state.hasChanges,
+                    onSave = viewModel::save,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
         }
     }
 
@@ -250,10 +247,13 @@ private fun EditorForm(
         modifier
             .fillMaxSize()
             .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .verticalScroll(rememberScrollState()),
     ) {
+      BoomPageTitle(stringResource(R.string.feature_tageditor_title), hasBack = true)
+      Column(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
         CoverRow(state = state, onPickCover = onPickCover, onRemoveCover = viewModel::removeCover)
         AutoTagCard(state = state, viewModel = viewModel)
 
@@ -292,6 +292,41 @@ private fun EditorForm(
             TextButton(onClick = viewModel::resetAll) { Text(stringResource(R.string.feature_tageditor_reset)) }
         }
         Spacer(Modifier.height(24.dp))
+      }
+    }
+}
+
+/**
+ * O Salvar do editor: parado no canto de cima, por cima da página, como o
+ * voltar (a tela não tem barra presa). Salvando, vira o aviso "Salvando…".
+ */
+@Composable
+private fun FloatingSave(saving: Boolean, enabled: Boolean, onSave: () -> Unit, modifier: Modifier = Modifier) {
+    val effects = boomEffectsSpec<Float>()
+    Box(modifier.statusBarsPadding().padding(top = 12.dp, end = 16.dp)) {
+        AnimatedContent(
+            targetState = saving,
+            transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
+            label = "save",
+        ) { busy ->
+            if (busy) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ) {
+                    Text(
+                        text = stringResource(R.string.feature_tageditor_saving),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    )
+                }
+            } else {
+                FilledTonalButton(onClick = onSave, enabled = enabled) {
+                    Text(stringResource(R.string.feature_tageditor_save))
+                }
+            }
+        }
     }
 }
 

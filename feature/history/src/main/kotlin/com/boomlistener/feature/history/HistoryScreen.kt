@@ -8,7 +8,8 @@ import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import com.boomlistener.core.designsystem.component.BoomFastScroller
@@ -20,11 +21,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -32,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,8 +46,12 @@ import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMenuHeader
 import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomMoreMenu
+import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import com.boomlistener.core.designsystem.component.BoomStickyHeader
+import com.boomlistener.core.designsystem.component.rememberStickyHeaderStuck
+import com.boomlistener.core.designsystem.component.tuckUnderStickyHeader
 import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.HistoryPeriod
 import com.boomlistener.data.wellbeing.HistorySection
@@ -72,35 +78,62 @@ internal fun HistoryScreen(
         title = stringResource(R.string.feature_history_title),
         onBack = onBack,
         modifier = modifier,
-        actions = {
-            if (hasEntries) {
-                BoomMoreMenu(
-                    actions = listOf(
-                        BoomMenuAction(stringResource(R.string.feature_history_clear), kind = BoomMenuKind.Delete) { confirmClear = true },
-                    ),
-                )
-            }
-        },
+        // Sem barra presa na tela: o título é o topo da página e sobe junto ao
+        // rolar; o voltar fica parado no canto, por cima da página.
+        topBar = {},
     ) { padding ->
+        val pageTitle: @Composable (Modifier) -> Unit = { titleModifier ->
+            BoomPageTitle(stringResource(R.string.feature_history_title), modifier = titleModifier, hasBack = true) {
+                if (hasEntries) {
+                    BoomMoreMenu(
+                        actions = listOf(
+                            BoomMenuAction(stringResource(R.string.feature_history_clear), kind = BoomMenuKind.Delete) { confirmClear = true },
+                        ),
+                    )
+                }
+            }
+        }
         when (val current = state) {
-            HistoryUiState.Loading -> BoomLoading(Modifier.padding(padding))
+            HistoryUiState.Loading -> Column(Modifier.padding(padding)) {
+                pageTitle(Modifier)
+                BoomLoading(Modifier.weight(1f))
+            }
             is HistoryUiState.Ready -> if (current.sections.isEmpty()) {
-                BoomPlaceholder(
-                    title = stringResource(R.string.feature_history_empty_title),
-                    message = stringResource(R.string.feature_history_empty_message),
-                    modifier = Modifier.padding(padding),
-                )
+                Column(Modifier.padding(padding)) {
+                    pageTitle(Modifier)
+                    BoomPlaceholder(
+                        title = stringResource(R.string.feature_history_empty_title),
+                        message = stringResource(R.string.feature_history_empty_message),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             } else {
                 val listState = rememberLazyListState()
-                // Rótulo de cada item: o período da seção ("Hoje", "Ontem"…).
+                // Rótulo de cada item: o período da seção ("Hoje", "Ontem"…). O 1º item é o título da página.
                 val titles = current.sections.map { sectionTitle(it) }
                 val labels = remember(current, titles) {
-                    current.sections.zip(titles).flatMap { (section, title) -> List(section.entries.size + 1) { title } }
+                    listOf(titles.first()) + current.sections.zip(titles).flatMap { (section, title) -> List(section.entries.size + 1) { title } }
                 }
+                // Posição de cada cabeçalho de período na lista (depois do título).
+                val headerIndexes = remember(current) {
+                    var next = 1
+                    current.sections.map { section -> next.also { next += section.entries.size + 1 } }
+                }
+                // Altura do cabeçalho preso no topo, para a barrinha de rolagem começar abaixo dele.
+                var headerPx by remember { mutableIntStateOf(0) }
+                // O item antes de um cabeçalho fica por baixo da faixa dele (sem vão).
+                val tuck = Modifier.tuckUnderStickyHeader()
                 Box(Modifier.fillMaxSize()) {
-                LazyColumn(state = listState, contentPadding = padding) {
-                    current.sections.forEach { section ->
-                        stickyHeader(key = "${section.period}-${section.month}") { SectionHeader(section) }
+                LazyColumn(state = listState, contentPadding = PaddingValues(bottom = padding.calculateBottomPadding())) {
+                    item(key = "pageTitle") { pageTitle(tuck) }
+                    current.sections.forEachIndexed { sectionIndex, section ->
+                        val headerIndex = headerIndexes[sectionIndex]
+                        val lastSection = sectionIndex == current.sections.lastIndex
+                        stickyHeader(key = "${section.period}-${section.month}") {
+                            // Preso no topo: a faixa das notificações acima dele fica sólida.
+                            val stuck by rememberStickyHeaderStuck(listState, headerIndex)
+                            SectionHeader(section, stuck, Modifier.onSizeChanged { headerPx = it.height })
+                        }
                         items(section.entries, key = { "${it.timestampMs}-${it.uri}" }) { entry ->
                             HistoryRow(
                                 entry = entry,
@@ -110,7 +143,9 @@ internal fun HistoryScreen(
                                 viewModel = viewModel,
                                 songMenu = songMenu,
                                 onClick = { viewModel.play(entry, section) },
-                                modifier = Modifier.animateItem(),
+                                modifier = Modifier
+                                    .animateItem()
+                                    .then(if (!lastSection && entry == section.entries.last()) tuck else Modifier),
                             )
                         }
                     }
@@ -120,7 +155,8 @@ internal fun HistoryScreen(
                     label = { index -> labels.getOrNull(index) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
+                        .padding(top = with(LocalDensity.current) { headerPx.toDp() })
+                        .padding(bottom = padding.calculateBottomPadding()),
                 )
                 }
             }
@@ -146,9 +182,9 @@ internal fun HistoryScreen(
 }
 
 @Composable
-private fun SectionHeader(section: HistorySection) {
+private fun SectionHeader(section: HistorySection, stuck: Boolean, modifier: Modifier = Modifier) {
     val title = sectionTitle(section)
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+    BoomStickyHeader(stuck = stuck, modifier = modifier) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
