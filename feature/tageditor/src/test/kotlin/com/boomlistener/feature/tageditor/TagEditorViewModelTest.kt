@@ -122,8 +122,10 @@ private class FakeLastfm(private val tags: List<String>) : LastfmRepository {
 
 private class FakeLyrics(private val result: LyricsResult) : LyricsRepository {
     var asked: LyricsQuery? = null
-    override suspend fun getLyrics(query: LyricsQuery): LyricsResult {
+    var refreshed = false
+    override suspend fun getLyrics(query: LyricsQuery, refresh: Boolean): LyricsResult {
         asked = query
+        refreshed = refresh
         return result
     }
 }
@@ -393,5 +395,38 @@ class TagEditorViewModelTest {
         vm.resetAll()
         assertEquals("letra minha", vm.state.value.tags.lyrics)
         assertEquals(LyricsSyncState.Idle, vm.state.value.lyricsSync)
+    }
+
+    @Test
+    fun letraJaIgualAoSiteNaoMudaNada() {
+        val lyrics = FakeLyrics(LyricsResult.Found(syncedLyrics))
+        val vm = viewModel(tags = FakeTags(fileTags = inFile.copy(lyrics = SYNCED_TEXT)), lyrics = lyrics)
+        vm.syncLyrics()
+        assertEquals(LyricsSyncState.SameAsSource("LRCLIB"), vm.state.value.lyricsSync)
+        assertEquals(SYNCED_TEXT, vm.state.value.tags.lyrics)
+        assertFalse(vm.state.value.hasChanges)
+    }
+
+    @Test
+    fun versaoDiferenteNoSiteSubstituiALetraJaSincronizada() {
+        val old = "[00:01.00]Açaí\n[01:05.43]outra coisa"
+        val vm = viewModel(
+            tags = FakeTags(fileTags = inFile.copy(lyrics = old)),
+            lyrics = FakeLyrics(LyricsResult.Found(syncedLyrics)),
+        )
+        vm.syncLyrics()
+        assertEquals(LyricsSyncState.Applied("LRCLIB"), vm.state.value.lyricsSync)
+        assertEquals(SYNCED_TEXT, vm.state.value.tags.lyrics)
+        assertTrue(vm.state.value.hasChanges)
+        vm.undoLyricsSync()
+        assertEquals(old, vm.state.value.tags.lyrics)
+    }
+
+    @Test
+    fun buscaDeLetraNaoUsaOCacheDoAparelho() {
+        val lyrics = FakeLyrics(LyricsResult.NotFound)
+        val vm = viewModel(lyrics = lyrics)
+        vm.syncLyrics()
+        assertTrue(lyrics.refreshed)
     }
 }

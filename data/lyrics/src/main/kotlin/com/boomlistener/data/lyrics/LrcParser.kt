@@ -95,3 +95,12 @@ fun Lyrics.toLrcText(): String =
     } else {
         lines.joinToString("\n") { it.text }
     }
+
+/**
+ * O texto da tag de letra já é igual a esta letra, linha por linha e tempo por
+ * tempo? (O formato do texto não importa: "[01:05.4]" e "[01:05.40]" são iguais.)
+ */
+fun Lyrics.matchesText(text: String?): Boolean {
+    val other = lyricsFromText(text) ?: return false
+    return other.synced == synced && other.lines == lines
+}

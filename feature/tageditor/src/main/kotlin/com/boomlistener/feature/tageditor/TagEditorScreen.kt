@@ -445,59 +445,67 @@ private fun AutoTagCard(state: TagEditorUiState, viewModel: TagEditorViewModel) 
 }
 
 /**
- * Letra sincronizada: aparece quando a letra do campo não tem tempos (só é
- * preciso fazer nas dessincronizadas). Busca no LRCLIB, põe no campo e o
- * Salvar grava no arquivo, onde ela passa a valer até sem internet.
+ * Letra sincronizada: busca no LRCLIB, põe no campo e o Salvar grava no
+ * arquivo, onde ela passa a valer até sem internet. Fica sempre aqui, também
+ * com a letra já sincronizada: dá para conferir de novo se alguém corrigiu a
+ * letra lá (se estiver igual, o cartão avisa).
  */
 @Composable
 private fun SyncLyricsCard(state: TagEditorUiState, viewModel: TagEditorViewModel) {
     val sync = state.lyricsSync
-    val visible = sync != LyricsSyncState.Idle || !hasSyncedLyrics(state.tags.lyrics)
-    AnimatedVisibility(
-        visible = visible,
-        enter = expandVertically(boomSpatialSpec()) + fadeIn(boomEffectsSpec()),
-        exit = shrinkVertically(boomSpatialSpec()) + fadeOut(boomEffectsSpec()),
+    val hasTimes = hasSyncedLyrics(state.tags.lyrics)
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(R.string.feature_tageditor_sync_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                when (sync) {
-                    LyricsSyncState.Searching -> {
-                        Text(stringResource(R.string.feature_tageditor_sync_searching), style = MaterialTheme.typography.bodyMedium)
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.feature_tageditor_sync_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            when (sync) {
+                LyricsSyncState.Searching -> {
+                    Text(stringResource(R.string.feature_tageditor_sync_searching), style = MaterialTheme.typography.bodyMedium)
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+                is LyricsSyncState.Applied -> {
+                    Text(
+                        text = stringResource(R.string.feature_tageditor_sync_applied, sync.source),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    TextButton(onClick = viewModel::undoLyricsSync) {
+                        Text(stringResource(R.string.feature_tageditor_auto_undo))
                     }
-                    is LyricsSyncState.Applied -> {
+                }
+                else -> {
+                    Text(
+                        text = stringResource(
+                            when (sync) {
+                                is LyricsSyncState.SameAsSource -> R.string.feature_tageditor_sync_same
+                                LyricsSyncState.OnlyPlain -> R.string.feature_tageditor_sync_only_plain
+                                LyricsSyncState.NotFound -> R.string.feature_tageditor_sync_not_found
+                                LyricsSyncState.Failed -> R.string.feature_tageditor_sync_failed
+                                else -> if (hasTimes) {
+                                    R.string.feature_tageditor_sync_message_synced
+                                } else {
+                                    R.string.feature_tageditor_sync_message
+                                }
+                            },
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    OutlinedButton(onClick = viewModel::syncLyrics) {
                         Text(
-                            text = stringResource(R.string.feature_tageditor_sync_applied, sync.source),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        TextButton(onClick = viewModel::undoLyricsSync) {
-                            Text(stringResource(R.string.feature_tageditor_auto_undo))
-                        }
-                    }
-                    else -> {
-                        Text(
-                            text = stringResource(
-                                when (sync) {
-                                    LyricsSyncState.OnlyPlain -> R.string.feature_tageditor_sync_only_plain
-                                    LyricsSyncState.NotFound -> R.string.feature_tageditor_sync_not_found
-                                    LyricsSyncState.Failed -> R.string.feature_tageditor_sync_failed
-                                    else -> R.string.feature_tageditor_sync_message
+                            stringResource(
+                                if (hasTimes || sync is LyricsSyncState.SameAsSource) {
+                                    R.string.feature_tageditor_sync_check_again
+                                } else {
+                                    R.string.feature_tageditor_sync_search
                                 },
                             ),
-                            style = MaterialTheme.typography.bodyMedium,
                         )
-                        OutlinedButton(onClick = viewModel::syncLyrics) {
-                            Text(stringResource(R.string.feature_tageditor_sync_search))
-                        }
                     }
                 }
             }

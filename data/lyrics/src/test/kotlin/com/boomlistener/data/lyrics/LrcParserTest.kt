@@ -100,4 +100,15 @@ class LrcParserTest {
         val lyrics = Lyrics(listOf(LyricLine(0, "Primeira"), LyricLine(0, "Segunda")), synced = false, source = "LRCLIB")
         assertEquals("Primeira\nSegunda", lyrics.toLrcText())
     }
+
+    @Test
+    fun comparaALetraComOTextoDaTag() {
+        val lyrics = Lyrics(listOf(LyricLine(1_000, "Açaí"), LyricLine(65_400, "guardiã")), synced = true, source = "LRCLIB")
+        assertEquals(true, lyrics.matchesText("[00:01.00]Açaí\n[01:05.40]guardiã"))
+        assertEquals(true, lyrics.matchesText("[00:01.000] Açaí\r\n[01:05.4]guardiã\n"))
+        assertEquals(false, lyrics.matchesText("[00:01.50]Açaí\n[01:05.40]guardiã")) // tempo diferente
+        assertEquals(false, lyrics.matchesText("[00:01.00]Açaí\n[01:05.40]guardião")) // texto diferente
+        assertEquals(false, lyrics.matchesText("Açaí\nguardiã")) // sem tempos
+        assertEquals(false, lyrics.matchesText(null))
+    }
 }

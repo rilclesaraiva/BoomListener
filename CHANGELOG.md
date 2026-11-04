@@ -6,6 +6,10 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Changed
+- **Lyrics screen:** when you scroll the lyrics, a **Sync with lyrics** button appears; tap it to jump back to the line that is playing. The lyrics no longer re-sync on their own after a few seconds (or when you stop on the current line). Holding a line to jump to it also goes back to following the song.
+- **Tag editor → Synced lyrics:** the card now stays on screen even when the lyrics are already synced, so you can check again whether LRCLIB has a different version (for example, if someone fixed the timing there). If yours already matches, it says so and changes nothing; if it differs, the new one goes in the field (you can undo) and Save stores it. The search always asks LRCLIB again instead of using what the app had saved.
+
 ### Fixed
 - **Keyboard:** typing in the tag editor (like the Lyrics field) no longer leaves a big empty gap between the field and the keyboard, hiding the rest of the page. The app now tells Android to leave the keyboard spacing to the screens themselves, instead of letting the system also move the whole page.
 

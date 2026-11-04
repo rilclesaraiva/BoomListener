@@ -23,7 +23,12 @@ sealed interface LyricsResult {
 
 /** Letras de músicas. Guarda o que encontra no aparelho. */
 interface LyricsRepository {
-    suspend fun getLyrics(query: LyricsQuery): LyricsResult
+    /**
+     * [refresh] ignora o que está guardado no aparelho e pergunta de novo ao
+     * serviço (alguém pode ter corrigido a letra lá); o que for achado
+     * atualiza o que estava guardado.
+     */
+    suspend fun getLyrics(query: LyricsQuery, refresh: Boolean = false): LyricsResult
 }
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */

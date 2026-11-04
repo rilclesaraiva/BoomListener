@@ -28,6 +28,7 @@
     <string name="feature_nowplaying_hide_lyrics">Mostrar portada</string>
     <string name="feature_nowplaying_edit_tags">Editar etiquetas</string>
     <string name="feature_nowplaying_lyrics_hint">Toca para volver a la portada · mantén pulsada una línea para saltar a ella</string>
+    <string name="feature_nowplaying_lyrics_resync">Sincronizar con la letra</string>
     <string name="feature_nowplaying_lyrics_from_file">Letra guardada en el archivo</string>
     <string name="feature_nowplaying_add_to_playlist">Añadir a una playlist</string>
     <string name="feature_nowplaying_devices">Dispositivos conectados</string>

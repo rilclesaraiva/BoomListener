@@ -49,7 +49,7 @@ private class FakeController(duration: Long, item: NowPlayingItem? = null) : Pla
 
 private class FakeLyrics(var result: LyricsResult = LyricsResult.NotFound) : LyricsRepository {
     var calls = 0
-    override suspend fun getLyrics(query: LyricsQuery): LyricsResult {
+    override suspend fun getLyrics(query: LyricsQuery, refresh: Boolean): LyricsResult {
         calls++
         return result
     }

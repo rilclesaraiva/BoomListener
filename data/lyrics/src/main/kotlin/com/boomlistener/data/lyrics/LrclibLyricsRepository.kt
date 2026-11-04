@@ -33,9 +33,9 @@ internal class LrclibLyricsRepository(context: Context) : LyricsRepository {
     private val cacheDir = File(context.cacheDir, "lyrics").apply { mkdirs() }
     private val userAgent = "BoomListener (https://github.com/rilclesaraiva/BoomListener)"
 
-    override suspend fun getLyrics(query: LyricsQuery): LyricsResult = withContext(Dispatchers.IO) {
+    override suspend fun getLyrics(query: LyricsQuery, refresh: Boolean): LyricsResult = withContext(Dispatchers.IO) {
         val cacheFile = File(cacheDir, cacheKey(query) + ".json")
-        readCache(cacheFile)?.let { return@withContext it }
+        if (!refresh) readCache(cacheFile)?.let { return@withContext it }
 
         // Cada etapa pode falhar sozinha (o LRCLIB às vezes demora numa delas).
         // Só é "sem conexão" se NENHUMA etapa respondeu; se alguma respondeu e
@@ -55,7 +55,8 @@ internal class LrclibLyricsRepository(context: Context) : LyricsRepository {
         if (result == null && !answered) return@withContext LyricsResult.Failed
 
         val final = result?.let { LyricsResult.Found(it) } ?: LyricsResult.NotFound
-        writeCache(cacheFile, final)
+        // Perguntando de novo e não achando agora: fica a letra que já estava guardada.
+        if (!(refresh && final == LyricsResult.NotFound)) writeCache(cacheFile, final)
         final
     }
 

@@ -45,6 +45,9 @@
     <string name="feature_tageditor_sync_only_plain">O LRCLIB só tem a letra desta música sem os tempos. Nada foi alterado.</string>
     <string name="feature_tageditor_sync_not_found">Nenhuma letra encontrada para esta música. Confira o título e o artista e busque de novo.</string>
     <string name="feature_tageditor_sync_failed">Não deu para falar com o LRCLIB. Você está conectado? O modo offline bloqueia esta busca.</string>
+    <string name="feature_tageditor_sync_message_synced">A letra já tem tempos. Dá para conferir se o LRCLIB tem uma versão diferente; nada muda até você salvar.</string>
+    <string name="feature_tageditor_sync_same">A sua letra já está igual à do LRCLIB. Nada para mudar.</string>
+    <string name="feature_tageditor_sync_check_again">Conferir de novo</string>
     <string name="feature_tageditor_discard_title">Descartar alterações?</string>
     <string name="feature_tageditor_discard_message">O que você mudou nesta música ainda não foi salvo.</string>
     <string name="feature_tageditor_discard">Descartar</string>

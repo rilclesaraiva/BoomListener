@@ -29,6 +29,7 @@ import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.lyrics.LyricsQuery
 import com.boomlistener.data.lyrics.LyricsRepository
 import com.boomlistener.data.lyrics.LyricsResult
+import com.boomlistener.data.lyrics.matchesText
 import com.boomlistener.data.lyrics.toLrcText
 import com.boomlistener.data.tags.CoverEdit
 import com.boomlistener.data.tags.TagsReadResult
@@ -82,6 +83,8 @@ internal sealed interface LyricsSyncState {
     data object Searching : LyricsSyncState
     /** A letra sincronizada de [source] está no campo; o Salvar grava no arquivo. */
     data class Applied(val source: String) : LyricsSyncState
+    /** A letra do campo já está igual à da fonte: nada a trocar. */
+    data class SameAsSource(val source: String) : LyricsSyncState
     /** A fonte só tem a letra desta música sem tempos: nada foi trocado. */
     data object OnlyPlain : LyricsSyncState
     data object NotFound : LyricsSyncState
@@ -205,10 +208,11 @@ internal class TagEditorViewModel(
     // ---- Letra sincronizada -------------------------------------------------
 
     /**
-     * Procura no LRCLIB a letra desta música com os tempos. Achando, ela vai
-     * para o campo de letra no lugar do texto de lá (a pessoa confere e toca
-     * em Salvar; "Desfazer" devolve o texto). Se a fonte só tem a letra sem
-     * tempos, nada muda.
+     * Procura no LRCLIB a letra desta música com os tempos (de novo, sem usar o
+     * que estava guardado). Achando uma diferente da do campo, ela vai para o
+     * campo no lugar do texto de lá (a pessoa confere e toca em Salvar;
+     * "Desfazer" devolve o texto). Igual à do campo, avisa e não muda nada; se
+     * a fonte só tem a letra sem tempos, também não muda.
      */
     fun syncLyrics() {
         val repository = lyricsRepository ?: return
@@ -227,11 +231,15 @@ internal class TagEditorViewModel(
         )
         _state.update { it.copy(lyricsSync = LyricsSyncState.Searching) }
         lyricsJob = viewModelScope.launch {
-            when (val result = repository.getLyrics(query)) {
+            // Sempre pergunta de novo ao serviço: a letra pode ter sido corrigida lá.
+            when (val result = repository.getLyrics(query, refresh = true)) {
                 is LyricsResult.Found -> {
                     val lyrics = result.lyrics
-                    if (lyrics.synced) {
-                        lyricsBefore = _state.value.tags.lyrics
+                    val inField = _state.value.tags.lyrics
+                    if (lyrics.synced && lyrics.matchesText(inField)) {
+                        _state.update { it.copy(lyricsSync = LyricsSyncState.SameAsSource(lyrics.source)) }
+                    } else if (lyrics.synced) {
+                        lyricsBefore = inField
                         _state.update {
                             it.copy(
                                 tags = it.tags.copy(lyrics = lyrics.toLrcText()),

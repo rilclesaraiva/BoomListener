@@ -3,7 +3,12 @@
 
 package com.boomlistener.feature.nowplaying
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -17,13 +22,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,6 +43,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
@@ -44,10 +51,6 @@ import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import com.boomlistener.core.model.Lyrics
 import com.boomlistener.data.lyrics.EMBEDDED_LYRICS_SOURCE
 import com.boomlistener.data.lyrics.currentLyricIndex
-
-// Depois que o usuário rola a letra com o dedo, a rolagem automática espera
-// um pouco antes de voltar a acompanhar a música.
-private const val AUTO_SCROLL_PAUSE_MS = 4_000L
 
 /**
  * A letra no lugar da capa. Sincronizada: a linha atual fica grande e forte,
@@ -88,7 +91,13 @@ internal fun LyricsView(
  */
 internal class LyricsScroll {
     val list = LazyListState()
-    val lastUserScroll = mutableLongStateOf(0L)
+
+    /**
+     * A lista acompanha a música? Rolar a letra com o dedo desliga; só o
+     * botão "Sincronizar com a letra" (ou pular para uma linha) liga de novo.
+     * Não volta sozinho, nem parando em cima da linha atual.
+     */
+    var following by mutableStateOf(true)
 }
 
 @Composable
@@ -102,62 +111,86 @@ private fun LyricsList(
 ) {
     val listState = scroll.list
     val current = if (lyrics.synced) currentLyricIndex(lyrics.lines, positionMs) else -1
-    var lastUserScroll by scroll.lastUserScroll
     val userScrollDetector = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (source == NestedScrollSource.UserInput) lastUserScroll = System.currentTimeMillis()
+                if (source == NestedScrollSource.UserInput) scroll.following = false
                 return Offset.Zero
             }
         }
     }
 
-    // Mantém a linha atual a um terço da altura, como nos players de letra.
-    LaunchedEffect(current) {
-        if (current < 0) return@LaunchedEffect
-        if (System.currentTimeMillis() - lastUserScroll < AUTO_SCROLL_PAUSE_MS) return@LaunchedEffect
+    // Mantém a linha atual a um terço da altura, como nos players de letra,
+    // enquanto a lista acompanha a música. Voltar a acompanhar (botão) leva
+    // direto à linha atual.
+    val following = scroll.following
+    LaunchedEffect(current, following) {
+        if (!following || current < 0) return@LaunchedEffect
         val viewport = listState.layoutInfo.viewportSize.height
         listState.animateScrollToItem(current, scrollOffset = -viewport / 3)
     }
 
-    LazyColumn(
-        state = listState,
-        contentPadding = PaddingValues(vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = modifier.fillMaxSize().nestedScroll(userScrollDetector),
-    ) {
-        if (lyrics.synced) {
+    Box(modifier) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxSize().nestedScroll(userScrollDetector),
+        ) {
+            if (lyrics.synced) {
+                item {
+                    Text(
+                        text = stringResource(R.string.feature_nowplaying_lyrics_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                }
+            }
+            itemsIndexed(lyrics.lines) { index, line ->
+                val isCurrent = index == current
+                val isPast = lyrics.synced && index < current
+                LyricLineText(
+                    text = line.text.ifEmpty { "♪" },
+                    highlighted = isCurrent || !lyrics.synced,
+                    past = isPast,
+                    onClick = onTap,
+                    onLongClick = if (lyrics.synced) {
+                        {
+                            // Pular para uma linha também volta a acompanhar a música.
+                            scroll.following = true
+                            onSeek(line.timeMs)
+                        }
+                    } else {
+                        null
+                    },
+                )
+            }
             item {
                 Text(
-                    text = stringResource(R.string.feature_nowplaying_lyrics_hint),
+                    text = if (lyrics.source == EMBEDDED_LYRICS_SOURCE) {
+                        stringResource(R.string.feature_nowplaying_lyrics_from_file)
+                    } else {
+                        stringResource(R.string.feature_nowplaying_lyrics_source, lyrics.source)
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }
-        itemsIndexed(lyrics.lines) { index, line ->
-            val isCurrent = index == current
-            val isPast = lyrics.synced && index < current
-            LyricLineText(
-                text = line.text.ifEmpty { "♪" },
-                highlighted = isCurrent || !lyrics.synced,
-                past = isPast,
-                onClick = onTap,
-                onLongClick = if (lyrics.synced) ({ onSeek(line.timeMs) }) else null,
-            )
-        }
-        item {
-            Text(
-                text = if (lyrics.source == EMBEDDED_LYRICS_SOURCE) {
-                    stringResource(R.string.feature_nowplaying_lyrics_from_file)
-                } else {
-                    stringResource(R.string.feature_nowplaying_lyrics_source, lyrics.source)
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 16.dp),
-            )
+        // Rolou a letra sozinho: o botão traz de volta para a linha que está tocando.
+        val effects = boomEffectsSpec<Float>()
+        val spatial = boomSpatialSpec<IntOffset>()
+        AnimatedVisibility(
+            visible = lyrics.synced && !following && current >= 0,
+            enter = fadeIn(effects) + slideInVertically(spatial) { it / 2 },
+            exit = fadeOut(effects) + slideOutVertically(spatial) { it / 2 },
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
+        ) {
+            FilledTonalButton(onClick = { scroll.following = true }) {
+                Text(stringResource(R.string.feature_nowplaying_lyrics_resync))
+            }
         }
     }
 }
