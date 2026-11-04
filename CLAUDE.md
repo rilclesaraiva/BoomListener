@@ -55,7 +55,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Registrar toda mudança em `[Unreleased]` no CHANGELOG (Added, Changed, Fixed, Removed, Security, Known issues), escrito para quem usa o app.
 - **Sem subir versão** fora do release.
 - Só dizer que terminou quando o CI daquele commit passar. CI vermelho é corrigido antes de qualquer tarefa nova (o erro vem como comentário no commit: `gh api repos/rilclesaraiva/BoomListener/commits/<sha>/comments`).
-- Rodada de testes do mantenedor (bugs relatados um a um): corrigir sem commitar a cada bug e mandar tudo junto quando ele sinalizar que terminou ("pode mandar"); na dúvida, perguntar. Para guardar trabalho sem gerar build, usar branch `wip/…`.
+- Rodada de testes do mantenedor (bugs relatados um a um): cada correção vai direto para a `main` (commit + push) e gera o build para vistoria, sem esperar "pode mandar" e sem branch `wip/…` (decisão de 03/11/2026: as branches só acumulavam). O CI daquele commit decide se terminou; na dúvida sobre o que ele pediu, perguntar antes de mexer.
 - Preferir remover a acumular: o que não é usado sai. Navegação sempre por `navigateOnce`/`popBackStackOnce`.
 
 ## Release (regra absoluta)
