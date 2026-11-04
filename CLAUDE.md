@@ -72,6 +72,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 ## Segredos
 - Nunca commitar chaves, keystores, senhas ou `.env`. Única exceção: `app/debug.keystore` (senha pública `android`), só para o APK de debug atualizar por cima.
 - A keystore de release já existe (`boomlistener-release.p12`, alias `boomlistener`): **nunca gerar outra** (trocar impede atualizar o app). Os 4 Secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) só existem no GitHub, cadastrados pelo mantenedor.
+- **Chave própria do Last.fm** (a pessoa cola em Ajustes → Sistema → Last.fm, decisão de 04/11/2026): fica só no aparelho, em `noBackupFilesDir`; nunca no backup, em log ou em mensagem; só é salva depois de o Last.fm aceitá-la. Sem ela, o app usa o Worker do projeto.
 - Chave e segredo do Last.fm só nos Secrets do Cloudflare Worker (`proxy/worker.js`, `LASTFM_API_KEY`, `LASTFM_SHARED_SECRET`): nunca escrever os valores em arquivo, commit, log ou mensagem. Mudança no `worker.js` o mantenedor cola no painel da Cloudflare.
 
 ## Projeto público

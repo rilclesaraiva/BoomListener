@@ -76,7 +76,7 @@ The app **never streams** from external services. Deezer, MusicBrainz and Last.f
 
 Your library, playlists, favorites, profile, followed artists and stats stay **on your phone only**. There is no account, no ads, no analytics and no server of ours keeping your data. The app only goes online for:
 
-- public artist, album and lyrics information (Deezer, MusicBrainz, Cover Art Archive, Last.fm and LRCLIB), unless offline mode is on
+- public artist, album and lyrics information (Deezer, MusicBrainz, Cover Art Archive, Last.fm and LRCLIB), unless offline mode is on. Last.fm goes through the project's Cloudflare Worker by default; in Settings → System you can enter your own free Last.fm key, and the app then asks Last.fm directly
 - checking GitHub for a new version, and showing the developer's GitHub photo in Settings → About
 
 It asks for access to your music and audio, and (on Android 13 and newer) for permission to show release alerts, which you can turn off. The full details are in the [Privacy Policy](https://rilclesaraiva.github.io/BoomListener/privacy).

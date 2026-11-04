@@ -31,6 +31,9 @@ interface LastfmRepository {
      * não achar ou sem internet). Sem tags na música, usa as do artista.
      */
     suspend fun trackTags(artistName: String, title: String): List<String> = emptyList()
+
+    /** Testa uma chave própria no Last.fm (uma consulta). */
+    suspend fun checkKey(key: String): KeyCheck = KeyCheck.Failed
 }
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */
@@ -38,8 +41,17 @@ object LastfmData {
     @Volatile
     private var instance: LastfmRepository? = null
 
+    @Volatile
+    private var store: LastfmKeyStore? = null
+
+    /** Onde fica a chave própria do Last.fm (vazia = servidor do Boom). */
+    fun keyStore(context: Context): LastfmKeyStore =
+        store ?: synchronized(this) {
+            store ?: FileLastfmKeyStore(context.applicationContext).also { store = it }
+        }
+
     fun repository(context: Context): LastfmRepository =
         instance ?: synchronized(this) {
-            instance ?: ProxyLastfmRepository(context.applicationContext).also { instance = it }
+            instance ?: ProxyLastfmRepository(context.applicationContext, keyStore(context)).also { instance = it }
         }
 }

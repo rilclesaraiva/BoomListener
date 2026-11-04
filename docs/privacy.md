@@ -36,9 +36,11 @@ Each request goes directly from your phone to the service (except Last.fm, see b
 |---|---|---|
 | **Deezer** (api.deezer.com and its image servers) | Showing artists on Home and in Library → Artists (their photos), opening an artist page, choosing between the artists of a song, the profile's "Your artists", searching artists in the Library, fixing tags, and the release check for artists you follow (about twice a day, in the background) | Artist names, song title, artist and length, what you type in the artist search, Deezer IDs of artists you follow |
 | **MusicBrainz** and **Cover Art Archive** | When Deezer doesn't know an artist or song | Artist names, song title, artist and length |
-| **Last.fm**, through the project's own Cloudflare Worker | Artist biography and song genres | Artist name (and song title for genres). The Worker only adds the project's access key and forwards the request; it runs on Cloudflare, which can see your IP address |
+| **Last.fm**, through the project's own Cloudflare Worker | Artist biography and song genres | Artist name (and song title for genres). The Worker only adds the project's access key and forwards the request; it runs on Cloudflare, which can see your IP address. If you enter **your own Last.fm key** (Settings → System → Last.fm), the Worker is not used: your phone asks Last.fm directly, sending your key, and Last.fm can see your IP address |
 | **LRCLIB** | When you open the lyrics of a song, pick "Lyrics" for the share banner, or tap "Find synced lyrics" in the tag editor | Song title, artist, album and length |
 | **GitHub** | When the app opens (new version check) and in Settings → About (the developer's photo: usually once a week; if it couldn't be downloaded, it tries again when you open About, at most every 10 minutes) | Only a request for the latest release and for the photo |
+
+**Your own Last.fm key:** it is optional, and by default the app uses the project's Worker. If you add a key, the app first sends one test request to Last.fm (an artist lookup) to check that the key works, and only then saves it. The key stays on your device, in a file that Android's automatic backup skips, and it is not part of the app's backups. Going back to the Boom server in the same screen deletes it.
 
 The app identifies itself to MusicBrainz, LRCLIB and GitHub with its name ("BoomListener"), as those services ask. These services have their own privacy policies.
 

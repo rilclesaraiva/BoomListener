@@ -12,6 +12,7 @@ android {
 dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":data:updates"))
+    implementation(project(":data:lastfm"))
     implementation(project(":data:library"))
     implementation(project(":core:player"))
     // Escolher onde salvar / qual backup abrir (seletor de arquivos do sistema).
