@@ -23,7 +23,7 @@ A **local** music player for Android. Free, open source, no ads, no account.
 - **Plays the music on your phone** with a Material 3 Expressive look: a floating mini player that grows into the full-screen player, a wavy progress bar that moves smoothly, and big expressive controls
 - **Swipe to change songs** on the mini player or on the cover
 - **Queue** you can reorder, "Play next", shuffle and repeat, and a **Mix** that fills up next with similar songs from your library
-- **Synced lyrics** from the file or from LRCLIB (you choose which comes first)
+- **Synced lyrics** from the file or from LRCLIB (you choose which comes first). In the tag editor, one tap looks up the synced version of a song whose lyrics have no times and, when you save, stores it in the file, so it also works offline
 - **Audio visualizer over the cover** (bars or wave), turned on from the player menu. It reads the app's own audio, so it needs no microphone permission
 - **Playback options:** crossfade between songs, fade on play/pause, gapless playback, ReplayGain, playback speed, sleep timer, resume when your headphones reconnect, and remember shuffle
 - **Picks up where you left off** after closing the app, or stops completely when you swipe it away from recents (optional)

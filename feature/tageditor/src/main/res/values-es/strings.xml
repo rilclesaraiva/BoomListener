@@ -37,6 +37,14 @@
     <string name="feature_tageditor_auto_failed">No se pudo conectar con Deezer ni con MusicBrainz. ¿Estás en línea?</string>
     <string name="feature_tageditor_auto_choose_title">¿Cuál es?</string>
     <string name="feature_tageditor_auto_match">%1$d%% de coincidencia</string>
+    <string name="feature_tageditor_sync_title">Letra sincronizada</string>
+    <string name="feature_tageditor_sync_message">Busca en LRCLIB la letra de esta canción con tiempos y la pone en el campo Letra, en lugar del texto que hay. Puedes deshacer antes de guardar.</string>
+    <string name="feature_tageditor_sync_search">Buscar letra sincronizada</string>
+    <string name="feature_tageditor_sync_searching">Buscando en LRCLIB…</string>
+    <string name="feature_tageditor_sync_applied">La letra sincronizada de %1$s está en el campo Letra. Revísala y toca Guardar.</string>
+    <string name="feature_tageditor_sync_only_plain">LRCLIB solo tiene la letra de esta canción sin tiempos. No se cambió nada.</string>
+    <string name="feature_tageditor_sync_not_found">No se encontró ninguna letra para esta canción. Revisa el título y el artista y vuelve a buscar.</string>
+    <string name="feature_tageditor_sync_failed">No se pudo conectar con LRCLIB. ¿Estás en línea? El modo sin conexión bloquea esta búsqueda.</string>
     <string name="feature_tageditor_discard_title">¿Descartar los cambios?</string>
     <string name="feature_tageditor_discard_message">Tus cambios en esta canción no se han guardado.</string>
     <string name="feature_tageditor_discard">Descartar</string>

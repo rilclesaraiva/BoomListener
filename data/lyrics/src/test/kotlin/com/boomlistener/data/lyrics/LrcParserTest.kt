@@ -74,4 +74,30 @@ class LrcParserTest {
         assertEquals(null, lyricsFromText("  \n "))
         assertEquals(null, lyricsFromText(null))
     }
+
+    @Test
+    fun reconheceLetraComTempos() {
+        assertEquals(true, hasSyncedLyrics("[00:01.00] Açaí\n[00:04.00] guardiã"))
+        assertEquals(false, hasSyncedLyrics("Primeira\nSegunda"))
+        assertEquals(false, hasSyncedLyrics("  "))
+        assertEquals(false, hasSyncedLyrics(null))
+    }
+
+    @Test
+    fun letraSincronizadaViraLrcEVoltaIgual() {
+        val lyrics = Lyrics(
+            lines = listOf(LyricLine(1_000, "Açaí"), LyricLine(65_430, ""), LyricLine(125_990, "guardiã [feat.]")),
+            synced = true,
+            source = "LRCLIB",
+        )
+        val text = lyrics.toLrcText()
+        assertEquals("[00:01.00]Açaí\n[01:05.43]\n[02:05.99]guardiã [feat.]", text)
+        assertEquals(lyrics.lines, parseLrc(text))
+    }
+
+    @Test
+    fun letraSemTemposViraSoAsLinhas() {
+        val lyrics = Lyrics(listOf(LyricLine(0, "Primeira"), LyricLine(0, "Segunda")), synced = false, source = "LRCLIB")
+        assertEquals("Primeira\nSegunda", lyrics.toLrcText())
+    }
 }

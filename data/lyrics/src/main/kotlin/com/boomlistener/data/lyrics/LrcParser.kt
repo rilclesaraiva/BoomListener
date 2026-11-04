@@ -5,6 +5,7 @@ package com.boomlistener.data.lyrics
 
 import com.boomlistener.core.model.LyricLine
 import com.boomlistener.core.model.Lyrics
+import java.util.Locale
 
 private val TIMESTAMP = Regex("""\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?]""")
 private val OFFSET = Regex("""\[offset:\s*([+-]?\d+)\s*]""", RegexOption.IGNORE_CASE)
@@ -74,3 +75,23 @@ fun lyricsFromText(text: String?, source: String = EMBEDDED_LYRICS_SOURCE): Lyri
     val plain = parsePlain(text)
     return if (plain.isEmpty()) null else Lyrics(plain, synced = false, source = source)
 }
+
+/** O texto da tag de letra já tem tempos no formato LRC? */
+fun hasSyncedLyrics(text: String?): Boolean = !text.isNullOrBlank() && parseLrc(text).isNotEmpty()
+
+/**
+ * A letra de volta para texto, para gravar na tag de letra do arquivo:
+ * sincronizada vira LRC "[mm:ss.xx]texto" (centésimos, como os outros
+ * players leem); sem tempos, só as linhas.
+ */
+fun Lyrics.toLrcText(): String =
+    if (synced) {
+        lines.joinToString("\n") { line ->
+            val minutes = line.timeMs / 60_000
+            val seconds = (line.timeMs % 60_000) / 1000
+            val centis = (line.timeMs % 1000) / 10
+            String.format(Locale.ROOT, "[%02d:%02d.%02d]%s", minutes, seconds, centis, line.text)
+        }
+    } else {
+        lines.joinToString("\n") { it.text }
+    }

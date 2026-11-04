@@ -82,6 +82,7 @@ import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import com.boomlistener.data.deezer.TrackCandidate
+import com.boomlistener.data.lyrics.hasSyncedLyrics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -272,6 +273,7 @@ private fun EditorForm(
             singleLine = false,
             hint = stringResource(R.string.feature_tageditor_field_lyrics_hint),
         ) { value -> viewModel.edit { it.copy(lyrics = value) } }
+        SyncLyricsCard(state = state, viewModel = viewModel)
 
         AnimatedVisibility(
             visible = state.hasChanges,
@@ -434,6 +436,67 @@ private fun AutoTagCard(state: TagEditorUiState, viewModel: TagEditorViewModel) 
                             Button(onClick = viewModel::autoTag) {
                                 Text(stringResource(R.string.feature_tageditor_auto_search))
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Letra sincronizada: aparece quando a letra do campo não tem tempos (só é
+ * preciso fazer nas dessincronizadas). Busca no LRCLIB, põe no campo e o
+ * Salvar grava no arquivo, onde ela passa a valer até sem internet.
+ */
+@Composable
+private fun SyncLyricsCard(state: TagEditorUiState, viewModel: TagEditorViewModel) {
+    val sync = state.lyricsSync
+    val visible = sync != LyricsSyncState.Idle || !hasSyncedLyrics(state.tags.lyrics)
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(boomSpatialSpec()) + fadeIn(boomEffectsSpec()),
+        exit = shrinkVertically(boomSpatialSpec()) + fadeOut(boomEffectsSpec()),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(R.string.feature_tageditor_sync_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                when (sync) {
+                    LyricsSyncState.Searching -> {
+                        Text(stringResource(R.string.feature_tageditor_sync_searching), style = MaterialTheme.typography.bodyMedium)
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    is LyricsSyncState.Applied -> {
+                        Text(
+                            text = stringResource(R.string.feature_tageditor_sync_applied, sync.source),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        TextButton(onClick = viewModel::undoLyricsSync) {
+                            Text(stringResource(R.string.feature_tageditor_auto_undo))
+                        }
+                    }
+                    else -> {
+                        Text(
+                            text = stringResource(
+                                when (sync) {
+                                    LyricsSyncState.OnlyPlain -> R.string.feature_tageditor_sync_only_plain
+                                    LyricsSyncState.NotFound -> R.string.feature_tageditor_sync_not_found
+                                    LyricsSyncState.Failed -> R.string.feature_tageditor_sync_failed
+                                    else -> R.string.feature_tageditor_sync_message
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        OutlinedButton(onClick = viewModel::syncLyrics) {
+                            Text(stringResource(R.string.feature_tageditor_sync_search))
                         }
                     }
                 }

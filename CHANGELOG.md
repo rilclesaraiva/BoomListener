@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Added
+- **Tag editor → Synced lyrics:** when a song's lyrics have no times, a new card offers **Find synced lyrics**. The app looks the song up on LRCLIB and, if it has the timed version, puts it in the Lyrics field (replacing the text there; you can undo). Tap Save and the synced lyrics are stored in the file itself, so the player shows them synced even offline and the file keeps them in other apps. Nothing changes until you save. If LRCLIB only has the lyrics without times, nothing is touched. The card doesn't show on songs whose lyrics are already synced.
+
 ## [0.54.1] - 2026-11-04
 
 ### Fixed

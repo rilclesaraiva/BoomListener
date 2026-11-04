@@ -26,6 +26,10 @@ import com.boomlistener.data.musicbrainz.MusicBrainzRepository
 import com.boomlistener.data.musicbrainz.musicBrainzKey
 import com.boomlistener.data.musicbrainz.toTagSuggestion
 import com.boomlistener.data.library.LibraryRepository
+import com.boomlistener.data.lyrics.LyricsQuery
+import com.boomlistener.data.lyrics.LyricsRepository
+import com.boomlistener.data.lyrics.LyricsResult
+import com.boomlistener.data.lyrics.toLrcText
 import com.boomlistener.data.tags.CoverEdit
 import com.boomlistener.data.tags.TagsReadResult
 import com.boomlistener.data.tags.TagsRepository
@@ -72,6 +76,19 @@ internal sealed interface AutoTagState {
     data object Failed : AutoTagState
 }
 
+/** Andamento da busca da letra sincronizada. */
+internal sealed interface LyricsSyncState {
+    data object Idle : LyricsSyncState
+    data object Searching : LyricsSyncState
+    /** A letra sincronizada de [source] está no campo; o Salvar grava no arquivo. */
+    data class Applied(val source: String) : LyricsSyncState
+    /** A fonte só tem a letra desta música sem tempos: nada foi trocado. */
+    data object OnlyPlain : LyricsSyncState
+    data object NotFound : LyricsSyncState
+    /** Sem internet (ou modo offline) ou serviço fora do ar. */
+    data object Failed : LyricsSyncState
+}
+
 internal data class TagEditorUiState(
     val loading: Boolean = true,
     val loadFailed: Boolean = false,
@@ -81,6 +98,7 @@ internal data class TagEditorUiState(
     val cover: CoverState = CoverState.Original,
     val saving: Boolean = false,
     val autoTag: AutoTagState = AutoTagState.Idle,
+    val lyricsSync: LyricsSyncState = LyricsSyncState.Idle,
     val durationMs: Long = 0,
 ) {
     /** Há algo diferente do que está gravado no arquivo? */
@@ -118,6 +136,8 @@ internal class TagEditorViewModel(
     private val player: PlaybackController,
     /** Reserva quando o Deezer não acha a música (ou está fora do ar). */
     private val musicBrainz: MusicBrainzRepository? = null,
+    /** Letra sincronizada (LRCLIB) para gravar na tag de letra. */
+    private val lyricsRepository: LyricsRepository? = null,
 ) : ViewModel() {
 
     // Opções que vieram do MusicBrainz (pelo trackId da opção).
@@ -132,6 +152,10 @@ internal class TagEditorViewModel(
     // Como o formulário estava antes das tags automáticas (para "Desfazer").
     private var beforeAuto: Pair<TrackTags, CoverState>? = null
     private var autoJob: Job? = null
+
+    // A letra que estava no campo antes de trazer a sincronizada (para "Desfazer").
+    private var lyricsBefore: String? = null
+    private var lyricsJob: Job? = null
 
     init {
         load()
@@ -171,7 +195,64 @@ internal class TagEditorViewModel(
     /** Volta tudo para o que está gravado no arquivo. */
     fun resetAll() {
         beforeAuto = null
-        _state.update { it.copy(tags = it.original, cover = CoverState.Original, autoTag = AutoTagState.Idle) }
+        lyricsBefore = null
+        lyricsJob?.cancel()
+        _state.update {
+            it.copy(tags = it.original, cover = CoverState.Original, autoTag = AutoTagState.Idle, lyricsSync = LyricsSyncState.Idle)
+        }
+    }
+
+    // ---- Letra sincronizada -------------------------------------------------
+
+    /**
+     * Procura no LRCLIB a letra desta música com os tempos. Achando, ela vai
+     * para o campo de letra no lugar do texto de lá (a pessoa confere e toca
+     * em Salvar; "Desfazer" devolve o texto). Se a fonte só tem a letra sem
+     * tempos, nada muda.
+     */
+    fun syncLyrics() {
+        val repository = lyricsRepository ?: return
+        lyricsJob?.cancel()
+        val current = _state.value
+        val title = current.tags.title.ifBlank { current.original.title }
+        if (title.isBlank()) {
+            _state.update { it.copy(lyricsSync = LyricsSyncState.NotFound) }
+            return
+        }
+        val query = LyricsQuery(
+            title = title,
+            artist = current.tags.artist.ifBlank { current.original.artist }.ifBlank { null },
+            album = current.tags.album.ifBlank { null },
+            durationMs = current.durationMs,
+        )
+        _state.update { it.copy(lyricsSync = LyricsSyncState.Searching) }
+        lyricsJob = viewModelScope.launch {
+            when (val result = repository.getLyrics(query)) {
+                is LyricsResult.Found -> {
+                    val lyrics = result.lyrics
+                    if (lyrics.synced) {
+                        lyricsBefore = _state.value.tags.lyrics
+                        _state.update {
+                            it.copy(
+                                tags = it.tags.copy(lyrics = lyrics.toLrcText()),
+                                lyricsSync = LyricsSyncState.Applied(lyrics.source),
+                            )
+                        }
+                    } else {
+                        _state.update { it.copy(lyricsSync = LyricsSyncState.OnlyPlain) }
+                    }
+                }
+                LyricsResult.NotFound -> _state.update { it.copy(lyricsSync = LyricsSyncState.NotFound) }
+                LyricsResult.Failed -> _state.update { it.copy(lyricsSync = LyricsSyncState.Failed) }
+            }
+        }
+    }
+
+    /** Devolve ao campo a letra que estava nele antes da sincronizada. */
+    fun undoLyricsSync() {
+        val before = lyricsBefore ?: return
+        lyricsBefore = null
+        _state.update { it.copy(tags = it.tags.copy(lyrics = before), lyricsSync = LyricsSyncState.Idle) }
     }
 
     // ---- Tags automáticas -------------------------------------------------
@@ -374,6 +455,7 @@ internal class TagEditorViewModel(
                         album = current.tags.album.ifBlank { null },
                     )
                     beforeAuto = null
+                    lyricsBefore = null
                     _state.update {
                         it.copy(
                             saving = false,
@@ -382,6 +464,7 @@ internal class TagEditorViewModel(
                             originalCover = current.shownCover,
                             cover = CoverState.Original,
                             autoTag = AutoTagState.Idle,
+                            lyricsSync = LyricsSyncState.Idle,
                         )
                     }
                     _events.send(TagEditorEvent.Saved)

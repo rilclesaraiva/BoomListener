@@ -37,6 +37,14 @@
     <string name="feature_tageditor_auto_failed">Couldn’t reach Deezer or MusicBrainz. Are you online?</string>
     <string name="feature_tageditor_auto_choose_title">Which one is it?</string>
     <string name="feature_tageditor_auto_match">%1$d%% match</string>
+    <string name="feature_tageditor_sync_title">Synced lyrics</string>
+    <string name="feature_tageditor_sync_message">Looks up this song’s lyrics with times on LRCLIB and puts them in the Lyrics field, replacing the text there. You can undo before saving.</string>
+    <string name="feature_tageditor_sync_search">Find synced lyrics</string>
+    <string name="feature_tageditor_sync_searching">Searching LRCLIB…</string>
+    <string name="feature_tageditor_sync_applied">Synced lyrics from %1$s are in the Lyrics field. Check them and tap Save.</string>
+    <string name="feature_tageditor_sync_only_plain">LRCLIB only has this song’s lyrics without times. Nothing was changed.</string>
+    <string name="feature_tageditor_sync_not_found">No lyrics found for this song. Check the title and artist, then search again.</string>
+    <string name="feature_tageditor_sync_failed">Couldn’t reach LRCLIB. Are you online? Offline mode blocks this search.</string>
     <string name="feature_tageditor_discard_title">Discard changes?</string>
     <string name="feature_tageditor_discard_message">Your edits to this song haven’t been saved.</string>
     <string name="feature_tageditor_discard">Discard</string>

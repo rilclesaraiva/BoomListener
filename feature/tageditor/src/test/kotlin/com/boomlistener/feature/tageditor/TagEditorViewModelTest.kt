@@ -4,6 +4,8 @@
 package com.boomlistener.feature.tageditor
 
 import android.graphics.Bitmap
+import com.boomlistener.core.model.LyricLine
+import com.boomlistener.core.model.Lyrics
 import com.boomlistener.core.model.TagSuggestion
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.model.TrackTags
@@ -19,6 +21,9 @@ import com.boomlistener.data.deezer.TrackTagsResult
 import com.boomlistener.data.lastfm.BioResult
 import com.boomlistener.data.lastfm.LastfmRepository
 import com.boomlistener.data.library.LibraryRepository
+import com.boomlistener.data.lyrics.LyricsQuery
+import com.boomlistener.data.lyrics.LyricsRepository
+import com.boomlistener.data.lyrics.LyricsResult
 import com.boomlistener.data.musicbrainz.MbArtistResult
 import com.boomlistener.data.musicbrainz.MbRecording
 import com.boomlistener.data.musicbrainz.MbSearchResult
@@ -115,6 +120,21 @@ private class FakeLastfm(private val tags: List<String>) : LastfmRepository {
     override suspend fun trackTags(artistName: String, title: String) = tags
 }
 
+private class FakeLyrics(private val result: LyricsResult) : LyricsRepository {
+    var asked: LyricsQuery? = null
+    override suspend fun getLyrics(query: LyricsQuery): LyricsResult {
+        asked = query
+        return result
+    }
+}
+
+private val syncedLyrics = Lyrics(
+    lines = listOf(LyricLine(1_000, "Açaí"), LyricLine(65_430, "guardiã")),
+    synced = true,
+    source = "LRCLIB",
+)
+private const val SYNCED_TEXT = "[00:01.00]Açaí\n[01:05.43]guardiã"
+
 private class FakePlayer : PlaybackController {
     var updated: String? = null
     override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState())
@@ -151,7 +171,8 @@ class TagEditorViewModelTest {
         player: FakePlayer = FakePlayer(),
         deezer: DeezerRepository = FakeDeezer(candidates),
         musicBrainz: MusicBrainzRepository? = null,
-    ) = TagEditorViewModel(URI, tags, library, deezer, FakeLastfm(lastfmTags), player, musicBrainz)
+        lyrics: LyricsRepository? = null,
+    ) = TagEditorViewModel(URI, tags, library, deezer, FakeLastfm(lastfmTags), player, musicBrainz, lyrics)
 
     @Test
     fun deezerNaoAchaUsaMusicBrainz() {
@@ -304,5 +325,73 @@ class TagEditorViewModelTest {
         vm.autoTag()
         assertTrue(vm.state.value.autoTag is AutoTagState.Applied)
         assertTrue(vm.state.value.hasChanges)
+    }
+
+    @Test
+    fun letraSincronizadaVaiParaOCampoSemGravar() {
+        val tags = FakeTags()
+        val lyrics = FakeLyrics(LyricsResult.Found(syncedLyrics))
+        val vm = viewModel(tags = tags, lyrics = lyrics)
+        vm.syncLyrics()
+        val state = vm.state.value
+        assertEquals(SYNCED_TEXT, state.tags.lyrics)
+        assertEquals(LyricsSyncState.Applied("LRCLIB"), state.lyricsSync)
+        assertTrue(state.hasChanges)
+        assertEquals(null, tags.written) // nada é gravado sem o Salvar
+        // A busca usa o que o arquivo tem: título, artista e duração.
+        assertEquals(LyricsQuery("Catharsis", "Chikoi The Maid", null, 180_000), lyrics.asked)
+    }
+
+    @Test
+    fun desfazerDevolveALetraDeAntes() {
+        val vm = viewModel(lyrics = FakeLyrics(LyricsResult.Found(syncedLyrics)))
+        vm.syncLyrics()
+        vm.undoLyricsSync()
+        assertEquals("letra minha", vm.state.value.tags.lyrics)
+        assertEquals(LyricsSyncState.Idle, vm.state.value.lyricsSync)
+        assertFalse(vm.state.value.hasChanges)
+    }
+
+    @Test
+    fun salvarGravaALetraSincronizadaNoArquivo() {
+        val tags = FakeTags()
+        val vm = viewModel(tags = tags, lyrics = FakeLyrics(LyricsResult.Found(syncedLyrics)))
+        vm.syncLyrics()
+        vm.save()
+        assertEquals(SYNCED_TEXT, tags.written?.first?.lyrics)
+        assertEquals(SYNCED_TEXT, vm.state.value.original.lyrics)
+        assertEquals(LyricsSyncState.Idle, vm.state.value.lyricsSync)
+    }
+
+    @Test
+    fun fonteSoComLetraSemTemposNaoMudaNada() {
+        val plain = Lyrics(listOf(LyricLine(0, "Primeira"), LyricLine(0, "Segunda")), synced = false, source = "LRCLIB")
+        val vm = viewModel(lyrics = FakeLyrics(LyricsResult.Found(plain)))
+        vm.syncLyrics()
+        assertEquals(LyricsSyncState.OnlyPlain, vm.state.value.lyricsSync)
+        assertEquals("letra minha", vm.state.value.tags.lyrics)
+        assertFalse(vm.state.value.hasChanges)
+    }
+
+    @Test
+    fun letraNaoEncontradaOuSemConexao() {
+        val notFound = viewModel(lyrics = FakeLyrics(LyricsResult.NotFound))
+        notFound.syncLyrics()
+        assertEquals(LyricsSyncState.NotFound, notFound.state.value.lyricsSync)
+        assertEquals("letra minha", notFound.state.value.tags.lyrics)
+
+        val failed = viewModel(lyrics = FakeLyrics(LyricsResult.Failed))
+        failed.syncLyrics()
+        assertEquals(LyricsSyncState.Failed, failed.state.value.lyricsSync)
+        assertFalse(failed.state.value.hasChanges)
+    }
+
+    @Test
+    fun resetAllTambemLimpaALetraSincronizada() {
+        val vm = viewModel(lyrics = FakeLyrics(LyricsResult.Found(syncedLyrics)))
+        vm.syncLyrics()
+        vm.resetAll()
+        assertEquals("letra minha", vm.state.value.tags.lyrics)
+        assertEquals(LyricsSyncState.Idle, vm.state.value.lyricsSync)
     }
 }
