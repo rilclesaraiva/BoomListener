@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Fixed
+- **Player:** when you open it, the buttons (previous, next, play) already come in the cover's color. Before, they started in the app's color and switched a moment later.
+
 ### Changed
 - **README:** now says that the release radar asks Deezer about the artists you follow about twice a day, sending only their Deezer IDs.
 - **Releases**, **History** and the **tag editor** no longer have a bar stuck at the top: the title scrolls up with the page and the back button stays in the corner, like in the other screens. The bell (release alerts) and the History menu move into the title line, and the tag editor's Save button sits in the title line too.

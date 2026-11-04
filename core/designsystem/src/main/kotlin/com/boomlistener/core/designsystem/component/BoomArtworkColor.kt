@@ -26,24 +26,47 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.CompositionLocalProvider
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.isSpecified
 import androidx.palette.graphics.Palette
+import java.util.Collections
+import java.util.WeakHashMap
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Cor principal de uma capa (vibrante se tiver, senão a dominante). null sem capa. */
+/**
+ * Cores já tiradas, por capa (a chave é o próprio bitmap, que o app mantém na
+ * memória enquanto a capa está em uso). [Color.Unspecified] = capa sem cor
+ * aproveitável. Sem isso, o player aberto começava com a cor do tema e só
+ * depois trocava para a da capa: os botões piscavam.
+ */
+private val ArtworkColorCache: MutableMap<Bitmap, Color> = Collections.synchronizedMap(WeakHashMap())
+
+/**
+ * Cor principal de uma capa (vibrante se tiver, senão a dominante). null sem
+ * capa. Capa que já teve a cor tirada (a do mini player, por exemplo) devolve
+ * a cor na hora, na primeira composição.
+ */
 @Composable
 fun rememberArtworkColor(image: ImageBitmap?): Color? {
-    val color by produceState<Color?>(initialValue = null, image) {
-        value = image?.let {
-            withContext(Dispatchers.Default) {
-                val palette = Palette.from(it.asAndroidBitmap()).maximumColorCount(16).generate()
-                val swatch = palette.vibrantSwatch ?: palette.darkVibrantSwatch ?: palette.dominantSwatch
-                swatch?.rgb?.let(::Color)
+    val bitmap = image?.asAndroidBitmap()
+    val cached = bitmap?.let { ArtworkColorCache[it] }
+    val computed by produceState<Color?>(initialValue = cached?.takeIf { it.isSpecified }, image) {
+        value = bitmap?.let {
+            val known = ArtworkColorCache[it]
+            if (known != null) {
+                known.takeIf { color -> color.isSpecified }
+            } else {
+                withContext(Dispatchers.Default) {
+                    val palette = Palette.from(it).maximumColorCount(16).generate()
+                    val swatch = palette.vibrantSwatch ?: palette.darkVibrantSwatch ?: palette.dominantSwatch
+                    swatch?.rgb?.let(::Color).also { color -> ArtworkColorCache[it] = color ?: Color.Unspecified }
+                }
             }
         }
     }
-    return color
+    return if (cached != null) cached.takeIf { it.isSpecified } else computed
 }
 
 /**
