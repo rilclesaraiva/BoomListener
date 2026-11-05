@@ -168,6 +168,8 @@
     <string name="feature_settings_lastfm_bad_format">A chave do Last.fm tem 32 letras e números.</string>
     <string name="feature_settings_lastfm_rejected">O Last.fm não aceitou essa chave.</string>
     <string name="feature_settings_lastfm_failed">Não deu para falar com o Last.fm e testar a chave. Confira a conexão e se o modo offline está desligado.</string>
+    <string name="feature_settings_lastfm_save_failed">Não deu para salvar a chave neste aparelho. Confira o espaço livre e tente de novo.</string>
+    <string name="feature_settings_lastfm_key_lost">O Last.fm não aceita mais a sua chave salva, então biografias e gêneros não carregam. Coloque uma chave nova ou volte ao servidor do Boom.</string>
     <string name="feature_settings_system_background">Segundo plano</string>
     <string name="feature_settings_stop_on_swipe">Encerrar ao remover dos recentes</string>
     <string name="feature_settings_stop_on_swipe_summary">Remover o app dos apps recentes para a música e fecha o app. Desligado: a música continua tocando</string>

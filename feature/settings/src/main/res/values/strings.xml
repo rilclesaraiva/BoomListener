@@ -165,6 +165,8 @@
     <string name="feature_settings_lastfm_bad_format">A Last.fm key has 32 letters and numbers.</string>
     <string name="feature_settings_lastfm_rejected">Last.fm didn’t accept this key.</string>
     <string name="feature_settings_lastfm_failed">Couldn’t reach Last.fm to test the key. Check your connection and that offline mode is off.</string>
+    <string name="feature_settings_lastfm_save_failed">Couldn’t save the key on this device. Check the free space and try again.</string>
+    <string name="feature_settings_lastfm_key_lost">Last.fm no longer accepts your saved key, so biographies and genres aren’t loading. Enter a new key or go back to the Boom server.</string>
     <string name="feature_settings_system_background">Background</string>
     <string name="feature_settings_stop_on_swipe">Stop when closed from recents</string>
     <string name="feature_settings_stop_on_swipe_summary">Swiping the app away from recent apps stops the music and closes the app. Off: the music keeps playing</string>

@@ -165,6 +165,8 @@
     <string name="feature_settings_lastfm_bad_format">Una clave de Last.fm tiene 32 letras y números.</string>
     <string name="feature_settings_lastfm_rejected">Last.fm no aceptó esta clave.</string>
     <string name="feature_settings_lastfm_failed">No se pudo contactar con Last.fm para probar la clave. Revisa la conexión y que el modo sin conexión esté desactivado.</string>
+    <string name="feature_settings_lastfm_save_failed">No se pudo guardar la clave en este dispositivo. Revisa el espacio libre e inténtalo de nuevo.</string>
+    <string name="feature_settings_lastfm_key_lost">Last.fm ya no acepta tu clave guardada, así que las biografías y los géneros no cargan. Pon una clave nueva o vuelve al servidor de Boom.</string>
     <string name="feature_settings_system_background">Segundo plano</string>
     <string name="feature_settings_stop_on_swipe">Cerrar al quitarla de recientes</string>
     <string name="feature_settings_stop_on_swipe_summary">Quitar la app de las apps recientes detiene la música y cierra la app. Desactivado: la música sigue sonando</string>

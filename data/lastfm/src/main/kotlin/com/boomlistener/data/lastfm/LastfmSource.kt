@@ -34,7 +34,14 @@ interface LastfmKeyStore {
     /** A chave própria, ou `null` quando o app usa o servidor do Boom. */
     val ownKey: StateFlow<String?>
 
-    fun setOwnKey(key: String?)
+    /** Verdadeiro quando o Last.fm recusou a chave salva (suspensa ou revogada depois). */
+    val rejected: StateFlow<Boolean>
+
+    /** Guarda (ou, com `null`, esquece) a chave. Falso se não deu para gravar; nada muda nesse caso. */
+    fun setOwnKey(key: String?): Boolean
+
+    /** O Last.fm recusou a chave salva: a tela de Ajustes avisa. */
+    fun markRejected()
 }
 
 /** Guarda a chave num arquivo de `noBackupFilesDir` (o Android não o copia para a nuvem). */
@@ -42,12 +49,29 @@ internal class FileLastfmKeyStore(context: Context) : LastfmKeyStore {
     private val file = File(context.noBackupFilesDir, "lastfm_own_key")
     private val state = MutableStateFlow(read())
 
-    override val ownKey: StateFlow<String?> = state.asStateFlow()
+    private val rejectedState = MutableStateFlow(false)
 
-    override fun setOwnKey(key: String?) {
+    override val ownKey: StateFlow<String?> = state.asStateFlow()
+    override val rejected: StateFlow<Boolean> = rejectedState.asStateFlow()
+
+    override fun setOwnKey(key: String?): Boolean {
         val clean = key?.let(::normalizeLastfmKey)
-        if (clean == null) file.delete() else file.writeText(clean)
-        state.value = clean
+        val saved = runCatching {
+            if (clean == null) {
+                if (file.exists()) check(file.delete()) { "Não deu para apagar a chave" }
+            } else {
+                file.writeText(clean)
+            }
+        }.isSuccess
+        if (saved) {
+            state.value = clean
+            rejectedState.value = false
+        }
+        return saved
+    }
+
+    override fun markRejected() {
+        rejectedState.value = true
     }
 
     private fun read(): String? = runCatching { file.readText() }.getOrNull()?.let(::normalizeLastfmKey)

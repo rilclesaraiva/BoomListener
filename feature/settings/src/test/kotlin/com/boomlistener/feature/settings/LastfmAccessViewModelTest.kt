@@ -24,11 +24,21 @@ import org.junit.Test
 
 private const val KEY = "0123456789abcdef0123456789abcdef"
 
-private class FakeStore(initial: String? = null) : LastfmKeyStore {
+private class FakeStore(initial: String? = null, private val canWrite: Boolean = true) : LastfmKeyStore {
     private val state = MutableStateFlow(initial)
+    private val rejectedState = MutableStateFlow(false)
     override val ownKey: StateFlow<String?> = state
-    override fun setOwnKey(key: String?) {
+    override val rejected: StateFlow<Boolean> = rejectedState
+
+    override fun setOwnKey(key: String?): Boolean {
+        if (!canWrite) return false
         state.value = key
+        rejectedState.value = false
+        return true
+    }
+
+    override fun markRejected() {
+        rejectedState.value = true
     }
 }
 
@@ -142,5 +152,60 @@ class LastfmAccessViewModelTest {
         assertNull(store.ownKey.value)
         assertFalse(viewModel.state.value.usingOwnKey)
         assertNull(viewModel.state.value.savedKeyEnd)
+    }
+
+    @Test
+    fun discoCheioNaoDerrubaNemMarcaComoSalva() {
+        val store = FakeStore(canWrite = false)
+        val viewModel = LastfmAccessViewModel(store, FakeLastfm(KeyCheck.Valid))
+
+        viewModel.onInput(KEY)
+        viewModel.save()
+
+        assertNull(store.ownKey.value)
+        val state = viewModel.state.value
+        assertEquals(LastfmAccessMessage.SaveFailed, state.message)
+        assertFalse(state.usingOwnKey)
+        assertFalse(state.checking)
+    }
+
+    @Test
+    fun chaveSalvaQueOLastfmPassouARecusarAvisaAPessoa() {
+        val store = FakeStore(KEY)
+        val viewModel = LastfmAccessViewModel(store, FakeLastfm(KeyCheck.Valid))
+        assertFalse(viewModel.state.value.keyRejected)
+
+        store.markRejected()
+
+        assertTrue(viewModel.state.value.keyRejected)
+        assertTrue(viewModel.state.value.usingOwnKey)
+    }
+
+    @Test
+    fun trocarAChaveOuVoltarAoServidorTiraOAviso() {
+        val store = FakeStore(KEY)
+        val viewModel = LastfmAccessViewModel(store, FakeLastfm(KeyCheck.Valid))
+        store.markRejected()
+        assertTrue(viewModel.state.value.keyRejected)
+
+        viewModel.onInput("fedcba9876543210fedcba9876543210")
+        viewModel.save()
+        assertFalse(viewModel.state.value.keyRejected)
+
+        store.markRejected()
+        viewModel.useBoomServer()
+        assertFalse(viewModel.state.value.keyRejected)
+        assertFalse(viewModel.state.value.usingOwnKey)
+    }
+
+    @Test
+    fun naoDaParaApagarAChaveMantemOEstadoAtual() {
+        val store = FakeStore(KEY, canWrite = false)
+        val viewModel = LastfmAccessViewModel(store, FakeLastfm(KeyCheck.Valid))
+
+        viewModel.useBoomServer()
+
+        assertTrue(viewModel.state.value.usingOwnKey)
+        assertEquals(KEY, store.ownKey.value)
     }
 }

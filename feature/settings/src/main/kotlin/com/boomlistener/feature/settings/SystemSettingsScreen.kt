@@ -169,6 +169,13 @@ private fun LastfmKeyForm(
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (state.keyRejected) {
+                Text(
+                    stringResource(R.string.feature_settings_lastfm_key_lost),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             state.message?.let { message ->
                 Text(
                     stringResource(
@@ -177,6 +184,7 @@ private fun LastfmKeyForm(
                             LastfmAccessMessage.BadFormat -> R.string.feature_settings_lastfm_bad_format
                             LastfmAccessMessage.Rejected -> R.string.feature_settings_lastfm_rejected
                             LastfmAccessMessage.CheckFailed -> R.string.feature_settings_lastfm_failed
+                            LastfmAccessMessage.SaveFailed -> R.string.feature_settings_lastfm_save_failed
                         },
                     ),
                     style = MaterialTheme.typography.bodySmall,

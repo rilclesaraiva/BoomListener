@@ -10,12 +10,15 @@ import com.boomlistener.data.lastfm.LastfmKeyStore
 import com.boomlistener.data.lastfm.LastfmRepository
 import com.boomlistener.data.lastfm.normalizeLastfmKey
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** O que dizer depois de tocar em "Testar e salvar". */
-internal enum class LastfmAccessMessage { Saved, BadFormat, Rejected, CheckFailed }
+internal enum class LastfmAccessMessage { Saved, BadFormat, Rejected, CheckFailed, SaveFailed }
 
 internal data class LastfmAccessUiState(
     /** Há uma chave própria salva: o app fala direto com o Last.fm. */
@@ -25,6 +28,8 @@ internal data class LastfmAccessUiState(
     val input: String = "",
     val checking: Boolean = false,
     val message: LastfmAccessMessage? = null,
+    /** O Last.fm deixou de aceitar a chave salva: só aparece até a pessoa trocá-la ou voltar ao servidor do Boom. */
+    val keyRejected: Boolean = false,
 )
 
 /**
@@ -37,7 +42,9 @@ internal class LastfmAccessViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(stateFor(store.ownKey.value))
-    val state: StateFlow<LastfmAccessUiState> = _state.asStateFlow()
+    val state: StateFlow<LastfmAccessUiState> = combine(_state, store.rejected) { state, rejected ->
+        state.copy(keyRejected = rejected && state.usingOwnKey)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, _state.value)
 
     fun onInput(text: String) {
         if (_state.value.checking) return
@@ -56,10 +63,12 @@ internal class LastfmAccessViewModel(
         _state.value = current.copy(checking = true, message = null)
         viewModelScope.launch {
             when (repository.checkKey(key)) {
-                KeyCheck.Valid -> {
-                    store.setOwnKey(key)
-                    _state.value = stateFor(key).copy(message = LastfmAccessMessage.Saved)
-                }
+                KeyCheck.Valid ->
+                    _state.value = if (store.setOwnKey(key)) {
+                        stateFor(key).copy(message = LastfmAccessMessage.Saved)
+                    } else {
+                        _state.value.copy(checking = false, message = LastfmAccessMessage.SaveFailed)
+                    }
                 KeyCheck.Invalid ->
                     _state.value = _state.value.copy(checking = false, message = LastfmAccessMessage.Rejected)
                 KeyCheck.Failed ->
@@ -70,8 +79,7 @@ internal class LastfmAccessViewModel(
 
     /** Volta ao servidor do Boom e esquece a chave. */
     fun useBoomServer() {
-        store.setOwnKey(null)
-        _state.value = stateFor(null)
+        if (store.setOwnKey(null)) _state.value = stateFor(null)
     }
 
     private fun stateFor(key: String?) = LastfmAccessUiState(

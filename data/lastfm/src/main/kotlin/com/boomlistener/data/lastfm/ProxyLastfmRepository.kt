@@ -107,7 +107,11 @@ internal class ProxyLastfmRepository(
         when (classifyReply(json)) {
             LastfmReply.Ok -> if (code in 200..299) runCatching { file.writeText(body) } else error("Last.fm respondeu $code")
             LastfmReply.NotFound -> Unit
-            LastfmReply.KeyRejected -> throw LastfmKeyException("Last.fm recusou a chave")
+            LastfmReply.KeyRejected -> {
+                // Só avisa quando a chave é da pessoa; a do projeto é problema do mantenedor.
+                if (keyStore.ownKey.value != null) keyStore.markRejected()
+                throw LastfmKeyException("Last.fm recusou a chave")
+            }
             LastfmReply.OtherError -> error("Last.fm respondeu erro ${json.optInt("error")}")
         }
         return json
