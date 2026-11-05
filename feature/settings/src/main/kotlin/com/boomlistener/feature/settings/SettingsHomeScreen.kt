@@ -36,8 +36,6 @@ import com.boomlistener.core.designsystem.component.BoomSettingsSection
 internal fun SettingsScreen(
     onOpenAppearance: () -> Unit,
     onOpenAbout: () -> Unit,
-    onOpenPrivacy: () -> Unit,
-    onOpenLicenses: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenPlayback: () -> Unit,
     onOpenShare: () -> Unit,
@@ -154,18 +152,6 @@ internal fun SettingsScreen(
                         title = stringResource(R.string.feature_settings_update_prompts),
                         subtitle = updatePromptsSubtitle(prompts),
                         onClick = { choosingPrompts = true },
-                    )
-                    BoomSettingsItem(
-                        icon = BoomIcons.Privacy,
-                        title = stringResource(R.string.feature_settings_privacy),
-                        subtitle = stringResource(R.string.feature_settings_privacy_summary),
-                        onClick = onOpenPrivacy,
-                    )
-                    BoomSettingsItem(
-                        icon = BoomIcons.Article,
-                        title = stringResource(R.string.feature_settings_licenses),
-                        subtitle = stringResource(R.string.feature_settings_licenses_summary),
-                        onClick = onOpenLicenses,
                     )
                 }
             }

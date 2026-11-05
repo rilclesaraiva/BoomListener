@@ -76,8 +76,8 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Chave e segredo do Last.fm só nos Secrets do Cloudflare Worker (`proxy/worker.js`, `LASTFM_API_KEY`, `LASTFM_SHARED_SECRET`): nunca escrever os valores em arquivo, commit, log ou mensagem. Mudança no `worker.js` o mantenedor cola no painel da Cloudflare.
 
 ## Projeto público
-- Páginas legais em `docs/privacy.md` e `docs/terms.md` (GitHub Pages: `https://rilclesaraiva.github.io/BoomListener/privacy` e `/terms`), linkadas no README e em Ajustes → Sobre. Sem cookies nem rastreadores, então sem página de cookies.
-- Coleta nova (SDK, permissão, chamada de rede) → atualizar a política, a data e o texto de Privacidade do app no mesmo commit.
+- Páginas legais em `docs/privacy.md`, `docs/terms.md` e `docs/licenses.md` (GitHub Pages: `https://rilclesaraiva.github.io/BoomListener/privacy`, `/terms` e `/licenses`), linkadas no README e em Ajustes → Sobre → Legal. **Tudo que é legal abre sempre no navegador, e o app não tem telas com esses textos** (decisão de 04/11/2026): lista de bibliotecas, política e termos vivem só nas páginas. Sem cookies nem rastreadores, então sem página de cookies.
+- Coleta nova (SDK, permissão, chamada de rede) → atualizar a política (e a data dela) no mesmo commit. Biblioteca ou serviço novo → `docs/licenses.md`.
 - Nenhuma afirmação sem respaldo: o que README, páginas legais e notas dizem precisa ser verdade no código. Na dúvida, não afirmar.
 
 ## Apoio e contato

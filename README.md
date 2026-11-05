@@ -111,7 +111,7 @@ Built with Kotlin, Jetpack Compose (Material 3) and Media3, and signed automatic
 
 ## License
 
-[GNU GPL v3](LICENSE).
+[GNU GPL v3](LICENSE). Libraries and services used: [Licenses and attributions](https://rilclesaraiva.github.io/BoomListener/licenses).
 
 ## Legal
 

@@ -46,7 +46,6 @@ import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
 
 private const val SOURCE_URL = "https://github.com/rilclesaraiva/BoomListener"
-private const val LICENSE_URL = "https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE"
 
 private const val DEVELOPER_URL = "https://github.com/rilclesaraiva"
 private const val CHANGELOG_URL = "https://github.com/rilclesaraiva/BoomListener/blob/main/CHANGELOG.md"
@@ -55,6 +54,7 @@ private const val ISSUES_URL = "https://github.com/rilclesaraiva/BoomListener/is
 // Páginas legais (docs/ no GitHub Pages).
 private const val PRIVACY_URL = "https://rilclesaraiva.github.io/BoomListener/privacy"
 private const val TERMS_URL = "https://rilclesaraiva.github.io/BoomListener/terms"
+private const val LICENSES_URL = "https://rilclesaraiva.github.io/BoomListener/licenses"
 
 @Composable
 internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
@@ -122,12 +122,6 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                         subtitle = stringResource(R.string.feature_settings_about_issues_summary),
                         onClick = { context.openUrl(ISSUES_URL) },
                     )
-                    BoomSettingsItem(
-                        icon = BoomIcons.Article,
-                        title = stringResource(R.string.feature_settings_license),
-                        subtitle = stringResource(R.string.feature_settings_license_summary),
-                        onClick = { context.openUrl(LICENSE_URL) },
-                    )
                 }
             }
             item(key = "legal") {
@@ -143,6 +137,12 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                         title = stringResource(R.string.feature_settings_about_terms),
                         subtitle = stringResource(R.string.feature_settings_about_terms_summary),
                         onClick = { context.openUrl(TERMS_URL) },
+                    )
+                    BoomSettingsItem(
+                        icon = BoomIcons.Article,
+                        title = stringResource(R.string.feature_settings_licenses),
+                        subtitle = stringResource(R.string.feature_settings_licenses_summary),
+                        onClick = { context.openUrl(LICENSES_URL) },
                     )
                 }
             }
@@ -220,73 +220,6 @@ private fun appIcon(context: Context): ImageBitmap? = runCatching {
 @Suppress("DEPRECATION")
 private fun rawVersionName(context: Context): String =
     runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
-
-@Composable
-internal fun PrivacyScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    BoomScreenScaffold(
-        title = stringResource(R.string.feature_settings_privacy),
-        onBack = onBack,
-        modifier = modifier,
-        // Sem barra presa na tela: o título é o topo da página.
-        topBar = {},
-    ) { padding ->
-        LazyColumn(contentPadding = padding) {
-            item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_privacy), hasBack = true, large = true)
-            }
-            item {
-                Text(
-                    text = stringResource(R.string.feature_settings_privacy_text),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(20.dp),
-                )
-            }
-        }
-    }
-}
-
-/** Uma biblioteca ou serviço usado pelo app, com sua licença. */
-private data class Attribution(val name: String, val detail: String)
-
-private val attributions = listOf(
-    Attribution("Jetpack Compose & AndroidX", "Google · Apache License 2.0"),
-    Attribution("Material 3 & Material Icons", "Google · Apache License 2.0"),
-    Attribution("Media3 (ExoPlayer)", "Google · Apache License 2.0"),
-    Attribution("DataStore", "Google · Apache License 2.0"),
-    Attribution("Kotlin & kotlinx.coroutines", "JetBrains · Apache License 2.0"),
-    Attribution("Palette", "Google · Apache License 2.0"),
-    Attribution("Reorderable", "Calvin Liang · Apache License 2.0"),
-    Attribution("LRCLIB", "lrclib.net · lyrics database"),
-    Attribution("TagLib", "TagLib team · LGPL 2.1 / MPL 1.1"),
-    Attribution("TagLib for Android", "Kyant · Apache License 2.0"),
-    Attribution("Deezer API", "Deezer · artist information"),
-    Attribution("Last.fm API", "Last.fm · biographies (CC BY-SA)"),
-    Attribution("MusicBrainz", "MetaBrainz Foundation · song and artist data (CC0)"),
-    Attribution("Cover Art Archive", "MetaBrainz Foundation & Internet Archive · album covers"),
-)
-
-@Composable
-internal fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    BoomScreenScaffold(
-        title = stringResource(R.string.feature_settings_licenses),
-        onBack = onBack,
-        modifier = modifier,
-        // Sem barra presa na tela: o título é o topo da página.
-        topBar = {},
-    ) { padding ->
-        LazyColumn(contentPadding = padding) {
-            item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_licenses), hasBack = true, large = true)
-            }
-            item {
-                BoomSettingsSection(title = null) {
-                    attributions.forEach { BoomSettingsItem(icon = null, title = it.name, subtitle = it.detail) }
-                }
-            }
-        }
-    }
-}
 
 internal fun Context.openUrl(url: String) {
     try {

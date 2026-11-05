@@ -7,10 +7,8 @@
     <string name="feature_settings_appearance_summary">Tema, colores y modo AMOLED</string>
     <string name="feature_settings_about">Acerca de Boom, listener!</string>
     <string name="feature_settings_about_summary">Versión %1$s, licencia y código fuente</string>
-    <string name="feature_settings_privacy">Privacidad</string>
-    <string name="feature_settings_privacy_summary">Qué se queda en tu dispositivo y qué sale de él</string>
     <string name="feature_settings_licenses">Licencias y atribuciones</string>
-    <string name="feature_settings_licenses_summary">Bibliotecas y servicios usados en la app</string>
+    <string name="feature_settings_licenses_summary">Licencia de la app, bibliotecas y servicios usados</string>
     <string name="feature_settings_updates">Buscar actualizaciones</string>
     <string name="feature_settings_updates_summary">Busca una versión más nueva en GitHub</string>
     <string name="feature_settings_updates_checking">Comprobando…</string>
@@ -32,10 +30,7 @@
     <string name="feature_settings_dynamic_color_unavailable">Disponible en Android 12 o posterior</string>
     <string name="feature_settings_source">Código fuente</string>
     <string name="feature_settings_source_summary">github.com/rilclesaraiva/BoomListener</string>
-    <string name="feature_settings_license">Licencia</string>
-    <string name="feature_settings_license_summary">GNU GPL v3: libre para usar, estudiar, modificar y compartir</string>
     <string name="feature_settings_about_text">Un reproductor de música local. Gratis, sin anuncios, sin cuenta. Hecho en Brasil, con ayuda de IA bajo la dirección y revisión del autor.</string>
-    <string name="feature_settings_privacy_text">Tu biblioteca, tus ajustes, tu perfil (nombre, foto, portada, descripción) y tus estadísticas de escucha se quedan solo en tu dispositivo. La app no tiene cuenta ni anuncios y no envía nada sobre ti a ningún sitio.\n\nCuando abres un artista, o ves tus artistas en Inicio y en la Biblioteca, la app pide a Deezer información pública sobre él (foto, canciones populares, discografía) usando solo el nombre del artista; si Deezer no lo conoce, pregunta a MusicBrainz y al Cover Art Archive. Para la biografía, pregunta a Last.fm (a través de nuestro propio servidor, que solo añade la clave de acceso, o directamente a Last.fm si pones tu propia clave en Ajustes → Sistema) usando el nombre del artista. Buscar artistas en la Biblioteca envía a Deezer lo que escribes. Para los artistas que sigues, la app consulta a Deezer unas dos veces al día si hay lanzamientos nuevos, usando solo su página de Deezer.\n\nLas letras se buscan en LRCLIB solo cuando las abres, las eliges para el banner de compartir o tocas Buscar letra sincronizada en el editor de etiquetas, usando el título, el artista, el álbum y la duración de la canción. Compartir una canción envía un enlace de búsqueda de YouTube Music; no se consulta nada en línea. Corregir etiquetas automáticamente pregunta a Deezer (o, si no encuentra nada, a MusicBrainz y al Cover Art Archive) y a Last.fm usando el título, el artista y la duración de la canción, solo cuando tocas Buscar. Al abrirse, la app pregunta a GitHub si hay una versión nueva. En Ajustes → Acerca de, descarga de GitHub la foto del desarrollador (por lo general una vez por semana).\n\nCon el modo sin conexión activado (Ajustes → Sistema), la app no se conecta a internet, salvo para buscar actualizaciones.\n\nLa app pide acceso a música y audio, para leer las canciones de tu teléfono, y, en Android 13 o posterior, a notificaciones, solo para los avisos de lanzamientos. Cuando guardas etiquetas, Android te pide permitir cambiar ese archivo. La app no pide fotos, videos, contactos ni ubicación.</string>
     <string name="feature_settings_library">Biblioteca</string>
     <string name="feature_settings_library_summary">Carpetas de música y duración mínima</string>
     <string name="feature_settings_library_duration">Duración mínima</string>
@@ -68,7 +63,7 @@
     <string name="feature_settings_about_short">Acerca de</string>
     <string name="feature_settings_about_legal">Legal</string>
     <string name="feature_settings_about_privacy_policy">Política de privacidad</string>
-    <string name="feature_settings_about_privacy_policy_summary">Lo que la app hace con la información, completo</string>
+    <string name="feature_settings_about_privacy_policy_summary">Qué se queda en tu dispositivo y qué sale de él</string>
     <string name="feature_settings_about_terms">Términos de uso</string>
     <string name="feature_settings_about_terms_summary">Las reglas para usar la app</string>
     <string name="feature_settings_about_support">¿Quieres apoyar el proyecto?</string>

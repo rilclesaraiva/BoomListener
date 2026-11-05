@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Changed
+- **Settings → About:** the legal items now live in one place, under **Legal**, and all three open in your browser, like the Terms of use always did: **Privacy policy**, **Terms of use** and **Licenses & attributions** (the app's GPL v3 license, libraries and services, now on its own page). The Settings home no longer repeats Privacy and Licenses, and the separate **License** entry in Project is gone.
+
 ## [0.55.0] - 2026-11-04
 ### Changed
 - **Lyrics screen:** when you scroll the lyrics, a **Sync with lyrics** button appears; tap it to jump back to the line that is playing. The lyrics no longer re-sync on their own after a few seconds (or when you stop on the current line). Holding a line to jump to it also goes back to following the song.

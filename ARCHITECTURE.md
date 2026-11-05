@@ -223,6 +223,7 @@ O que cada parte faz e por quê, com os nomes do código. O `CLAUDE.md` traz só
 
 ## Ajustes
 
+- **Sobre → Legal:** Política de privacidade, Termos de uso e Licenças e atribuições abrem **no navegador** (GitHub Pages: `docs/privacy.md`, `docs/terms.md`, `docs/licenses.md`); o app não tem telas com esses textos, e a tela inicial de Ajustes não repete esses itens. A licença do app (GPL v3) e a lista de bibliotecas e serviços estão em `docs/licenses.md`: biblioteca ou serviço novo entra lá.
 - **Sobre → Desenvolvedor:** a foto do GitHub (`DeveloperAvatarData`, data/updates): arquivo em `filesDir/github`, consulta no máximo 1 vez por semana com `ETag` (falhou sem foto: tenta de novo em 10 min; `shouldRefreshAvatar`, testado), respeita o modo offline e os ajustes dela ficam fora do backup.
 
 - **Nenhuma opção solta na tela principal dos Ajustes:** toda opção mora numa categoria. Ordem do Geral: Aparência, Reprodução, Biblioteca, Compartilhamento, Sistema (do visual ao técnico). Opção nova entra na categoria que corresponde; se nenhuma serve, pergunte.
