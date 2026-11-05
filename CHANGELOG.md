@@ -6,6 +6,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+## [0.55.0] - 2026-11-04
 ### Changed
 - **Lyrics screen:** when you scroll the lyrics, a **Sync with lyrics** button appears; tap it to jump back to the line that is playing. The lyrics no longer re-sync on their own after a few seconds (or when you stop on the current line). Holding a line to jump to it also goes back to following the song.
 - **Tag editor → Synced lyrics:** the card now stays on screen even when the lyrics are already synced, so you can check again whether LRCLIB has a different version (for example, if someone fixed the timing there). If yours already matches, it says so and changes nothing; if it differs, the new one goes in the field (you can undo) and Save stores it. The search always asks LRCLIB again instead of using what the app had saved.
@@ -16,6 +17,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ### Added
 - **Settings → System → Last.fm:** you can now use your **own Last.fm key** instead of the Boom server. Paste a free key (the screen has a link to get one), tap **Test and save**, and the app asks Last.fm directly from your phone for artist biographies and genres, so the project's server is out of the loop. The key is tested before it is saved, stays only on your device (not in backups) and tapping **Boom server** goes back to the default and deletes it. If Last.fm later stops accepting your saved key, the screen tells you so instead of silently showing nothing. Nothing changes if you don't use it.
 - **Tag editor → Synced lyrics:** when a song's lyrics have no times, a new card offers **Find synced lyrics**. The app looks the song up on LRCLIB and, if it has the timed version, puts it in the Lyrics field (replacing the text there; you can undo). Tap Save and the synced lyrics are stored in the file itself, so the player shows them synced even offline and the file keeps them in other apps. Nothing changes until you save. If LRCLIB only has the lyrics without times, nothing is touched.
+
+### Known issues
+- **Own Last.fm key:** tested by hand only for the common cases. How the app behaves when Last.fm later stops accepting a saved key, or when the phone has no space left to save it, is covered by automated tests but hasn't been tried on a real device yet. If something looks wrong, please open an issue.
 
 ## [0.54.1] - 2026-11-04
 

@@ -103,5 +103,5 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 
 ## Contexto atual
 - Foco: polimento do player e da fila; seguir o documento de estrutura do mantenedor (adotado em 29/10/2026).
-- Celular travado em pé (31/10/2026); tablet gira e usa o mesmo layout do celular em pé (o layout próprio de tela larga saiu em 30/10/2026). Última Release pública: v0.54.0.
+- Celular travado em pé (31/10/2026); tablet gira e usa o mesmo layout do celular em pé (o layout próprio de tela larga saiu em 30/10/2026). Última Release pública: v0.55.0.
 - Problemas conhecidos: toque no nome/bio do perfil e nas prévias da folha de edição ainda abre o editor/seletor.
