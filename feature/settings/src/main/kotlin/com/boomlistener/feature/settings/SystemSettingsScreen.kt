@@ -45,7 +45,8 @@ import com.boomlistener.core.designsystem.component.BoomSettingsSection
 import com.boomlistener.core.player.PlaybackSettingsData
 
 /**
- * Ajustes → Sistema: como o app usa a internet (modo offline), o que ele
+ * Ajustes → Sistema: como o app usa a internet (modo offline, Last.fm), as
+ * atualizações do app, o que ele
  * faz em segundo plano (fechar de vez ao tirar dos apps recentes) e o backup
  * dos seus dados.
  */
@@ -117,6 +118,7 @@ internal fun SystemSettingsScreen(onBack: () -> Unit, onOpenBackup: () -> Unit, 
                     }
                 }
             }
+            item(key = "updates") { UpdatesSettingsSection() }
             item(key = "background") {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_system_background)) {
                     // Tirar dos recentes encerra a música e o app (desligado: continua tocando).

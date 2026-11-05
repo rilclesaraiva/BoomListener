@@ -144,7 +144,7 @@
     <string name="feature_settings_visualizer_wave">Wave</string>
     <string name="feature_settings_visualizer_wave_summary">The shape of the sound, live</string>
     <string name="feature_settings_system">System</string>
-    <string name="feature_settings_system_summary">Offline mode, Last.fm access, the app in the background and backup</string>
+    <string name="feature_settings_system_summary">Offline mode, Last.fm access, app updates, the app in the background and backup</string>
     <string name="feature_settings_system_internet">Internet</string>
     <string name="feature_settings_lastfm">Last.fm</string>
     <string name="feature_settings_lastfm_boom">Boom server</string>
@@ -162,6 +162,7 @@
     <string name="feature_settings_lastfm_failed">Couldn’t reach Last.fm to test the key. Check your connection and that offline mode is off.</string>
     <string name="feature_settings_lastfm_save_failed">Couldn’t save the key on this device. Check the free space and try again.</string>
     <string name="feature_settings_lastfm_key_lost">Last.fm no longer accepts your saved key, so biographies and genres aren’t loading. Enter a new key or go back to the Boom server.</string>
+    <string name="feature_settings_system_updates">Updates</string>
     <string name="feature_settings_system_background">Background</string>
     <string name="feature_settings_stop_on_swipe">Stop when closed from recents</string>
     <string name="feature_settings_stop_on_swipe_summary">Swiping the app away from recent apps stops the music and closes the app. Off: the music keeps playing</string>

@@ -144,7 +144,7 @@
     <string name="feature_settings_visualizer_wave">Onda</string>
     <string name="feature_settings_visualizer_wave_summary">La forma del sonido, en vivo</string>
     <string name="feature_settings_system">Sistema</string>
-    <string name="feature_settings_system_summary">Modo sin conexión, acceso a Last.fm, la app en segundo plano y copia de seguridad</string>
+    <string name="feature_settings_system_summary">Modo sin conexión, acceso a Last.fm, actualizaciones de la app, la app en segundo plano y copia de seguridad</string>
     <string name="feature_settings_system_internet">Internet</string>
     <string name="feature_settings_lastfm">Last.fm</string>
     <string name="feature_settings_lastfm_boom">Servidor de Boom</string>
@@ -162,6 +162,7 @@
     <string name="feature_settings_lastfm_failed">No se pudo contactar con Last.fm para probar la clave. Revisa la conexión y que el modo sin conexión esté desactivado.</string>
     <string name="feature_settings_lastfm_save_failed">No se pudo guardar la clave en este dispositivo. Revisa el espacio libre e inténtalo de nuevo.</string>
     <string name="feature_settings_lastfm_key_lost">Last.fm ya no acepta tu clave guardada, así que las biografías y los géneros no cargan. Pon una clave nueva o vuelve al servidor de Boom.</string>
+    <string name="feature_settings_system_updates">Actualizaciones</string>
     <string name="feature_settings_system_background">Segundo plano</string>
     <string name="feature_settings_stop_on_swipe">Cerrar al quitarla de recientes</string>
     <string name="feature_settings_stop_on_swipe_summary">Quitar la app de las apps recientes detiene la música y cierra la app. Desactivado: la música sigue sonando</string>

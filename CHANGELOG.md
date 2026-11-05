@@ -8,6 +8,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ### Changed
 - **Settings → About:** the legal items now live in one place, under **Legal**, and all three open in your browser, like the Terms of use always did: **Privacy policy**, **Terms of use** and **Licenses & attributions** (the app's GPL v3 license, libraries and services, now on its own page). The Settings home no longer repeats Privacy and Licenses, and the separate **License** entry in Project is gone.
+- **Settings:** **Check for updates** and **Update alerts** moved from the Settings home to **System → Updates**, so every option lives inside a category. The Settings home now has only the five categories and About.
 
 ## [0.55.0] - 2026-11-04
 ### Changed
