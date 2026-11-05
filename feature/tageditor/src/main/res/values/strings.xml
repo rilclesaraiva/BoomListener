@@ -55,4 +55,6 @@
     <string name="feature_tageditor_cover_yours">Yours</string>
     <string name="feature_tageditor_cover_found">Found</string>
     <string name="feature_tageditor_cover_use_found">Use this cover</string>
+    <string name="feature_tageditor_queue_position">Song %1$d of %2$d</string>
+    <string name="feature_tageditor_queue_skip">Skip</string>
 </resources>

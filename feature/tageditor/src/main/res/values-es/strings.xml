@@ -55,4 +55,6 @@
     <string name="feature_tageditor_cover_yours">La tuya</string>
     <string name="feature_tageditor_cover_found">Encontrada</string>
     <string name="feature_tageditor_cover_use_found">Usar esta portada</string>
+    <string name="feature_tageditor_queue_position">Canción %1$d de %2$d</string>
+    <string name="feature_tageditor_queue_skip">Omitir</string>
 </resources>

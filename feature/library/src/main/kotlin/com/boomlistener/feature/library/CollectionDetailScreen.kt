@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,6 +63,9 @@ import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomFastScroller
 import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.core.designsystem.component.BoomSelectableArtwork
+import com.boomlistener.core.designsystem.component.BoomSelectionBar
+import com.boomlistener.core.designsystem.component.rememberBoomSelection
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomMenuAction
@@ -92,6 +97,7 @@ internal fun CollectionDetailScreen(
     onBack: () -> Unit,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onEditTagsMany: (List<String>) -> Unit,
     modifier: Modifier = Modifier,
     /** Abre o álbum de uma música (null dentro do próprio álbum). */
     onOpenAlbum: ((albumKey: String) -> Unit)? = null,
@@ -152,6 +158,7 @@ internal fun CollectionDetailScreen(
                 padding = padding,
                 onOpenArtist = onOpenArtist,
                 onEditTags = onEditTags,
+                onEditTagsMany = onEditTagsMany,
                 onAddToPlaylist = { addToPlaylist = it },
                 onDelete = deleteSong,
                 onDetails = { showDetails(it.uri, it.title) },
@@ -207,6 +214,7 @@ private fun TrackListWithHeader(
     padding: androidx.compose.foundation.layout.PaddingValues,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onEditTagsMany: (List<String>) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
     onDelete: (Track) -> Unit,
     onDetails: (Track) -> Unit,
@@ -215,6 +223,9 @@ private fun TrackListWithHeader(
     playlistMenu: @Composable () -> Unit,
 ) {
     val listState = rememberLazyListState()
+    // Seleção de várias músicas (tocar na capa); só as que ainda estão na lista contam.
+    val selection = rememberBoomSelection()
+    LaunchedEffect(state.tracks) { selection.retain(state.tracks.map { it.uri }.toSet()) }
     // Reordenar mexe na lista da tela na hora; a playlist só é gravada ao soltar.
     var local by remember { mutableStateOf(state.tracks) }
     var dragging by remember { mutableStateOf(false) }
@@ -249,6 +260,9 @@ private fun TrackListWithHeader(
                         viewModel = viewModel,
                         isPlaylist = state.isPlaylist,
                         onClick = { viewModel.play(local.indexOf(track)) },
+                        selected = selection.isSelected(track.uri),
+                        selectionActive = selection.isActive,
+                        onToggle = { selection.toggle(track.uri) },
                         onOpenArtist = onOpenArtist,
                         onEditTags = onEditTags,
                         onAddToPlaylist = onAddToPlaylist,
@@ -281,6 +295,12 @@ private fun TrackListWithHeader(
                     )
                 }
             }
+        }
+    }
+    val localUris = local.map { it.uri }
+    BoomSelectionBar(selection, localUris, Modifier.align(Alignment.TopCenter)) {
+        IconButton(onClick = { onEditTagsMany(selection.inOrder(localUris)) }) {
+            Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_library_edit_tags))
         }
     }
     // Arrastar pela direita pula pela lista, mostrando a letra.
@@ -400,6 +420,9 @@ private fun DetailTrackRow(
     viewModel: CollectionDetailViewModel,
     isPlaylist: Boolean,
     onClick: () -> Unit,
+    selected: Boolean,
+    selectionActive: Boolean,
+    onToggle: () -> Unit,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
@@ -419,12 +442,19 @@ private fun DetailTrackRow(
     }
     ListItem(
         // Segurar a música abre o mesmo menu dos três pontinhos.
-        modifier = Modifier.clickableWithMenu(menuOpen, longPressEnabled = { !handlePressed.value }, onClick = onClick),
+        modifier = Modifier.clickableWithMenu(
+            menuOpen,
+            longPressEnabled = { !handlePressed.value && !selectionActive },
+            onClick = if (selectionActive) onToggle else onClick,
+        ),
+        colors = ListItemDefaults.colors(
+            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else ListItemDefaults.containerColor,
+        ),
         leadingContent = {
             // Na playlist, o puxador de reordenar fica ao lado da capa.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (isPlaylist) Box(Modifier.trackPress(handlePressed)) { dragHandle() }
-                BoomArtwork(image = artwork, fallbackText = track.title)
+                BoomSelectableArtwork(image = artwork, fallbackText = track.title, selected = selected, onToggle = onToggle)
             }
         },
         headlineContent = { Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },

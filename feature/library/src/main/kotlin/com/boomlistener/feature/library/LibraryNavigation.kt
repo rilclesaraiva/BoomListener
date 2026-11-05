@@ -46,6 +46,7 @@ fun NavGraphBuilder.libraryScreen(
     navController: NavController,
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onEditTagsMany: (List<String>) -> Unit,
     onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -64,6 +65,7 @@ fun NavGraphBuilder.libraryScreen(
                     }
                 },
                 onEditTags = onEditTags,
+                onEditTagsMany = onEditTagsMany,
                 onOpenReleases = onOpenReleases,
                 onOpenSettings = onOpenSettings,
             )
@@ -125,6 +127,7 @@ fun NavGraphBuilder.libraryScreen(
                     onBack = back,
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
+                    onEditTagsMany = onEditTagsMany,
                     onOpenAlbum = if (route == ALBUM_ROUTE) null else { key -> navController.openCollection("album", key) },
                 )
             }

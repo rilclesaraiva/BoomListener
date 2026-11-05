@@ -38,6 +38,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -88,6 +90,9 @@ import com.boomlistener.core.designsystem.component.BoomMenuKind
 import com.boomlistener.core.designsystem.component.BoomFastScroller
 import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.core.designsystem.component.BoomSelectableArtwork
+import com.boomlistener.core.designsystem.component.BoomSelectionBar
+import com.boomlistener.core.designsystem.component.rememberBoomSelection
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomMenuAction
@@ -113,6 +118,7 @@ internal fun LibraryScreen(
     onOpenAlbum: (albumKey: String) -> Unit,
     onSeeAll: (CollectionKind) -> Unit,
     onEditTags: (Track) -> Unit,
+    onEditTagsMany: (List<String>) -> Unit,
     onOpenReleases: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -194,6 +200,7 @@ internal fun LibraryScreen(
                     onOpenTrack = viewModel::play,
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
+                    onEditTagsMany = onEditTagsMany,
                     onAddToPlaylist = { addToPlaylist = it },
                     albumMenu = AlbumMenuActions(
                         play = viewModel::playTracks,
@@ -233,12 +240,17 @@ private fun TrackList(
     onOpenTrack: (Track) -> Unit,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
+    onEditTagsMany: (List<String>) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
     albumMenu: AlbumMenuActions,
     contentPadding: PaddingValues,
     title: @Composable () -> Unit,
 ) {
     val listState = rememberLazyListState()
+    // Seleção de várias músicas (tocar na capa); só as da lista atual contam.
+    val selection = rememberBoomSelection()
+    val trackUris = remember(state.tracks) { state.tracks.map { it.uri } }
+    LaunchedEffect(trackUris) { selection.retain(trackUris.toSet()) }
     val scope = rememberCoroutineScope()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
     val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails, onOpenAlbum) {
@@ -379,6 +391,9 @@ private fun TrackList(
                     version = state.version,
                     loadArtwork = loadArtwork,
                     menu = menu,
+                    selected = selection.isSelected(track.uri),
+                    selectionActive = selection.isActive,
+                    onToggle = { selection.toggle(track.uri) },
                     onClick = { onOpenTrack(track) },
                 )
             }
@@ -387,6 +402,11 @@ private fun TrackList(
             // pularia de lugar a cada letra). Com ele, a busca fica onde está.
             if (state.query.isNotEmpty()) searchRoomItem(searchRoom)
           }
+            BoomSelectionBar(selection, trackUris, Modifier.align(Alignment.TopCenter)) {
+                IconButton(onClick = { onEditTagsMany(selection.inOrder(trackUris)) }) {
+                    Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_library_edit_tags))
+                }
+            }
             // Arrastar pela direita pula pela lista, mostrando a letra.
             BoomFastScroller(
                 state = listState,
@@ -686,6 +706,9 @@ private fun TrackItem(
     version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
     menu: SongMenu,
+    selected: Boolean,
+    selectionActive: Boolean,
+    onToggle: () -> Unit,
     onClick: () -> Unit,
 ) {
     val menuOpen = remember { mutableStateOf(false) }
@@ -697,9 +720,19 @@ private fun TrackItem(
     val unknownArtist = stringResource(R.string.feature_library_unknown_artist)
 
     ListItem(
-        // Segurar a música abre o mesmo menu dos três pontinhos.
-        modifier = Modifier.clickableWithMenu(menuOpen, onClick = onClick),
-        leadingContent = { BoomArtwork(image = artwork, fallbackText = track.title) },
+        // Segurar a música abre o mesmo menu dos três pontinhos (com a seleção
+        // aberta, tocar na linha marca e segurar não abre o menu).
+        modifier = Modifier.clickableWithMenu(
+            menuOpen,
+            longPressEnabled = { !selectionActive },
+            onClick = if (selectionActive) onToggle else onClick,
+        ),
+        colors = ListItemDefaults.colors(
+            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else ListItemDefaults.containerColor,
+        ),
+        leadingContent = {
+            BoomSelectableArtwork(image = artwork, fallbackText = track.title, selected = selected, onToggle = onToggle)
+        },
         headlineContent = { Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = {
             Text(

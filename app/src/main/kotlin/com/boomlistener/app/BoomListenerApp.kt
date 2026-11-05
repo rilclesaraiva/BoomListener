@@ -88,6 +88,7 @@ import com.boomlistener.core.designsystem.component.FavoriteShare
 import com.boomlistener.core.designsystem.component.LocalFavoriteShare
 import com.boomlistener.core.common.ShareTarget
 import com.boomlistener.feature.tageditor.navigateToTagEditor
+import com.boomlistener.feature.tageditor.navigateToTagEditorQueue
 import com.boomlistener.feature.tageditor.tageditorScreen
 import com.boomlistener.feature.history.navigateToHistory
 import com.boomlistener.feature.settings.navigateToSettings
@@ -282,6 +283,7 @@ fun BoomListenerApp() {
                 navController = navController,
                 onOpenArtist = openSongArtist,
                 onEditTags = { track -> navController.navigateToTagEditor(track.uri) },
+                onEditTagsMany = navController::navigateToTagEditorQueue,
                 onOpenReleases = openReleases,
                 onOpenSettings = openSettings,
             )
@@ -300,7 +302,7 @@ fun BoomListenerApp() {
                 onBack = back,
                 onOpenArtist = openSongArtist,
             )
-            tageditorScreen(onBack = back)
+            tageditorScreen(onBack = back, onOpenNext = navController::navigateToTagEditor)
             releasesScreen(
                 onBack = back,
                 onOpenAlbum = navController::navigateToAlbum,

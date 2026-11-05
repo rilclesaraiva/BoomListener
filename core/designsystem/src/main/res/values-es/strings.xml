@@ -22,4 +22,6 @@
     <string name="core_designsystem_releases">Lanzamientos</string>
     <string name="core_designsystem_artists_title">Artistas de esta canción</string>
     <string name="core_designsystem_artist_full_name">Nombre completo, como en la etiqueta</string>
+    <string name="core_designsystem_selection_close">Cerrar selección</string>
+    <string name="core_designsystem_selection_all">Seleccionar todo</string>
 </resources>

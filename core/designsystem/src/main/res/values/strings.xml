@@ -22,4 +22,6 @@
     <string name="core_designsystem_releases">New releases</string>
     <string name="core_designsystem_artists_title">Artists on this song</string>
     <string name="core_designsystem_artist_full_name">Full name, as in the tag</string>
+    <string name="core_designsystem_selection_close">Close selection</string>
+    <string name="core_designsystem_selection_all">Select all</string>
 </resources>

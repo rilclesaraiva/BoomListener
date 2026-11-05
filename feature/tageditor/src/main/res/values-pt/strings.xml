@@ -55,4 +55,6 @@
     <string name="feature_tageditor_cover_yours">A sua</string>
     <string name="feature_tageditor_cover_found">Encontrada</string>
     <string name="feature_tageditor_cover_use_found">Usar esta capa</string>
+    <string name="feature_tageditor_queue_position">Música %1$d de %2$d</string>
+    <string name="feature_tageditor_queue_skip">Pular</string>
 </resources>

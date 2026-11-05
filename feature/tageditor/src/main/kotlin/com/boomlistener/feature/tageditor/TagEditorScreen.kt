@@ -56,6 +56,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -92,14 +93,28 @@ private val CoverSize = 136.dp
 @Composable
 internal fun TagEditorScreen(
     viewModel: TagEditorViewModel,
+    uri: String,
     onBack: () -> Unit,
+    onOpenNext: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Seleção múltipla: a fila só vale para a música que ela mesma abriu.
+    val queue = TagEditQueue.state.collectAsStateWithLifecycle().value?.takeIf { it.current == uri }
+    val queueActive = queue != null
+    val goNext: () -> Unit = {
+        val next = TagEditQueue.advance()
+        if (next != null) onOpenNext(next) else onBack()
+    }
+    val exit: () -> Unit = {
+        TagEditQueue.clear()
+        onBack()
+    }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
-    var confirmDiscard by remember { mutableStateOf(false) }
+    // O que fazer se a pessoa confirmar o descarte das alterações (sair ou pular).
+    var discardAction by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     val savedMessage = stringResource(R.string.feature_tageditor_saved)
     val failedMessage = stringResource(R.string.feature_tageditor_save_failed)
@@ -132,6 +147,8 @@ internal fun TagEditorScreen(
         }
     }
 
+    val currentQueueActive by rememberUpdatedState(queueActive)
+    val currentGoNext by rememberUpdatedState(goNext)
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
@@ -139,7 +156,8 @@ internal fun TagEditorScreen(
                     writeRequest.launch(IntentSenderRequest.Builder(event.request).build())
                 TagEditorEvent.AskStoragePermission ->
                     storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                TagEditorEvent.Saved -> snackbar.showSnackbar(savedMessage)
+                // Na fila, salvar já abre a próxima (a tela some, não há aviso a mostrar).
+                TagEditorEvent.Saved -> if (currentQueueActive) currentGoNext() else snackbar.showSnackbar(savedMessage)
                 TagEditorEvent.SaveFailed -> snackbar.showSnackbar(failedMessage)
             }
         }
@@ -148,10 +166,13 @@ internal fun TagEditorScreen(
     // Com alterações não salvas, "voltar" pergunta antes de descartar.
     val leave: () -> Unit = {
         if (state.hasChanges) {
-            confirmDiscard = true
+            discardAction = exit
         } else {
-            onBack()
+            exit()
         }
+    }
+    val skip: () -> Unit = {
+        if (state.hasChanges) discardAction = goNext else goNext()
     }
     BackHandler(enabled = state.hasChanges, onBack = leave)
 
@@ -187,6 +208,8 @@ internal fun TagEditorScreen(
                 onPickCover = {
                     pickCover.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
+                queue = queue,
+                onSkip = skip,
                 modifier = contentModifier,
             )
         }
@@ -202,19 +225,19 @@ internal fun TagEditorScreen(
         )
     }
 
-    if (confirmDiscard) {
+    discardAction?.let { action ->
         AlertDialog(
-            onDismissRequest = { confirmDiscard = false },
+            onDismissRequest = { discardAction = null },
             title = { Text(stringResource(R.string.feature_tageditor_discard_title)) },
             text = { Text(stringResource(R.string.feature_tageditor_discard_message)) },
             confirmButton = {
                 TextButton(onClick = {
-                    confirmDiscard = false
-                    onBack()
+                    discardAction = null
+                    action()
                 }) { Text(stringResource(R.string.feature_tageditor_discard)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDiscard = false }) {
+                TextButton(onClick = { discardAction = null }) {
                     Text(stringResource(R.string.feature_tageditor_keep_editing))
                 }
             },
@@ -227,6 +250,8 @@ private fun EditorForm(
     state: TagEditorUiState,
     viewModel: TagEditorViewModel,
     onPickCover: () -> Unit,
+    queue: TagQueue?,
+    onSkip: () -> Unit,
     modifier: Modifier,
 ) {
     val tags = state.tags
@@ -244,6 +269,7 @@ private fun EditorForm(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
+        if (queue != null) QueueBar(queue, onSkip)
         CoverRow(state = state, onPickCover = onPickCover, onRemoveCover = viewModel::removeCover)
         AutoTagCard(state = state, viewModel = viewModel)
 
@@ -636,4 +662,18 @@ private fun decodeSampled(bytes: ByteArray, sizePx: Int): ImageBitmap? {
     while (bounds.outWidth / (sample * 2) >= sizePx && bounds.outHeight / (sample * 2) >= sizePx) sample *= 2
     return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
         ?.asImageBitmap()
+}
+
+/** "Música N de M" e o Pular, quando o editor foi aberto pela seleção de várias músicas. */
+@Composable
+private fun QueueBar(queue: TagQueue, onSkip: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.feature_tageditor_queue_position, queue.position, queue.size),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onSkip) { Text(stringResource(R.string.feature_tageditor_queue_skip)) }
+    }
 }

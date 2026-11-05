@@ -35,7 +35,14 @@ fun NavController.navigateToTagEditor(trackUri: String) =
         launchSingleTop = true
     }
 
-fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit) {
+/** Abre o editor na primeira de várias músicas; salvar (ou pular) leva à próxima. */
+fun NavController.navigateToTagEditorQueue(trackUris: List<String>) {
+    if (trackUris.isEmpty()) return
+    TagEditQueue.start(trackUris)
+    navigateToTagEditor(trackUris.first())
+}
+
+fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit, onOpenNext: (String) -> Unit) {
     composable(
         route = TAGEDITOR_ROUTE,
         arguments = listOf(navArgument(ARG_URI) { type = NavType.StringType }),
@@ -55,7 +62,7 @@ fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit) {
             )
         }
         BoomNavScreen(this) {
-            TagEditorScreen(viewModel = viewModel, onBack = onBack)
+            TagEditorScreen(viewModel = viewModel, uri = uri, onBack = onBack, onOpenNext = onOpenNext)
         }
     }
 }

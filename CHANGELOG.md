@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Added
+- **Select several songs:** in the **Songs** list on Home and in any album, genre, playlist or favorites page, tap a song's **cover** to select it (it turns into a check). With one selected, tapping any row selects or unselects it, holding no longer opens the song menu, and a bar at the top shows how many you picked, **Select all** and the **Edit tags** button. Back (or ✕) closes the selection. **Edit tags** opens the tag editor on the first song and, each time you save, goes to the next ("Song 2 of 5"); **Skip** moves on without saving. This is a first step: fixing tags automatically for many songs at once, and a dedicated area for it, come later. Other lists (artist page, search, history, profile) don't have selection yet.
+
 ### Fixed
 - **Background blur:** after starting the system "back" gesture on a page and giving up (without letting go), turning the blur setting off and on could leave the whole page stuck blurred. The page you are on is now never blurred while it is stopped, and turning the setting on or off no longer interferes with a movement in progress.
 
