@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Fixed
+- **Background blur:** after starting the system "back" gesture on a page and giving up (without letting go), turning the blur setting off and on could leave the whole page stuck blurred. The page you are on is now never blurred while it is stopped, and turning the setting on or off no longer interferes with a movement in progress.
+
 ## [0.55.0] - 2026-11-04
 
 ### Changed

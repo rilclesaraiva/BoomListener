@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -20,6 +21,8 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.boomlistener.core.designsystem.theme.boomScreenSpec
 
 /*
@@ -60,19 +63,41 @@ fun BoomNavScreen(scope: AnimatedVisibilityScope, content: @Composable () -> Uni
     }
 }
 
+/**
+ * Quanto a tela fica desfocada (0 = nítida, 1 = [ScreenBlurRadius]).
+ *
+ * [settled] é verdadeiro quando a tela é a de cima, parada e interativa (a
+ * entrada da navegação está em RESUMED). Ela nunca desfoca: assim um "voltar"
+ * preditivo começado e desistido, ou ligar e desligar o desfoque no meio, não
+ * deixa a tela em que a pessoa está presa desfocada.
+ */
+internal fun recedeTarget(
+    enabled: Boolean,
+    settled: Boolean,
+    state: EnterExitState,
+    goingBack: Boolean,
+    tabSwitch: Boolean,
+): Float {
+    if (!enabled || settled || tabSwitch) return 0f
+    // Abrindo: a que sai fica por baixo. Voltando: a que entra estava por baixo.
+    val underneath = when (state) {
+        EnterExitState.PreEnter -> goingBack
+        EnterExitState.PostExit -> !goingBack
+        EnterExitState.Visible -> false
+    }
+    return if (underneath) 1f else 0f
+}
+
 @Composable
 private fun Modifier.recedeBlur(scope: AnimatedVisibilityScope): Modifier {
     val blur = LocalBackgroundBlur.current ?: return this
-    // Desligado: nem cria a animação nem a camada.
-    if (!blur.enabled) return this
-    // Abrindo: a que sai fica por baixo. Voltando: a que entra estava por baixo.
+    // A entrada da navegação só fica em RESUMED quando já terminou de entrar (e não está saindo).
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
+    val settled = lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
+    // A animação existe sempre (ligar ou desligar o desfoque só muda o alvo): criá-la ou
+    // tirá-la no meio de um movimento deixava o valor num estado que não bate com a tela.
     val amount by scope.transition.animateFloat(transitionSpec = { boomScreenSpec() }, label = "recedeBlur") { state ->
-        val underneath = when (state) {
-            EnterExitState.PreEnter -> blur.goingBack
-            EnterExitState.PostExit -> !blur.goingBack
-            EnterExitState.Visible -> false
-        }
-        if (blur.enabled && underneath && !blur.tabSwitch) 1f else 0f
+        recedeTarget(blur.enabled, settled, state, blur.goingBack, blur.tabSwitch)
     }
     return graphicsLayer {
         val radius = ScreenBlurRadius.toPx() * amount

@@ -18,4 +18,6 @@ dependencies {
     implementation(libs.androidx.palette)
     // BackHandler dos painéis (BoomModalSheet).
     implementation(libs.androidx.activity.compose)
+    // Estado da tela na navegação (o desfoque do fundo só vale em movimento).
+    implementation(libs.androidx.lifecycle.runtime.compose)
 }
