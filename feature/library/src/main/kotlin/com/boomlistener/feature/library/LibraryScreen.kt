@@ -367,7 +367,7 @@ private fun TrackList(
             stickyHeader(key = "songsTitle") {
                 SongsHeader(
                     stuck = songsHeaderStuck,
-                    modifier = Modifier.onSizeChanged { songsHeaderPx = it.height }.recedeWhileSelecting(selection),
+                    modifier = Modifier.recedeWhileSelecting(selection).onSizeChanged { songsHeaderPx = it.height },
                     query = state.query,
                     // Cada letra digitada traz a tela de volta até a busca (a pessoa
                     // pode ter rolado para cima no meio da busca).

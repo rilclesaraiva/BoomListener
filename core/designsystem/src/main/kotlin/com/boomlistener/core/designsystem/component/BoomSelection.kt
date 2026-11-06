@@ -45,11 +45,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import com.boomlistener.core.designsystem.R
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
@@ -243,6 +245,12 @@ fun Modifier.recedeWhileSelecting(selection: BoomSelection): Modifier {
     val active = selection.isActive
     val extra = with(LocalDensity.current) { 120.dp.toPx() }
     return this
+        // O espaço do cabeçalho também se fecha (sem vão vazio no meio da lista).
+        .layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            val height = (placeable.height * (1f - fraction.coerceIn(0f, 1f))).roundToInt()
+            layout(placeable.width, height) { placeable.place(0, 0) }
+        }
         .pointerInput(active) {
             if (active) {
                 awaitPointerEventScope {
