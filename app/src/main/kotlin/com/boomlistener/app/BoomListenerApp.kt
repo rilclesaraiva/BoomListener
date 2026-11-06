@@ -413,7 +413,7 @@ fun BoomListenerApp() {
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         // Barra de abas recolhida pela seleção: o mini player desce junto.
-                        .padding(bottom = bottom * (1f - selectionFraction))
+                        .padding(bottom = bottom * (1f - selectionFraction).coerceIn(0f, 1f))
                         // O player em tela cheia cresce a partir daqui.
                         .playerSheetAnchor(playerSheet),
                 ) {
