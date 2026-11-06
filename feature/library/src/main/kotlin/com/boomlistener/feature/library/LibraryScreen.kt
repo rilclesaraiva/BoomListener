@@ -51,6 +51,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -254,7 +255,11 @@ private fun TrackList(
     // Seleção de várias músicas (tocar na capa); só as da lista atual contam.
     val selection = rememberBoomSelection()
     val trackUris = remember(state.tracks) { state.tracks.map { it.uri } }
-    LaunchedEffect(trackUris) { selection.retain(trackUris.toSet()) }
+    // Buscar não solta a seleção: as marcadas que a busca esconde continuam marcadas
+    // (e entram nas ações). Só com a lista inteira à vista se tira o que saiu dela.
+    val seenTracks = remember { HashMap<String, Track>() }
+    SideEffect { state.tracks.forEach { seenTracks[it.uri] = it } }
+    LaunchedEffect(trackUris, state.query) { if (state.query.isEmpty()) selection.retain(trackUris.toSet()) }
     val scope = rememberCoroutineScope()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
     val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails, onOpenAlbum) {
@@ -413,7 +418,9 @@ private fun TrackList(
             // pularia de lugar a cada letra). Com ele, a busca fica onde está.
             if (state.query.isNotEmpty()) searchRoomItem(searchRoom)
           }
-            val selectedTracks = state.tracks.filter { selection.isSelected(it.uri) }
+            val visibleUris = trackUris.toHashSet()
+            val selectedTracks = state.tracks.filter { selection.isSelected(it.uri) } +
+                selection.selected.filter { it !in visibleUris }.mapNotNull { seenTracks[it] }
             BoomSelectionBar(
                 selection = selection,
                 allIds = trackUris,
