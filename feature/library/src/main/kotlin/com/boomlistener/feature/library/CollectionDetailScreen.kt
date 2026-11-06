@@ -112,6 +112,9 @@ internal fun CollectionDetailScreen(
     var addToPlaylist by remember { mutableStateOf<Track?>(null) }
     var addingSongs by remember { mutableStateOf(false) }
     val deleteSong = rememberSongDeleter()
+    val deleteSongs = rememberSongsDeleter()
+    // A seleção inteira a caminho de uma playlist.
+    var addManyToPlaylist by remember { mutableStateOf<List<String>?>(null) }
     val showDetails = rememberSongDetails()
     // Capa do topo do menu da playlist: a da primeira música.
     val headerPx = with(LocalDensity.current) { 56.dp.roundToPx() }
@@ -159,6 +162,8 @@ internal fun CollectionDetailScreen(
                 onOpenArtist = onOpenArtist,
                 onEditTags = onEditTags,
                 onEditTagsMany = onEditTagsMany,
+                onAddManyToPlaylist = { tracks -> addManyToPlaylist = tracks.map { it.uri } },
+                onDeleteMany = deleteSongs,
                 onAddToPlaylist = { addToPlaylist = it },
                 onDelete = deleteSong,
                 onDetails = { showDetails(it.uri, it.title) },
@@ -175,6 +180,9 @@ internal fun CollectionDetailScreen(
 
     addToPlaylist?.let { track ->
         AddToPlaylistSheet(trackUris = listOf(track.uri), onDismiss = { addToPlaylist = null })
+    }
+    addManyToPlaylist?.let { uris ->
+        AddToPlaylistSheet(trackUris = uris, onDismiss = { addManyToPlaylist = null })
     }
     if (renaming && ready != null) {
         PlaylistNameDialog(
@@ -215,6 +223,8 @@ private fun TrackListWithHeader(
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
     onEditTagsMany: (List<String>) -> Unit,
+    onAddManyToPlaylist: (List<Track>) -> Unit,
+    onDeleteMany: (List<Track>) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
     onDelete: (Track) -> Unit,
     onDetails: (Track) -> Unit,
@@ -298,11 +308,19 @@ private fun TrackListWithHeader(
         }
     }
     val localUris = local.map { it.uri }
-    BoomSelectionBar(selection, localUris, Modifier.align(Alignment.TopCenter)) {
-        IconButton(onClick = { onEditTagsMany(selection.inOrder(localUris)) }) {
-            Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_library_edit_tags))
-        }
-    }
+    val selectedTracks = local.filter { selection.isSelected(it.uri) }
+    BoomSelectionBar(
+        selection = selection,
+        allIds = localUris,
+        actions = selectionActions(
+            tracks = selectedTracks,
+            onEditTags = onEditTagsMany,
+            onAddToPlaylist = onAddManyToPlaylist,
+            onDelete = onDeleteMany,
+            onRemoveFromPlaylist = if (state.isPlaylist) { viewModel::removeMany } else null,
+        ),
+        modifier = Modifier.align(Alignment.TopCenter),
+    )
     // Arrastar pela direita pula pela lista, mostrando a letra.
     BoomFastScroller(
         state = listState,

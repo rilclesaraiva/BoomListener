@@ -91,4 +91,10 @@
     <string name="feature_nowplaying_share_card_visualizer_bars">Barras</string>
     <string name="feature_nowplaying_share_card_visualizer_wave">Onda</string>
     <string name="feature_nowplaying_share_card_visualizer_none">Nenhum</string>
+    <string name="feature_nowplaying_sleep_custom">Personalizar</string>
+    <string name="feature_nowplaying_sleep_start">Iniciar</string>
+    <string name="feature_nowplaying_sleep_hours">Horas</string>
+    <string name="feature_nowplaying_sleep_minutes_label">Minutos</string>
+    <string name="feature_nowplaying_sleep_back">Voltar</string>
+    <string name="feature_nowplaying_sleep_preset">%d min</string>
 </resources>

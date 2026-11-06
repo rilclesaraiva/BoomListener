@@ -125,6 +125,13 @@ internal class CollectionDetailViewModel(
         viewModelScope.launch { playlists.removeTracks(id, listOf(track.uri)) }
     }
 
+    /** Tira várias de uma vez (a seleção da lista), numa gravação só. */
+    fun removeMany(tracks: List<Track>) {
+        val id = (ref as? CollectionRef.Playlist)?.id ?: return
+        if (tracks.isEmpty()) return
+        viewModelScope.launch { playlists.removeTracks(id, tracks.map { it.uri }) }
+    }
+
     /** Todas as músicas do aparelho (para "Adicionar músicas"). */
     val libraryTracks: StateFlow<List<Track>> = tracks
         .map { it.orEmpty() }

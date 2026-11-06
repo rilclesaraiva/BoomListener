@@ -11,19 +11,18 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -131,16 +130,17 @@ fun BoomSelectableArtwork(
 }
 
 /**
- * Barra no topo enquanto há músicas marcadas: fechar, quantas são, as [actions]
- * e "Selecionar tudo" ([allIds] é a lista inteira da tela). Fica por cima da
- * página, que continua por baixo.
+ * Controles flutuantes no topo enquanto há músicas marcadas (no estilo do
+ * Fotos): à esquerda uma pílula com fechar e quantas são; à direita, outra com
+ * "selecionar tudo" e o ⋮ com as [actions]. Sem faixa de fundo: a página
+ * continua visível por trás. [allIds] é a lista inteira da tela.
  */
 @Composable
 fun BoomSelectionBar(
     selection: BoomSelection,
     allIds: List<String>,
+    actions: List<BoomMenuAction>,
     modifier: Modifier = Modifier,
-    actions: @Composable RowScope.() -> Unit,
 ) {
     // "Voltar" fecha a seleção antes de sair da tela.
     BackHandler(enabled = selection.isActive) { selection.clear() }
@@ -155,35 +155,36 @@ fun BoomSelectionBar(
         enter = slideInVertically(boomSpatialSpec()) { -it } + fadeIn(boomEffectsSpec()),
         exit = slideOutVertically(boomSpatialSpec()) { -it } + fadeOut(boomEffectsSpec()),
     ) {
-        Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.statusBarsPadding()) {
-                Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHighest, shadowElevation = 3.dp) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = selection::clear) {
                         Icon(BoomIcons.Close, contentDescription = stringResource(R.string.core_designsystem_selection_close))
                     }
                     Text(
                         text = shownCount.toString(),
                         style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(start = 12.dp).weight(1f),
+                        modifier = Modifier.padding(end = 20.dp, start = 4.dp),
                     )
-                    actions()
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .toggleable(
-                            value = allSelected,
-                            role = Role.Checkbox,
-                            onValueChange = { checked -> if (checked) selection.selectAll(allIds) else selection.clear() },
+            }
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHighest, shadowElevation = 3.dp) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconToggleButton(
+                        checked = allSelected,
+                        onCheckedChange = { checked -> if (checked) selection.selectAll(allIds) else selection.clear() },
+                    ) {
+                        Icon(
+                            BoomIcons.SelectAll,
+                            contentDescription = stringResource(R.string.core_designsystem_selection_all),
+                            tint = if (allSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         )
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(checked = allSelected, onCheckedChange = null)
-                    Text(
-                        text = stringResource(R.string.core_designsystem_selection_all),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
+                    }
+                    BoomMoreMenu(actions = actions)
                 }
             }
         }

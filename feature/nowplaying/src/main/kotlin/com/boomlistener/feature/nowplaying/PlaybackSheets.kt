@@ -5,6 +5,19 @@ package com.boomlistener.feature.nowplaying
 
 import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,49 +70,138 @@ internal fun sleepTimerLabel(timer: SleepTimer?): String {
     }
 }
 
-/** Timer para dormir: 15 min a 1 h 30, ou no fim desta música. */
+/** "1:05:09" ou "05:09": o tempo que falta, arredondado para cima em segundos. */
+internal fun formatCountdown(remainingMs: Long): String {
+    val total = ((remainingMs.coerceAtLeast(0) + 999) / 1000)
+    val h = total / 3600
+    val m = (total % 3600) / 60
+    val sec = total % 60
+    return if (h > 0) String.format(Locale.ROOT, "%d:%02d:%02d", h, m, sec)
+    else String.format(Locale.ROOT, "%02d:%02d", m, sec)
+}
+
+/** Minutos do "Personalizar": só dígitos; vazio vale 0; no máximo 23 h 59 min. */
+internal fun customSleepMinutes(hours: String, minutes: String): Int {
+    val h = hours.filter(Char::isDigit).take(2).toIntOrNull() ?: 0
+    val m = minutes.filter(Char::isDigit).take(2).toIntOrNull() ?: 0
+    return (h.coerceAtMost(23) * 60 + m.coerceAtMost(59))
+}
+
+/**
+ * Timer para dormir, como o do relógio do Android: o tempo no topo (correndo
+ * quando ligado), atalhos prontos para só tocar e um botão grande para
+ * personalizar.
+ */
 @Composable
 internal fun SleepTimerSheet(settings: PlaybackSettings, onDismiss: () -> Unit) {
     val timer by settings.sleepTimer.collectAsStateWithLifecycle()
+    var custom by rememberSaveable { mutableStateOf(false) }
+    var hours by rememberSaveable { mutableStateOf("") }
+    var minutes by rememberSaveable { mutableStateOf("") }
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(timer) {
+        while (timer?.endsAtMs != null) {
+            now = System.currentTimeMillis()
+            delay(250)
+        }
+    }
+    val endsAt = timer?.endsAtMs
     BoomModalSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(bottom = 24.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp).verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
                 stringResource(R.string.feature_nowplaying_sleep),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            listOf(15, 30, 45, 60, 90).forEach { minutes ->
-                ListItem(
-                    modifier = Modifier.clickable {
-                        settings.startSleepTimer(minutes)
-                        onDismiss()
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = { Text(pluralStringResource(R.plurals.feature_nowplaying_sleep_minutes, minutes, minutes)) },
+            Spacer(Modifier.height(8.dp))
+            when {
+                timer?.endOfTrack == true -> Text(
+                    stringResource(R.string.feature_nowplaying_sleep_end_of_track),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 14.dp),
+                )
+                endsAt != null -> Text(
+                    formatCountdown(endsAt - now),
+                    style = MaterialTheme.typography.displayLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                else -> Text(
+                    "00:00",
+                    style = MaterialTheme.typography.displayLarge,
+                    color = MaterialTheme.colorScheme.outline,
                 )
             }
-            ListItem(
-                modifier = Modifier.clickable {
-                    settings.sleepAtEndOfTrack()
-                    onDismiss()
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                headlineContent = { Text(stringResource(R.string.feature_nowplaying_sleep_end_of_track)) },
-            )
             if (timer != null) {
-                ListItem(
-                    modifier = Modifier.clickable {
-                        settings.cancelSleepTimer()
-                        onDismiss()
+                TextButton(onClick = { settings.cancelSleepTimer() }) {
+                    Text(stringResource(R.string.feature_nowplaying_sleep_cancel), color = MaterialTheme.colorScheme.error)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            if (!custom) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(15, 30, 45, 60).forEach { min -> SleepPreset(min, Modifier.weight(1f)) { settings.startSleepTimer(min) } }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SleepPreset(90, Modifier.weight(1f)) { settings.startSleepTimer(90) }
+                    FilledTonalButton(
+                        onClick = { settings.sleepAtEndOfTrack() },
+                        modifier = Modifier.weight(3f).height(48.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text(stringResource(R.string.feature_nowplaying_sleep_end_of_track), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = { custom = true }, modifier = Modifier.fillMaxWidth().height(64.dp)) {
+                    Text(stringResource(R.string.feature_nowplaying_sleep_custom), style = MaterialTheme.typography.titleMedium)
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SleepField(hours, R.string.feature_nowplaying_sleep_hours, Modifier.weight(1f)) { hours = it.filter(Char::isDigit).take(2) }
+                    SleepField(minutes, R.string.feature_nowplaying_sleep_minutes_label, Modifier.weight(1f)) { minutes = it.filter(Char::isDigit).take(2) }
+                }
+                Spacer(Modifier.height(16.dp))
+                val total = customSleepMinutes(hours, minutes)
+                Button(
+                    onClick = {
+                        settings.startSleepTimer(total)
+                        custom = false
                     },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    headlineContent = {
-                        Text(stringResource(R.string.feature_nowplaying_sleep_cancel), color = MaterialTheme.colorScheme.error)
-                    },
-                )
+                    enabled = total > 0,
+                    modifier = Modifier.fillMaxWidth().height(64.dp),
+                ) {
+                    Text(stringResource(R.string.feature_nowplaying_sleep_start), style = MaterialTheme.typography.titleMedium)
+                }
+                TextButton(onClick = { custom = false }) { Text(stringResource(R.string.feature_nowplaying_sleep_back)) }
             }
         }
     }
+}
+
+@Composable
+private fun SleepPreset(minutes: Int, modifier: Modifier, onClick: () -> Unit) {
+    FilledTonalButton(onClick = onClick, modifier = modifier.height(48.dp), contentPadding = PaddingValues(horizontal = 4.dp)) {
+        Text(stringResource(R.string.feature_nowplaying_sleep_preset, minutes), maxLines = 1)
+    }
+}
+
+@Composable
+private fun SleepField(value: String, label: Int, modifier: Modifier, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        label = { Text(stringResource(label)) },
+        placeholder = { Text("0") },
+        singleLine = true,
+        textStyle = MaterialTheme.typography.headlineMedium.copy(textAlign = TextAlign.Center),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = modifier,
+    )
 }
 
 /** "1,25×" no formato do idioma. */

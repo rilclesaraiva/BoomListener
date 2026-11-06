@@ -160,6 +160,7 @@ internal fun LibraryScreen(
     val query = (uiState as? LibraryUiState.Success)?.query.orEmpty()
     BackHandler(enabled = query.isNotEmpty()) { viewModel.onQueryChange("") }
     val deleteSong = rememberSongDeleter()
+    val deleteSongs = rememberSongsDeleter()
     val showDetails = rememberSongDetails()
 
     val title = stringResource(R.string.feature_library_title)
@@ -201,6 +202,7 @@ internal fun LibraryScreen(
                     onOpenArtist = onOpenArtist,
                     onEditTags = onEditTags,
                     onEditTagsMany = onEditTagsMany,
+                    onDeleteMany = deleteSongs,
                     onAddToPlaylist = { addToPlaylist = it },
                     albumMenu = AlbumMenuActions(
                         play = viewModel::playTracks,
@@ -241,6 +243,7 @@ private fun TrackList(
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
     onEditTagsMany: (List<String>) -> Unit,
+    onDeleteMany: (List<Track>) -> Unit,
     onAddToPlaylist: (Track) -> Unit,
     albumMenu: AlbumMenuActions,
     contentPadding: PaddingValues,
@@ -402,11 +405,18 @@ private fun TrackList(
             // pularia de lugar a cada letra). Com ele, a busca fica onde está.
             if (state.query.isNotEmpty()) searchRoomItem(searchRoom)
           }
-            BoomSelectionBar(selection, trackUris, Modifier.align(Alignment.TopCenter)) {
-                IconButton(onClick = { onEditTagsMany(selection.inOrder(trackUris)) }) {
-                    Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_library_edit_tags))
-                }
-            }
+            val selectedTracks = state.tracks.filter { selection.isSelected(it.uri) }
+            BoomSelectionBar(
+                selection = selection,
+                allIds = trackUris,
+                actions = selectionActions(
+                    tracks = selectedTracks,
+                    onEditTags = onEditTagsMany,
+                    onAddToPlaylist = albumMenu.addToPlaylist,
+                    onDelete = onDeleteMany,
+                ),
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
             // Arrastar pela direita pula pela lista, mostrando a letra.
             BoomFastScroller(
                 state = listState,

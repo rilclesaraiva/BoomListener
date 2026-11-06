@@ -74,4 +74,9 @@
     <string name="feature_library_show_list">Show as list</string>
     <string name="feature_library_play_next">Add to queue</string>
     <string name="feature_library_play_next_done">Plays next</string>
+    <plurals name="feature_library_delete_songs_title">
+        <item quantity="one">Delete %d song?</item>
+        <item quantity="other">Delete %d songs?</item>
+    </plurals>
+    <string name="feature_library_delete_songs_message">The selected songs will be deleted from your phone. This can’t be undone.</string>
 </resources>

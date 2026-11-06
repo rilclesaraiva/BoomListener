@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
@@ -35,38 +36,48 @@ import kotlinx.coroutines.launch
  */
 @Composable
 internal fun rememberSongDeleter(): (Track) -> Unit {
+    val many = rememberSongsDeleter()
+    return { track -> many(listOf(track)) }
+}
+
+/** O mesmo para várias músicas de uma vez (a seleção das listas). */
+@Composable
+internal fun rememberSongsDeleter(): (List<Track>) -> Unit {
     val context = LocalContext.current
     val library = remember { LibraryData.repository(context.applicationContext) }
     // Apagada: sai também da fila de reprodução.
-    val onDeleted: (String) -> Unit = { uri -> PlayerConnection.controller(context.applicationContext).removeUri(uri) }
+    val onDeleted: (List<String>) -> Unit = { uris ->
+        val player = PlayerConnection.controller(context.applicationContext)
+        uris.forEach { player.removeUri(it) }
+    }
     val scope = rememberCoroutineScope()
-    var confirming by remember { mutableStateOf<Track?>(null) }
-    var pending by remember { mutableStateOf<String?>(null) }
-    var retry by remember { mutableStateOf<String?>(null) }
+    var confirming by remember { mutableStateOf<List<Track>?>(null) }
+    var pending by remember { mutableStateOf<List<String>?>(null) }
+    var retry by remember { mutableStateOf(false) }
     val failedText = stringResource(R.string.feature_library_delete_failed)
 
     val systemConfirm = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-        val uri = pending
-        if (result.resultCode == Activity.RESULT_OK && uri != null) {
+        val uris = pending
+        if (result.resultCode == Activity.RESULT_OK && uris != null) {
             // Android 10: a pessoa liberou; agora apaga de verdade. Android 11+: já apagou.
-            if (retry == uri) {
-                retry = null
+            if (retry) {
+                retry = false
                 scope.launch {
-                    if (library.delete(listOf(uri)) == DeleteResult.Done) onDeleted(uri)
+                    if (library.delete(uris) == DeleteResult.Done) onDeleted(uris)
                     else Toast.makeText(context, failedText, Toast.LENGTH_SHORT).show()
                 }
             } else {
-                onDeleted(uri)
+                onDeleted(uris)
             }
         }
         pending = null
     }
     var askPermission by remember { mutableStateOf(false) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        val uri = pending
-        if (granted && uri != null) {
+        val uris = pending
+        if (granted && uris != null) {
             scope.launch {
-                if (library.delete(listOf(uri)) == DeleteResult.Done) onDeleted(uri)
+                if (library.delete(uris) == DeleteResult.Done) onDeleted(uris)
                 else Toast.makeText(context, failedText, Toast.LENGTH_SHORT).show()
             }
         }
@@ -79,17 +90,17 @@ internal fun rememberSongDeleter(): (Track) -> Unit {
         }
     }
 
-    fun start(uri: String) {
+    fun start(uris: List<String>) {
         scope.launch {
-            when (val result = library.delete(listOf(uri))) {
-                DeleteResult.Done -> onDeleted(uri)
+            when (val result = library.delete(uris)) {
+                DeleteResult.Done -> onDeleted(uris)
                 is DeleteResult.NeedsConfirmation -> {
-                    pending = uri
-                    retry = if (result.retryAfter) uri else null
+                    pending = uris
+                    retry = result.retryAfter
                     systemConfirm.launch(IntentSenderRequest.Builder(result.intentSender).build())
                 }
                 DeleteResult.NeedsPermission -> {
-                    pending = uri
+                    pending = uris
                     askPermission = true
                 }
                 DeleteResult.Failed -> Toast.makeText(context, failedText, Toast.LENGTH_SHORT).show()
@@ -97,15 +108,25 @@ internal fun rememberSongDeleter(): (Track) -> Unit {
         }
     }
 
-    confirming?.let { track ->
+    confirming?.let { tracks ->
         AlertDialog(
             onDismissRequest = { confirming = null },
-            title = { Text(stringResource(R.string.feature_library_delete_song_title)) },
-            text = { Text(stringResource(R.string.feature_library_delete_song_message, track.title)) },
+            title = {
+                Text(
+                    if (tracks.size == 1) stringResource(R.string.feature_library_delete_song_title)
+                    else pluralStringResource(R.plurals.feature_library_delete_songs_title, tracks.size, tracks.size),
+                )
+            },
+            text = {
+                Text(
+                    if (tracks.size == 1) stringResource(R.string.feature_library_delete_song_message, tracks.first().title)
+                    else stringResource(R.string.feature_library_delete_songs_message),
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     confirming = null
-                    start(track.uri)
+                    start(tracks.map { it.uri })
                 }) { Text(stringResource(R.string.feature_library_delete)) }
             },
             dismissButton = {
@@ -114,8 +135,10 @@ internal fun rememberSongDeleter(): (Track) -> Unit {
         )
     }
 
-    return { track ->
-        // Android 11+: o sistema já mostra o "Apagar?"; perguntar duas vezes cansa.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) start(track.uri) else confirming = track
+    return { tracks ->
+        if (tracks.isNotEmpty()) {
+            // Android 11+: o sistema já mostra o "Apagar?"; perguntar duas vezes cansa.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) start(tracks.map { it.uri }) else confirming = tracks
+        }
     }
 }

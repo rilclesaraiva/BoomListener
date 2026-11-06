@@ -74,4 +74,9 @@
     <string name="feature_library_show_list">Mostrar em lista</string>
     <string name="feature_library_play_next">Adicionar à fila</string>
     <string name="feature_library_play_next_done">Vai tocar em seguida</string>
+    <plurals name="feature_library_delete_songs_title">
+        <item quantity="one">Apagar %d música?</item>
+        <item quantity="other">Apagar %d músicas?</item>
+    </plurals>
+    <string name="feature_library_delete_songs_message">As músicas selecionadas vão ser apagadas do celular. Não dá para desfazer.</string>
 </resources>

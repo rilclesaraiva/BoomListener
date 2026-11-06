@@ -33,7 +33,7 @@ data class PlaybackPrefs(
     /** Visualizador sobre a capa do player (liga e desliga no menu do player). */
     val visualizer: Boolean = false,
     /** Tipo do visualizador (Ajustes → Aparência). */
-    val visualizerStyle: VisualizerStyle = VisualizerStyle.Bars,
+    val visualizerStyle: VisualizerStyle = VisualizerStyle.Wave,
     /** Tirar o app dos recentes encerra a música e o app (Ajustes → Sistema). */
     val stopOnTaskRemoved: Boolean = false,
     /** Botões do player e do mini player na cor da capa (Ajustes → Aparência). */
@@ -99,7 +99,7 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
             gapless = store.getBoolean(KEY_GAPLESS, true),
             visualizer = store.getBoolean(KEY_VISUALIZER, false),
             visualizerStyle = VisualizerStyle.entries.firstOrNull { it.name == store.getString(KEY_VISUALIZER_STYLE, null) }
-                ?: VisualizerStyle.Bars,
+                ?: VisualizerStyle.Wave,
             stopOnTaskRemoved = store.getBoolean(KEY_STOP_ON_SWIPE, false),
             artworkButtons = store.getBoolean(KEY_ARTWORK_BUTTONS, true),
         ),

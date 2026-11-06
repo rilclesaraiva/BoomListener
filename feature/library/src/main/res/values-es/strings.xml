@@ -74,4 +74,9 @@
     <string name="feature_library_show_list">Ver en lista</string>
     <string name="feature_library_play_next">Añadir a la cola</string>
     <string name="feature_library_play_next_done">Suena a continuación</string>
+    <plurals name="feature_library_delete_songs_title">
+        <item quantity="one">¿Borrar %d canción?</item>
+        <item quantity="other">¿Borrar %d canciones?</item>
+    </plurals>
+    <string name="feature_library_delete_songs_message">Las canciones seleccionadas se borrarán de tu teléfono. No se puede deshacer.</string>
 </resources>
