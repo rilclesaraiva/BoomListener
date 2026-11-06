@@ -50,6 +50,7 @@ private const val DURATION_STEP = 5
 @Composable
 internal fun LibrarySettingsScreen(
     onBack: () -> Unit,
+    onOpenTagAudit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current.applicationContext
@@ -98,6 +99,16 @@ internal fun LibrarySettingsScreen(
             }
             item(key = "folders") {
                 FolderList(state, viewModel)
+            }
+            item(key = "tagScan") {
+                BoomSettingsSection(title = null) {
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_library_tag_scan),
+                        subtitle = stringResource(R.string.feature_settings_library_tag_scan_summary),
+                        onClick = onOpenTagAudit,
+                    )
+                }
             }
             item { Spacer(Modifier.height(24.dp)) }
         }

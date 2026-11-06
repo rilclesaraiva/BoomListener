@@ -50,6 +50,9 @@ interface TagsRepository {
     suspend fun readLyrics(uri: String): String?
 
     suspend fun write(uri: String, tags: TrackTags, cover: CoverEdit): TagsWriteResult
+
+    /** O que falta nas tags do arquivo (escaneamento da biblioteca), ou null se não deu para ler. */
+    suspend fun scan(uri: String): Set<TagGap>? = null
 }
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */

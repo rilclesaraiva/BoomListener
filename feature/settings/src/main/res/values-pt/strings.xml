@@ -178,4 +178,6 @@
     <string name="feature_settings_update_prompts_snoozed">Pausados até %1$s</string>
     <string name="feature_settings_update_prompts_skipped">Pulando a versão %1$s</string>
     <string name="feature_settings_update_prompts_always">Avisar normalmente</string>
+    <string name="feature_settings_library_tag_scan">Escaneamento de tags</string>
+    <string name="feature_settings_library_tag_scan_summary">Ache músicas sem tags, capa ou letra</string>
 </resources>

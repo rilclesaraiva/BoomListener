@@ -42,7 +42,21 @@ fun NavController.navigateToTagEditorQueue(trackUris: List<String>) {
     navigateToTagEditor(trackUris.first())
 }
 
-fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit, onOpenNext: (String) -> Unit) {
+const val TAGAUDIT_ROUTE = "tageditor/audit"
+
+/** Abre o escaneamento de tags (Ajustes → Biblioteca). */
+fun NavController.navigateToTagAudit() = navigateOnce(TAGAUDIT_ROUTE) { launchSingleTop = true }
+
+fun NavGraphBuilder.tageditorScreen(onBack: () -> Unit, onOpenNext: (String) -> Unit, onEditTracks: (List<String>) -> Unit) {
+    composable(TAGAUDIT_ROUTE) {
+        val context = LocalContext.current.applicationContext
+        val viewModel = viewModel {
+            TagAuditViewModel(tags = TagsData.repository(context), library = LibraryData.repository(context))
+        }
+        BoomNavScreen(this) {
+            TagAuditScreen(viewModel = viewModel, onBack = onBack, onEditTracks = onEditTracks)
+        }
+    }
     composable(
         route = TAGEDITOR_ROUTE,
         arguments = listOf(navArgument(ARG_URI) { type = NavType.StringType }),

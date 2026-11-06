@@ -57,4 +57,28 @@
     <string name="feature_tageditor_cover_use_found">Usar esta portada</string>
     <string name="feature_tageditor_queue_position">Canción %1$d de %2$d</string>
     <string name="feature_tageditor_queue_skip">Omitir</string>
+    <string name="feature_tageditor_audit_title">Escaneo de etiquetas</string>
+    <string name="feature_tageditor_audit_intro">Escanea la biblioteca para encontrar canciones sin etiquetas, portada o letra y corrígelas una tras otra.</string>
+    <string name="feature_tageditor_audit_scan">Escanear biblioteca</string>
+    <string name="feature_tageditor_audit_rescan">Escanear de nuevo</string>
+    <string name="feature_tageditor_audit_progress">Analizando %1$d de %2$d</string>
+    <plurals name="feature_tageditor_audit_summary">
+        <item quantity="one">%1$d canción analizada</item>
+        <item quantity="other">%1$d canciones analizadas</item>
+    </plurals>
+    <plurals name="feature_tageditor_audit_unreadable">
+        <item quantity="one">%1$d archivo no se pudo leer</item>
+        <item quantity="other">%1$d archivos no se pudieron leer</item>
+    </plurals>
+    <string name="feature_tageditor_audit_all_good">No falta nada. Las etiquetas están completas.</string>
+    <string name="feature_tageditor_audit_edit_all">Editar las %1$d en orden</string>
+    <string name="feature_tageditor_audit_gap_artist">Sin artista</string>
+    <string name="feature_tageditor_audit_gap_album">Sin álbum</string>
+    <string name="feature_tageditor_audit_gap_year">Sin año</string>
+    <string name="feature_tageditor_audit_gap_genre">Sin género</string>
+    <string name="feature_tageditor_audit_gap_track">Sin número de pista</string>
+    <string name="feature_tageditor_audit_gap_album_artist">Sin artista del álbum</string>
+    <string name="feature_tageditor_audit_gap_composer">Sin compositor</string>
+    <string name="feature_tageditor_audit_gap_cover">Sin portada</string>
+    <string name="feature_tageditor_audit_gap_lyrics">Sin letra en el archivo</string>
 </resources>

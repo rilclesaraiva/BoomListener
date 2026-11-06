@@ -57,4 +57,28 @@
     <string name="feature_tageditor_cover_use_found">Use this cover</string>
     <string name="feature_tageditor_queue_position">Song %1$d of %2$d</string>
     <string name="feature_tageditor_queue_skip">Skip</string>
+    <string name="feature_tageditor_audit_title">Tag scan</string>
+    <string name="feature_tageditor_audit_intro">Scan your library to find songs with missing tags, cover art or lyrics, then fix them one after another.</string>
+    <string name="feature_tageditor_audit_scan">Scan library</string>
+    <string name="feature_tageditor_audit_rescan">Scan again</string>
+    <string name="feature_tageditor_audit_progress">Scanning %1$d of %2$d</string>
+    <plurals name="feature_tageditor_audit_summary">
+        <item quantity="one">%1$d song scanned</item>
+        <item quantity="other">%1$d songs scanned</item>
+    </plurals>
+    <plurals name="feature_tageditor_audit_unreadable">
+        <item quantity="one">%1$d file couldn\'t be read</item>
+        <item quantity="other">%1$d files couldn\'t be read</item>
+    </plurals>
+    <string name="feature_tageditor_audit_all_good">Nothing missing. Your tags are complete.</string>
+    <string name="feature_tageditor_audit_edit_all">Edit all %1$d in order</string>
+    <string name="feature_tageditor_audit_gap_artist">No artist</string>
+    <string name="feature_tageditor_audit_gap_album">No album</string>
+    <string name="feature_tageditor_audit_gap_year">No year</string>
+    <string name="feature_tageditor_audit_gap_genre">No genre</string>
+    <string name="feature_tageditor_audit_gap_track">No track number</string>
+    <string name="feature_tageditor_audit_gap_album_artist">No album artist</string>
+    <string name="feature_tageditor_audit_gap_composer">No composer</string>
+    <string name="feature_tageditor_audit_gap_cover">No cover art</string>
+    <string name="feature_tageditor_audit_gap_lyrics">No lyrics in the file</string>
 </resources>

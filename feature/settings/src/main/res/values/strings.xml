@@ -175,4 +175,6 @@
     <string name="feature_settings_update_prompts_snoozed">Paused until %1$s</string>
     <string name="feature_settings_update_prompts_skipped">Skipping version %1$s</string>
     <string name="feature_settings_update_prompts_always">Show notices normally</string>
+    <string name="feature_settings_library_tag_scan">Tag scan</string>
+    <string name="feature_settings_library_tag_scan_summary">Find songs missing tags, covers or lyrics</string>
 </resources>

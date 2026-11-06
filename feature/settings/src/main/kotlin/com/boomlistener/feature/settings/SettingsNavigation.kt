@@ -22,7 +22,7 @@ internal const val SYSTEM_SETTINGS_ROUTE = "settings/system"
 fun NavController.navigateToSettings() = navigateOnce(SETTINGS_ROUTE) { launchSingleTop = true }
 
 /** Ajustes e suas telas internas. */
-fun NavGraphBuilder.settingsScreen(navController: NavController) {
+fun NavGraphBuilder.settingsScreen(navController: NavController, onOpenTagAudit: () -> Unit) {
     val back: () -> Unit = { navController.popBackStackOnce() }
     composable(SETTINGS_ROUTE) {
         BoomNavScreen(this) {
@@ -38,7 +38,7 @@ fun NavGraphBuilder.settingsScreen(navController: NavController) {
         }
     }
     composable(APPEARANCE_ROUTE) { BoomNavScreen(this) { AppearanceScreen(onBack = back) } }
-    composable(LIBRARY_SETTINGS_ROUTE) { BoomNavScreen(this) { LibrarySettingsScreen(onBack = back) } }
+    composable(LIBRARY_SETTINGS_ROUTE) { BoomNavScreen(this) { LibrarySettingsScreen(onBack = back, onOpenTagAudit = onOpenTagAudit) } }
     composable(PLAYBACK_SETTINGS_ROUTE) { BoomNavScreen(this) { PlaybackSettingsScreen(onBack = back) } }
     composable(SHARE_SETTINGS_ROUTE) { BoomNavScreen(this) { ShareSettingsScreen(onBack = back) } }
     composable(BACKUP_ROUTE) { BoomNavScreen(this) { BackupScreen(onBack = back) } }

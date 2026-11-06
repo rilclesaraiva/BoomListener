@@ -57,4 +57,28 @@
     <string name="feature_tageditor_cover_use_found">Usar esta capa</string>
     <string name="feature_tageditor_queue_position">Música %1$d de %2$d</string>
     <string name="feature_tageditor_queue_skip">Pular</string>
+    <string name="feature_tageditor_audit_title">Escaneamento de tags</string>
+    <string name="feature_tageditor_audit_intro">Escaneie a biblioteca para achar músicas sem tags, capa ou letra e corrigi-las em sequência.</string>
+    <string name="feature_tageditor_audit_scan">Escanear biblioteca</string>
+    <string name="feature_tageditor_audit_rescan">Escanear de novo</string>
+    <string name="feature_tageditor_audit_progress">Analisando %1$d de %2$d</string>
+    <plurals name="feature_tageditor_audit_summary">
+        <item quantity="one">%1$d música analisada</item>
+        <item quantity="other">%1$d músicas analisadas</item>
+    </plurals>
+    <plurals name="feature_tageditor_audit_unreadable">
+        <item quantity="one">%1$d arquivo não pôde ser lido</item>
+        <item quantity="other">%1$d arquivos não puderam ser lidos</item>
+    </plurals>
+    <string name="feature_tageditor_audit_all_good">Nada faltando. As tags estão completas.</string>
+    <string name="feature_tageditor_audit_edit_all">Editar as %1$d em sequência</string>
+    <string name="feature_tageditor_audit_gap_artist">Sem artista</string>
+    <string name="feature_tageditor_audit_gap_album">Sem álbum</string>
+    <string name="feature_tageditor_audit_gap_year">Sem ano</string>
+    <string name="feature_tageditor_audit_gap_genre">Sem gênero</string>
+    <string name="feature_tageditor_audit_gap_track">Sem número da faixa</string>
+    <string name="feature_tageditor_audit_gap_album_artist">Sem artista do álbum</string>
+    <string name="feature_tageditor_audit_gap_composer">Sem compositor</string>
+    <string name="feature_tageditor_audit_gap_cover">Sem capa</string>
+    <string name="feature_tageditor_audit_gap_lyrics">Sem letra no arquivo</string>
 </resources>

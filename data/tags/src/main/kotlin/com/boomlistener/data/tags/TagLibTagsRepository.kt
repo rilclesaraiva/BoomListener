@@ -59,6 +59,19 @@ internal class TagLibTagsRepository(private val context: Context) : TagsReposito
         }
     }
 
+    override suspend fun scan(uri: String): Set<TagGap>? = withContext(Dispatchers.IO) {
+        try {
+            resolver.openFileDescriptor(Uri.parse(uri), "r")?.use { file ->
+                val metadata = TagLib.getMetadata(file.dupFd(), readPictures = true) ?: return@withContext null
+                gapsOf(tagsFromProperties(metadata.propertyMap.toListMap()), hasCover = metadata.pictures.isNotEmpty())
+            }
+        } catch (_: Exception) {
+            null
+        } catch (_: LinkageError) {
+            null
+        }
+    }
+
     override suspend fun readLyrics(uri: String): String? = withContext(Dispatchers.IO) {
         try {
             resolver.openFileDescriptor(Uri.parse(uri), "r")?.use { file ->
