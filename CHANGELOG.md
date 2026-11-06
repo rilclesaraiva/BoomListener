@@ -6,15 +6,16 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Fixed
+- **Mini player missing while music plays:** if the app couldn't connect to the playback service on the first try (for example right after being updated over the old version while a song was playing), the music kept playing but the mini player never showed up. The app now retries the connection for a few seconds.
+- **Background blur:** after starting the system "back" gesture on a page and giving up (without letting go), turning the blur setting off and on could leave the whole page stuck blurred. The page you are on is now never blurred while it is stopped, and turning the setting on or off no longer interferes with a movement in progress.
+
 ### Changed
 - **Sleep timer** now works like the Android clock: the time shows at the top (counting down while the timer runs), ready-made buttons (15, 30, 45, 60, 90 min and **end of this song**) start it with one tap, and a big **Customize** button lets you type any hours and minutes. The panel stays open after you start it so you can see the countdown, and **Turn off timer** appears when it is running.
 - **Visualizer:** the default style is now **Waves** (it was Bars). If you already picked a style in Settings → Appearance, your choice is kept.
 
 ### Added
 - **Select several songs:** in the **Songs** list on Home and in any album, genre, playlist or favorites page, tap a song's **cover** to select it (it turns into a check). With one selected, tapping any row selects or unselects it and holding no longer opens the song menu. Two floating buttons appear at the top: **✕ and the count** on the left, and **Select all** plus a **⋮ menu** on the right. The menu works on everything you picked: **Edit tags**, **Add to queue**, **Add to playlist**, **Add to / Remove from favorites**, **Remove from playlist** (inside a playlist) and **Delete from device**. Back (or ✕) closes the selection. **Edit tags** opens the tag editor on the first song and, each time you save, goes to the next ("Song 2 of 5"); **Skip** moves on without saving. This is a first step: fixing tags automatically for many songs at once, and a dedicated area for it, come later. Other lists (artist page, search, history, profile) don't have selection yet.
-
-### Fixed
-- **Background blur:** after starting the system "back" gesture on a page and giving up (without letting go), turning the blur setting off and on could leave the whole page stuck blurred. The page you are on is now never blurred while it is stopped, and turning the setting on or off no longer interferes with a movement in progress.
 
 ## [0.55.0] - 2026-11-04
 
