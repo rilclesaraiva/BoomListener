@@ -92,6 +92,7 @@ import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomSelectableArtwork
 import com.boomlistener.core.designsystem.component.BoomSelectionBar
+import com.boomlistener.core.designsystem.component.recedeWhileSelecting
 import com.boomlistener.core.designsystem.component.rememberBoomSelection
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
@@ -285,7 +286,8 @@ private fun TrackList(
               state = listState,
               contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
           ) {
-            item(key = "title") { title() }
+            // O título sobe e esmaece enquanto há músicas marcadas (as pílulas ficam livres).
+            item(key = "title") { Box(Modifier.recedeWhileSelecting(selection)) { title() } }
             item(key = "header") {
                 // Aleatório e Tocar, com a contagem do outro lado.
                 Row(
@@ -365,7 +367,7 @@ private fun TrackList(
             stickyHeader(key = "songsTitle") {
                 SongsHeader(
                     stuck = songsHeaderStuck,
-                    modifier = Modifier.onSizeChanged { songsHeaderPx = it.height },
+                    modifier = Modifier.onSizeChanged { songsHeaderPx = it.height }.recedeWhileSelecting(selection),
                     query = state.query,
                     // Cada letra digitada traz a tela de volta até a busca (a pessoa
                     // pode ter rolado para cima no meio da busca).

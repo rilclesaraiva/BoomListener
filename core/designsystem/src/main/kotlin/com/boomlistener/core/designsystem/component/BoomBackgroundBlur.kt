@@ -8,8 +8,8 @@ import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -59,12 +59,15 @@ val PlayerBlurRadius = 24.dp
  */
 @Composable
 fun BoomNavScreen(scope: AnimatedVisibilityScope, tab: Boolean = false, content: @Composable () -> Unit) {
-    // As telas das abas guardam a folga da barra de abas por conta própria (a barra
-    // some nas telas de dentro, mas a lista da aba não pode crescer por baixo: ao
-    // voltar, ela voltava rolada uma música acima).
+    // As telas das abas guardam a folga da barra de abas por conta própria, como
+    // folga no fim da lista (e não encolhendo a tela): a barra some nas telas de
+    // dentro e quando há músicas marcadas, e a lista da aba não pode crescer nem
+    // encolher por isso (ao voltar, ela voltava rolada uma música acima).
     val inset = if (tab) LocalTabBarInset.current else 0.dp
-    Box(Modifier.fillMaxSize().recedeBlur(scope).padding(bottom = inset), propagateMinConstraints = true) {
-        content()
+    Box(Modifier.fillMaxSize().recedeBlur(scope), propagateMinConstraints = true) {
+        CompositionLocalProvider(LocalBottomOverlay provides LocalBottomOverlay.current + inset) {
+            content()
+        }
     }
 }
 

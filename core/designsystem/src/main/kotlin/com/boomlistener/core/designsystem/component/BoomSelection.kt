@@ -5,11 +5,13 @@ package com.boomlistener.core.designsystem.component
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.shape.CircleShape
@@ -18,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.background
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,11 +41,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -167,8 +168,6 @@ fun BoomSelectionBar(
     allIds: List<String>,
     actions: List<BoomMenuAction>,
     modifier: Modifier = Modifier,
-    /** Faixa na cor da página atrás das pílulas, escondendo o cabeçalho da lista (título, busca). */
-    scrim: Boolean = true,
 ) {
     val overlay = LocalSelectionOverlay.current
     val barActive = LocalSelectionBarActive.current
@@ -193,17 +192,6 @@ fun BoomSelectionBar(
         enter = slideInVertically(boomSpatialSpec()) { -it } + fadeIn(boomEffectsSpec()),
         exit = slideOutVertically(boomSpatialSpec()) { -it } + fadeOut(boomEffectsSpec()),
     ) {
-        Box {
-        if (scrim) {
-            val page = MaterialTheme.colorScheme.background
-            Box(
-                Modifier
-                    .matchParentSize()
-                    // Engole os toques: o cabeçalho escondido por baixo não reage.
-                    .pointerInput(Unit) { detectTapGestures { } }
-                    .background(Brush.verticalGradient(0f to page, 0.8f to page, 1f to Color.Transparent)),
-            )
-        }
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -237,6 +225,34 @@ fun BoomSelectionBar(
                 }
             }
         }
-        }
     }
+}
+
+/**
+ * Cabeçalho da lista que se recolhe quando há músicas marcadas (sobe e esmaece,
+ * como a barra de abas desce): assim as pílulas ficam livres, sem faixa de
+ * fundo atrás delas. Recolhido, não recebe toques.
+ */
+@Composable
+fun Modifier.recedeWhileSelecting(selection: BoomSelection): Modifier {
+    val fraction by animateFloatAsState(
+        targetValue = if (selection.isActive) 1f else 0f,
+        animationSpec = boomSpatialSpec(),
+        label = "recedeWhileSelecting",
+    )
+    val active = selection.isActive
+    val extra = with(LocalDensity.current) { 120.dp.toPx() }
+    return this
+        .pointerInput(active) {
+            if (active) {
+                awaitPointerEventScope {
+                    while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                }
+            }
+        }
+        .graphicsLayer {
+            val f = fraction.coerceIn(0f, 1f)
+            translationY = -f * (size.height + extra)
+            alpha = 1f - f
+        }
 }
