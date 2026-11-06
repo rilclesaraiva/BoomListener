@@ -79,33 +79,12 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         }
     }
 
-    private val appContext = context.applicationContext
-
     init {
-        connect(attempt = 0)
-    }
-
-    /**
-     * Conecta ao serviço de reprodução. Se a conexão falhar (o serviço ainda
-     * subindo, o app recém-atualizado por cima de outro), tenta de novo em
-     * seguida: sem isto o app ficava sem enxergar a música que continuava
-     * tocando (e o mini player não aparecia) até ser fechado e aberto.
-     */
-    private fun connect(attempt: Int) {
-        val token = SessionToken(appContext, ComponentName(appContext, PlaybackService::class.java))
-        val future = MediaController.Builder(appContext, token).buildAsync()
+        val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
+        val future = MediaController.Builder(context, token).buildAsync()
         future.addListener(
             {
-                val connected = runCatching { future.get() }.getOrNull()
-                if (connected == null) {
-                    reconnectDelayMs(attempt)?.let { wait ->
-                        scope.launch {
-                            delay(wait)
-                            connect(attempt + 1)
-                        }
-                    }
-                    return@addListener
-                }
+                val connected = runCatching { future.get() }.getOrNull() ?: return@addListener
                 controller = connected
                 connected.addListener(listener)
                 queueCache = buildQueue(connected)
@@ -407,7 +386,3 @@ private fun Track.toMediaItem(): MediaItem =
                 .build(),
         )
         .build()
-
-/** Espera antes da próxima tentativa de conexão (1 s, 2 s… até 5 s); null depois de 6 tentativas. */
-internal fun reconnectDelayMs(failedAttempts: Int): Long? =
-    if (failedAttempts in 0..5) (failedAttempts + 1).coerceAtMost(5) * 1_000L else null
