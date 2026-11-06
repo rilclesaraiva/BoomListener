@@ -62,6 +62,7 @@ import com.boomlistener.feature.nowplaying.rememberArtistOpener
 import com.boomlistener.core.datastore.PreferencesData
 import com.boomlistener.core.designsystem.component.BackgroundBlurState
 import com.boomlistener.core.designsystem.component.LocalBackgroundBlur
+import com.boomlistener.core.designsystem.component.LocalSelectionEpoch
 import com.boomlistener.core.designsystem.component.fractionBlur
 import com.boomlistener.feature.releases.navigateToReleases
 import com.boomlistener.feature.releases.releasesScreen
@@ -95,6 +96,8 @@ import com.boomlistener.feature.settings.navigateToSettings
 import com.boomlistener.feature.library.AddToPlaylistSheet
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.boomlistener.feature.history.historyScreen
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
@@ -320,7 +323,16 @@ fun BoomListenerApp() {
         }
     }
 
+    // Trocar de aba cancela as músicas marcadas (sobe a "época" da seleção).
+    var lastTab by rememberSaveable { mutableIntStateOf(selectedTab?.ordinal ?: -1) }
+    var selectionEpoch by rememberSaveable { mutableIntStateOf(0) }
+    val tabNow = selectedTab?.ordinal ?: -1
+    if (tabNow != lastTab && tabNow >= 0) {
+        lastTab = tabNow
+        selectionEpoch++
+    }
     CompositionLocalProvider(
+        LocalSelectionEpoch provides selectionEpoch,
         LocalTabReselect provides reselect,
         LocalFavoriteShare provides favoriteShare,
         LocalBackgroundBlur provides backgroundBlur,

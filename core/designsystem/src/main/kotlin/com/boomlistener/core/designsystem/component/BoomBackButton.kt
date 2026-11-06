@@ -41,5 +41,7 @@ fun BoomBackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 /** O [BoomBackButton] parado no canto de cima, abaixo da faixa das notificações. */
 @Composable
 fun BoomFloatingBackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    // Com músicas marcadas, a barra da seleção toma o lugar dele.
+    if (LocalSelectionOverlay.current?.value == true) return
     BoomBackButton(onClick, modifier.statusBarsPadding().padding(8.dp))
 }

@@ -320,6 +320,8 @@ private fun TrackListWithHeader(
             onRemoveFromPlaylist = if (state.isPlaylist) { viewModel::removeMany } else null,
         ),
         modifier = Modifier.align(Alignment.TopCenter),
+        // Sobre a capa grande: sem faixa, só as pílulas.
+        scrim = false,
     )
     // Arrastar pela direita pula pela lista, mostrando a letra.
     BoomFastScroller(

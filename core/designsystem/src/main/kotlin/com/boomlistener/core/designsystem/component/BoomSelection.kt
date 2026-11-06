@@ -27,6 +27,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -37,7 +40,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -85,15 +92,31 @@ class BoomSelection internal constructor(initial: Set<String> = emptySet()) {
     fun inOrder(all: List<String>): List<String> = all.filter { it in selected }
 
     companion object {
-        val Saver = listSaver<BoomSelection, String>(
-            save = { it.selected.toList() },
-            restore = { BoomSelection(it.toSet()) },
+        /**
+         * Guarda a seleção junto com a "época" do app (a que sobe a cada troca
+         * de aba): ao voltar de outra aba, a época é outra e a seleção vem
+         * vazia; girar a tela mantém a época e a seleção.
+         */
+        fun saver(epoch: Int) = listSaver<BoomSelection, String>(
+            save = { listOf(epoch.toString()) + it.selected },
+            restore = { saved ->
+                if (saved.firstOrNull() == epoch.toString()) BoomSelection(saved.drop(1).toSet()) else BoomSelection()
+            },
         )
     }
 }
 
+/** Sobe a cada troca de aba (dado pelo :app): seleções de antes da troca não voltam. */
+val LocalSelectionEpoch = compositionLocalOf { 0 }
+
+/** Quem mostra a barra de seleção avisa aqui, para o voltar parado no canto sair da frente. */
+val LocalSelectionOverlay = compositionLocalOf<MutableState<Boolean>?> { null }
+
 @Composable
-fun rememberBoomSelection(): BoomSelection = rememberSaveable(saver = BoomSelection.Saver) { BoomSelection() }
+fun rememberBoomSelection(): BoomSelection {
+    val epoch = LocalSelectionEpoch.current
+    return rememberSaveable(saver = BoomSelection.saver(epoch)) { BoomSelection() }
+}
 
 /**
  * Capa que também é o marcador de seleção: tocar nela marca a música; marcada,
@@ -141,7 +164,14 @@ fun BoomSelectionBar(
     allIds: List<String>,
     actions: List<BoomMenuAction>,
     modifier: Modifier = Modifier,
+    /** Faixa na cor da página atrás das pílulas, escondendo o cabeçalho da lista (título, busca). */
+    scrim: Boolean = true,
 ) {
+    val overlay = LocalSelectionOverlay.current
+    DisposableEffect(overlay, selection.isActive) {
+        overlay?.value = selection.isActive
+        onDispose { overlay?.value = false }
+    }
     // "Voltar" fecha a seleção antes de sair da tela.
     BackHandler(enabled = selection.isActive) { selection.clear() }
     // Durante a saída da barra o número não pode zerar antes de ela sumir.
@@ -155,8 +185,19 @@ fun BoomSelectionBar(
         enter = slideInVertically(boomSpatialSpec()) { -it } + fadeIn(boomEffectsSpec()),
         exit = slideOutVertically(boomSpatialSpec()) { -it } + fadeOut(boomEffectsSpec()),
     ) {
+        Box {
+        if (scrim) {
+            val page = MaterialTheme.colorScheme.background
+            Box(
+                Modifier
+                    .matchParentSize()
+                    // Engole os toques: o cabeçalho escondido por baixo não reage.
+                    .pointerInput(Unit) { detectTapGestures { } }
+                    .background(Brush.verticalGradient(0f to page, 0.8f to page, 1f to Color.Transparent)),
+            )
+        }
         Row(
-            Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -187,6 +228,7 @@ fun BoomSelectionBar(
                     BoomMoreMenu(actions = actions)
                 }
             }
+        }
         }
     }
 }

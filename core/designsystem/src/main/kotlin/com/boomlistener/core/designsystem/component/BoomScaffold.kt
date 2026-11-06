@@ -28,6 +28,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.material3.TopAppBarState
@@ -99,6 +101,10 @@ fun BoomScreenScaffold(
     } else {
         modifier
     }
+    // Há músicas marcadas nesta tela? Então o voltar parado no canto se esconde
+    // (a barra da seleção ocupa o lugar dele).
+    val selectionOverlay = remember { mutableStateOf(false) }
+    CompositionLocalProvider(LocalSelectionOverlay provides selectionOverlay) {
     Scaffold(
         // Barra própria (ou nenhuma, como no perfil): sem ligar a rolagem à barra
         // padrão. Ela não foi desenhada, então não sabe a própria altura, e o
@@ -177,6 +183,7 @@ fun BoomScreenScaffold(
             }
         },
     )
+    }
 }
 
 /**
