@@ -290,7 +290,10 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
         it.shuffleModeEnabled = false
         it.stop()
         it.clearMediaItems()
-        publish(it)
+        // Encerrado é encerrado: sem música nem fila já na hora (o controle remoto
+        // pode demorar a confirmar, e o mini player precisa sair e voltar direito).
+        queueCache = emptyList()
+        _state.value = PlaybackState()
     }
 
     override fun updateTrackInfo(uri: String, title: String, artist: String?, album: String?) = withController { player ->

@@ -7,6 +7,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ## [Unreleased]
 
 ### Fixed
+- **Mini player hidden after closing it twice:** closing the mini player by dragging it down, playing a song, closing it again and playing another could leave it pushed down and faded behind the tab bar while the music played. Closing now fully ends playback right away and the mini player's position is reset for each new song.
 - **Mini player missing while music plays:** if the app couldn't connect to the playback service on the first try (for example right after being updated over the old version while a song was playing), the music kept playing but the mini player never showed up. The app now retries the connection for a few seconds.
 - **Background blur:** after starting the system "back" gesture on a page and giving up (without letting go), turning the blur setting off and on could leave the whole page stuck blurred. The page you are on is now never blurred while it is stopped, and turning the setting on or off no longer interferes with a movement in progress.
 

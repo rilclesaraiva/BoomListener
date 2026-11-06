@@ -94,7 +94,10 @@ fun MiniPlayer(
 
     // Só volta o mini player para o lugar quando algo começar a tocar de novo
     // (antes disso ele ainda está saindo, e voltar agora causaria um salto).
-    LaunchedEffect(visible) {
+    // Também quando a música é outra: o deslocamento de um "fechar" nunca pode
+    // sobrar para a música seguinte (o mini player ficava abaixo da barra de
+    // abas, apagado, com a música tocando).
+    LaunchedEffect(visible, liveState.item?.uri) {
         if (visible) dismissOffset = 0f
     }
 
@@ -136,6 +139,13 @@ fun MiniPlayer(
                                 viewModel.stop()
                                 animate(dismissOffset, heightPx, animationSpec = returnSpec) { value, _ ->
                                     dismissOffset = value
+                                }
+                                // Se mesmo assim ainda há música (o encerramento não
+                                // valeu), o mini player volta ao lugar em vez de ficar escondido.
+                                if (viewModel.state.value.item != null) {
+                                    animate(dismissOffset, 0f, animationSpec = returnSpec) { value, _ ->
+                                        dismissOffset = value
+                                    }
                                 }
                             } else {
                                 animate(dismissOffset, 0f, animationSpec = returnSpec) { value, _ ->
