@@ -13,6 +13,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
@@ -45,13 +47,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
 import com.boomlistener.core.designsystem.R
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
@@ -188,8 +188,10 @@ fun BoomSelectionBar(
     if (selection.count > 0) shownCount = selection.count
     val allSelected = allIds.isNotEmpty() && selection.count == allIds.size && selection.selected.containsAll(allIds)
 
+    // Com o teclado aberto (digitando na busca) as pílulas saem da frente e voltam ao fechá-lo.
+    val imeOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     AnimatedVisibility(
-        visible = selection.isActive,
+        visible = selection.isActive && !imeOpen,
         modifier = modifier,
         enter = slideInVertically(boomSpatialSpec()) { -it } + fadeIn(boomEffectsSpec()),
         exit = slideOutVertically(boomSpatialSpec()) { -it } + fadeOut(boomEffectsSpec()),
@@ -231,7 +233,7 @@ fun BoomSelectionBar(
 }
 
 /**
- * Cabeçalho da lista que se recolhe quando há músicas marcadas (sobe e esmaece,
+ * Título da lista que se recolhe quando há músicas marcadas (sobe e esmaece,
  * como a barra de abas desce): assim as pílulas ficam livres, sem faixa de
  * fundo atrás delas. Recolhido, não recebe toques.
  */
@@ -245,12 +247,6 @@ fun Modifier.recedeWhileSelecting(selection: BoomSelection): Modifier {
     val active = selection.isActive
     val extra = with(LocalDensity.current) { 120.dp.toPx() }
     return this
-        // O espaço do cabeçalho também se fecha (sem vão vazio no meio da lista).
-        .layout { measurable, constraints ->
-            val placeable = measurable.measure(constraints)
-            val height = (placeable.height * (1f - fraction.coerceIn(0f, 1f))).roundToInt()
-            layout(placeable.width, height) { placeable.place(0, 0) }
-        }
         .pointerInput(active) {
             if (active) {
                 awaitPointerEventScope {

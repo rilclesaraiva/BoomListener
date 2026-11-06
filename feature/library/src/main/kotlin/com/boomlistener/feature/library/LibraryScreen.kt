@@ -363,11 +363,12 @@ private fun TrackList(
                 }
             }
             // "Músicas" com a busca ao lado: fica sempre, mesmo buscando.
-            // Fica presa no topo ao rolar: a busca está sempre à mão.
-            stickyHeader(key = "songsTitle") {
+            // Fica presa no topo ao rolar (a busca está sempre à mão), exceto com
+            // músicas marcadas: aí ela fica no lugar dela na lista.
+            val songsHeader: @Composable () -> Unit = {
                 SongsHeader(
                     stuck = songsHeaderStuck,
-                    modifier = Modifier.recedeWhileSelecting(selection).onSizeChanged { songsHeaderPx = it.height },
+                    modifier = Modifier.onSizeChanged { songsHeaderPx = it.height },
                     query = state.query,
                     // Cada letra digitada traz a tela de volta até a busca (a pessoa
                     // pode ter rolado para cima no meio da busca).
@@ -379,6 +380,11 @@ private fun TrackList(
                     // Ao tocar na busca, a lista sobe até ela (os resultados aparecem logo abaixo).
                     onFocused = { scope.launch { listState.animateScrollToItem(headerItems - 1) } },
                 )
+            }
+            if (selection.isActive) {
+                item(key = "songsTitle") { songsHeader() }
+            } else {
+                stickyHeader(key = "songsTitle") { songsHeader() }
             }
             if (state.tracks.isEmpty()) {
                 item(key = "noResults") {
