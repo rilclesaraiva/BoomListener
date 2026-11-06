@@ -193,6 +193,9 @@ fun BoomScreenScaffold(
  */
 val LocalBottomOverlay = compositionLocalOf { 0.dp }
 
+/** Altura da barra de abas, que as telas das abas ([BoomNavScreen] com `tab`) guardam embaixo. */
+val LocalTabBarInset = compositionLocalOf { 0.dp }
+
 /**
  * Estado da barra superior da tela atual. Rolar a lista por código (tocar de
  * novo na aba) não passa pela barra, que ficaria com a cor de "rolado";

@@ -62,7 +62,10 @@ import com.boomlistener.feature.nowplaying.rememberArtistOpener
 import com.boomlistener.core.datastore.PreferencesData
 import com.boomlistener.core.designsystem.component.BackgroundBlurState
 import com.boomlistener.core.designsystem.component.LocalBackgroundBlur
+import com.boomlistener.core.designsystem.component.LocalSelectionBarActive
 import com.boomlistener.core.designsystem.component.LocalSelectionEpoch
+import com.boomlistener.core.designsystem.component.LocalTabBarInset
+import com.boomlistener.feature.tageditor.TagEditQueue
 import com.boomlistener.core.designsystem.component.fractionBlur
 import com.boomlistener.feature.releases.navigateToReleases
 import com.boomlistener.feature.releases.releasesScreen
@@ -78,6 +81,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.flow.MutableSharedFlow
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.platform.LocalContext
@@ -331,7 +335,18 @@ fun BoomListenerApp() {
         lastTab = tabNow
         selectionEpoch++
     }
+    // Terminou a fila do editor de tags (salvando ou pulando): as músicas deixam de estar marcadas.
+    LaunchedEffect(Unit) { TagEditQueue.finished.collect { selectionEpoch++ } }
+    // Com músicas marcadas, a barra de abas se recolhe (como ao abrir o player): não
+    // dá para trocar de aba sem querer e perder a seleção.
+    val selectionBarActive = remember { mutableStateOf(false) }
+    val selectionFraction by animateFloatAsState(
+        targetValue = if (selectionBarActive.value) 1f else 0f,
+        animationSpec = boomSpatialSpec(),
+        label = "selectionBar",
+    )
     CompositionLocalProvider(
+        LocalSelectionBarActive provides selectionBarActive,
         LocalSelectionEpoch provides selectionEpoch,
         LocalTabReselect provides reselect,
         LocalFavoriteShare provides favoriteShare,
@@ -360,7 +375,7 @@ fun BoomListenerApp() {
                     NavigationBar(
                         Modifier
                             .onSizeChanged { navBarMeasured = with(density) { it.height.toDp() } }
-                            .graphicsLayer { translationY = playerSheet.fraction * size.height },
+                            .graphicsLayer { translationY = maxOf(playerSheet.fraction, selectionFraction) * size.height },
                     ) {
                         TopLevelDestination.entries.forEach { destination ->
                             NavigationBarItem(
@@ -382,9 +397,14 @@ fun BoomListenerApp() {
             // vez de acompanhar a barra encolhendo quadro a quadro.
             val bottom = navBarMeasured?.let { if (onTab) it else 0.dp } ?: innerPadding.calculateBottomPadding()
             Box(Modifier.fillMaxSize()) {
-                CompositionLocalProvider(LocalBottomOverlay provides miniPlayerHeight) {
+                // As abas guardam a folga da barra embaixo por conta própria (BoomNavScreen):
+                // esconder a barra nas telas de dentro não muda o tamanho da lista da aba.
+                CompositionLocalProvider(
+                    LocalBottomOverlay provides miniPlayerHeight,
+                    LocalTabBarInset provides (navBarMeasured ?: innerPadding.calculateBottomPadding()),
+                ) {
                     // Abrindo o player, o app por trás vai desfocando.
-                    navGraph(Modifier.padding(bottom = bottom).fractionBlur(backgroundBlur.enabled, { playerSheet.fraction }))
+                    navGraph(Modifier.fractionBlur(backgroundBlur.enabled, { playerSheet.fraction }))
                 }
                 AnimatedVisibility(
                     visible = miniPlayerVisible,
@@ -392,7 +412,8 @@ fun BoomListenerApp() {
                     exit = shrinkVertically(barSpec) + fadeOut(barFade),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = bottom)
+                        // Barra de abas recolhida pela seleção: o mini player desce junto.
+                        .padding(bottom = bottom * (1f - selectionFraction))
                         // O player em tela cheia cresce a partir daqui.
                         .playerSheetAnchor(playerSheet),
                 ) {

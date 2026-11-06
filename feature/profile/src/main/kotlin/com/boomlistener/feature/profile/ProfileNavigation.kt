@@ -43,7 +43,7 @@ fun NavGraphBuilder.profileScreen(
                 artistPhoto = { name, sizePx -> DeezerData.repository(context).artistPicture(name, sizePx) },
             )
         }
-        BoomNavScreen(this) {
+        BoomNavScreen(this, tab = true) {
             MyProfileScreen(
                 viewModel = viewModel,
                 onOpenArtist = onOpenArtist,

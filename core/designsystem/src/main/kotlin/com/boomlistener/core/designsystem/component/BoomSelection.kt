@@ -109,6 +109,9 @@ class BoomSelection internal constructor(initial: Set<String> = emptySet()) {
 /** Sobe a cada troca de aba (dado pelo :app): seleções de antes da troca não voltam. */
 val LocalSelectionEpoch = compositionLocalOf { 0 }
 
+/** O :app dá um estado aqui; a barra de seleção o liga, e a barra de abas de baixo se recolhe. */
+val LocalSelectionBarActive = compositionLocalOf<MutableState<Boolean>?> { null }
+
 /** Quem mostra a barra de seleção avisa aqui, para o voltar parado no canto sair da frente. */
 val LocalSelectionOverlay = compositionLocalOf<MutableState<Boolean>?> { null }
 
@@ -168,9 +171,14 @@ fun BoomSelectionBar(
     scrim: Boolean = true,
 ) {
     val overlay = LocalSelectionOverlay.current
-    DisposableEffect(overlay, selection.isActive) {
+    val barActive = LocalSelectionBarActive.current
+    DisposableEffect(overlay, barActive, selection.isActive) {
         overlay?.value = selection.isActive
-        onDispose { overlay?.value = false }
+        barActive?.value = selection.isActive
+        onDispose {
+            overlay?.value = false
+            barActive?.value = false
+        }
     }
     // "Voltar" fecha a seleção antes de sair da tela.
     BackHandler(enabled = selection.isActive) { selection.clear() }

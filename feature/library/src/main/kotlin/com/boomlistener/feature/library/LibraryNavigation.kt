@@ -51,7 +51,7 @@ fun NavGraphBuilder.libraryScreen(
     onOpenSettings: () -> Unit,
 ) {
     composable(LIBRARY_ROUTE) {
-        BoomNavScreen(this) {
+        BoomNavScreen(this, tab = true) {
             LibraryScreen(
                 onOpenArtist = onOpenArtist,
                 onOpenAlbum = { navController.openCollection("album", it) },
@@ -87,7 +87,7 @@ fun NavGraphBuilder.libraryScreen(
                 layout = CollectionsLayoutData.repository(context),
             )
         }
-        BoomNavScreen(this) {
+        BoomNavScreen(this, tab = true) {
             CollectionsScreen(
                 viewModel = viewModel,
                 onOpenGenre = { navController.openCollection("genre", it) },

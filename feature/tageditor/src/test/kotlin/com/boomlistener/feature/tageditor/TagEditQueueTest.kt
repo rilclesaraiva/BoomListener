@@ -3,6 +3,11 @@
 
 package com.boomlistener.feature.tageditor
 
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -42,5 +47,17 @@ class TagEditQueueTest {
         TagEditQueue.clear()
         assertNull(TagEditQueue.state.value)
         assertNull(TagEditQueue.advance())
+    }
+
+    @Test
+    fun avisaQuandoAFilaTermina() = runBlocking {
+        TagEditQueue.start(listOf("a", "b"))
+        val avisado = async(start = CoroutineStart.UNDISPATCHED) {
+            TagEditQueue.finished.first()
+        }
+        assertEquals("b", TagEditQueue.advance())
+        assertNull(TagEditQueue.advance())
+        withTimeout(2_000) { avisado.await() }
+        Unit
     }
 }
