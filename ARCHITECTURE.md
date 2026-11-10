@@ -20,7 +20,7 @@ gradle/libs.versions.toml ← catálogo de versões (única lista de dependênci
 
 core/
   model/          ← classes de dados puras (Track, Album, Artist, Release…). Sem nenhum import android.*
-  common/         ← utilidades: Result, dispatchers, log, formatação de tempo
+  common/         ← utilidades: modo offline (`OfflineMode`), navegação sem toque repetido (`navigateOnce`), busca sem acento (`SearchText`), app favorito de compartilhar (`ShareTarget`), links externos e permissões de mídia
   designsystem/   ← tema M3, cor dinâmica, cor extraída da capa, componentes visuais reutilizáveis
   datastore/      ← preferências do usuário (DataStore)
   player/         ← Media3 (ExoPlayer) + MediaSessionService: fila, notificação, tela de bloqueio, Bluetooth
@@ -29,22 +29,22 @@ data/
   library/        ← lê o MediaStore (com o filtro de pastas e duração), expõe faixas, álbuns, artistas e playlists
   tags/           ← lê e grava tags nos arquivos (TagLib nativo) + pedido de permissão de escrita
   deezer/         ← API do Deezer: foto do artista, discografia, lançamentos, faixas
-  lastfm/         ← API do Last.fm (via proxy): biografia, tags de gênero, similares, scrobble
+  lastfm/         ← API do Last.fm (pelo proxy do projeto ou pela chave própria da pessoa): biografia e tags de gênero
   musicbrainz/    ← reserva quando o Deezer não acha: MusicBrainz (tags, discografia) + capas do Cover Art Archive
-  releases/       ← artistas seguidos, comparação de discografia, WorkManager diário, notificações
-  history/        ← o histórico de escuta (aberto pelo Perfil)
+  releases/       ← artistas seguidos, escolhas dos avisos de lançamento e a regra do que é novidade (`ReleaseCheck`, até 30 dias)
+  wellbeing/      ← histórico de escuta e estatísticas (contagem de reproduções, mais ouvidas, horários)
   profile/        ← seu perfil, só seu e só no aparelho: nome, descrição, cor, foto e capa (recorte e GIF animado)
   lyrics/         ← letras: LRCLIB + cache no aparelho + leitor de LRC
-  updates/        ← "Verificar atualizações": compara a versão instalada com a última Release do GitHub
+  updates/        ← "Verificar atualizações" (compara a versão instalada com a última Release do GitHub) e a foto do desenvolvedor em Sobre
 
 feature/
-  library/        ← telas da biblioteca: músicas, álbuns, artistas, pastas, busca
+  library/        ← telas da biblioteca: músicas, gêneros, artistas, playlists, álbuns, favoritos, busca e seleção de várias músicas
   nowplaying/     ← player em tela cheia + mini player
   artist/         ← página do artista: foto, bio, discografia com "tenho / falta"
-  tageditor/      ← edição de tags de uma ou várias faixas
-  releases/       ← lançamentos (abre pelo sino no topo das abas) e gerenciamento de quem você segue
-  settings/       ← ajustes, tema, sobre, licenças, privacidade
-  wellbeing/      ← estatísticas e histórico de escuta (usados pelo Perfil)
+  tageditor/      ← edição de tags de uma ou várias faixas (em sequência) e o escaneamento de tags da biblioteca
+  releases/       ← lançamentos (abre pelo sino no topo das abas), gerenciamento de quem você segue e a verificação a cada 12 h (WorkManager) com as notificações
+  settings/       ← ajustes (aparência, reprodução, biblioteca, compartilhamento, sistema), backup, atualizações e Sobre (os textos legais abrem no navegador)
+  history/        ← tela do histórico de escuta (aberta pelo Perfil)
   profile/        ← aba Perfil: o seu perfil personalizado, com estatísticas, mais ouvidas, artistas e histórico
 
 proxy/            ← Cloudflare Worker que guarda a chave e o segredo do Last.fm (igual ao do BusBus)
