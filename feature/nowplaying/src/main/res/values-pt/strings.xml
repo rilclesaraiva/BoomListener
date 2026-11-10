@@ -56,11 +56,6 @@
         <item quantity="other">Timer para dormir · faltam %d min</item>
     </plurals>
     <string name="feature_nowplaying_sleep_active_end">Timer para dormir · no fim desta música</string>
-    <plurals name="feature_nowplaying_sleep_minutes">
-        <item quantity="one">%d minuto</item>
-        <item quantity="many">%d minutos</item>
-        <item quantity="other">%d minutos</item>
-    </plurals>
     <string name="feature_nowplaying_sleep_end_of_track">No fim desta música</string>
     <string name="feature_nowplaying_sleep_cancel">Desligar timer</string>
     <string name="feature_nowplaying_speed">Velocidade</string>

@@ -38,14 +38,6 @@ class BoomSelectionTest {
     }
 
     @Test
-    fun inOrderSegueAOrdemDaLista() {
-        val s = BoomSelection()
-        s.toggle("c")
-        s.toggle("a")
-        assertEquals(listOf("a", "c"), s.inOrder(listOf("a", "b", "c")))
-    }
-
-    @Test
     fun seMesmaEpocaVoltaAMesmaSelecaoEOutraVoltaVazia() {
         val scope = androidx.compose.runtime.saveable.SaverScope { true }
         val saved = with(BoomSelection.saver(epoch = 3)) { scope.save(BoomSelection(setOf("a", "b"))) }!!

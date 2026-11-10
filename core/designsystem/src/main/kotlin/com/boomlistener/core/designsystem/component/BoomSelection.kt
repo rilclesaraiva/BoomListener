@@ -91,9 +91,6 @@ class BoomSelection internal constructor(initial: Set<String> = emptySet()) {
         if (selected.isNotEmpty() && !ids.containsAll(selected)) selected = selected.intersect(ids)
     }
 
-    /** As marcadas, na ordem em que aparecem na lista [all]. */
-    fun inOrder(all: List<String>): List<String> = all.filter { it in selected }
-
     companion object {
         /**
          * Guarda a seleção junto com a "época" do app (a que sobe a cada troca
