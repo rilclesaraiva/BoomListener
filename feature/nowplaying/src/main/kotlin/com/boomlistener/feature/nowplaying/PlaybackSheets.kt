@@ -126,7 +126,7 @@ internal fun SleepTimerSheet(settings: PlaybackSettings, onDismiss: () -> Unit) 
                     color = MaterialTheme.colorScheme.primary,
                 )
                 else -> Text(
-                    "00:00",
+                    formatCountdown(0L),
                     style = MaterialTheme.typography.displayLarge,
                     color = MaterialTheme.colorScheme.outline,
                 )
@@ -192,7 +192,7 @@ private fun SleepField(value: String, label: Int, modifier: Modifier, onChange: 
         value = value,
         onValueChange = onChange,
         label = { Text(stringResource(label)) },
-        placeholder = { Text("0") },
+        placeholder = { Text(0.toString()) },
         singleLine = true,
         textStyle = MaterialTheme.typography.headlineMedium.copy(textAlign = TextAlign.Center),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

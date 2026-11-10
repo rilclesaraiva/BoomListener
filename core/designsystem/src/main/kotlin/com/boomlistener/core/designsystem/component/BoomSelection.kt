@@ -78,8 +78,9 @@ class BoomSelection internal constructor(initial: Set<String> = emptySet()) {
         selected = if (id in selected) selected - id else selected + id
     }
 
+    /** Marca todas de [ids], somando às já marcadas (as que uma busca esconde continuam marcadas). */
     fun selectAll(ids: Collection<String>) {
-        selected = ids.toSet()
+        selected = selected + ids
     }
 
     fun clear() {
@@ -183,7 +184,7 @@ fun BoomSelectionBar(
     // Durante a saída da barra o número não pode zerar antes de ela sumir.
     var shownCount by remember { mutableIntStateOf(0) }
     if (selection.count > 0) shownCount = selection.count
-    val allSelected = allIds.isNotEmpty() && selection.count == allIds.size && selection.selected.containsAll(allIds)
+    val allSelected = allIds.isNotEmpty() && selection.selected.containsAll(allIds)
 
     // Com o teclado aberto (digitando na busca) as pílulas saem da frente e voltam ao fechá-lo.
     val imeOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0

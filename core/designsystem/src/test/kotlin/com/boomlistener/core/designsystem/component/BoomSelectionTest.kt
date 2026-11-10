@@ -29,6 +29,13 @@ class BoomSelectionTest {
     }
 
     @Test
+    fun selecionarTudoSomaAsJaMarcadasQueAListaNaoMostra() {
+        val s = BoomSelection(setOf("escondida"))
+        s.selectAll(listOf("a", "b"))
+        assertEquals(setOf("escondida", "a", "b"), s.selected)
+    }
+
+    @Test
     fun retainTiraOQueSaiuDaLista() {
         val s = BoomSelection(setOf("a", "b"))
         s.retain(setOf("b", "c"))

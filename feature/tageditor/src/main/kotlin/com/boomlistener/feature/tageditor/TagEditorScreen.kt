@@ -174,7 +174,8 @@ internal fun TagEditorScreen(
     val skip: () -> Unit = {
         if (state.hasChanges) discardAction = goNext else goNext()
     }
-    BackHandler(enabled = state.hasChanges, onBack = leave)
+    // Também com a fila ativa: o voltar do sistema precisa limpá-la (senão ela ficaria velha).
+    BackHandler(enabled = state.hasChanges || queueActive, onBack = leave)
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_tageditor_title),
