@@ -6,6 +6,8 @@ package com.boomlistener.feature.tageditor
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,10 +28,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -91,6 +95,7 @@ internal fun TagAuditScreen(
         modifier = modifier,
         topBar = {},
     ) { padding ->
+      Box(Modifier.fillMaxSize()) {
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") { BoomPageTitle(title, hasBack = true, large = true) }
             if (open == null) {
@@ -124,6 +129,19 @@ internal fun TagAuditScreen(
             }
             item { Spacer(Modifier.height(24.dp)) }
         }
+        // Aviso discreto no rodapé (só na visão geral; a lista de músicas usa a tela toda).
+        if (open == null) {
+            Text(
+                stringResource(R.string.feature_tageditor_audit_experimental),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 32.dp, end = 32.dp, bottom = padding.calculateBottomPadding() + 16.dp),
+            )
+        }
+      }
     }
 }
 

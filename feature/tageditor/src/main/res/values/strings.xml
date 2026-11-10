@@ -81,4 +81,5 @@
     <string name="feature_tageditor_audit_gap_composer">No composer</string>
     <string name="feature_tageditor_audit_gap_cover">No cover art</string>
     <string name="feature_tageditor_audit_gap_lyrics">No lyrics in the file</string>
+    <string name="feature_tageditor_audit_experimental">This area is in development and may improve or disappear.</string>
 </resources>
