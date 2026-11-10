@@ -6,6 +6,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-11-10
+
 ### Fixed
 - **Tag editor queue:** leaving the editor with your phone's back gesture, without changing anything, left the queue half-open, so the next time you opened that song the editor said "Song 1 of 5" and Save jumped to another song. Leaving the editor in any way now ends the queue.
 - **Lists jumping up after going back:** if you were at the very end of a tab's list (for example the last genre in Library), opened it and came back, the list returned one item higher. The tab bar no longer changes the size of the list underneath.
@@ -19,6 +21,11 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ### Added
 - **Tag scan** (Settings → Library → Tag scan): reads every song file and tells you how many are missing an artist, album, year, genre, track number, album artist, composer, cover art or lyrics (lyrics counts only what's saved inside the file). Tap a gap to see the songs; tap one to fix it in the tag editor and keep going through the rest of the list, or use "Edit all in order". After saving, the list updates by itself. Nothing leaves your phone, and the result isn't saved: scanning again takes a few seconds. A small note at the bottom says this area is still in development and may improve or disappear.
 - **Select several songs:** in the **Songs** list on Home and in any album, genre, playlist or favorites page, tap a song's **cover** to select it (it turns into a check). With one selected, tapping any row selects or unselects it and holding no longer opens the song menu. Two floating buttons appear at the top: **✕ and the count** on the left, and **Select all** plus a **⋮ menu** on the right. The menu works on everything you picked: **Edit tags**, **Add to queue**, **Add to playlist**, **Add to / Remove from favorites**, **Remove from playlist** (inside a playlist) and **Delete from device**. Back (or ✕) closes the selection, and so does switching to another tab. The tab bar at the bottom slides away while songs are selected (like when the player opens), so a stray tap can't lose your selection. Finishing the tag-edit queue (saving or skipping the last song) also clears the selection. While songs are selected, the page title and back arrow step aside so nothing overlaps the buttons, and the "Songs" search stays in its place in the list (it stops sticking to the top). Searching doesn't clear your selection (songs the search hides stay selected, and **Select all** adds to them). When you tap the search and the keyboard opens, the two buttons hide until the keyboard closes. **Edit tags** opens the tag editor on the first song and, each time you save, goes to the next ("Song 2 of 5"); **Skip** moves on without saving. This is a first step: fixing tags automatically for many songs at once, and a dedicated area for it, come later. Other lists (artist page, search, history, profile) don't have selection yet.
+
+### Known issues
+- **Tag scan:** it is still in development. "No lyrics" only looks at lyrics saved inside the file, not the ones the app fetched from LRCLIB. On a big library the scan can take a while, and the result is not saved between visits.
+- **Selecting songs:** it only works in the Songs list on Home and in album, genre, playlist and favorites pages (not yet in artist pages, search results, history or profile).
+- **Profile:** tapping the name or bio, and the previews in the edit sheet, still open the editor or the picture picker.
 
 ## [0.55.0] - 2026-11-04
 
