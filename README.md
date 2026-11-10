@@ -22,8 +22,8 @@ A **local** music player for Android. Free, open source, no ads, no account.
 ### Playing music
 - **Plays the music on your phone** with a Material 3 Expressive look: a floating mini player that grows into the full-screen player, a wavy progress bar that moves smoothly, and big expressive controls
 - **Swipe to change songs** on the mini player or on the cover
-- **Queue** you can reorder, "Play next", shuffle and repeat, and a **Mix** that fills up next with similar songs from your library
-- **Synced lyrics** from the file or from LRCLIB (you choose which comes first). In the tag editor, one tap looks up the synced version of a song whose lyrics have no times and, when you save, stores it in the file, so it also works offline
+- **Queue** you can reorder, "Play next", shuffle and repeat, and a **Mix** that plays a few similar songs next (same artist or genre) and then the rest of your library, shuffled
+- **Synced lyrics** from the file or from LRCLIB (you choose which comes first), with a button to jump back to the line that is playing after you scroll. In the tag editor, one tap looks up the synced version of a song whose lyrics have no times and, when you save, stores it in the file, so it also works offline
 - **Audio visualizer over the cover** (bars or wave), turned on from the player menu. It reads the app's own audio, so it needs no microphone permission
 - **Playback options:** crossfade between songs, fade on play/pause, gapless playback, ReplayGain, playback speed, sleep timer, resume when your headphones reconnect, and remember shuffle
 - **Picks up where you left off** after closing the app, or stops completely when you swipe it away from recents (optional)
@@ -39,9 +39,12 @@ A **local** music player for Android. Free, open source, no ads, no account.
 - Long-press anything for a menu: play next, add to playlist, go to album or artist, details, share, delete from the phone
 - Filter the library by folder and minimum length
 - Fast scroller with letter bubble on long lists
+- **Select several songs** in the song lists (Home, albums, genres, playlists, favorites) and act on all of them at once: edit tags, add to the queue or a playlist, favorite, remove from a playlist or delete from the phone
 
 ### Tags
-- **Edit tags**: title, artist, album, year, genre, cover and lyrics
+- **Edit tags**: title, artist, album, album artist, year, genre, track and disc number, composer, cover and lyrics
+- **Edit several songs in a row**: with a selection, the editor opens on the first song and moves to the next each time you save (or skip)
+- **Tag scan** (Settings → Library, still in development): reads your library and shows how many songs are missing an artist, album, year, genre, track number, album artist, composer, cover or lyrics saved in the file, then takes you through them in the editor. Everything stays on your phone
 - **Automatic tags** from Deezer, with MusicBrainz and Cover Art Archive as backup and genres from Last.fm. Songs with several artists ("feat.", "x", "&") are matched too
 - If your tags are already right, nothing is overwritten. When a different cover is found, you see both side by side and decide
 
