@@ -7,6 +7,11 @@ import android.widget.Toast
 import com.boomlistener.feature.artist.ARTIST_NAME_ARG
 import com.boomlistener.feature.artist.ARTIST_ROUTE
 import com.boomlistener.core.player.PlayerConnection
+import com.boomlistener.core.player.PlaybackSettingsData
+import com.boomlistener.core.player.ScreenOnPlace
+import com.boomlistener.core.player.shouldKeepScreenOn
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -220,6 +225,29 @@ fun BoomListenerApp() {
         currentDestination?.hierarchy?.any { node ->
             node.route == destination.route || node.route?.startsWith(destination.route + "/") == true
         } == true
+    }
+    // "Manter a tela ativa" (Ajustes → Reprodução): o :app junta a aba aberta, o player e a letra.
+    val view = LocalView.current
+    val playbackSettings = remember { PlaybackSettingsData.get(context) }
+    val playbackPrefs by playbackSettings.prefs.collectAsStateWithLifecycle()
+    val playback by remember { PlayerConnection.controller(context).state }.collectAsStateWithLifecycle()
+    var lyricsShown by remember { mutableStateOf(false) }
+    val keepScreenOn = shouldKeepScreenOn(
+        places = playbackPrefs.keepScreenOn,
+        onlyWhilePlaying = playbackPrefs.keepScreenOnOnlyPlaying,
+        playing = playback.isPlaying,
+        tab = when (TopLevelDestination.entries.firstOrNull { it.route == route }) {
+            TopLevelDestination.Home -> ScreenOnPlace.Home
+            TopLevelDestination.Collections -> ScreenOnPlace.Library
+            TopLevelDestination.Profile -> ScreenOnPlace.Profile
+            null -> null
+        },
+        playerOpen = playerSheet.isExpanded,
+        lyricsShown = lyricsShown,
+    )
+    DisposableEffect(view, keepScreenOn) {
+        view.keepScreenOn = keepScreenOn
+        onDispose { view.keepScreenOn = false }
     }
     // Abrir um artista que já está aberto não empilha outra página igual.
     val openArtist: (String) -> Unit = { name ->
@@ -454,6 +482,7 @@ fun BoomListenerApp() {
                 openFromPlayer { navController.navigateToTagEditor(uri) }
             },
             onAddToPlaylist = { uri -> addToPlaylistUri = uri },
+            onLyricsShown = { lyricsShown = it },
         )
 
         addToPlaylistUri?.let { uri ->

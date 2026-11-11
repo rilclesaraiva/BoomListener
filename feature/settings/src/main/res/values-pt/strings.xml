@@ -94,6 +94,15 @@
     <string name="feature_settings_playback_fade_summary">O volume sobe e desce suave em vez de cortar</string>
     <string name="feature_settings_playback_gapless">Sem pausa entre faixas (gapless)</string>
     <string name="feature_settings_playback_gapless_summary">Álbuns sem silêncio entre as faixas tocam emendados. Vale a partir da próxima música</string>
+    <string name="feature_settings_playback_screen_on">Manter a tela ativa em</string>
+    <string name="feature_settings_playback_screen_on_player">Player em tela cheia (capa e letra)</string>
+    <string name="feature_settings_playback_screen_on_lyrics">Só na letra</string>
+    <string name="feature_settings_playback_screen_on_home">Aba Início</string>
+    <string name="feature_settings_playback_screen_on_library">Aba Biblioteca</string>
+    <string name="feature_settings_playback_screen_on_profile">Aba Perfil</string>
+    <string name="feature_settings_playback_screen_on_everywhere">O app todo</string>
+    <string name="feature_settings_playback_screen_on_only_playing">Só enquanto a música toca</string>
+    <string name="feature_settings_playback_screen_on_only_playing_summary">Pausada, a tela apaga como sempre para economizar bateria.</string>
     <string name="feature_settings_playback_speed">Velocidade</string>
     <string name="feature_settings_playback_speed_summary">A voz mantém o tom</string>
     <string name="feature_settings_playback_speed_reset">Voltar ao normal</string>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -34,6 +35,7 @@ import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
 import com.boomlistener.core.player.PlaybackPrefs
 import com.boomlistener.core.player.PlaybackSettingsData
+import com.boomlistener.core.player.ScreenOnPlace
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -137,6 +139,35 @@ internal fun PlaybackSettingsScreen(onBack: () -> Unit, modifier: Modifier = Mod
                         ),
                         onClick = { settings.setLyricsOnlineFirst(!prefs.lyricsOnlineFirst) },
                         trailing = { Switch(checked = prefs.lyricsOnlineFirst, onCheckedChange = settings::setLyricsOnlineFirst) },
+                    )
+                }
+            }
+            item(key = "screenOn") {
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_playback_screen_on)) {
+                    listOf(
+                        ScreenOnPlace.Player to R.string.feature_settings_playback_screen_on_player,
+                        ScreenOnPlace.Lyrics to R.string.feature_settings_playback_screen_on_lyrics,
+                        ScreenOnPlace.Home to R.string.feature_settings_playback_screen_on_home,
+                        ScreenOnPlace.Library to R.string.feature_settings_playback_screen_on_library,
+                        ScreenOnPlace.Profile to R.string.feature_settings_playback_screen_on_profile,
+                        ScreenOnPlace.Everywhere to R.string.feature_settings_playback_screen_on_everywhere,
+                    ).forEach { (place, label) ->
+                        val checked = place in prefs.keepScreenOn
+                        BoomSettingsItem(
+                            icon = null,
+                            title = stringResource(label),
+                            onClick = { settings.setKeepScreenOn(place, !checked) },
+                            trailing = { Checkbox(checked = checked, onCheckedChange = { settings.setKeepScreenOn(place, it) }) },
+                        )
+                    }
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_playback_screen_on_only_playing),
+                        subtitle = stringResource(R.string.feature_settings_playback_screen_on_only_playing_summary),
+                        onClick = { settings.setKeepScreenOnOnlyPlaying(!prefs.keepScreenOnOnlyPlaying) },
+                        trailing = {
+                            Switch(checked = prefs.keepScreenOnOnlyPlaying, onCheckedChange = settings::setKeepScreenOnOnlyPlaying)
+                        },
                     )
                 }
             }

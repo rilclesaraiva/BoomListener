@@ -91,6 +91,15 @@
     <string name="feature_settings_playback_fade_summary">El volumen sube y baja suavemente en vez de cortarse</string>
     <string name="feature_settings_playback_gapless">Reproducción sin pausas (gapless)</string>
     <string name="feature_settings_playback_gapless_summary">Los álbumes sin silencio entre pistas suenan seguidos. Se aplica desde la siguiente canción</string>
+    <string name="feature_settings_playback_screen_on">Mantener la pantalla encendida en</string>
+    <string name="feature_settings_playback_screen_on_player">Reproductor a pantalla completa (portada y letra)</string>
+    <string name="feature_settings_playback_screen_on_lyrics">Solo en la letra</string>
+    <string name="feature_settings_playback_screen_on_home">Pestaña Inicio</string>
+    <string name="feature_settings_playback_screen_on_library">Pestaña Biblioteca</string>
+    <string name="feature_settings_playback_screen_on_profile">Pestaña Perfil</string>
+    <string name="feature_settings_playback_screen_on_everywhere">Toda la app</string>
+    <string name="feature_settings_playback_screen_on_only_playing">Solo mientras suena la música</string>
+    <string name="feature_settings_playback_screen_on_only_playing_summary">En pausa, la pantalla se apaga como siempre para ahorrar batería.</string>
     <string name="feature_settings_playback_speed">Velocidad</string>
     <string name="feature_settings_playback_speed_summary">Las voces mantienen su tono</string>
     <string name="feature_settings_playback_speed_reset">Restablecer</string>

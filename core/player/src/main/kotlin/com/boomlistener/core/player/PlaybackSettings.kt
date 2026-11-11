@@ -38,6 +38,10 @@ data class PlaybackPrefs(
     val stopOnTaskRemoved: Boolean = false,
     /** Botões do player e do mini player na cor da capa (Ajustes → Aparência). */
     val artworkButtons: Boolean = true,
+    /** Onde a tela fica acesa enquanto o app está aberto (Ajustes → Reprodução). */
+    val keepScreenOn: Set<ScreenOnPlace> = emptySet(),
+    /** A tela só fica acesa enquanto a música toca (pausada, apaga como sempre). */
+    val keepScreenOnOnlyPlaying: Boolean = true,
 ) {
     companion object {
         const val MAX_TRANSITION_SECONDS = 12
@@ -63,6 +67,8 @@ interface PlaybackSettings {
     fun setVisualizerStyle(style: VisualizerStyle)
     fun setStopOnTaskRemoved(enabled: Boolean)
     fun setArtworkButtons(enabled: Boolean)
+    fun setKeepScreenOn(place: ScreenOnPlace, enabled: Boolean)
+    fun setKeepScreenOnOnlyPlaying(enabled: Boolean)
 
     /** null = sem timer. Não é guardado: fechar o app desliga. */
     val sleepTimer: StateFlow<SleepTimer?>
@@ -102,6 +108,9 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
                 ?: VisualizerStyle.Wave,
             stopOnTaskRemoved = store.getBoolean(KEY_STOP_ON_SWIPE, false),
             artworkButtons = store.getBoolean(KEY_ARTWORK_BUTTONS, true),
+            keepScreenOn = store.getStringSet(KEY_SCREEN_ON, emptySet()).orEmpty()
+                .mapNotNull { name -> ScreenOnPlace.entries.firstOrNull { it.name == name } }.toSet(),
+            keepScreenOnOnlyPlaying = store.getBoolean(KEY_SCREEN_ON_PLAYING, true),
         ),
     )
     override val prefs: StateFlow<PlaybackPrefs> = state.asStateFlow()
@@ -171,6 +180,17 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
         state.value = state.value.copy(artworkButtons = enabled)
     }
 
+    override fun setKeepScreenOn(place: ScreenOnPlace, enabled: Boolean) {
+        val places = if (enabled) state.value.keepScreenOn + place else state.value.keepScreenOn - place
+        store.edit().putStringSet(KEY_SCREEN_ON, places.map { it.name }.toSet()).apply()
+        state.value = state.value.copy(keepScreenOn = places)
+    }
+
+    override fun setKeepScreenOnOnlyPlaying(enabled: Boolean) {
+        store.edit().putBoolean(KEY_SCREEN_ON_PLAYING, enabled).apply()
+        state.value = state.value.copy(keepScreenOnOnlyPlaying = enabled)
+    }
+
     override fun startSleepTimer(minutes: Int, nowMs: Long) {
         sleep.value = SleepTimer(endsAtMs = nowMs + minutes.coerceAtLeast(1) * 60_000L)
     }
@@ -196,6 +216,8 @@ internal class SharedPrefsPlaybackSettings(context: Context) : PlaybackSettings 
         const val KEY_VISUALIZER_STYLE = "visualizer_style"
         const val KEY_STOP_ON_SWIPE = "stop_on_task_removed"
         const val KEY_ARTWORK_BUTTONS = "artwork_buttons"
+        const val KEY_SCREEN_ON = "keep_screen_on"
+        const val KEY_SCREEN_ON_PLAYING = "keep_screen_on_only_playing"
     }
 }
 

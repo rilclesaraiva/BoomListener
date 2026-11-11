@@ -46,9 +46,13 @@ fun PlayerSheet(
     onEditTags: (trackUri: String) -> Unit,
     onAddToPlaylist: (trackUri: String) -> Unit,
     modifier: Modifier = Modifier,
+    /** Avisa o :app quando a letra aparece ou some no player (para "manter a tela ativa"). */
+    onLyricsShown: (Boolean) -> Unit = {},
 ) {
     val viewModel = nowPlayingViewModel()
     val playback by viewModel.state.collectAsStateWithLifecycle()
+    val lyricsOn by viewModel.showLyrics.collectAsStateWithLifecycle()
+    LaunchedEffect(lyricsOn) { onLyricsShown(lyricsOn) }
 
     // Fila esvaziou (música encerrada pelo mini player): fecha o painel.
     LaunchedEffect(playback.item == null) {
