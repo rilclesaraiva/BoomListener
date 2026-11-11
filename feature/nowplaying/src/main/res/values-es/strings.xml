@@ -4,6 +4,7 @@
     <string name="feature_nowplaying_empty_title">No suena nada</string>
     <string name="feature_nowplaying_queue_position">%1$d de %2$d</string>
     <string name="feature_nowplaying_unknown_artist">Artista desconocido</string>
+    <string name="feature_nowplaying_open_app">Abrir en BoomListener</string>
     <string name="feature_nowplaying_play">Reproducir</string>
     <string name="feature_nowplaying_pause">Pausar</string>
     <string name="feature_nowplaying_next">Siguiente</string>

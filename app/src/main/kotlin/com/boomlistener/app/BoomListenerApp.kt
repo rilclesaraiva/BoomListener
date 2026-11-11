@@ -275,14 +275,6 @@ fun BoomListenerApp() {
             navController.navigateToReleases()
         }
     }
-    // Abriu um áudio de fora ("Abrir com"): começa a tocar e o player abre.
-    val openPlayerRequest by AppRequests.openPlayer.collectAsState()
-    LaunchedEffect(openPlayerRequest) {
-        if (openPlayerRequest) {
-            AppRequests.openPlayer.value = false
-            playerSheet.expand()
-        }
-    }
     // Saiu do player aberto para outra tela (artista, editor): ao voltar até a
     // tela de onde saiu, o player abre de novo, como estava.
     var reopenPlayerOn by remember { mutableStateOf<String?>(null) }

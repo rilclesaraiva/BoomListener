@@ -6,11 +6,6 @@ package com.boomlistener.app
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
-import android.widget.Toast
-import androidx.lifecycle.lifecycleScope
-import com.boomlistener.core.player.PlayerConnection
-import com.boomlistener.data.library.LibraryData
-import kotlinx.coroutines.launch
 import com.boomlistener.feature.releases.ReleaseAlerts
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.activity.ComponentActivity
@@ -25,9 +20,6 @@ import com.boomlistener.core.designsystem.theme.BoomTheme
 /** Pedidos vindos de fora da tela (ex.: tocar no aviso de lançamento). */
 internal object AppRequests {
     val openReleases = MutableStateFlow(false)
-
-    /** Abriu um áudio de fora ("Abrir com"): o player abre em tela cheia. */
-    val openPlayer = MutableStateFlow(false)
 }
 
 /** Menor largura (dp) a partir da qual a tela é de tablet (a mesma divisa do Android). */
@@ -61,20 +53,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handle(intent: Intent?) {
-        // "Abrir com" o BoomListener: toca o arquivo e abre o player.
-        val audio = intent?.data
-        if (intent?.action == Intent.ACTION_VIEW && audio != null) {
-            intent.data = null
-            lifecycleScope.launch {
-                val track = LibraryData.repository(applicationContext).trackFromUri(audio.toString())
-                if (track == null) {
-                    Toast.makeText(applicationContext, R.string.app_open_file_failed, Toast.LENGTH_LONG).show()
-                } else {
-                    PlayerConnection.controller(applicationContext).play(listOf(track), 0)
-                    AppRequests.openPlayer.value = true
-                }
-            }
-        }
         if (intent?.getBooleanExtra(ReleaseAlerts.EXTRA_OPEN_RELEASES, false) == true) {
             AppRequests.openReleases.value = true
             intent.removeExtra(ReleaseAlerts.EXTRA_OPEN_RELEASES)

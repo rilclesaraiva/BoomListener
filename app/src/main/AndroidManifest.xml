@@ -44,7 +44,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- "Abrir com": arquivos de áudio abertos de um gerenciador de arquivos ou de outro app. -->
+        </activity>
+
+        <!-- "Abrir com": player pequeno por cima do app de onde veio o arquivo de áudio. -->
+        <activity
+            android:name=".ExternalPlayerActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.BoomListener.Popup">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

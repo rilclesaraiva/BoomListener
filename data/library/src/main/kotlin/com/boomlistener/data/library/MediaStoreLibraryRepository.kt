@@ -309,11 +309,12 @@ internal class MediaStoreLibraryRepository(
 
         val bitmap = withContext(Dispatchers.IO) {
             val uri = Uri.parse(trackUri)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && uri.authority == MediaStore.AUTHORITY) {
                 runCatching {
                     context.contentResolver.loadThumbnail(uri, Size(sizePx, sizePx), null)
                 }.getOrNull()
             } else {
+                // Android 9 ou arquivo aberto de outro app ("Abrir com"): a capa que está dentro do arquivo.
                 loadEmbeddedArtwork(uri, sizePx)
             }
         }
@@ -321,7 +322,7 @@ internal class MediaStoreLibraryRepository(
         return bitmap
     }
 
-    /** Android 9 ou anterior: lê a capa embutida no próprio arquivo. */
+    /** Lê a capa embutida no próprio arquivo (Android 9 ou anterior, e arquivos de fora da biblioteca). */
     private fun loadEmbeddedArtwork(uri: Uri, sizePx: Int): Bitmap? {
         val retriever = MediaMetadataRetriever()
         return try {

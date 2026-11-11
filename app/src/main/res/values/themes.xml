@@ -3,4 +3,11 @@
     <!-- Tema só da janela, antes do Compose desenhar. O tema de verdade é o
          BoomTheme (core/designsystem). -->
     <style name="Theme.BoomListener" parent="android:Theme.Material.NoActionBar" />
+
+    <!-- Player pequeno do "Abrir com": a tela some e só o painel aparece por cima do outro app. -->
+    <style name="Theme.BoomListener.Popup" parent="Theme.BoomListener">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>
