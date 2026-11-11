@@ -147,6 +147,8 @@ internal fun LibraryScreen(
     // biblioteca (músicas novas podem ter chegado enquanto o app estava fechado).
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         hasPermission = MediaPermissions.hasReadAudio(context)
+        // O aviso do MediaStore pode não chegar com o app parado em segundo plano: relê ao voltar.
+        if (hasPermission) viewModel.refresh()
     }
     LaunchedEffect(hasPermission) { if (hasPermission) viewModel.load() }
 

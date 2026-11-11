@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Fixed
+- **New songs not showing up:** songs downloaded while the app was in the background could be missing from the library until you restarted it. The library now also reloads every time you come back to the app.
+
 ### Changed
 - **The app is now simply called BoomListener**, the same name you see under the icon, everywhere (About, backups, the share card, the README and the legal pages). It used to be written "Boom, listener!".
 

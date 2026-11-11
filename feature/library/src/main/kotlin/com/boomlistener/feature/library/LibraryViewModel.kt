@@ -61,6 +61,11 @@ internal class LibraryViewModel(
         viewModelScope.launch { allTracks.value = repository.getTracks() }
     }
 
+    /** Relê só se a biblioteca já foi carregada (ao voltar para o app); a primeira leitura é do [load]. */
+    fun refresh() {
+        if (allTracks.value != null) load()
+    }
+
     fun onQueryChange(newQuery: String) {
         query.value = newQuery
     }

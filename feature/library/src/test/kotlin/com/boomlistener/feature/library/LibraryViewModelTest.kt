@@ -130,4 +130,27 @@ class LibraryViewModelTest {
         val viewModel = LibraryViewModel(FakeLibraryRepository(listOf(song)), FakePlaybackController())
         assertTrue(viewModel.shareUrl(song).startsWith("https://music.youtube.com/search?q="))
     }
+
+    @Test
+    fun refreshRelePorqueMusicaNovaChegouComOAppParado() = runTest(dispatcher) {
+        val old = Track(1, "content://1", "Antiga", "Artista", null, 0, 180_000, null, null, 0)
+        val new = Track(2, "content://2", "Baixada agora", "Artista", null, 0, 180_000, null, null, 0)
+        var current = listOf(old)
+        val repository = object : LibraryRepository {
+            override suspend fun getTracks(): List<Track> = current
+            override suspend fun loadArtwork(trackUri: String, sizePx: Int): Bitmap? = null
+        }
+        val viewModel = LibraryViewModel(repository, FakePlaybackController())
+        val collector = launch { viewModel.uiState.collect {} }
+
+        // Antes da primeira leitura, refresh não faz nada (quem lê é o load).
+        viewModel.refresh()
+        assertTrue(viewModel.uiState.value is LibraryUiState.Loading)
+
+        viewModel.load()
+        current = listOf(old, new)
+        viewModel.refresh()
+        assertEquals(listOf(1L, 2L), (viewModel.uiState.value as LibraryUiState.Success).tracks.map { it.id })
+        collector.cancel()
+    }
 }
