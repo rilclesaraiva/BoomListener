@@ -105,5 +105,5 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 
 ## Contexto atual
 - Foco: polimento do player e da fila; seguir o documento de estrutura do mantenedor (adotado em 29/10/2026).
-- Celular travado em pé (31/10/2026); tablet gira e usa o mesmo layout do celular em pé (o layout próprio de tela larga saiu em 30/10/2026). Última Release pública: v0.55.0.
-- Problemas conhecidos: toque no nome/bio do perfil e nas prévias da folha de edição ainda abre o editor/seletor.
+- Celular travado em pé (31/10/2026); tablet gira e usa o mesmo layout do celular em pé (o layout próprio de tela larga saiu em 30/10/2026). Última Release pública: v0.56.0 (10/11/2026).
+- Problemas conhecidos: toque no nome/bio do perfil e nas prévias da folha de edição ainda abre o editor/seletor. O escaneamento de tags (Ajustes → Biblioteca) está em desenvolvimento: a letra só conta a que está dentro do arquivo. A seleção de várias músicas ainda não existe na página do artista, na busca, no histórico nem no perfil.
