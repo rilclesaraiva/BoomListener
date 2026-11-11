@@ -33,6 +33,11 @@ class ExternalPlayerActivity : ComponentActivity() {
     private lateinit var player: ExternalPlayer
     private var track by mutableStateOf<Track?>(null)
 
+    // O player do app estava tocando quando o pop-up começou? (null = ainda não conferido.)
+    // O Android o pausa para o pop-up tocar; ao fechar, só volta a tocar se era ele que estava tocando.
+    private var appWasPlaying: Boolean? = null
+    private var handedOver = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -65,6 +70,12 @@ class ExternalPlayerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         player.release()
+        // Fechou o pop-up (não girou a tela nem passou a música ao app): devolve o que ele pausou.
+        if (isFinishing && !handedOver && appWasPlaying == true) {
+            val controller = PlayerConnection.controller(applicationContext)
+            val app = controller.state.value
+            if (app.item != null && !app.isPlaying) controller.togglePlayPause()
+        }
         super.onDestroy()
     }
 
@@ -76,6 +87,8 @@ class ExternalPlayerActivity : ComponentActivity() {
                 Toast.makeText(applicationContext, R.string.app_open_file_failed, Toast.LENGTH_LONG).show()
                 finish()
             } else {
+                // Só na primeira vez: um segundo arquivo chega com o app já pausado por este pop-up.
+                if (appWasPlaying == null) appWasPlaying = PlayerConnection.controller(applicationContext).state.value.isPlaying
                 track = found
                 player.play(found.uri)
             }
@@ -85,6 +98,7 @@ class ExternalPlayerActivity : ComponentActivity() {
     /** "Abrir no BoomListener": só aqui a música passa para o player do app (pedido da pessoa). */
     private fun openInApp() {
         val current = track ?: return
+        handedOver = true
         // Continua do ponto em que estava no pop-up, não do começo.
         val position = player.currentPositionMs()
         player.release()
