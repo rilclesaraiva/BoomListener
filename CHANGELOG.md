@@ -11,6 +11,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Songs that don't say they're music:** audio files that Android doesn't flag as music (for example ones saved straight in your phone's storage by a download app) now show up in the library. Ringtones, notifications and alarms are still left out. If voice messages or other audio show up that you don't want, use **Settings → Library**: minimum duration or only the folders you choose.
 
 ### Added
+- **Open audio files with BoomListener:** BoomListener now shows up in "Open with" when you tap an audio file in a file manager or another app. It plays the file and opens the player, even if the song isn't in your library (for example, a file in a folder hidden by your library settings).
 - **Keep the screen on** (Settings → Playback → Keep the screen on in): tick where the screen should stay awake while the app is open: the full-screen player (cover and lyrics), only the lyrics, the Home, Library or Profile tab, or the whole app. A switch below (on by default) keeps it awake only while music is playing, so a paused app lets the screen turn off. Nothing is on by default.
 
 ### Changed

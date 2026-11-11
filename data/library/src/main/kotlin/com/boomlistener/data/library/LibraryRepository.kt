@@ -50,6 +50,13 @@ interface LibraryRepository {
      */
     suspend fun delete(uris: List<String>): DeleteResult = DeleteResult.Failed
 
+    /**
+     * A música de um arquivo aberto de fora ("Abrir com" de um gerenciador de arquivos): a da
+     * biblioteca, se for uma delas, ou uma montada pelas tags do próprio arquivo. null se não der
+     * para ler.
+     */
+    suspend fun trackFromUri(uri: String): Track? = null
+
     /** Detalhes do arquivo de [uri]; null se ele não existe mais. */
     suspend fun details(uri: String): SongDetails? = null
 }

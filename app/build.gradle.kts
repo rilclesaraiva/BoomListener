@@ -80,6 +80,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:datastore"))
     implementation(project(":core:player"))
+    implementation(project(":data:library"))
     implementation(project(":data:wellbeing"))
     implementation(project(":data:profile"))
 

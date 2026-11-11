@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_open_file_failed">No se pudo abrir este archivo de audio</string>
     <string name="nav_home">Inicio</string>
     <string name="nav_collections">Biblioteca</string>
     <string name="nav_profile">Perfil</string>

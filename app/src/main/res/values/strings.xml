@@ -2,6 +2,7 @@
 <resources>
     <!-- App name (under the icon and everywhere else). -->
     <string name="app_name" translatable="false">BoomListener</string>
+    <string name="app_open_file_failed">Couldn’t open this audio file</string>
     <string name="nav_home">Home</string>
     <string name="nav_collections">Library</string>
     <string name="nav_profile">Profile</string>

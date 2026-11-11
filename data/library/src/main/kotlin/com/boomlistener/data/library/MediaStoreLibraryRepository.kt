@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.LruCache
 import android.util.Size
 import com.boomlistener.core.model.Track
@@ -209,6 +210,41 @@ internal class MediaStoreLibraryRepository(
         // Até o Android 10 o gênero não vem junto: fica numa tabela à parte.
         val withGenres = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) tracks else addLegacyGenres(tracks)
         withGenres.sortedWith { a, b -> collator.compare(a.title, b.title) }
+    }
+
+    override suspend fun trackFromUri(uri: String): Track? = withContext(Dispatchers.IO) {
+        val parsed = Uri.parse(uri)
+        // Já é uma música da biblioteca (endereço do MediaStore): usa a de lá, com as tags e a capa.
+        if (parsed.authority == MediaStore.AUTHORITY) {
+            val id = runCatching { ContentUris.parseId(parsed) }.getOrNull()
+            if (id != null) queryAll().firstOrNull { it.track.id == id }?.let { return@withContext it.track }
+        }
+        // De outro app (ex.: MiXplorer): o que o arquivo diz de si mesmo.
+        val fileName = runCatching {
+            context.contentResolver.query(parsed, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { if (it.moveToFirst()) it.getString(0) else null }
+        }.getOrNull() ?: parsed.lastPathSegment
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, parsed)
+            fun tag(key: Int) = retriever.extractMetadata(key)?.takeIf { it.isNotBlank() }
+            Track(
+                id = uri.hashCode().toLong(),
+                uri = uri,
+                title = tag(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: titleFromFileName(fileName) ?: "—",
+                artist = tag(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: tag(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST),
+                album = tag(MediaMetadataRetriever.METADATA_KEY_ALBUM),
+                albumId = 0,
+                durationMs = tag(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0,
+                trackNumber = leadingNumber(tag(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)),
+                year = leadingNumber(tag(MediaMetadataRetriever.METADATA_KEY_YEAR)),
+                dateAddedSeconds = System.currentTimeMillis() / 1000,
+            )
+        } catch (_: Exception) {
+            null
+        } finally {
+            runCatching { retriever.release() }
+        }
     }
 
     /** Uma música e a pasta onde ela está. */
