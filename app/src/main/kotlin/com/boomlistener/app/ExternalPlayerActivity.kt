@@ -22,7 +22,9 @@ import com.boomlistener.core.player.ExternalPlayer
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.feature.nowplaying.ExternalPlayerPopup
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * "Abrir com" o BoomListener num arquivo de áudio: um player pequeno por cima
@@ -42,6 +44,8 @@ class ExternalPlayerActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         player = ExternalPlayer(applicationContext)
+        // Já começa a conectar ao player do app: quando o arquivo for lido, o estado dele está certo.
+        PlayerConnection.controller(applicationContext)
         handle(intent)
         val preferences = PreferencesData.repository(applicationContext).preferences
         setContent {
@@ -88,7 +92,12 @@ class ExternalPlayerActivity : ComponentActivity() {
                 finish()
             } else {
                 // Só na primeira vez: um segundo arquivo chega com o app já pausado por este pop-up.
-                if (appWasPlaying == null) appWasPlaying = PlayerConnection.controller(applicationContext).state.value.isPlaying
+                if (appWasPlaying == null) {
+                    val controller = PlayerConnection.controller(applicationContext)
+                    // Sem nada na fila pode ser só o app ainda conectando ao serviço: espera um instante.
+                    if (controller.state.value.item == null) withTimeoutOrNull(300) { controller.state.first { it.item != null } }
+                    appWasPlaying = controller.state.value.isPlaying
+                }
                 track = found
                 player.play(found.uri)
             }
@@ -98,16 +107,21 @@ class ExternalPlayerActivity : ComponentActivity() {
     /** "Abrir no BoomListener": só aqui a música passa para o player do app (pedido da pessoa). */
     private fun openInApp() {
         val current = track ?: return
+        if (handedOver) return
         handedOver = true
         // Continua do ponto em que estava no pop-up, não do começo.
         val position = player.currentPositionMs()
         player.release()
-        val controller = PlayerConnection.controller(applicationContext)
-        controller.play(listOf(current), 0)
-        controller.seekTo(position)
-        // NEW_TASK: o app abre na tarefa dele. Sem isto ele entrava na tarefa do pop-up e, da vez
-        // seguinte, o pop-up (mesma tarefa) abria por cima do app em vez de por cima do gerenciador.
-        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        finish()
+        lifecycleScope.launch {
+            // Arquivo de outro app: leva uma cópia, porque a permissão de leitura dele acaba com este pop-up.
+            val kept = LibraryData.repository(applicationContext).keepExternalCopy(current)
+            val controller = PlayerConnection.controller(applicationContext)
+            controller.play(listOf(kept), 0)
+            controller.seekTo(position)
+            // NEW_TASK: o app abre na tarefa dele. Sem isto ele entrava na tarefa do pop-up e, da vez
+            // seguinte, o pop-up (mesma tarefa) abria por cima do app em vez de por cima do gerenciador.
+            startActivity(Intent(this@ExternalPlayerActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            finish()
+        }
     }
 }

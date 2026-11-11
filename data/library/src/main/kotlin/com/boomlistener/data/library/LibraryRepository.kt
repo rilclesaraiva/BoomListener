@@ -57,6 +57,14 @@ interface LibraryRepository {
      */
     suspend fun trackFromUri(uri: String): Track? = null
 
+    /**
+     * Para uma música de fora da biblioteca ("Abrir com"): copia o arquivo para o cache do app e devolve
+     * a música apontando para a cópia, porque a permissão de leitura que o outro app deu acaba com a
+     * tela que a recebeu. Músicas do MediaStore e já copiadas voltam como estão; se não der para copiar,
+     * também.
+     */
+    suspend fun keepExternalCopy(track: Track): Track = track
+
     /** Detalhes do arquivo de [uri]; null se ele não existe mais. */
     suspend fun details(uri: String): SongDetails? = null
 }

@@ -52,6 +52,7 @@
             android:exported="true"
             android:excludeFromRecents="true"
             android:taskAffinity=""
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:theme="@style/Theme.BoomListener.Popup">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

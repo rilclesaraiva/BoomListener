@@ -14,3 +14,13 @@ internal fun titleFromFileName(fileName: String?): String? {
 /** O primeiro número de uma tag como "3/12" (faixa 3 de 12); null se não houver. */
 internal fun leadingNumber(raw: String?): Int? =
     raw?.trim()?.takeWhile { it.isDigit() }?.toIntOrNull()?.takeIf { it > 0 }
+
+/**
+ * Nome do arquivo da cópia de um áudio de fora: o nome original sem caracteres perigosos para um
+ * caminho, curto, e com um número do endereço para dois arquivos de mesmo nome não se misturarem.
+ */
+internal fun safeCopyName(displayName: String?, uri: String): String {
+    val clean = (displayName?.takeIf { it.isNotBlank() } ?: "audio").replace(Regex("[^\\p{L}\\p{N}._ ()-]"), "_")
+    val short = if (clean.length > 80) clean.take(60) + clean.takeLast(20) else clean
+    return "${uri.hashCode().toUInt()}_$short"
+}

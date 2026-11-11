@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.Collator
 import java.util.Collections
 import java.util.Locale
@@ -212,6 +213,35 @@ internal class MediaStoreLibraryRepository(
         withGenres.sortedWith { a, b -> collator.compare(a.title, b.title) }
     }
 
+    private fun displayNameOf(uri: Uri): String? = runCatching {
+        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { if (it.moveToFirst()) it.getString(0) else null }
+    }.getOrNull() ?: uri.lastPathSegment
+
+    override suspend fun keepExternalCopy(track: Track): Track = withContext(Dispatchers.IO) {
+        val parsed = Uri.parse(track.uri)
+        val dir = File(context.cacheDir, "external-audio")
+        if (parsed.authority == MediaStore.AUTHORITY || (parsed.scheme == "file" && parsed.path.orEmpty().startsWith(dir.path))) {
+            return@withContext track
+        }
+        val target = File(dir, safeCopyName(displayNameOf(parsed), track.uri))
+        try {
+            dir.mkdirs()
+            // Cópias de mais de um dia saem do cache (o Android também limpa o cache sozinho).
+            val cutoff = System.currentTimeMillis() - EXTERNAL_COPY_MAX_AGE_MS
+            dir.listFiles()?.filter { it.lastModified() < cutoff }?.forEach { it.delete() }
+            if (!target.exists()) {
+                val input = context.contentResolver.openInputStream(parsed) ?: return@withContext track
+                input.use { source -> target.outputStream().use { source.copyTo(it) } }
+            }
+            target.setLastModified(System.currentTimeMillis())
+            track.copy(uri = Uri.fromFile(target).toString())
+        } catch (_: Exception) {
+            target.delete()
+            track
+        }
+    }
+
     override suspend fun trackFromUri(uri: String): Track? = withContext(Dispatchers.IO) {
         val parsed = Uri.parse(uri)
         // Já é uma música da biblioteca (endereço do MediaStore): usa a de lá, com as tags e a capa.
@@ -220,10 +250,7 @@ internal class MediaStoreLibraryRepository(
             if (id != null) queryAll().firstOrNull { it.track.id == id }?.let { return@withContext it.track }
         }
         // De outro app (ex.: MiXplorer): o que o arquivo diz de si mesmo.
-        val fileName = runCatching {
-            context.contentResolver.query(parsed, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-                ?.use { if (it.moveToFirst()) it.getString(0) else null }
-        }.getOrNull() ?: parsed.lastPathSegment
+        val fileName = displayNameOf(parsed)
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(context, parsed)
@@ -231,7 +258,7 @@ internal class MediaStoreLibraryRepository(
             Track(
                 id = uri.hashCode().toLong(),
                 uri = uri,
-                title = tag(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: titleFromFileName(fileName) ?: "—",
+                title = tag(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: titleFromFileName(fileName) ?: uri.substringAfterLast('/'),
                 artist = tag(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: tag(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST),
                 album = tag(MediaMetadataRetriever.METADATA_KEY_ALBUM),
                 albumId = 0,
@@ -411,6 +438,7 @@ internal class MediaStoreLibraryRepository(
 }
 
 private const val CHANGE_DEBOUNCE_MS = 1_500L
+private const val EXTERNAL_COPY_MAX_AGE_MS = 24 * 60 * 60 * 1000L
 private const val KEY_MIN_DURATION = "min_duration_s"
 private const val KEY_ONLY_CHOSEN = "only_chosen_folders"
 private const val KEY_FOLDERS = "folders"
