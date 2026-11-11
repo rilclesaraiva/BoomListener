@@ -71,6 +71,9 @@ class ExternalPlayer(context: Context) {
         refresh()
     }
 
+    /** Onde a música está agora (para continuar do mesmo ponto em outro player). */
+    fun currentPositionMs(): Long = if (released) 0L else player.currentPosition.coerceAtLeast(0)
+
     /** Atualiza a posição (a tela chama a cada meio segundo enquanto toca). */
     fun refresh() {
         if (released) return

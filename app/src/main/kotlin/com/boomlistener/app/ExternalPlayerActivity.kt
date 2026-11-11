@@ -85,8 +85,12 @@ class ExternalPlayerActivity : ComponentActivity() {
     /** "Abrir no BoomListener": só aqui a música passa para o player do app (pedido da pessoa). */
     private fun openInApp() {
         val current = track ?: return
+        // Continua do ponto em que estava no pop-up, não do começo.
+        val position = player.currentPositionMs()
         player.release()
-        PlayerConnection.controller(applicationContext).play(listOf(current), 0)
+        val controller = PlayerConnection.controller(applicationContext)
+        controller.play(listOf(current), 0)
+        controller.seekTo(position)
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }

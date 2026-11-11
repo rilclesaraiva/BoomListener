@@ -14,16 +14,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
@@ -68,10 +64,6 @@ fun ExternalPlayerPopup(
     val artwork by produceState<ImageBitmap?>(null, track.uri) {
         value = LibraryData.repository(context).loadArtwork(track.uri, sizePx)?.asImageBitmap()
     }
-    // Arrastar mexe só na barra; busca ao soltar.
-    var dragging by remember { mutableFloatStateOf(-1f) }
-    val shown = if (dragging >= 0f) dragging else state.progress
-
     BoomModalSheet(onDismissRequest = onClose) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -91,17 +83,17 @@ fun ExternalPlayerPopup(
                 }
             }
             Spacer(Modifier.height(8.dp))
-            Slider(
-                value = shown,
-                onValueChange = { dragging = it },
-                onValueChangeFinished = {
-                    player.seekToFraction(dragging)
-                    dragging = -1f
-                },
-                modifier = Modifier.fillMaxWidth(),
+            // A mesma barra ondulada do player do app; arrastando, o balão mostra o tempo do alvo.
+            SmoothSeekBar(
+                positionMs = state.positionMs,
+                durationMs = state.durationMs,
+                isPlaying = state.isPlaying,
+                speed = 1f,
+                onSeek = player::seekToFraction,
+                dragLabel = { fraction -> formatTime((fraction * state.durationMs).toLong()) },
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(formatTime((shown * state.durationMs).toLong()), style = MaterialTheme.typography.labelMedium)
+                Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelMedium)
                 Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelMedium)
             }
             Spacer(Modifier.height(8.dp))
