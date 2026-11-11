@@ -1,4 +1,4 @@
-// Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
+// BoomListener — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 
 pluginManagement {
     // Plugins de convenção: a configuração compartilhada entre módulos mora aqui.

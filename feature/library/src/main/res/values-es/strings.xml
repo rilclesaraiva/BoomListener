@@ -9,7 +9,7 @@
     <string name="feature_library_empty_message">No encontramos música en tu dispositivo. Copia archivos de música a tu teléfono y aparecerán aquí solos.</string>
     <string name="feature_library_no_results_message">Ninguna canción coincide con “%1$s”.</string>
     <string name="feature_library_permission_title">Tu música vive aquí</string>
-    <string name="feature_library_permission_message">Para mostrar y reproducir la música de tu dispositivo, Boom, listener! necesita acceso a música y audio. Nada sale de tu teléfono.</string>
+    <string name="feature_library_permission_message">Para mostrar y reproducir la música de tu dispositivo, BoomListener necesita acceso a música y audio. Nada sale de tu teléfono.</string>
     <string name="feature_library_permission_button">Permitir acceso</string>
     <string name="feature_library_permission_denied">Se denegó el acceso. Puedes permitirlo en Permisos → Música y audio.</string>
     <string name="feature_library_permission_settings">Abrir ajustes</string>

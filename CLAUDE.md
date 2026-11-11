@@ -3,8 +3,8 @@
 Lido no início de cada sessão: é como o Claude recupera o contexto do projeto. Detalhes técnicos de cada parte (player, ajustes, perfil, build) ficam no [`ARCHITECTURE.md`](ARCHITECTURE.md); o histórico, no [`CHANGELOG.md`](CHANGELOG.md). Em conflito entre uma instrução antiga do chat e este arquivo, **vale este arquivo**. Decisão nova que mude algo aqui entra neste arquivo no mesmo commit.
 
 ## Projeto
-**Boom, listener!** (trocadilho com *sonic boom* + ouvinte; no ícone, **BoomListener**): reprodutor de música **local** para Android, em Material 3 Expressive, com edição de tags, página de artista (Deezer + Last.fm) e radar de lançamentos dos artistas seguidos. Gratuito, sem anúncios, sem conta. Público: **global** (pública desde a 0.36.2; deixou de se chamar beta em 30/10/2026).
-- Nome nos arquivos: `boomlistener` (`boomlistener_vX.Y.Z.apk`; título da Release: "Boom, listener! vX.Y.Z").
+**BoomListener** (nome único do app, no ícone e em todo texto; vem de *sonic boom* + ouvinte, e o Android não aceita "!" nem vírgula no nome): reprodutor de música **local** para Android, em Material 3 Expressive, com edição de tags, página de artista (Deezer + Last.fm) e radar de lançamentos dos artistas seguidos. Gratuito, sem anúncios, sem conta. Público: **global** (pública desde a 0.36.2; deixou de se chamar beta em 30/10/2026).
+- Nome nos arquivos: `boomlistener` (`boomlistener_vX.Y.Z.apk`; título da Release: "BoomListener vX.Y.Z").
 
 ## Mantenedor
 - Nome: **rilclesaraiva** · Contato: saraivarilcle@gmail.com (e as issues do GitHub)

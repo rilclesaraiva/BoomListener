@@ -158,6 +158,6 @@ jobs:
         with:
           tag_name: ${{ steps.decide.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Boom, listener! ${{ steps.decide.outputs.tag }}
+          name: BoomListener ${{ steps.decide.outputs.tag }}
           body_path: notes.md
           files: boomlistener_${{ steps.decide.outputs.tag }}.apk

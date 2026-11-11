@@ -1,4 +1,4 @@
-# Boom, listener!
+# BoomListener
 
 A **local** music player for Android. Free, open source, no ads, no account.
 
@@ -86,7 +86,7 @@ It asks for access to your music and audio, and (on Android 13 and newer) for pe
 
 ## 🤖 Built with AI ("vibe coding")
 
-In the spirit of transparency: **Boom, listener! is developed with heavy use of AI.**
+In the spirit of transparency: **BoomListener is developed with heavy use of AI.**
 Most of the code is written by [Claude](https://claude.ai) (Anthropic) under the
 direction of the human maintainer, a workflow often called *vibe coding*.
 We take care that it doesn't turn into AI slop:
@@ -123,7 +123,7 @@ Built with Kotlin, Jetpack Compose (Material 3) and Media3, and signed automatic
 
 ## ☕ Support the project
 
-Boom, listener! is free and maintained independently. If it's useful to you, you can
+BoomListener is free and maintained independently. If it's useful to you, you can
 support its development with a coffee:
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/saraivarilcle)

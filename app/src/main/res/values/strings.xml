@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Short name under the icon. The full name is "Boom, listener!". -->
+    <!-- App name (under the icon and everywhere else). -->
     <string name="app_name" translatable="false">BoomListener</string>
     <string name="nav_home">Home</string>
     <string name="nav_collections">Library</string>

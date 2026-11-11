@@ -2,11 +2,11 @@
 title: Terms of Use
 ---
 
-# Terms of Use — Boom, listener!
+# Terms of Use — BoomListener
 
 _Last updated: October 29, 2026_
 
-Boom, listener! ("the app") is maintained by **rilclesaraiva** ([github.com/rilclesaraiva](https://github.com/rilclesaraiva)). By installing or using the app, you agree to these terms.
+BoomListener ("the app") is maintained by **rilclesaraiva** ([github.com/rilclesaraiva](https://github.com/rilclesaraiva)). By installing or using the app, you agree to these terms.
 
 ## Free and open source
 

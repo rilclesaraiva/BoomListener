@@ -1,4 +1,4 @@
-// Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
+// BoomListener — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
 package com.boomlistener.feature.settings
@@ -182,7 +182,7 @@ private fun AboutHero() {
             )
         }
         Spacer(Modifier.height(16.dp))
-        Text("Boom, listener!", style = MaterialTheme.typography.headlineMedium)
+        Text("BoomListener", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AboutChip(rawVersion.removeSuffix("-debug"))

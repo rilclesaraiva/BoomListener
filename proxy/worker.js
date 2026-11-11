@@ -1,4 +1,4 @@
-// Boom, listener! — Proxy do Last.fm (Cloudflare Worker)
+// BoomListener — Proxy do Last.fm (Cloudflare Worker)
 // Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 //

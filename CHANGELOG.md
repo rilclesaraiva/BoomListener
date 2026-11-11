@@ -1,10 +1,13 @@
 # Changelog
 
-All notable changes to **Boom, listener!** are recorded here, by version. This file is also the text of each GitHub Release, so it is written in English, for people who use the app.
+All notable changes to **BoomListener** are recorded here, by version. This file is also the text of each GitHub Release, so it is written in English, for people who use the app.
 
 Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/) — `MAJOR.MINOR.PATCH`.
 
 ## [Unreleased]
+
+### Changed
+- **The app is now simply called BoomListener**, the same name you see under the icon, everywhere (About, backups, the share card, the README and the legal pages). It used to be written "Boom, listener!".
 
 ## [0.56.0] - 2026-11-10
 

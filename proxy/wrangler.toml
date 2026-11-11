@@ -1,4 +1,4 @@
-# Boom, listener! — configuração do Worker (proxy do Last.fm).
+# BoomListener — configuração do Worker (proxy do Last.fm).
 # A chave e o segredo NÃO ficam aqui: são variáveis secretas no painel da
 # Cloudflare (LASTFM_API_KEY e LASTFM_SHARED_SECRET). Ver proxy/README.md.
 name = "boomlistener-lastfm"

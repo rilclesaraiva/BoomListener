@@ -1,4 +1,4 @@
-// Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
+// BoomListener — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 //
 // Só declara os plugins (apply false) para que todos os módulos usem as mesmas
 // versões. A configuração de verdade fica nos plugins de convenção (build-logic).

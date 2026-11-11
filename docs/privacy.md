@@ -2,11 +2,11 @@
 title: Privacy Policy
 ---
 
-# Privacy Policy — Boom, listener!
+# Privacy Policy — BoomListener
 
 _Last updated: November 4, 2026_
 
-Boom, listener! ("the app") is a free, open-source music player for Android that plays the music files stored on your phone. This policy explains what the app does with information, based on what its [source code](https://github.com/rilclesaraiva/BoomListener) actually does.
+BoomListener ("the app") is a free, open-source music player for Android that plays the music files stored on your phone. This policy explains what the app does with information, based on what its [source code](https://github.com/rilclesaraiva/BoomListener) actually does.
 
 **Who is responsible:** the app is maintained by **rilclesaraiva** ([github.com/rilclesaraiva](https://github.com/rilclesaraiva)). Contact: [saraivarilcle@gmail.com](mailto:saraivarilcle@gmail.com), or [open an issue](https://github.com/rilclesaraiva/BoomListener/issues) on the project repository.
 

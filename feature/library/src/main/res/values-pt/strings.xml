@@ -9,7 +9,7 @@
     <string name="feature_library_empty_message">Não encontramos músicas no seu aparelho. Coloque arquivos de música no celular e eles aparecem aqui sozinhos.</string>
     <string name="feature_library_no_results_message">Nenhuma música combina com “%1$s”.</string>
     <string name="feature_library_permission_title">Suas músicas moram aqui</string>
-    <string name="feature_library_permission_message">Para mostrar e tocar as músicas do seu aparelho, o Boom, listener! precisa de acesso a música e áudio. Nada sai do seu celular.</string>
+    <string name="feature_library_permission_message">Para mostrar e tocar as músicas do seu aparelho, o BoomListener precisa de acesso a música e áudio. Nada sai do seu celular.</string>
     <string name="feature_library_permission_button">Permitir acesso</string>
     <string name="feature_library_permission_denied">O acesso foi negado. Você pode liberar em Permissões → Música e áudio.</string>
     <string name="feature_library_permission_settings">Abrir configurações</string>

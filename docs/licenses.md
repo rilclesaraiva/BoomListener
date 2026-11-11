@@ -2,13 +2,13 @@
 title: Licenses and attributions
 ---
 
-# Licenses and attributions — Boom, listener!
+# Licenses and attributions — BoomListener
 
 _Last updated: November 4, 2026_
 
 ## The app
 
-Boom, listener! is free software, licensed under the **GNU General Public License v3.0**. You can use, study, modify and share it. The full text and the source code are at [github.com/rilclesaraiva/BoomListener](https://github.com/rilclesaraiva/BoomListener) ([LICENSE](https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE)).
+BoomListener is free software, licensed under the **GNU General Public License v3.0**. You can use, study, modify and share it. The full text and the source code are at [github.com/rilclesaraiva/BoomListener](https://github.com/rilclesaraiva/BoomListener) ([LICENSE](https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE)).
 
 ## Libraries
 

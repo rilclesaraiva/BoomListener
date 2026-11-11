@@ -1,4 +1,4 @@
-// Boom, listener! — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
+// BoomListener — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
 package com.boomlistener.feature.nowplaying
@@ -333,4 +333,4 @@ internal fun darkCardColors(seed: Int): ShareCardColors = ShareCardColors(
 )
 
 /** Nome completo do app (nome próprio, igual em todo idioma). */
-internal const val SHARE_CARD_APP_NAME = "Boom, listener!"
+internal const val SHARE_CARD_APP_NAME = "BoomListener"

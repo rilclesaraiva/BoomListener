@@ -5,7 +5,7 @@
     <string name="feature_settings_section_about">Acerca de</string>
     <string name="feature_settings_appearance">Apariencia</string>
     <string name="feature_settings_appearance_summary">Tema, colores y modo AMOLED</string>
-    <string name="feature_settings_about">Acerca de Boom, listener!</string>
+    <string name="feature_settings_about">Acerca de BoomListener</string>
     <string name="feature_settings_about_summary">Versión %1$s, licencia y código fuente</string>
     <string name="feature_settings_licenses">Licencias y atribuciones</string>
     <string name="feature_settings_licenses_summary">Licencia de la app, bibliotecas y servicios usados</string>
@@ -113,7 +113,7 @@
     <string name="feature_settings_backup_working">Trabajando…</string>
     <string name="feature_settings_backup_saved">Copia guardada.</string>
     <string name="feature_settings_backup_failed">No se pudo guardar la copia.</string>
-    <string name="feature_settings_backup_invalid">Este archivo no es una copia de Boom, listener!.</string>
+    <string name="feature_settings_backup_invalid">Este archivo no es una copia de BoomListener.</string>
     <string name="feature_settings_backup_newer">Esta copia se hizo con una versión más nueva de la app. Actualiza la app primero.</string>
     <string name="feature_settings_backup_restore_failed">No se pudo restaurar esta copia.</string>
     <string name="feature_settings_backup_confirm_title">¿Restaurar esta copia?</string>

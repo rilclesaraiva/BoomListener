@@ -1,4 +1,4 @@
-# Arquitetura do Boom, listener!
+# Arquitetura do BoomListener
 
 Documento de referência da estrutura do app. O `CLAUDE.md` resume as regras; aqui fica o porquê de cada peça.
 
