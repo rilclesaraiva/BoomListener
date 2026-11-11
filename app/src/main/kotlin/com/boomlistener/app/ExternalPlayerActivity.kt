@@ -91,7 +91,9 @@ class ExternalPlayerActivity : ComponentActivity() {
         val controller = PlayerConnection.controller(applicationContext)
         controller.play(listOf(current), 0)
         controller.seekTo(position)
-        startActivity(Intent(this, MainActivity::class.java))
+        // NEW_TASK: o app abre na tarefa dele. Sem isto ele entrava na tarefa do pop-up e, da vez
+        // seguinte, o pop-up (mesma tarefa) abria por cima do app em vez de por cima do gerenciador.
+        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         finish()
     }
 }
