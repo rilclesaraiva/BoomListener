@@ -51,6 +51,7 @@
             android:name=".ExternalPlayerActivity"
             android:exported="true"
             android:excludeFromRecents="true"
+            android:taskAffinity=""
             android:theme="@style/Theme.BoomListener.Popup">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

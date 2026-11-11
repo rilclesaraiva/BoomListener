@@ -17,34 +17,35 @@ import androidx.lifecycle.lifecycleScope
 import com.boomlistener.core.datastore.PreferencesData
 import com.boomlistener.core.datastore.UserPreferences
 import com.boomlistener.core.designsystem.theme.BoomTheme
+import com.boomlistener.core.model.Track
+import com.boomlistener.core.player.ExternalPlayer
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.feature.nowplaying.ExternalPlayerPopup
 import kotlinx.coroutines.launch
 
 /**
- * "Abrir com" o BoomListener num arquivo de áudio: toca o arquivo e mostra um
- * player pequeno por cima do app de onde veio (sem abrir o app inteiro).
- * A música continua tocando ao fechar o painel.
+ * "Abrir com" o BoomListener num arquivo de áudio: um player pequeno por cima
+ * do app de onde veio o arquivo, com player próprio. A fila e a música do app
+ * não são tocadas. Sair do pop-up (fechar, ir para outro app) encerra o som dele.
  */
 class ExternalPlayerActivity : ComponentActivity() {
-    // A música deste pedido; o painel só aparece quando é ela que está tocando.
-    private var trackUri by mutableStateOf<String?>(null)
+    private lateinit var player: ExternalPlayer
+    private var track by mutableStateOf<Track?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) handle(intent)
+        player = ExternalPlayer(applicationContext)
+        handle(intent)
         val preferences = PreferencesData.repository(applicationContext).preferences
         setContent {
             val prefs by preferences.collectAsStateWithLifecycle(initialValue = UserPreferences())
             BoomTheme(themeMode = prefs.themeMode, dynamicColor = prefs.dynamicColor) {
                 ExternalPlayerPopup(
-                    trackUri = trackUri,
-                    onOpenApp = {
-                        startActivity(Intent(this, MainActivity::class.java))
-                        finish()
-                    },
+                    track = track,
+                    player = player,
+                    onOpenApp = ::openInApp,
                     onClose = ::finish,
                 )
             }
@@ -56,17 +57,37 @@ class ExternalPlayerActivity : ComponentActivity() {
         handle(intent)
     }
 
+    // Saiu da frente (outro app, tela apagada): o pop-up não fica tocando sem controle na tela.
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) finish()
+    }
+
+    override fun onDestroy() {
+        player.release()
+        super.onDestroy()
+    }
+
     private fun handle(intent: Intent?) {
         val audio = intent?.data ?: return finish()
         lifecycleScope.launch {
-            val track = LibraryData.repository(applicationContext).trackFromUri(audio.toString())
-            if (track == null) {
+            val found = LibraryData.repository(applicationContext).trackFromUri(audio.toString())
+            if (found == null) {
                 Toast.makeText(applicationContext, R.string.app_open_file_failed, Toast.LENGTH_LONG).show()
                 finish()
             } else {
-                PlayerConnection.controller(applicationContext).play(listOf(track), 0)
-                trackUri = track.uri
+                track = found
+                player.play(found.uri)
             }
         }
+    }
+
+    /** "Abrir no BoomListener": só aqui a música passa para o player do app (pedido da pessoa). */
+    private fun openInApp() {
+        val current = track ?: return
+        player.release()
+        PlayerConnection.controller(applicationContext).play(listOf(current), 0)
+        startActivity(Intent(this, MainActivity::class.java))
+        finish()
     }
 }
