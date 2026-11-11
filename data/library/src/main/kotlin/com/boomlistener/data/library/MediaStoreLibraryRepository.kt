@@ -236,8 +236,11 @@ internal class MediaStoreLibraryRepository(
         } else {
             emptyArray()
         }
-        // Só músicas: deixa de fora toques, notificações, alarmes e gravações.
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        // Todo áudio do aparelho, mesmo o que o arquivo não declara como música (baixado na raiz,
+        // por apps de download...). Só ficam de fora toques, notificações e alarmes; áudios de
+        // mensagem e afins se escondem com a duração mínima ou as pastas escolhidas (Ajustes → Biblioteca).
+        val selection = "${MediaStore.Audio.Media.IS_RINGTONE} = 0 AND " +
+            "${MediaStore.Audio.Media.IS_NOTIFICATION} = 0 AND ${MediaStore.Audio.Media.IS_ALARM} = 0"
 
         val entries = mutableListOf<Entry>()
         try {
