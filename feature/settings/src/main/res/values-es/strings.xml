@@ -39,6 +39,7 @@
         <item quantity="one">Ocultar audios de menos de %d segundo</item>
         <item quantity="other">Ocultar audios de menos de %d segundos</item>
     </plurals>
+    <string name="feature_settings_library_duration_on_minutes">Ocultar audios de menos de %1$s min</string>
     <string name="feature_settings_library_duration_summary">Deja fuera de tu biblioteca notas de voz, tonos y clips cortos</string>
     <string name="feature_settings_library_folders">De dónde viene tu música</string>
     <string name="feature_settings_library_all">Todo el teléfono</string>

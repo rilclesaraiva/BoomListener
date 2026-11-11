@@ -129,8 +129,10 @@ private fun DurationSlider(savedSeconds: Int, onCommit: (Int) -> Unit) {
             Text(
                 text = if (seconds == 0) {
                     stringResource(R.string.feature_settings_library_duration_off)
-                } else {
+                } else if (seconds < 60) {
                     pluralStringResource(R.plurals.feature_settings_library_duration_on, seconds, seconds)
+                } else {
+                    stringResource(R.string.feature_settings_library_duration_on_minutes, formatMinutesSeconds(seconds))
                 },
                 style = MaterialTheme.typography.titleMedium,
             )
@@ -197,3 +199,7 @@ private fun FolderList(state: LibrarySettingsUiState, viewModel: LibrarySettings
         }
     }
 }
+
+/** 60 s ou mais vira minutos e segundos: 60 → "1:00", 65 → "1:05", 100 → "1:40". */
+internal fun formatMinutesSeconds(totalSeconds: Int): String =
+    "${totalSeconds / 60}:${(totalSeconds % 60).toString().padStart(2, '0')}"

@@ -40,6 +40,7 @@
         <item quantity="many">Esconder áudios com menos de %d segundos</item>
         <item quantity="other">Esconder áudios com menos de %d segundos</item>
     </plurals>
+    <string name="feature_settings_library_duration_on_minutes">Esconder áudios com menos de %1$s min</string>
     <string name="feature_settings_library_duration_summary">Deixa áudios de mensagem, toques e trechos curtos fora da biblioteca</string>
     <string name="feature_settings_library_folders">De onde vêm as músicas</string>
     <string name="feature_settings_library_all">Todo o aparelho</string>

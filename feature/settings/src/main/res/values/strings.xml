@@ -39,6 +39,7 @@
         <item quantity="one">Hide audio shorter than %d second</item>
         <item quantity="other">Hide audio shorter than %d seconds</item>
     </plurals>
+    <string name="feature_settings_library_duration_on_minutes">Hide audio shorter than %1$s min</string>
     <string name="feature_settings_library_duration_summary">Keeps voice notes, ringtones and short clips out of your library</string>
     <string name="feature_settings_library_folders">Where your music comes from</string>
     <string name="feature_settings_library_all">Whole phone</string>
