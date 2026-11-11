@@ -4,6 +4,7 @@ Lido no início de cada sessão: é como o Claude recupera o contexto do projeto
 
 ## Projeto
 **Boom, listener!** (trocadilho com *sonic boom* + ouvinte; no ícone, **BoomListener**): reprodutor de música **local** para Android, em Material 3 Expressive, com edição de tags, página de artista (Deezer + Last.fm) e radar de lançamentos dos artistas seguidos. Gratuito, sem anúncios, sem conta. Público: **global** (pública desde a 0.36.2; deixou de se chamar beta em 30/10/2026).
+- Nome nos arquivos: `boomlistener` (`boomlistener_vX.Y.Z.apk`; título da Release: "Boom, listener! vX.Y.Z").
 
 ## Mantenedor
 - Nome: **rilclesaraiva** · Contato: saraivarilcle@gmail.com (e as issues do GitHub)
@@ -15,7 +16,8 @@ Lido no início de cada sessão: é como o Claude recupera o contexto do projeto
 - Build: `./gradlew assembleRelease` · Testes: `./gradlew testDebugUnitTest`. **Nada do Gradle compila nesta sessão** (repositórios Maven fora da rede liberada): a única prova é o CI.
 - Mapa (módulos Gradle): core → `core/*` · data → `data/*` · features → `feature/*` (no singular, decisão do mantenedor) · entrada → `app`.
 - Versão: `APP_VERSION` em `gradle.properties` (`versionCode = MAJOR*10000 + MINOR*100 + PATCH`; nunca editar `versionCode`/`versionName` direto).
-- Release: commit de release na main (APP_VERSION novo + seção no CHANGELOG, sem tag ainda) → `.github/workflows/ci.yml` cria a tag `vX.Y.Z` e publica `boomlistener_vX.Y.Z.apk` na Release do GitHub. Build para vistoria: artefato `build-para-vistoria-…` de cada push.
+- Versionamento: SemVer, **regra e não escolha**: o número sai do `[Unreleased]`, calculado pelo Claude. Só correções (Fixed, Security) → PATCH; algo novo ou alterado compatível (Added, Changed, Deprecated) → MINOR; algo que quebra compatibilidade (Removed, mudança incompatível) → MAJOR. Known issues sozinho não gera versão. Número pedido fora da regra: explicar o certo e esperar a confirmação com ele. Trocar o sistema de versionamento só com pedido explícito.
+- Release: commit de release na main (APP_VERSION novo + seção no CHANGELOG, sem tag ainda) → `.github/workflows/ci.yml` cria a tag `vX.Y.Z` e publica `boomlistener_vX.Y.Z.apk` na Release do GitHub. Build para vistoria: artefato `boomlistener_vX.Y.Z-build<nº da execução>` de cada push (o APK dentro tem o mesmo nome).
 - Pacote: `com.boomlistener.app`, fixo para sempre · R8 ativo no release, nunca desligar (com `-dontobfuscate`: os nomes ficam legíveis nos erros, decisão do mantenedor; problema só no release → regra `-keep` em `app/proguard-rules.pro`).
 - Ícone: `app/src/main/res/mipmap-anydpi*/` e `drawable/ic_launcher_*`; só muda se o mantenedor pedir.
 
@@ -52,7 +54,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 ## Fluxo de trabalho
 - Uma tarefa por vez, mudanças pequenas. Não refatorar fora do escopo. Na dúvida, perguntar. Nunca inventar API (conferir no código-fonte ou na documentação).
 - Toda lógica de `data/*` e todo ViewModel novo vem com teste unitário. Partes sensíveis (discografia, associação de artistas, avisos) com casos reais: acentos, "feat.", homônimos.
-- Registrar toda mudança em `[Unreleased]` no CHANGELOG (Added, Changed, Fixed, Removed, Security, Known issues), escrito para quem usa o app.
+- Registrar toda mudança em `[Unreleased]` no CHANGELOG (Added, Changed, Deprecated, Fixed, Removed, Security, Known issues), escrito para quem usa o app.
 - **Sem subir versão** fora do release.
 - Só dizer que terminou quando o CI daquele commit passar. CI vermelho é corrigido antes de qualquer tarefa nova (o erro vem como comentário no commit: `gh api repos/rilclesaraiva/BoomListener/commits/<sha>/comments`).
 - Tudo direto na `main`: sem branches (`wip/`, `feature/`…) e sem PR. Cada push gera o build para vistoria; se o ambiente exigir commit ao parar, é na `main` (decisão de 03/11/2026: as branches só acumulavam).
@@ -63,9 +65,9 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 
 ## Release (regra absoluta)
 - Só com confirmação explícita do mantenedor citando a versão ("confirmo release v1.2.0"), na conversa. "Ok", "beleza", "pode lançar" sem versão ou silêncio não contam.
-- Sem confirmação: nada de tag, bump de versão, mover `[Unreleased]` ou Release.
+- Sem confirmação: nada de tag, bump de versão, mover `[Unreleased]` ou Release. O Claude nunca cria tag nem Release: o commit `chore(release)` na main basta, e o CI faz o resto.
 - Toda atualização vai para os artefatos do Actions (build para vistoria) e o Claude avisa com o link da execução. O mantenedor vistoria e só então pede o release.
-- Com a confirmação: (0) revisão com contexto limpo (subagente que lê só este arquivo e o diff desde o último release, procurando falhas de segurança, quebra das regras e itens do CHANGELOG que não estão no código), achados vão ao mantenedor; (1) mover `[Unreleased]` para `## [X.Y.Z] - AAAA-MM-DD`, juntando o que veio desde a última Release pública; (2) `APP_VERSION=X.Y.Z`; (3) commit `chore(release): vX.Y.Z` e push na main; (4) o CI confere, **cria a tag `vX.Y.Z`** (token do Actions) e publica. Push de tag à mão só como reserva (feito pelo mantenedor).
+- Com a confirmação: (0) revisão com contexto limpo (subagente que lê só este arquivo e o diff desde o último release, procurando falhas de segurança, quebra das regras e itens do CHANGELOG que não estão no código), achados vão ao mantenedor, que decide entre lançar assim ou corrigir antes (o que exige novo build e nova vistoria); (1) mover `[Unreleased]` para `## [X.Y.Z] - AAAA-MM-DD`, juntando o que veio desde a última Release pública, e deixar um `[Unreleased]` vazio; (2) `APP_VERSION=X.Y.Z`; (3) commit `chore(release): vX.Y.Z` e push na main; (4) o CI confere, **cria a tag `vX.Y.Z`** (token do Actions) e publica. Push de tag à mão só como reserva (feito pelo mantenedor).
 - Entre a vistoria e a tag só mudam versão e CHANGELOG; mudou código, nova vistoria. Notas honestas: avisar o que ainda está quebrado.
 - Esta sessão não apaga Releases nem tags (403): se sair algo por engano, pedir ao mantenedor.
 
