@@ -173,6 +173,13 @@
     <string name="feature_settings_lastfm_save_failed">Couldn’t save the key on this device. Check the free space and try again.</string>
     <string name="feature_settings_lastfm_key_lost">Last.fm no longer accepts your saved key, so biographies and genres aren’t loading. Enter a new key or go back to the Boom server.</string>
     <string name="feature_settings_system_updates">Updates</string>
+    <string name="feature_settings_system_diagnostic">Diagnostics</string>
+    <string name="feature_settings_diagnostic_log">Diagnostic log</string>
+    <string name="feature_settings_diagnostic_log_summary">Keeps on your phone what the app does with the keyboard and with the delete confirmation, to help find a bug. Nothing is sent by itself and no song names are saved.</string>
+    <string name="feature_settings_diagnostic_share">Share the log</string>
+    <string name="feature_settings_diagnostic_clear">Clear the log</string>
+    <string name="feature_settings_diagnostic_empty">The log is empty.</string>
+    <string name="feature_settings_diagnostic_cleared">Log cleared</string>
     <string name="feature_settings_system_background">Background</string>
     <string name="feature_settings_stop_on_swipe">Stop when closed from recents</string>
     <string name="feature_settings_stop_on_swipe_summary">Swiping the app away from recent apps stops the music and closes the app. Off: the music keeps playing</string>

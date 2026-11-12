@@ -11,11 +11,13 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:common"))
     implementation(project(":core:model"))
     // "api": quem usa o design system recebe os componentes do Material 3 junto.
     api(libs.androidx.compose.material3)
     api(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.palette)
+    implementation(libs.androidx.core)
     // BackHandler dos painéis (BoomModalSheet).
     implementation(libs.androidx.activity.compose)
     // Estado da tela na navegação (o desfoque do fundo só vale em movimento).

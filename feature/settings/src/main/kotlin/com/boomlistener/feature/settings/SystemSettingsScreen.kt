@@ -3,6 +3,9 @@
 
 package com.boomlistener.feature.settings
 
+import com.boomlistener.core.common.DiagnosticLog
+import android.widget.Toast
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -52,7 +55,8 @@ import com.boomlistener.core.player.PlaybackSettingsData
  */
 @Composable
 internal fun SystemSettingsScreen(onBack: () -> Unit, onOpenBackup: () -> Unit, modifier: Modifier = Modifier) {
-    val context = LocalContext.current.applicationContext
+    val host = LocalContext.current
+    val context = host.applicationContext
     val playback = remember { PlaybackSettingsData.get(context) }
     val prefs by playback.prefs.collectAsStateWithLifecycle()
     val offline by OfflineMode.enabled.collectAsStateWithLifecycle()
@@ -139,6 +143,40 @@ internal fun SystemSettingsScreen(onBack: () -> Unit, onOpenBackup: () -> Unit, 
                         title = stringResource(R.string.feature_settings_backup),
                         subtitle = stringResource(R.string.feature_settings_backup_summary),
                         onClick = onOpenBackup,
+                    )
+                }
+            }
+            item(key = "diagnostic") {
+                val logOn by DiagnosticLog.enabled.collectAsStateWithLifecycle()
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_system_diagnostic)) {
+                    // Para achar bugs difíceis de reproduzir: guarda no aparelho o que o app faz; só sai se a pessoa compartilhar.
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_diagnostic_log),
+                        subtitle = stringResource(R.string.feature_settings_diagnostic_log_summary),
+                        onClick = { DiagnosticLog.set(context, !logOn) },
+                        trailing = { Switch(checked = logOn, onCheckedChange = { DiagnosticLog.set(context, it) }) },
+                    )
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_diagnostic_share),
+                        onClick = {
+                            val text = DiagnosticLog.read()
+                            if (text.isBlank()) {
+                                Toast.makeText(context, R.string.feature_settings_diagnostic_empty, Toast.LENGTH_SHORT).show()
+                            } else {
+                                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+                                host.startActivity(Intent.createChooser(send, null))
+                            }
+                        },
+                    )
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_diagnostic_clear),
+                        onClick = {
+                            DiagnosticLog.clear()
+                            Toast.makeText(context, R.string.feature_settings_diagnostic_cleared, Toast.LENGTH_SHORT).show()
+                        },
                     )
                 }
             }

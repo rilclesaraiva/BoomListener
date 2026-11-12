@@ -3,6 +3,9 @@
 
 package com.boomlistener.app
 
+import com.boomlistener.core.common.DiagnosticLog
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.WindowInsets
 import android.widget.Toast
 import com.boomlistener.feature.artist.ARTIST_NAME_ARG
 import com.boomlistener.feature.artist.ARTIST_ROUTE
@@ -248,6 +251,11 @@ fun BoomListenerApp() {
     DisposableEffect(view, keepScreenOn) {
         view.keepScreenOn = keepScreenOn
         onDispose { view.keepScreenOn = false }
+    }
+    // Registro de diagnóstico (Ajustes → Sistema): quando o teclado aparece ou some, e em que tela.
+    val imeShown = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    LaunchedEffect(imeShown) {
+        DiagnosticLog.log("teclado", (if (imeShown) "apareceu" else "sumiu") + " (tela=$route, foco na janela=${view.hasWindowFocus()})")
     }
     // Abrir um artista que já está aberto não empilha outra página igual.
     val openArtist: (String) -> Unit = { name ->

@@ -1,3 +1,5 @@
+import com.boomlistener.core.common.DiagnosticLog
+import com.boomlistener.core.designsystem.component.imeVisible
 // BoomListener — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
@@ -58,6 +60,7 @@ internal fun rememberSongsDeleter(): (List<Track>) -> Unit {
     val failedText = stringResource(R.string.feature_library_delete_failed)
 
     val systemConfirm = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        DiagnosticLog.log("apagar", "janela do sistema voltou, resultCode=${result.resultCode}")
         val uris = pending
         if (result.resultCode == Activity.RESULT_OK && uris != null) {
             // Android 10: a pessoa liberou; agora apaga de verdade. Android 11+: já apagou.
@@ -92,14 +95,19 @@ internal fun rememberSongsDeleter(): (List<Track>) -> Unit {
     }
 
     val dismissKeyboard = rememberKeyboardDismisser()
+    val view = LocalView.current
     fun start(uris: List<String>) {
         scope.launch {
+            DiagnosticLog.log("apagar", "pedido (${uris.size}) na biblioteca, teclado=${imeVisible(view)}")
             dismissKeyboard()
-            when (val result = library.delete(uris)) {
+            val result = library.delete(uris)
+            DiagnosticLog.log("apagar", "resultado=${result::class.simpleName}, teclado=${imeVisible(view)}")
+            when (result) {
                 DeleteResult.Done -> onDeleted(uris)
                 is DeleteResult.NeedsConfirmation -> {
                     pending = uris
                     retry = result.retryAfter
+                    DiagnosticLog.log("apagar", "abrindo a janela do sistema, teclado=${imeVisible(view)}")
                     systemConfirm.launch(IntentSenderRequest.Builder(result.intentSender).build())
                 }
                 DeleteResult.NeedsPermission -> {

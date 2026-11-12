@@ -3,6 +3,7 @@
 
 package com.boomlistener.app
 
+import com.boomlistener.core.common.DiagnosticLog
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
@@ -50,6 +51,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handle(intent)
+    }
+
+    // Registro de diagnóstico: quem tem o foco da janela (a janela do sistema de apagar o tira daqui).
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        DiagnosticLog.log("janela", "app " + if (hasFocus) "ganhou o foco" else "perdeu o foco")
     }
 
     private fun handle(intent: Intent?) {
