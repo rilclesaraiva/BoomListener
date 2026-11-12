@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.tageditor
 
+import com.boomlistener.core.designsystem.component.rememberKeyboardDismisser
 import com.boomlistener.core.designsystem.component.BoomModalSheet
 import android.Manifest
 import androidx.annotation.StringRes
@@ -147,13 +148,16 @@ internal fun TagEditorScreen(
         }
     }
 
+    val dismissKeyboard = rememberKeyboardDismisser()
     val currentQueueActive by rememberUpdatedState(queueActive)
     val currentGoNext by rememberUpdatedState(goNext)
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                is TagEditorEvent.AskWritePermission ->
+                is TagEditorEvent.AskWritePermission -> {
+                    dismissKeyboard()
                     writeRequest.launch(IntentSenderRequest.Builder(event.request).build())
+                }
                 TagEditorEvent.AskStoragePermission ->
                     storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 // Na fila, salvar já abre a próxima (a tela some, não há aviso a mostrar).

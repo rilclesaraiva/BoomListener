@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.designsystem.component.rememberKeyboardDismisser
 import android.Manifest
 import android.app.Activity
 import android.os.Build
@@ -90,8 +91,10 @@ internal fun rememberSongsDeleter(): (List<Track>) -> Unit {
         }
     }
 
+    val dismissKeyboard = rememberKeyboardDismisser()
     fun start(uris: List<String>) {
         scope.launch {
+            dismissKeyboard()
             when (val result = library.delete(uris)) {
                 DeleteResult.Done -> onDeleted(uris)
                 is DeleteResult.NeedsConfirmation -> {
