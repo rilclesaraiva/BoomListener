@@ -17,6 +17,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Keep the screen on** (Settings → Playback → Keep the screen on in): tick where the screen should stay awake while the app is open: the full-screen player (cover and lyrics), only the lyrics, the Home, Library or Profile tab, or the whole app. A switch below (on by default) keeps it awake only while music is playing, so a paused app lets the screen turn off. Nothing is on by default.
 
 ### Changed
+- **Update notices:** the "Update notices" choice (Settings → System → Updates) now opens as a bottom panel instead of a centered window, like the other pickers.
 - **Minimum length label:** from 60 seconds up, the slider now shows minutes and seconds (for example "1:05 min") instead of a long number of seconds.
 - **The app is now simply called BoomListener**, the same name you see under the icon, everywhere (About, backups, the share card, the README and the legal pages). It used to be written "Boom, listener!".
 

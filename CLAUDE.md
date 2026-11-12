@@ -52,6 +52,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - README, CHANGELOG e páginas legais em inglês; CLAUDE.md, ARCHITECTURE.md e mensagens de commit em português.
 
 ## Fluxo de trabalho
+- **Bug que não reproduzo aqui: log primeiro, correção depois.** Peço o registro (ou crio um, como o Registro de diagnóstico) antes de mexer no código; só chamo de causa o que o log sustentar, o resto digo como hipótese. Vale também perguntar se outro app tem o mesmo sintoma (o caso do teclado de 12/11/2026 era do sistema). Decisão de 12/11/2026.
 - Uma tarefa por vez, mudanças pequenas. Não refatorar fora do escopo. Na dúvida, perguntar. Nunca inventar API (conferir no código-fonte ou na documentação).
 - Toda lógica de `data/*` e todo ViewModel novo vem com teste unitário. Partes sensíveis (discografia, associação de artistas, avisos) com casos reais: acentos, "feat.", homônimos.
 - Registrar toda mudança em `[Unreleased]` no CHANGELOG (Added, Changed, Deprecated, Fixed, Removed, Security, Known issues), escrito para quem usa o app.

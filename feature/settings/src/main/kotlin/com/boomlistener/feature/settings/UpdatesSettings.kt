@@ -3,10 +3,16 @@
 
 package com.boomlistener.feature.settings
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,8 +47,8 @@ internal fun UpdatesSettingsSection() {
     var choosingPrompts by remember { mutableStateOf(false) }
     if (choosingPrompts) {
         UpdatePromptsDialog(
-            onAlways = { updatesViewModel.resumePrompts(); choosingPrompts = false },
-            onSnooze = { period -> updatesViewModel.snooze(period); choosingPrompts = false },
+            onAlways = { updatesViewModel.resumePrompts() },
+            onSnooze = { period -> updatesViewModel.snooze(period) },
             onDismiss = { choosingPrompts = false },
         )
     }
@@ -111,21 +117,37 @@ private fun updatePromptsSubtitle(state: UpdatePromptState): String {
     }
 }
 
-/** Escolher como ficam os avisos de versão nova: normais, ou pausados por um tempo. */
+/**
+ * Escolher como ficam os avisos de versão nova: normais, ou pausados por um tempo.
+ * Painel de baixo; a escolha desce o painel e só então fecha.
+ */
 @Composable
 private fun UpdatePromptsDialog(onAlways: () -> Unit, onSnooze: (SnoozePeriod) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.feature_settings_update_prompts)) },
-        text = {
-            Column {
-                TextButton(onClick = onAlways) { Text(stringResource(R.string.feature_settings_update_prompts_always)) }
-                TextButton(onClick = { onSnooze(SnoozePeriod.Week) }) { Text(stringResource(R.string.feature_settings_update_prompt_week)) }
-                TextButton(onClick = { onSnooze(SnoozePeriod.Month) }) { Text(stringResource(R.string.feature_settings_update_prompt_month)) }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.feature_settings_backup_cancel)) } },
-    )
+    BoomModalSheet(onDismissRequest = onDismiss) {
+        val sheet = this
+        Column(Modifier.padding(bottom = 24.dp)) {
+            Text(
+                stringResource(R.string.feature_settings_update_prompts),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            val colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            ListItem(
+                modifier = Modifier.clickable { onAlways(); sheet.dismiss() },
+                headlineContent = { Text(stringResource(R.string.feature_settings_update_prompts_always)) },
+                colors = colors,
+            )
+            ListItem(
+                modifier = Modifier.clickable { onSnooze(SnoozePeriod.Week); sheet.dismiss() },
+                headlineContent = { Text(stringResource(R.string.feature_settings_update_prompt_week)) },
+                colors = colors,
+            )
+            ListItem(
+                modifier = Modifier.clickable { onSnooze(SnoozePeriod.Month); sheet.dismiss() },
+                headlineContent = { Text(stringResource(R.string.feature_settings_update_prompt_month)) },
+                colors = colors,
+            )
+        }
+    }
 }
 
