@@ -58,6 +58,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - **Sem subir versão** fora do release.
 - Só dizer que terminou quando o CI daquele commit passar. CI vermelho é corrigido antes de qualquer tarefa nova (o erro vem como comentário no commit: `gh api repos/rilclesaraiva/BoomListener/commits/<sha>/comments`).
 - Tudo direto na `main`: sem branches (`wip/`, `feature/`…) e sem PR. Cada push gera o build para vistoria; se o ambiente exigir commit ao parar, é na `main` (decisão de 03/11/2026: as branches só acumulavam).
+- **Link do build para vistoria = execução do workflow `CI` (`.github/workflows/ci.yml`)**, nunca a do "pages build and deployment" (dispara quando `docs/` muda e aparece primeiro na lista). Ao consultar a API, filtrar pelo nome/arquivo do workflow e conferir `.name == "CI"` antes de avisar o link ou dizer que o CI passou (decisão de 12/11/2026).
 - Rodar build e testes antes do push quando o ambiente permitir. Aqui o Gradle não compila: o CI é a única prova, e eu digo isso em vez de afirmar que testei.
 - Rodada de testes do mantenedor (bugs relatados um a um): cada correção vai direto para a `main` (commit + push) e gera o build para vistoria, sem esperar "pode mandar". O CI daquele commit decide se terminou; na dúvida sobre o que ele pediu, perguntar antes de mexer.
 - Bloqueio de segurança do ambiente (proxy, permissão, leitura de credencial) nunca é contornado: o passo vai para o CI ou para o mantenedor.
