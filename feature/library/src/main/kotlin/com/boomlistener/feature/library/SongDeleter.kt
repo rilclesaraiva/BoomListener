@@ -1,11 +1,12 @@
-import com.boomlistener.core.common.DiagnosticLog
-import com.boomlistener.core.designsystem.component.imeVisible
 // BoomListener — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
 // Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.common.DiagnosticLog
+import com.boomlistener.core.designsystem.component.imeVisible
 import com.boomlistener.core.designsystem.component.rememberKeyboardDismisser
+import androidx.compose.ui.platform.LocalView
 import android.Manifest
 import android.app.Activity
 import android.os.Build
