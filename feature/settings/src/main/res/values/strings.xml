@@ -175,7 +175,7 @@
     <string name="feature_settings_system_updates">Updates</string>
     <string name="feature_settings_system_diagnostic">Diagnostics</string>
     <string name="feature_settings_diagnostic_log">Diagnostic log</string>
-    <string name="feature_settings_diagnostic_log_summary">Keeps on your phone what the app does with the keyboard and with the delete confirmation, to help find a bug. Nothing is sent by itself and no song names are saved.</string>
+    <string name="feature_settings_diagnostic_log_summary">Keeps on your phone what the app does with the keyboard, the delete confirmation, saving tags and the player, to help find a bug. Nothing is sent by itself and no song names are saved.</string>
     <string name="feature_settings_diagnostic_share">Share the log</string>
     <string name="feature_settings_diagnostic_clear">Clear the log</string>
     <string name="feature_settings_diagnostic_empty">The log is empty.</string>

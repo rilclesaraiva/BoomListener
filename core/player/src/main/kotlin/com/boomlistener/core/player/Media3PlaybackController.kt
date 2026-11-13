@@ -15,6 +15,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.model.Track
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -276,17 +277,21 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     }
 
     override fun updateTrackInfo(uri: String, title: String, artist: String?, album: String?) = withController { player ->
+        var matches = 0
         for (index in 0 until player.mediaItemCount) {
             val item = player.getMediaItemAt(index)
             if (item.mediaId != uri) continue
+            matches++
             val metadata = item.mediaMetadata.buildUpon()
                 .setTitle(title)
                 .setArtist(artist)
                 .setAlbumTitle(album)
                 .build()
             // Mesmo arquivo: o ExoPlayer só troca as informações, sem parar.
+            DiagnosticLog.log("player", "tags salvas: trocando o item $index (tocando=${player.isPlaying}, pos=${player.currentPosition} ms)")
             player.replaceMediaItem(index, item.buildUpon().setMediaMetadata(metadata).build())
         }
+        DiagnosticLog.log("player", "tags salvas: $matches item(ns) da fila com esse arquivo")
         publish(player)
     }
 

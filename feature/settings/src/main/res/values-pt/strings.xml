@@ -178,7 +178,7 @@
     <string name="feature_settings_system_updates">Atualizações</string>
     <string name="feature_settings_system_diagnostic">Diagnóstico</string>
     <string name="feature_settings_diagnostic_log">Registro de diagnóstico</string>
-    <string name="feature_settings_diagnostic_log_summary">Guarda no aparelho o que o app faz com o teclado e com a confirmação de apagar, para ajudar a achar um bug. Nada é enviado sozinho e nenhum nome de música é guardado.</string>
+    <string name="feature_settings_diagnostic_log_summary">Guarda no aparelho o que o app faz com o teclado, com a confirmação de apagar, ao salvar tags e no player, para ajudar a achar um bug. Nada é enviado sozinho e nenhum nome de música é guardado.</string>
     <string name="feature_settings_diagnostic_share">Compartilhar o registro</string>
     <string name="feature_settings_diagnostic_clear">Limpar o registro</string>
     <string name="feature_settings_diagnostic_empty">O registro está vazio.</string>

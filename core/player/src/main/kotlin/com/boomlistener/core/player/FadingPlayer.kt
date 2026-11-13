@@ -59,6 +59,9 @@ internal class VolumeMixer(private val exo: ExoPlayer, private val handler: Hand
         handler.post(step)
     }
 
+    /** As partes do volume, para o registro de diagnóstico. */
+    fun describe(): String = "transição=%.2f fade=%.2f replayGain=%.2f".format(java.util.Locale.ROOT, transition, fade, replayGain)
+
     /** Sem rampa. */
     fun setFade(value: Float) {
         ramp?.let(handler::removeCallbacks)

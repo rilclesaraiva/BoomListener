@@ -175,7 +175,7 @@
     <string name="feature_settings_system_updates">Actualizaciones</string>
     <string name="feature_settings_system_diagnostic">Diagnóstico</string>
     <string name="feature_settings_diagnostic_log">Registro de diagnóstico</string>
-    <string name="feature_settings_diagnostic_log_summary">Guarda en el dispositivo lo que la app hace con el teclado y con la confirmación de borrado, para ayudar a encontrar un error. No se envía nada solo y no se guardan nombres de canciones.</string>
+    <string name="feature_settings_diagnostic_log_summary">Guarda en el dispositivo lo que la app hace con el teclado, con la confirmación de borrado, al guardar etiquetas y en el reproductor, para ayudar a encontrar un error. No se envía nada solo y no se guardan nombres de canciones.</string>
     <string name="feature_settings_diagnostic_share">Compartir el registro</string>
     <string name="feature_settings_diagnostic_clear">Borrar el registro</string>
     <string name="feature_settings_diagnostic_empty">El registro está vacío.</string>
