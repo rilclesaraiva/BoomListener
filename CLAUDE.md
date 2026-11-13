@@ -96,6 +96,8 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - FFmpeg para formatos extras (22/10/2026).
 - **Estilo "vidro líquido"** (a moda do Liquid Glass da Apple: botões e painéis de vidro translúcido com reflexos; 31/10/2026, pedido de usuário): não combina com o Material 3 Expressive. Desfoque em si é bem-vindo (como o desfoque atrás das telas e do player).
 - **Área Bem-estar** (removida em 31/10/2026): as mais ouvidas ficam só no Perfil; nada de tempo de escuta nem avisos de pausa.
+- **Crossfade (sobreposição real de duas músicas) e segundo player** (12/11/2026): o Media3 não tem crossfade nativo, e fazer exigiria dois players, reescrever fila, volume, ReplayGain, visualizador e foco de áudio, sem poder compilar aqui; num app local não compensa. Fica a "Transição entre músicas" de um player só (a que acaba some e a próxima aparece). O corte curto (~150 ms) ao salvar tags da música que toca é o preço aceito do conserto (recarrega o item na mesma posição); **sem fade** para disfarçar (a descida e subida do volume incomoda tanto quanto o corte).
+- **Equalizador interno** (12/11/2026, decisão do mantenedor): nunca entra. Um equalizador só do player teria poucas bandas; quem quiser usa um equalizador externo.
 - **Layout próprio de tela larga** (barra lateral, painel do artista, player deitado; removido em 30/10/2026): tablet usa o layout do retrato e o celular fica em pé.
 
 ## Limitações desta sessão
