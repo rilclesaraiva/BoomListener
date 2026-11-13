@@ -8,6 +8,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ### Fixed
 - **Delete and save confirmations:** the app now closes the keyboard and waits for its own window to have focus before opening the system's "allow BoomListener to delete this file?" window, to avoid the keyboard showing up behind it. The keyboard popping up there was also seen in another app and went away after restarting the phone, so it was most likely an Android glitch rather than something in BoomListener; this change is a precaution.
+- **Song going silent after saving its tags:** if you edited the tags of the song that was playing and then dragged the bar to another spot, it could go silent a few seconds later (pausing and playing again brought it back). The song is now reloaded from the same point when you save, so it plays the updated file; you may hear a very short cut at that moment.
 - **New songs not showing up:** songs downloaded while the app was in the background could be missing from the library until you restarted it. The library now also reloads every time you come back to the app.
 - **Songs that don't say they're music:** audio files that Android doesn't flag as music (for example ones saved straight in your phone's storage by a download app) now show up in the library. Ringtones, notifications and alarms are still left out. If voice messages or other audio show up that you don't want, use **Settings → Library**: minimum duration or only the folders you choose.
 

@@ -277,21 +277,28 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
     }
 
     override fun updateTrackInfo(uri: String, title: String, artist: String?, album: String?) = withController { player ->
-        var matches = 0
-        for (index in 0 until player.mediaItemCount) {
+        // Onde o arquivo está na fila, antes de mexer em qualquer posição.
+        val indexes = (0 until player.mediaItemCount).filter { player.getMediaItemAt(it).mediaId == uri }
+        val playingIndex = player.currentMediaItemIndex
+        val positionMs = player.currentPosition
+        for (index in indexes) {
             val item = player.getMediaItemAt(index)
-            if (item.mediaId != uri) continue
-            matches++
             val metadata = item.mediaMetadata.buildUpon()
                 .setTitle(title)
                 .setArtist(artist)
                 .setAlbumTitle(album)
                 .build()
-            // Mesmo arquivo: o ExoPlayer só troca as informações, sem parar.
-            DiagnosticLog.log("player", "tags salvas: trocando o item $index (tocando=${player.isPlaying}, pos=${player.currentPosition} ms)")
-            player.replaceMediaItem(index, item.buildUpon().setMediaMetadata(metadata).build())
+            val fresh = item.buildUpon().setMediaMetadata(metadata).build()
+            DiagnosticLog.log("player", "tags salvas: recarregando o item $index (tocando=${player.isPlaying}, pos=$positionMs ms, atual=${index == playingIndex})")
+            // O arquivo mudou no disco: trocar só as informações mantinha o mapa antigo dele no
+            // player, e pular para outro ponto dava erro de leitura (música muda). Entra uma cópia
+            // nova logo depois e a antiga sai: o player abre o arquivo de novo e, se era a que
+            // tocava, segue nela e volta ao ponto em que estava.
+            player.addMediaItem(index + 1, fresh)
+            player.removeMediaItem(index)
+            if (index == playingIndex) player.seekTo(positionMs)
         }
-        DiagnosticLog.log("player", "tags salvas: $matches item(ns) da fila com esse arquivo")
+        DiagnosticLog.log("player", "tags salvas: ${indexes.size} item(ns) da fila com esse arquivo")
         publish(player)
     }
 
