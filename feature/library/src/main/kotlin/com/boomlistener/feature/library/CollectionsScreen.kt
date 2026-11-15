@@ -336,11 +336,12 @@ private fun CategoryChips(state: CollectionsUiState.Ready, onSelect: (Collection
     }
 }
 
-/** "12 músicas", para o topo dos menus. */
-@Composable
+/** Quantos artistas do topo ficam com a foto pré-carregada (grade e lista). */
 private const val PINNED_GRID = 12
 private const val PINNED_LIST = 20
 
+/** "12 músicas", para o topo dos menus. */
+@Composable
 private fun countText(count: Int): String = pluralStringResource(R.plurals.feature_library_count, count, count)
 
 @Composable
