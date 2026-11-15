@@ -20,6 +20,7 @@ import com.boomlistener.core.model.TrackTags
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -84,14 +85,17 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         if (clean.isEmpty()) return@withContext emptyList()
         try {
             val encoded = URLEncoder.encode(clean, "UTF-8")
-            val json = searchGate.withPermit {
-                getJson("$API/search/artist?q=$encoded&limit=25") { (it.optJSONArray("data")?.length() ?: 0) > 0 }
-            }
+            val url = "$API/search/artist?q=$encoded&limit=25"
+            val hasResults = { json: JSONObject -> (json.optJSONArray("data")?.length() ?: 0) > 0 }
+            // O que já está no cache não espera na fila: só os pedidos de rede são limitados.
+            val json = cachedJson(url, hasResults) ?: searchGate.withPermit { getJson(url, hasResults) }
             val found = json.optJSONArray("data").objects()
                 .map { it.toArtist() }
                 .filter { it.id > 0 && it.name.isNotBlank() }
             if (found.isEmpty()) DiagnosticLog.log("deezer", "busca de artista veio vazia (em andamento=${inFlight.get()})")
             found
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             DiagnosticLog.log("deezer", "busca de artista falhou: ${e.javaClass.simpleName}: ${e.message?.take(120)} (em andamento=${inFlight.get()})")
             null
@@ -283,11 +287,15 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
      * vazia, que pode ser só o Deezer limitando pedidos em rajada) não é guardado
      * nem reaproveitado, e é pedido de novo na próxima vez.
      */
+    private fun cachedJson(url: String, worthKeeping: (JSONObject) -> Boolean = { true }): JSONObject? {
+        val file = File(jsonCache, sha1(url) + ".json")
+        if (!file.exists() || System.currentTimeMillis() - file.lastModified() >= JSON_TTL_MS) return null
+        return runCatching { JSONObject(file.readText()) }.getOrNull()?.takeIf(worthKeeping)
+    }
+
     private fun getJson(url: String, worthKeeping: (JSONObject) -> Boolean = { true }): JSONObject {
         val file = File(jsonCache, sha1(url) + ".json")
-        if (file.exists() && System.currentTimeMillis() - file.lastModified() < JSON_TTL_MS) {
-            runCatching { JSONObject(file.readText()) }.getOrNull()?.takeIf(worthKeeping)?.let { return it }
-        }
+        cachedJson(url, worthKeeping)?.let { return it }
         OfflineMode.requireOnline()
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 10_000
