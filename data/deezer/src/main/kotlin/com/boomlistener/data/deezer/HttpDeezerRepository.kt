@@ -3,6 +3,7 @@
 
 package com.boomlistener.data.deezer
 
+import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.common.OfflineMode
 import android.content.Context
 import android.graphics.Bitmap
@@ -27,6 +28,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.security.MessageDigest
+import java.util.concurrent.atomic.AtomicInteger
 
 private const val API = "https://api.deezer.com"
 // Respostas da API ficam guardadas por um dia (discografia muda pouco).
@@ -36,6 +38,8 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
 
     private val jsonCache = File(context.cacheDir, "deezer/json").apply { mkdirs() }
     private val imageCache = File(context.cacheDir, "deezer/images").apply { mkdirs() }
+    /** Pedidos de rede em andamento (para o registro de diagnóstico: limite do Deezer, rolagem rápida). */
+    private val inFlight = AtomicInteger()
     private val memoryImages = object : LruCache<String, Bitmap>(
         (Runtime.getRuntime().maxMemory() / 1024 / 16).toInt(),
     ) {
@@ -78,7 +82,8 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             getJson("$API/search/artist?q=$encoded&limit=25").optJSONArray("data").objects()
                 .map { it.toArtist() }
                 .filter { it.id > 0 && it.name.isNotBlank() }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            DiagnosticLog.log("deezer", "busca de artista falhou: ${e.javaClass.simpleName}: ${e.message?.take(120)} (em andamento=${inFlight.get()})")
             null
         }
     }
@@ -227,14 +232,29 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
                     val connection = URL(url).openConnection() as HttpURLConnection
                     connection.connectTimeout = 10_000
                     connection.readTimeout = 15_000
+                    inFlight.incrementAndGet()
                     try {
-                        if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
+                        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                            DiagnosticLog.log("deezer", "imagem: resposta ${connection.responseCode} (em andamento=${inFlight.get()})")
+                            return@runCatching null
+                        }
                         connection.inputStream.use { input -> file.outputStream().use { input.copyTo(it) } }
+                        val expected = connection.contentLengthLong
+                        if (expected > 0 && file.length() != expected) {
+                            DiagnosticLog.log("deezer", "imagem: download incompleto (${file.length()} de $expected bytes)")
+                        }
                     } finally {
                         connection.disconnect()
+                        inFlight.decrementAndGet()
                     }
                 }
                 decodeSampled(file, sizePx)?.also { memoryImages.put(key, it) }
+                    ?: run {
+                        DiagnosticLog.log("deezer", "imagem: arquivo de ${file.length()} bytes não decodificou")
+                        null
+                    }
+            }.onFailure {
+                DiagnosticLog.log("deezer", "imagem: falhou ${it.javaClass.simpleName}: ${it.message?.take(100)} (em andamento=${inFlight.get()})")
             }.getOrNull()
         }
     }
@@ -258,6 +278,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             connectTimeout = 10_000
             readTimeout = 10_000
         }
+        inFlight.incrementAndGet()
         try {
             check(connection.responseCode == HttpURLConnection.HTTP_OK) { "Deezer ${connection.responseCode}" }
             val body = connection.inputStream.bufferedReader().use { it.readText() }
@@ -268,6 +289,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             return json
         } finally {
             connection.disconnect()
+            inFlight.decrementAndGet()
         }
     }
 

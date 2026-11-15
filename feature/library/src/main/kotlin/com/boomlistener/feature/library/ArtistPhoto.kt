@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import com.boomlistener.core.common.DiagnosticLog
+import kotlinx.coroutines.isActive
 
 /**
  * As fotos de artista já carregadas nesta abertura do app (até ~8 MB): rolar a
@@ -32,7 +34,13 @@ internal fun rememberArtistPhoto(name: String?, size: Dp, load: suspend (String,
     val key = name?.let { "$it@$px" }
     val image by produceState(initialValue = key?.let { ArtistPhotoMemory.get(it) }, key) {
         if (name == null || key == null || value != null) return@produceState
-        value = load(name, px)?.asImageBitmap()?.also { ArtistPhotoMemory.put(key, it) }
+        val bitmap = load(name, px)
+        if (!isActive) {
+            DiagnosticLog.log("foto", "carga da foto de artista cancelada ao sair da tela")
+            return@produceState
+        }
+        if (bitmap == null) DiagnosticLog.log("foto", "foto de artista sem imagem, ainda na tela")
+        value = bitmap?.asImageBitmap()?.also { ArtistPhotoMemory.put(key, it) }
     }
     return image
 }
