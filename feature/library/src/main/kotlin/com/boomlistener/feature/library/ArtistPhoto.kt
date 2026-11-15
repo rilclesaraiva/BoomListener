@@ -6,6 +6,7 @@ package com.boomlistener.feature.library
 import android.graphics.Bitmap
 import android.util.LruCache
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
@@ -32,6 +33,40 @@ private object ArtistPhotoMemory : LruCache<String, ImageBitmap>(
 }
 
 /**
+ * Fotos dos primeiros artistas da lista, fixas na memória (fora da regra de "sai
+ * quem foi menos usado"). Tocar na aba para subir ao topo cai sempre perto dele,
+ * então essas fotos já estão prontas quando a lista chega, sem passar pela inicial.
+ */
+private object ArtistPhotoPinned {
+    private val map = HashMap<String, ImageBitmap>()
+
+    @Synchronized fun get(key: String): ImageBitmap? = map[key]
+
+    @Synchronized fun put(key: String, image: ImageBitmap) { map[key] = image }
+
+    /** Solta o que não é mais do topo (outro tamanho ou outra ordem). */
+    @Synchronized fun keepOnly(keys: Set<String>) { map.keys.retainAll(keys) }
+}
+
+/**
+ * Carrega, uma de cada vez, a foto dos [names] (os primeiros da lista) e as deixa
+ * fixas na memória. Sem foto no Deezer, não faz nada: a capa continua valendo.
+ */
+@Composable
+internal fun PinTopArtistPhotos(names: List<String>, size: Dp, load: suspend (String, Int) -> Bitmap?) {
+    val px = with(LocalDensity.current) { size.roundToPx() }
+    LaunchedEffect(names, px) {
+        val keys = names.associateBy { "$it@$px" }
+        ArtistPhotoPinned.keepOnly(keys.keys)
+        for ((key, name) in keys) {
+            if (ArtistPhotoPinned.get(key) != null) continue
+            val image = ArtistPhotoMemory.get(key) ?: load(name, px)?.asImageBitmap()?.also { ArtistPhotoMemory.put(key, it) }
+            if (image != null) ArtistPhotoPinned.put(key, image)
+        }
+    }
+}
+
+/**
  * A foto do artista [name] no Deezer (a mesma da página dele), ou null sem
  * internet, com o modo offline ou se o Deezer não o conhece: aí quem chama
  * mostra a capa de uma música dele.
@@ -40,7 +75,7 @@ private object ArtistPhotoMemory : LruCache<String, ImageBitmap>(
 internal fun rememberArtistPhoto(name: String?, size: Dp, load: suspend (String, Int) -> Bitmap?): ImageBitmap? {
     val px = with(LocalDensity.current) { size.roundToPx() }
     val key = name?.let { "$it@$px" }
-    val image by produceState(initialValue = key?.let { ArtistPhotoMemory.get(it) }, key) {
+    val image by produceState(initialValue = key?.let { ArtistPhotoPinned.get(it) ?: ArtistPhotoMemory.get(it) }, key) {
         if (name == null || key == null || value != null) return@produceState
         val bitmap = load(name, px)
         if (!isActive) {

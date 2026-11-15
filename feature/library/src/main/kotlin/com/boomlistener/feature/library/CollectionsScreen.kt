@@ -144,6 +144,11 @@ internal fun CollectionsScreen(
                     onOpenPlaylist = onOpenPlaylist,
                     onOpenFavorites = onOpenFavorites,
                 )
+                if (current.selected == CollectionKind.Artists && !searching) {
+                    // A subida pela aba cai perto do topo: as primeiras fotos ficam prontas (uma tela e meia na grade, duas na lista).
+                    val topNames = remember(entries, grid) { entries.mapNotNull { it.artistName }.take(if (grid) PINNED_GRID else PINNED_LIST) }
+                    PinTopArtistPhotos(topNames, if (grid) 200.dp else BoomListArtworkSize, viewModel::artistPhoto)
+                }
               val artistSearchStuck by rememberStickyHeaderStuck(listState, SEARCH_ITEM_INDEX)
               var artistSearchPx by remember { mutableIntStateOf(0) }
               val artistSearchRoom = rememberSearchRoom(listState, SEARCH_ITEM_INDEX, entries to artistSearch)
@@ -333,6 +338,9 @@ private fun CategoryChips(state: CollectionsUiState.Ready, onSelect: (Collection
 
 /** "12 músicas", para o topo dos menus. */
 @Composable
+private const val PINNED_GRID = 12
+private const val PINNED_LIST = 20
+
 private fun countText(count: Int): String = pluralStringResource(R.plurals.feature_library_count, count, count)
 
 @Composable
