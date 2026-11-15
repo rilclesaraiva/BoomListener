@@ -14,6 +14,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.boomlistener.core.common.DiagnosticLog
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
@@ -32,7 +36,18 @@ fun ScrollToTopOnReselect(route: String, state: LazyListState) {
     val topBar = LocalTopBarState.current
     val spec = boomScreenSpec<Float>()
     LaunchedEffect(events, state, route) {
-        events.filter { it == route }.collect { state.scrollToTopSmoothly(spec) }
+        events.filter { it == route }.collect {
+            try {
+                state.scrollToTopSmoothly(spec)
+            } catch (e: CancellationException) {
+                // Tocar na lista no meio da subida cancela só a animação (a rolagem
+                // do dedo tem prioridade). Sem isto, o cancelamento derrubava também
+                // a escuta da aba, e ela deixava de subir ao topo. Se foi a própria
+                // escuta que acabou (saiu da aba), ensureActive() relança.
+                DiagnosticLog.log("aba", "subida ao topo interrompida pela rolagem")
+                currentCoroutineContext().ensureActive()
+            }
+        }
     }
     // De volta ao topo (por toque na aba ou de qualquer jeito): a barra de cima
     // volta à cor normal, sem ficar com o tom de "rolado", e reaparece se
