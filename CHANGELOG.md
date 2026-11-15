@@ -7,6 +7,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ## [Unreleased]
 
 ### Fixed
+- **Artist photos disappearing while scrolling fast:** when the photo search came back empty (it looks like the service limits requests that arrive in a burst), that empty answer was kept for a day, so the photo stayed missing. Empty searches are no longer kept and are asked again the next time, and the app now runs only a few artist searches at once.
 - **Tapping the tab to go back to the top stopping working:** if you touched the list while it was scrolling up after tapping the active tab, that tab could stop answering the tap until you switched tabs and came back. It now keeps working (this applies to Home, Library, Releases and Profile).
 - **Delete and save confirmations:** the app now closes the keyboard and waits for its own window to have focus before opening the system's "allow BoomListener to delete this file?" window, to avoid the keyboard showing up behind it. The keyboard popping up there was also seen in another app and went away after restarting the phone, so it was most likely an Android glitch rather than something in BoomListener; this change is a precaution.
 - **Song going silent after saving its tags:** if you edited the tags of the song that was playing and then dragged the bar to another spot, it could go silent a few seconds later (pausing and playing again brought it back). The song is now reloaded from the same point when you save, so it plays the updated file; you may hear a very short cut at that moment.

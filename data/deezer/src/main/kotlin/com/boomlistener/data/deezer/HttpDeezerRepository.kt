@@ -20,6 +20,8 @@ import com.boomlistener.core.model.TrackTags
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -40,6 +42,9 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
     private val imageCache = File(context.cacheDir, "deezer/images").apply { mkdirs() }
     /** Pedidos de rede em andamento (para o registro de diagnóstico: limite do Deezer, rolagem rápida). */
     private val inFlight = AtomicInteger()
+
+    /** Poucas buscas de artista ao mesmo tempo: a rolagem rápida da lista não despeja centenas de pedidos de uma vez. */
+    private val searchGate = Semaphore(4)
     private val memoryImages = object : LruCache<String, Bitmap>(
         (Runtime.getRuntime().maxMemory() / 1024 / 16).toInt(),
     ) {
@@ -79,9 +84,14 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         if (clean.isEmpty()) return@withContext emptyList()
         try {
             val encoded = URLEncoder.encode(clean, "UTF-8")
-            getJson("$API/search/artist?q=$encoded&limit=25").optJSONArray("data").objects()
+            val json = searchGate.withPermit {
+                getJson("$API/search/artist?q=$encoded&limit=25") { (it.optJSONArray("data")?.length() ?: 0) > 0 }
+            }
+            val found = json.optJSONArray("data").objects()
                 .map { it.toArtist() }
                 .filter { it.id > 0 && it.name.isNotBlank() }
+            if (found.isEmpty()) DiagnosticLog.log("deezer", "busca de artista veio vazia (em andamento=${inFlight.get()})")
+            found
         } catch (e: Exception) {
             DiagnosticLog.log("deezer", "busca de artista falhou: ${e.javaClass.simpleName}: ${e.message?.take(120)} (em andamento=${inFlight.get()})")
             null
@@ -268,10 +278,15 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
     }
 
     /** GET com cache em arquivo. Erros de rede viram exceção. */
-    private fun getJson(url: String): JSONObject {
+    /**
+     * [worthKeeping] diz se a resposta serve para o cache: o que não serve (busca
+     * vazia, que pode ser só o Deezer limitando pedidos em rajada) não é guardado
+     * nem reaproveitado, e é pedido de novo na próxima vez.
+     */
+    private fun getJson(url: String, worthKeeping: (JSONObject) -> Boolean = { true }): JSONObject {
         val file = File(jsonCache, sha1(url) + ".json")
         if (file.exists() && System.currentTimeMillis() - file.lastModified() < JSON_TTL_MS) {
-            runCatching { return JSONObject(file.readText()) }
+            runCatching { JSONObject(file.readText()) }.getOrNull()?.takeIf(worthKeeping)?.let { return it }
         }
         OfflineMode.requireOnline()
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
@@ -285,7 +300,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             val json = JSONObject(body)
             // O Deezer responde 200 com {"error": …} em alguns erros.
             check(!json.has("error")) { "Deezer: ${json.opt("error")}" }
-            runCatching { file.writeText(body) }
+            if (worthKeeping(json)) runCatching { file.writeText(body) }
             return json
         } finally {
             connection.disconnect()
