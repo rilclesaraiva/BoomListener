@@ -78,6 +78,7 @@
     <string name="feature_settings_about_changelog_summary">Cada versão e o que mudou nela</string>
     <string name="feature_settings_about_issues">Reportar um problema</string>
     <string name="feature_settings_about_issues_summary">Achou um erro ou teve uma ideia? Abra uma issue</string>
+    <string name="feature_settings_about_icon_replay">Tocar a animação do ícone</string>
     <string name="feature_settings_about_build_release">Release</string>
     <string name="feature_settings_about_build_debug">Teste</string>
     <string name="feature_settings_playback">Reprodução</string>

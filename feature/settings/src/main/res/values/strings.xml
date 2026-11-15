@@ -76,6 +76,7 @@
     <string name="feature_settings_about_changelog_summary">Every version and what changed in it</string>
     <string name="feature_settings_about_issues">Report a problem</string>
     <string name="feature_settings_about_issues_summary">Found a bug or have an idea? Open an issue</string>
+    <string name="feature_settings_about_icon_replay">Play the icon animation</string>
     <string name="feature_settings_about_build_release">Release</string>
     <string name="feature_settings_about_build_debug">Debug</string>
     <string name="feature_settings_playback">Playback</string>

@@ -12,20 +12,16 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.boomlistener.core.designsystem.component.BoomAccent
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.core.designsystem.component.BoomLogo
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
@@ -167,20 +164,14 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun AboutHero() {
     val context = LocalContext.current
-    val icon = remember { appIcon(context) }
     val rawVersion = remember { rawVersionName(context) }
     val isDebug = rawVersion.endsWith("-debug")
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp),
     ) {
-        if (icon != null) {
-            Image(
-                bitmap = icon,
-                contentDescription = null,
-                modifier = Modifier.size(112.dp).clip(CircleShape),
-            )
-        }
+        // Toca uma vez ao entrar e de novo a cada toque no ícone.
+        BoomLogo(size = 112.dp, clickLabel = stringResource(R.string.feature_settings_about_icon_replay))
         Spacer(Modifier.height(16.dp))
         Text("BoomListener", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(10.dp))
@@ -205,17 +196,6 @@ private fun AboutChip(text: String) {
         Text(text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
     }
 }
-
-/** O ícone do app, desenhado num bitmap (o módulo não enxerga os recursos do :app). */
-private fun appIcon(context: Context): ImageBitmap? = runCatching {
-    val drawable = context.packageManager.getApplicationIcon(context.packageName)
-    val size = 288
-    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-    val canvas = android.graphics.Canvas(bitmap)
-    drawable.setBounds(0, 0, size, size)
-    drawable.draw(canvas)
-    bitmap.asImageBitmap()
-}.getOrNull()
 
 @Suppress("DEPRECATION")
 private fun rawVersionName(context: Context): String =
