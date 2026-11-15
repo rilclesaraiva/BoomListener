@@ -352,21 +352,14 @@ private fun GroupRow(
 ) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
-    val photoState = rememberArtistPhotoState(artistName, BoomListArtworkSize, viewModel::artistPhoto)
-    val image = photoState.image ?: images.firstOrNull()
+    val photo = rememberArtistPhoto(artistName, BoomListArtworkSize, viewModel::artistPhoto)
+    val image = photo ?: images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu?.invoke(menuOpen, image)
     ListItem(
         modifier = if (menu != null) modifier.clickableWithMenu(menuOpen, onClick = onClick) else modifier.clickable(onClick = onClick),
         leadingContent = {
-            if (photoState.pending) {
-                // Foto a caminho: um espaço neutro, sem a capa nem a inicial piscando antes dela.
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = if (round) CircleShape else MaterialTheme.shapes.medium,
-                    modifier = Modifier.size(BoomListArtworkSize),
-                ) {}
-            } else if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
+            if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -409,20 +402,13 @@ private fun AlbumTile(
 ) {
     val px = with(LocalDensity.current) { 200.dp.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
-    val photoState = rememberArtistPhotoState(artistName, 200.dp, viewModel::artistPhoto)
-    val image = photoState.image ?: images.firstOrNull()
+    val photo = rememberArtistPhoto(artistName, 200.dp, viewModel::artistPhoto)
+    val image = photo ?: images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu(menuOpen, image)
     // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
     Column(modifier.clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = 8.dp)) {
-        if (photoState.pending) {
-            // Foto a caminho: um espaço neutro, sem a capa nem a inicial piscando antes dela.
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = if (round) CircleShape else MaterialTheme.shapes.extraLarge,
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-            ) {}
-        } else if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
+        if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
             Surface(
                 color = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
