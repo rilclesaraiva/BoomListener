@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.sqrt
@@ -54,6 +55,9 @@ import kotlin.math.sqrt
 
 /** Duração da animação inteira, em milissegundos (o último eco termina em 1980). */
 internal const val BoomLogoMs = 2000f
+
+/** Espera ao entrar na tela, para a animação começar com a transição já assentada. */
+private const val EntryDelayMs = 400L
 
 private val IconBase = Color(0xFF9A4600)
 private val IconPeach = Color(0xFFFFDBC8)
@@ -174,6 +178,8 @@ fun BoomLogo(
             progress.snapTo(BoomLogoMs)
         } else {
             progress.snapTo(0f)
+            // Ao entrar na tela, espera a transição de tela acabar antes de começar.
+            if (replay == 0) delay(EntryDelayMs)
             progress.animateTo(BoomLogoMs, tween(BoomLogoMs.toInt(), easing = LinearEasing))
         }
     }

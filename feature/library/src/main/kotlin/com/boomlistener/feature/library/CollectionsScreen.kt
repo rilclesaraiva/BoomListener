@@ -75,6 +75,9 @@ import com.boomlistener.core.designsystem.component.BoomSearchField
 import com.boomlistener.core.designsystem.component.BoomTopActions
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import androidx.compose.material3.IconButton
+import com.boomlistener.core.designsystem.component.BoomImageMemory
+import com.boomlistener.core.designsystem.component.PinImages
+import com.boomlistener.core.designsystem.component.PinItem
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.boomlistener.core.model.ExternalArtist
@@ -149,6 +152,7 @@ internal fun CollectionsScreen(
                     val topNames = remember(entries, grid) { entries.mapNotNull { it.artistName }.take(if (grid) PINNED_GRID else PINNED_LIST) }
                     PinTopArtistPhotos(topNames, if (grid) 200.dp else BoomListArtworkSize, viewModel::artistPhoto)
                 }
+                if (current.selected != CollectionKind.Artists) PinTopCovers(entries, grid, viewModel)
               val artistSearchStuck by rememberStickyHeaderStuck(listState, SEARCH_ITEM_INDEX)
               var artistSearchPx by remember { mutableIntStateOf(0) }
               val artistSearchRoom = rememberSearchRoom(listState, SEARCH_ITEM_INDEX, entries to artistSearch)
@@ -712,12 +716,36 @@ private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, v
 private fun GroupEntry.covers(): List<Track> =
     if (mosaic) mosaicCovers(tracks) else listOfNotNull(tracks.firstOrNull())
 
-/** Carrega as capas de [covers] (na mesma ordem; null enquanto não chega). */
+/** Tamanho em pixels de cada capa: no mosaico (2 × 2) cada uma aparece com metade do bloco. */
+private fun coverPixels(count: Int, px: Int) = if (count >= MOSAIC_SIZE) px / 2 else px
+
+/**
+ * As capas de [covers] (na mesma ordem; null enquanto não chegam). Ficam na memória
+ * de imagens: voltar à tela já mostra a capa, sem passar pela inicial.
+ */
 @Composable
 private fun rememberCovers(covers: List<Track>, px: Int, viewModel: CollectionsViewModel): List<ImageBitmap?> {
-    val uris = covers.map { it.uri }
-    val images by produceState<List<ImageBitmap?>>(initialValue = List(uris.size) { null }, uris) {
-        value = uris.map { uri -> viewModel.artwork(uri, px)?.asImageBitmap() }
+    val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
+    val coverPx = coverPixels(covers.size, px)
+    val keys = covers.map { coverKey(it.uri, coverPx, version) }
+    val images by produceState<List<ImageBitmap?>>(initialValue = keys.map { BoomImageMemory.get(it) }, keys) {
+        value = covers.mapIndexed { i, track ->
+            BoomImageMemory.get(keys[i])
+                ?: viewModel.artwork(track.uri, coverPx)?.asImageBitmap()?.also { BoomImageMemory.put(keys[i], it) }
+        }
     }
     return images
+}
+
+/** As capas dos primeiros grupos ficam prontas na memória: a subida pela aba cai perto do topo. */
+@Composable
+private fun PinTopCovers(entries: List<GroupEntry>, grid: Boolean, viewModel: CollectionsViewModel) {
+    val px = with(LocalDensity.current) { (if (grid) 200.dp else BoomListArtworkSize).roundToPx() }
+    val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
+    val items = entries.take(if (grid) PINNED_GRID else PINNED_LIST).flatMap { entry ->
+        val covers = entry.covers()
+        val coverPx = coverPixels(covers.size, px)
+        covers.map { track -> PinItem(coverKey(track.uri, coverPx, version)) { viewModel.artwork(track.uri, coverPx) } }
+    }
+    PinImages("collectionCovers", items)
 }

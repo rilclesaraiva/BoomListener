@@ -48,7 +48,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
@@ -66,7 +65,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.RowScope
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
@@ -103,7 +101,10 @@ import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSearchField
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.designsystem.component.BoomTopActions
+import com.boomlistener.core.designsystem.component.PinImages
+import com.boomlistener.core.designsystem.component.PinItem
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
+import com.boomlistener.core.designsystem.component.rememberMemoryImage
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
@@ -263,6 +264,7 @@ private fun TrackList(
     LaunchedEffect(trackUris, state.query) { if (state.query.isEmpty()) selection.retain(trackUris.toSet()) }
     val scope = rememberCoroutineScope()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
+    if (state.query.isEmpty()) PinHomeImages(state, loadArtwork, loadArtistPhoto)
     val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails, onOpenAlbum) {
         SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails, onOpenAlbum)
     }
@@ -524,6 +526,38 @@ private fun HomeSectionTitle(title: String, action: (@Composable () -> Unit)? = 
     }
 }
 
+/**
+ * As imagens do topo do Início ficam prontas na memória (recentes, álbuns, artistas
+ * e as primeiras músicas): tocar na aba para subir cai perto do topo, e elas já estão lá.
+ */
+@Composable
+private fun PinHomeImages(
+    state: LibraryUiState.Success,
+    loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
+    loadArtistPhoto: suspend (String, Int) -> android.graphics.Bitmap?,
+) {
+    val density = LocalDensity.current
+    val recentPx = with(density) { RecentCover.roundToPx() }
+    val tilePx = with(density) { HomeTile.roundToPx() }
+    val rowPx = with(density) { BoomListArtworkSize.roundToPx() }
+    val version = state.version
+    val items = buildList {
+        state.home?.let { home ->
+            home.recent.forEach { track -> add(PinItem(coverKey(track.uri, recentPx, version)) { loadArtwork(track, recentPx) }) }
+            (home.albums + home.artists).forEach { group ->
+                group.tracks.firstOrNull()?.let { track -> add(PinItem(coverKey(track.uri, tilePx, version)) { loadArtwork(track, tilePx) }) }
+            }
+            home.artists.forEach { artist -> add(PinItem(artistPhotoKey(artist.name, tilePx)) { loadArtistPhoto(artist.name, tilePx) }) }
+        }
+        state.tracks.take(HOME_PINNED_TRACKS).forEach { track ->
+            add(PinItem(coverKey(track.uri, rowPx, version)) { loadArtwork(track, rowPx) })
+        }
+    }
+    PinImages("homeImages", items)
+}
+
+private const val HOME_PINNED_TRACKS = 12
+
 /** Capa de um item do topo do Início (relê quando as tags mudam). */
 @Composable
 private fun rememberHomeCover(
@@ -533,10 +567,7 @@ private fun rememberHomeCover(
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
 ): ImageBitmap? {
     val px = with(LocalDensity.current) { size.roundToPx() }
-    val image by produceState<ImageBitmap?>(initialValue = null, track?.uri, version) {
-        value = track?.let { loadArtwork(it, px)?.asImageBitmap() }
-    }
-    return image
+    return rememberMemoryImage(track?.let { coverKey(it.uri, px, version) }) { track?.let { loadArtwork(it, px) } }
 }
 
 /** Adicionadas recentemente: três linhas que correm para o lado, numeradas. */
@@ -740,9 +771,7 @@ private fun TrackItem(
     val menuOpen = remember { mutableStateOf(false) }
     val sizePx = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     // [version] muda quando alguma tag foi editada: a capa é lida de novo.
-    val artwork by produceState<ImageBitmap?>(initialValue = null, track.uri, version) {
-        value = loadArtwork(track, sizePx)?.asImageBitmap()
-    }
+    val artwork = rememberMemoryImage(coverKey(track.uri, sizePx, version)) { loadArtwork(track, sizePx) }
     val unknownArtist = stringResource(R.string.feature_library_unknown_artist)
 
     ListItem(

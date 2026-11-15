@@ -57,7 +57,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -65,7 +64,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -81,7 +79,10 @@ import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
+import com.boomlistener.core.designsystem.component.PinImages
+import com.boomlistener.core.designsystem.component.PinItem
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
+import com.boomlistener.core.designsystem.component.rememberMemoryImage
 import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.SongStat
 import java.time.Instant
@@ -116,6 +117,7 @@ internal fun MyProfileScreen(
     var editing by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(MY_PROFILE_ROUTE, listState)
+    state?.let { PinProfileImages(it, viewModel) }
 
     // Cor sólida: a página inteira na cor escolhida (preto puro fica preto puro),
     // com textos e cartões em tons que combinam com ela.
@@ -732,9 +734,7 @@ private fun PersonChip(
     onShuffle: () -> Unit,
 ) {
     val px = with(LocalDensity.current) { 72.dp.roundToPx() }
-    val photo by produceState<ImageBitmap?>(initialValue = null, name) {
-        value = viewModel.artistImage(name, px)?.asImageBitmap()
-    }
+    val photo = rememberMemoryImage(artistKey(name, px)) { viewModel.artistImage(name, px) }
     // Segurar abre o menu do artista.
     val menuOpen = remember { mutableStateOf(false) }
     ProfileArtistMenuSheet(menuOpen, name, photo, onPlay = onPlay, onShuffle = onShuffle, onOpenArtist = onClick)
@@ -791,8 +791,33 @@ private fun HistoryCard(entry: HistoryEntry, today: LocalDate, viewModel: MyProf
 @Composable
 private fun rememberLocalArtwork(viewModel: MyProfileViewModel, uri: String?, size: Dp): ImageBitmap? {
     val px = with(LocalDensity.current) { size.roundToPx() }
-    val image by produceState<ImageBitmap?>(initialValue = null, uri, px) {
-        value = uri?.let { viewModel.artwork(it, px)?.asImageBitmap() }
+    val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
+    return rememberMemoryImage(uri?.let { coverKey(it, px, version) }) { uri?.let { viewModel.artwork(it, px) } }
+}
+
+/** Chave da capa na memória de imagens (a mesma do Início e da Biblioteca: é a mesma imagem). */
+private fun coverKey(uri: String, px: Int, version: Int) = "cover:$uri@$px#$version"
+
+/** Chave da foto do artista no perfil (própria: aqui ela cai na capa de uma música dele quando não há foto). */
+private fun artistKey(name: String, px: Int) = "profileArtist:$name@$px"
+
+/**
+ * As imagens do perfil ficam prontas na memória (mais ouvidas, histórico e artistas):
+ * deslizar as fileiras ou subir ao topo não deixa nenhuma piscar a inicial.
+ */
+@Composable
+private fun PinProfileImages(state: MyProfileUiState, viewModel: MyProfileViewModel) {
+    val density = LocalDensity.current
+    val coverPx = with(density) { CoverCard.roundToPx() }
+    val artistPx = with(density) { 72.dp.roundToPx() }
+    val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
+    val items = buildList {
+        state.stats.topArtists.forEach { artist ->
+            add(PinItem(artistKey(artist.name, artistPx)) { viewModel.artistImage(artist.name, artistPx) })
+        }
+        (state.topSongs.map { it.uri } + state.recent.map { it.uri }).distinct().forEach { uri ->
+            add(PinItem(coverKey(uri, coverPx, version)) { viewModel.artwork(uri, coverPx) })
+        }
     }
-    return image
+    PinImages("profileImages", items)
 }

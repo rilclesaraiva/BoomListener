@@ -161,6 +161,9 @@ internal class MyProfileViewModel(
         if (index >= 0) player.play(queue, index)
     }
 
+    /** Sobe quando as tags mudam: as capas guardadas na memória de imagens deixam de valer. */
+    val libraryVersion: kotlinx.coroutines.flow.StateFlow<Int> get() = library.version
+
     suspend fun artwork(uri: String, sizePx: Int): Bitmap? = library.loadArtwork(uri, sizePx)
 
     /**

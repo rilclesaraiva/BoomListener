@@ -162,6 +162,9 @@ internal class CollectionsViewModel(
         viewModelScope.launch { playlistRepository.create(name) }
     }
 
+    /** Sobe quando as tags mudam: as capas guardadas na memória de imagens deixam de valer. */
+    val libraryVersion: kotlinx.coroutines.flow.StateFlow<Int> get() = library.version
+
     suspend fun artwork(uri: String, sizePx: Int): Bitmap? = library.loadArtwork(uri, sizePx)
 
     /** Foto do artista: a do Deezer pelo nome (null sem internet ou sem achar; aí vale a capa). */
