@@ -22,6 +22,21 @@ private fun pictureShape(url: String): String {
     return if (code.isEmpty()) "sem código" else "código de ${code.length} caracteres"
 }
 
+/** Código da imagem → ids dos artistas que o usam (só na memória, para o registro de diagnóstico). */
+private val codesSeen = HashMap<String, MutableSet<Long>>()
+
+/**
+ * Uma foto de verdade é única de cada artista; um código que aparece em artistas diferentes é
+ * quase certamente uma imagem padrão. Registra esse código (o código de uma imagem não
+ * identifica ninguém) para a silhueta poder ser reconhecida pelo endereço.
+ */
+private fun noteCode(url: String, artistId: Long) {
+    val code = url.substringAfter("/images/artist/", "").substringBefore('/')
+    if (code.isEmpty()) return
+    val artists = synchronized(codesSeen) { codesSeen.getOrPut(code) { HashSet() }.apply { add(artistId) }.size }
+    if (artists == 2) DiagnosticLog.log("foto", "o mesmo código de imagem em 2 artistas diferentes: $code")
+}
+
 /**
  * Foto de um artista pelo nome: o mesmo artista que a página dele acharia
  * ([pickArtist]: nome igual; entre homônimos, o mais conhecido). Nulo se não
@@ -47,6 +62,7 @@ suspend fun DeezerRepository.artistPicture(name: String, sizePx: Int): Bitmap? {
         DiagnosticLog.log("foto", "sem foto: o Deezer só tem a silhueta padrão (${pictureShape(url)})")
         return null
     }
+    noteCode(url, found.id)
     DiagnosticLog.log("foto", "foto do Deezer aceita (${pictureShape(url)})")
     return image(url, sizePx).also { if (it == null) DiagnosticLog.log("foto", "sem foto: a imagem não veio") }
 }
