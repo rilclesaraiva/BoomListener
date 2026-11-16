@@ -328,7 +328,7 @@ private fun JSONObject.str(name: String): String? = optString(name).takeIf { it.
 private fun JSONObject.toArtist() = ExternalArtist(
     id = optLong("id"),
     name = optString("name"),
-    pictureUrl = str("picture_xl") ?: str("picture_big"),
+    pictureUrl = listOfNotNull(str("picture_xl"), str("picture_big")).firstOrNull { !isDefaultArtistPicture(it) },
     fans = optLong("nb_fan"),
     link = str("link"),
 )

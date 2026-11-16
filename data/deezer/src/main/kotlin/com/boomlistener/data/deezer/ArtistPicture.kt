@@ -9,12 +9,15 @@ import com.boomlistener.core.common.DiagnosticLog
 /** O código (MD5) do "vazio": o Deezer o usa no endereço da silhueta padrão de quem não tem foto. */
 private const val EMPTY_MD5 = "d41d8cd98f00b204e9800998ecf8427e"
 
+/** O código da silhueta padrão que o Deezer manda hoje (visto em artistas diferentes no registro de diagnóstico). */
+private const val SILHOUETTE_CODE = "c4babb7727a1acd0b1ba07cfed913c92"
+
 /**
  * O Deezer devolve, para artista sem foto, o endereço de uma silhueta padrão: o código
  * da imagem no endereço vem vazio (".../images/artist//1000x1000...") ou é o MD5 do
  * vazio. Isso não é foto: quem mostra usa a capa do lançamento mais novo no lugar.
  */
-fun isDefaultArtistPicture(url: String): Boolean = url.contains("/images/artist//") || url.contains(EMPTY_MD5)
+fun isDefaultArtistPicture(url: String): Boolean = url.contains("/images/artist//") || url.contains(EMPTY_MD5) || url.contains(SILHOUETTE_CODE)
 
 /** O formato do código da imagem no endereço (só o tamanho dele, sem o endereço), para o registro de diagnóstico. */
 private fun pictureShape(url: String): String {
