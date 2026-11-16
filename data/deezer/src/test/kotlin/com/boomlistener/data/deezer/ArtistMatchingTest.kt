@@ -71,4 +71,30 @@ class ArtistMatchingTest {
         // Convidado já no título não se repete.
         assertEquals("Anitta", joinArtists(listOf("Anitta"), listOf("J Balvin"), "Downtown (feat. J Balvin)"))
     }
+
+    private fun song(id: Long, artist: String?, year: Int?, added: Long) =
+        com.boomlistener.core.model.Track(id, "content://$id", "Música $id", artist, "Álbum", 1, 200_000, 1, year, added)
+
+    @Test
+    fun ultimoLancamentoDoArtistaEntreVariasMusicas() {
+        val tracks = listOf(
+            song(1, "Delinquent, KCAT", 2023, 10),
+            song(2, "KCAT", 2025, 5),
+            song(3, "Delinquent", 2023, 20),
+            song(4, "Outro", 2026, 30),
+        )
+        // KCAT aparece sozinho e junto: vale o de maior ano.
+        assertEquals(2L, latestTrackOf(tracks, "kcat")?.id)
+        // Mesmo ano: a adicionada por último; e o nome da tag com vários conta para cada um.
+        assertEquals(3L, latestTrackOf(tracks, "Delinquent")?.id)
+        assertEquals(null, latestTrackOf(tracks, "Ninguém"))
+    }
+
+    @Test
+    fun ultimoLancamentoIgnoraAcentoEFeat() {
+        val tracks = listOf(song(1, "Djavan feat. Caetano", 1982, 0), song(2, "Beyoncé", null, 0))
+        assertEquals(1L, latestTrackOf(tracks, "Djavan")?.id)
+        assertEquals(1L, latestTrackOf(tracks, "Caetano")?.id)
+        assertEquals(2L, latestTrackOf(tracks, "beyonce")?.id)
+    }
 }

@@ -5,6 +5,7 @@ package com.boomlistener.data.deezer
 
 import com.boomlistener.core.common.normalizedForSearch
 import com.boomlistener.core.model.ExternalArtist
+import com.boomlistener.core.model.Track
 
 private val FEATURING = Regex("""\s+(feat\.?|ft\.?|featuring|part\.?)\s+.*$""", RegexOption.IGNORE_CASE)
 
@@ -30,6 +31,23 @@ private val ARTIST_SEPARATOR = Regex(
  */
 fun splitArtistNames(tagName: String): List<String> =
     tagName.split(ARTIST_SEPARATOR).map { it.trim() }.filter { it.isNotEmpty() }
+
+/**
+ * A música mais recente do aparelho em que [artist] aparece (sozinho ou entre
+ * vários na tag: "Delinquent, KCAT" conta para os dois): a de maior ano e, no
+ * empate, a adicionada por último. A capa dela é a "capa do último lançamento"
+ * de quem não tem foto. Nulo se o artista não tem música aqui.
+ */
+fun latestTrackOf(tracks: List<Track>, artist: String): Track? {
+    val wanted = artist.normalizedForSearch()
+    return tracks
+        .filter { track ->
+            val tag = track.artist ?: return@filter false
+            primaryArtistName(tag).normalizedForSearch() == wanted ||
+                splitArtistNames(tag).any { it.normalizedForSearch() == wanted }
+        }
+        .maxWithOrNull(compareBy<Track>({ it.year ?: 0 }, { it.dateAddedSeconds }))
+}
 
 /**
  * Nomes para procurar o artista, na ordem: o nome inteiro (sem o "feat."),

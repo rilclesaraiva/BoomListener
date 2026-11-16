@@ -151,7 +151,8 @@ internal fun CollectionsScreen(
                 if (current.selected == CollectionKind.Artists && !searching) {
                     // A subida pela aba cai perto do topo: as primeiras fotos ficam prontas (uma tela e meia na grade, duas na lista).
                     val topNames = remember(entries, grid) { entries.mapNotNull { it.artistName }.take(if (grid) PINNED_GRID else PINNED_LIST) }
-                    PinTopArtistPhotos(topNames, if (grid) 200.dp else BoomListArtworkSize, viewModel::artistPhoto)
+                    val pinVersion by viewModel.libraryVersion.collectAsStateWithLifecycle()
+                    PinTopArtistPhotos(topNames, if (grid) 200.dp else BoomListArtworkSize, pinVersion, viewModel::artistImage)
                 }
                 if (current.selected != CollectionKind.Artists) PinTopCovers(entries, grid, viewModel)
               val artistSearchStuck by rememberStickyHeaderStuck(listState, SEARCH_ITEM_INDEX)
@@ -366,7 +367,8 @@ private fun GroupRow(
 ) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
-    val photos = rememberArtistPhotos(artistName, BoomListArtworkSize, viewModel::artistPhoto)
+    val libraryVersion by viewModel.libraryVersion.collectAsStateWithLifecycle()
+    val photos = rememberArtistPhotos(artistName, BoomListArtworkSize, libraryVersion, viewModel::artistImage)
     val image = photos.firstOrNull() ?: images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu?.invoke(menuOpen, image)
@@ -418,7 +420,8 @@ private fun AlbumTile(
 ) {
     val px = with(LocalDensity.current) { 200.dp.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
-    val photos = rememberArtistPhotos(artistName, 200.dp, viewModel::artistPhoto)
+    val libraryVersion by viewModel.libraryVersion.collectAsStateWithLifecycle()
+    val photos = rememberArtistPhotos(artistName, 200.dp, libraryVersion, viewModel::artistImage)
     val image = photos.firstOrNull() ?: images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu(menuOpen, image)

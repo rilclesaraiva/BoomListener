@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.profile
 
+import com.boomlistener.data.deezer.latestTrackOf
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -169,7 +170,7 @@ internal class MyProfileViewModel(
     /**
      * Foto de um artista: a do Deezer (pelo id, se você o segue; senão
      * procurando pelo nome, como a página dele); sem ela (sem internet, artista
-     * que o Deezer não conhece), a capa de uma música dele que está no aparelho.
+     * que o Deezer não conhece), a capa do último lançamento dele que está no aparelho.
      */
     suspend fun artistImage(name: String, sizePx: Int, coverFallback: Boolean = true): Bitmap? {
         val key = name.normalizedForSearch()
@@ -180,9 +181,7 @@ internal class MyProfileViewModel(
             artistPhoto(name, sizePx)?.let { return it }
         }
         if (!coverFallback) return null
-        val track = tracks.value.firstOrNull { track ->
-            track.artist?.let { artistOf(it).normalizedForSearch() == key } == true
-        } ?: return null
+        val track = latestTrackOf(tracks.value, name) ?: return null
         return library.loadArtwork(track.uri, sizePx)
     }
 

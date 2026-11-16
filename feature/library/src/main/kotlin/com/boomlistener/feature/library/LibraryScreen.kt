@@ -201,7 +201,7 @@ internal fun LibraryScreen(
                     onOpenAlbum = onOpenAlbum,
                     onSeeAll = onSeeAll,
                     loadArtwork = viewModel::artwork,
-                    loadArtistPhoto = viewModel::artistPhoto,
+                    loadArtistPhoto = viewModel::artistImage,
                     shareUrl = viewModel::shareUrl,
                     onOpenTrack = viewModel::play,
                     onOpenArtist = onOpenArtist,
@@ -242,7 +242,7 @@ private fun TrackList(
     onOpenAlbum: (String) -> Unit,
     onSeeAll: (CollectionKind) -> Unit,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
-    loadArtistPhoto: suspend (String, Int) -> android.graphics.Bitmap?,
+    loadArtistPhoto: ArtistImageLoader,
     shareUrl: suspend (Track) -> String,
     onOpenTrack: (Track) -> Unit,
     onOpenArtist: (String) -> Unit,
@@ -535,7 +535,7 @@ private fun HomeSectionTitle(title: String, action: (@Composable () -> Unit)? = 
 private fun PinHomeImages(
     state: LibraryUiState.Success,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
-    loadArtistPhoto: suspend (String, Int) -> android.graphics.Bitmap?,
+    loadArtistPhoto: ArtistImageLoader,
 ) {
     val density = LocalDensity.current
     val recentPx = with(density) { RecentCover.roundToPx() }
@@ -548,7 +548,7 @@ private fun PinHomeImages(
             (home.albums + home.artists).forEach { group ->
                 group.tracks.firstOrNull()?.let { track -> add(PinItem(coverKey(track.uri, tilePx, version)) { loadArtwork(track, tilePx) }) }
             }
-            home.artists.forEach { artist -> addAll(artistPinItems(artist.name, tilePx, loadArtistPhoto)) }
+            home.artists.forEach { artist -> addAll(artistPinItems(artist.name, tilePx, version, loadArtistPhoto)) }
         }
         state.tracks.take(HOME_PINNED_TRACKS).forEach { track ->
             add(PinItem(coverKey(track.uri, rowPx, version)) { loadArtwork(track, rowPx) })
@@ -666,14 +666,14 @@ private fun HomeArtist(
     artist: TrackGroup,
     version: Int,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
-    loadArtistPhoto: suspend (String, Int) -> android.graphics.Bitmap?,
+    loadArtistPhoto: ArtistImageLoader,
     menu: AlbumMenuActions,
     onClick: () -> Unit,
 ) {
     // A foto do artista no Deezer; sem ela (sem internet, artista que o Deezer
     // não conhece), a capa de uma música dele.
     val songCover = rememberHomeCover(artist.tracks.firstOrNull(), version, HomeTile, loadArtwork)
-    val photos = rememberArtistPhotos(artist.name, HomeTile, loadArtistPhoto)
+    val photos = rememberArtistPhotos(artist.name, HomeTile, version, loadArtistPhoto)
     val cover = photos.firstOrNull() ?: songCover
     // Segurar o artista abre o menu dele.
     val menuOpen = remember { mutableStateOf(false) }

@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.data.deezer.latestTrackOf
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -114,7 +115,15 @@ internal class LibraryViewModel(
     suspend fun artwork(track: Track, sizePx: Int): Bitmap? =
         repository.loadArtwork(track.uri, sizePx)
 
-    /** Foto do artista: a do Deezer pelo nome (null sem internet ou sem achar; aí vale a capa). */
-    suspend fun artistPhoto(name: String, sizePx: Int): Bitmap? =
-        if (name.isBlank()) null else runCatching { artistPhoto.invoke(name, sizePx) }.getOrNull()
+    /**
+     * A imagem do artista: a foto do Deezer pelo nome; sem ela (sem internet, artista
+     * que o Deezer não conhece) e com [coverFallback], a capa do último lançamento dele.
+     */
+    suspend fun artistImage(name: String, sizePx: Int, coverFallback: Boolean): Bitmap? {
+        if (name.isBlank()) return null
+        runCatching { artistPhoto.invoke(name, sizePx) }.getOrNull()?.let { return it }
+        if (!coverFallback) return null
+        val track = latestTrackOf(allTracks.value.orEmpty(), name) ?: return null
+        return repository.loadArtwork(track.uri, sizePx)
+    }
 }

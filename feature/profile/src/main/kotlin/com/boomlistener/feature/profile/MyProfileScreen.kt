@@ -809,17 +809,16 @@ private fun artistKey(name: String, px: Int) = "profileArtist:$name@$px"
 private fun artistPhotoOnlyKey(name: String, px: Int) = "profileArtistPhoto:$name@$px"
 
 /**
- * As fotos de [name] por tentativas. Um artista só: a foto (ou a capa de uma música
- * dele). Vários ("Delinquent, Kcat"): a foto do nome inteiro (bandas como "Earth,
- * Wind & Fire"), senão a de cada artista, e só no fim a capa.
+ * As imagens de [name] por tentativas. Um artista só: a foto, ou a capa do último
+ * lançamento dele. Vários ("Delinquent, Kcat"): a foto do nome inteiro (bandas como
+ * "Earth, Wind & Fire"), senão a de cada artista (foto, ou a capa do último lançamento).
  */
 private fun artistAttempts(name: String, px: Int, viewModel: MyProfileViewModel): List<List<PinItem>> {
-    val withCover = PinItem(artistKey(name, px)) { viewModel.artistImage(name, px) }
-    val parts = splitArtistNames(name).takeIf { it.size > 1 } ?: return listOf(listOf(withCover))
+    fun withCover(n: String) = PinItem(artistKey(n, px)) { viewModel.artistImage(n, px) }
+    val parts = splitArtistNames(name).takeIf { it.size > 1 } ?: return listOf(listOf(withCover(name)))
     return listOf(
         listOf(PinItem(artistPhotoOnlyKey(name, px)) { viewModel.artistImage(name, px, coverFallback = false) }),
-        parts.map { part -> PinItem(artistPhotoOnlyKey(part, px)) { viewModel.artistImage(part, px, coverFallback = false) } },
-        listOf(withCover),
+        parts.map { withCover(it) },
     )
 }
 
