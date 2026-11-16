@@ -119,6 +119,23 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         }
     }
 
+    override suspend fun latestReleaseCoverUrl(artistId: Long): String? = withContext(Dispatchers.IO) {
+        try {
+            val url = "$API/artist/$artistId/albums?limit=200"
+            val hasResults = { json: JSONObject -> (json.optJSONArray("data")?.length() ?: 0) > 0 }
+            val json = cachedJson(url, hasResults) ?: searchGate.withPermit { getJson(url, hasResults) }
+            val cover = json.optJSONArray("data").objects().map { it.toRelease() }
+                .maxByOrNull { it.releaseDate.orEmpty() }?.coverUrl
+            if (cover == null) DiagnosticLog.log("deezer", "lançamentos do artista vieram sem capa (em andamento=${inFlight.get()})")
+            cover
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            DiagnosticLog.log("deezer", "lançamentos do artista falharam: ${e.javaClass.simpleName}: ${e.message?.take(120)} (em andamento=${inFlight.get()})")
+            null
+        }
+    }
+
     override suspend fun album(albumId: Long): AlbumResult = withContext(Dispatchers.IO) {
         try {
             val json = getJson("$API/album/$albumId")

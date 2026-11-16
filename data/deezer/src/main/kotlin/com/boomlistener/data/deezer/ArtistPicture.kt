@@ -76,8 +76,15 @@ suspend fun DeezerRepository.artistPicture(name: String, sizePx: Int): Bitmap? {
  * lançamentos ou sem internet.
  */
 suspend fun DeezerRepository.artistLatestCover(name: String, sizePx: Int): Bitmap? {
-    val found = pickArtist(name, searchArtists(primaryArtistName(name)) ?: return null) ?: return null
-    val releases = (artistReleases(found.id) as? ArtistReleasesResult.Found)?.releases ?: return null
-    val url = releases.maxByOrNull { it.releaseDate.orEmpty() }?.coverUrl ?: return null
-    return image(url, sizePx)
+    val found = pickArtist(name, searchArtists(primaryArtistName(name)) ?: return null)
+    if (found == null) {
+        DiagnosticLog.log("foto", "sem capa: artista não achado no Deezer")
+        return null
+    }
+    val url = latestReleaseCoverUrl(found.id)
+    if (url == null) {
+        DiagnosticLog.log("foto", "sem capa: o Deezer não deu lançamentos")
+        return null
+    }
+    return image(url, sizePx).also { if (it == null) DiagnosticLog.log("foto", "sem capa: a imagem do lançamento não veio") }
 }

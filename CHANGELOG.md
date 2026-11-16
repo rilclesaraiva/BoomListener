@@ -7,6 +7,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ## [Unreleased]
 
 ### Fixed
+- **Artist circles that stayed empty:** when Deezer answered empty or failed while many pictures loaded at once, the circle kept the generic person icon until you left the screen. Now it asks again a couple of seconds later (twice at most), and finding the newest cover takes one request instead of three.
 - **Pictures flashing the initial letter or the cover while you scroll fast or jump back to the top:** covers and artist photos are now kept in memory (and the ones at the top of each list are prepared ahead), in Library (Genres, Artists, Playlists, Albums), Home and Profile. Scrolling the rows of Profile by hand no longer makes some artists lose their picture either.
 - **Artist photos at the top of the list showing the initial while you tap the tab to go back up:** the photos of the first artists (about a screen and a half in the grid, two in the list) are now loaded ahead and kept in memory, so they are already there when the list slides back to the top.
 - **Artist photos in the big grid reloading when you jump back to the top:** the app kept only a few big photos in memory, so after scrolling far and tapping the tab to go back up, they all had to be loaded again (and showed the song cover for a moment). It now keeps many more, in proportion to the memory your phone gives the app, and searches already saved on the phone no longer wait in line behind the ones that need the internet.

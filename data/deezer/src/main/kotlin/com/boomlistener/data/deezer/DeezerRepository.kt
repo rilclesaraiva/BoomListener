@@ -51,6 +51,13 @@ interface DeezerRepository {
     suspend fun artistReleases(artistId: Long): ArtistReleasesResult = ArtistReleasesResult.Failed
 
     /**
+     * O endereço da capa do lançamento mais novo do artista [artistId]. Pede só a lista de
+     * lançamentos (um pedido, que usa o mesmo cache da discografia). null = sem internet,
+     * sem lançamentos ou o Deezer falhou.
+     */
+    suspend fun latestReleaseCoverUrl(artistId: Long): String? = null
+
+    /**
      * Procura artistas pelo nome (busca da Biblioteca → Artistas, para achar
      * quem não está no aparelho). null = sem internet ou o Deezer falhou.
      */

@@ -19,6 +19,9 @@ import kotlinx.coroutines.delay
 /** Quanto cada foto fica na tela antes de a próxima entrar. */
 internal const val CycleHoldMs = 2000L
 
+/** Quanto esperar antes de cada nova tentativa quando nenhuma imagem veio. */
+private val RetryDelaysMs = longArrayOf(2_000L, 5_000L)
+
 /** O índice que vem depois de [index] numa lista de [size] (volta ao começo no fim). */
 internal fun nextCycleIndex(index: Int, size: Int): Int = if (size <= 1) 0 else (index + 1) % size
 
@@ -53,16 +56,20 @@ fun BoomImageCycle(images: List<ImageBitmap>, content: @Composable (ImageBitmap?
 fun rememberImageSet(attempts: List<List<PinItem>>): List<ImageBitmap> {
     val ids = attempts.map { attempt -> attempt.map { it.key } }
     val images by produceState(initialValue = fromMemory(attempts), ids) {
-        for (attempt in attempts) {
-            val found = ArrayList<ImageBitmap>()
-            for (item in attempt) {
-                val image = BoomImageMemory.get(item.key) ?: item.load()?.asImageBitmap()?.also { BoomImageMemory.put(item.key, it) }
-                if (image != null) {
-                    found += image
-                    value = found.toList()
+        // Sem nenhuma imagem (o Deezer limita pedidos em rajada e responde vazio): tenta de novo, devagar.
+        for (retry in 0..RetryDelaysMs.size) {
+            for (attempt in attempts) {
+                val found = ArrayList<ImageBitmap>()
+                for (item in attempt) {
+                    val image = BoomImageMemory.get(item.key) ?: item.load()?.asImageBitmap()?.also { BoomImageMemory.put(item.key, it) }
+                    if (image != null) {
+                        found += image
+                        value = found.toList()
+                    }
                 }
+                if (found.isNotEmpty()) return@produceState
             }
-            if (found.isNotEmpty()) return@produceState
+            delay(RetryDelaysMs.getOrNull(retry) ?: return@produceState)
         }
     }
     return images
