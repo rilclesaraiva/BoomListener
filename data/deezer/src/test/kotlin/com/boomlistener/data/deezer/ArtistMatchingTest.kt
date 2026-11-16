@@ -105,6 +105,7 @@ class ArtistMatchingTest {
         assertTrue(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg"))
         assertTrue(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg"))
         assertTrue(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/c4babb7727a1acd0b1ba07cfed913c92/1000x1000-000000-80-0-0.jpg"))
+        assertTrue(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/f0f2ae4b9f95cc09b9e3e9663569f2ce/1000x1000-000000-80-0-0.jpg"))
         assertFalse(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/ab12cd34ef56/1000x1000-000000-80-0-0.jpg"))
     }
 }
