@@ -93,6 +93,7 @@
     <string name="feature_settings_playback_gapless">Reproducción sin pausas (gapless)</string>
     <string name="feature_settings_playback_gapless_summary">Los álbumes sin silencio entre pistas suenan seguidos. Se aplica desde la siguiente canción</string>
     <string name="feature_settings_playback_screen_on">Mantener la pantalla encendida en</string>
+    <string name="feature_settings_playback_screen_on_none">Ninguna</string>
     <string name="feature_settings_playback_screen_on_player">Reproductor a pantalla completa (portada y letra)</string>
     <string name="feature_settings_playback_screen_on_lyrics">Solo en la letra</string>
     <string name="feature_settings_playback_screen_on_home">Pestaña Inicio</string>

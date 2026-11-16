@@ -6,6 +6,8 @@ package com.boomlistener.core.common
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,6 +61,15 @@ object ShareTarget {
             .distinctBy { it.packageName }
             .sortedBy { it.label.lowercase() }
     }
+
+    /** O ícone do app [packageName] em [sizePx], ou null se não der para ler. */
+    fun icon(context: Context, packageName: String, sizePx: Int): Bitmap? = runCatching {
+        val drawable = context.packageManager.getApplicationIcon(packageName)
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, sizePx, sizePx)
+        drawable.draw(Canvas(bitmap))
+        bitmap
+    }.getOrNull()
 
     /** O próximo compartilhamento vai direto para [packageName]. */
     fun shareNextWith(packageName: String) {

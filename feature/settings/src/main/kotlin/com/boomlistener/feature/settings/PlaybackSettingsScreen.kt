@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
+import com.boomlistener.core.designsystem.component.BoomSettingsPanel
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
 import com.boomlistener.core.player.PlaybackPrefs
 import com.boomlistener.core.player.PlaybackSettingsData
@@ -143,22 +144,29 @@ internal fun PlaybackSettingsScreen(onBack: () -> Unit, modifier: Modifier = Mod
                 }
             }
             item(key = "screenOn") {
-                BoomSettingsSection(title = stringResource(R.string.feature_settings_playback_screen_on)) {
-                    listOf(
+                BoomSettingsSection(title = null) {
+                    val places = listOf(
                         ScreenOnPlace.Player to R.string.feature_settings_playback_screen_on_player,
                         ScreenOnPlace.Lyrics to R.string.feature_settings_playback_screen_on_lyrics,
                         ScreenOnPlace.Home to R.string.feature_settings_playback_screen_on_home,
                         ScreenOnPlace.Library to R.string.feature_settings_playback_screen_on_library,
                         ScreenOnPlace.Profile to R.string.feature_settings_playback_screen_on_profile,
                         ScreenOnPlace.Everywhere to R.string.feature_settings_playback_screen_on_everywhere,
-                    ).forEach { (place, label) ->
-                        val checked = place in prefs.keepScreenOn
-                        BoomSettingsItem(
-                            icon = null,
-                            title = stringResource(label),
-                            onClick = { settings.setKeepScreenOn(place, !checked) },
-                            trailing = { Checkbox(checked = checked, onCheckedChange = { settings.setKeepScreenOn(place, it) }) },
-                        )
+                    )
+                    val chosen = places.filter { (place, _) -> place in prefs.keepScreenOn }.map { (_, label) -> stringResource(label) }
+                    BoomSettingsPanel(
+                        title = stringResource(R.string.feature_settings_playback_screen_on),
+                        summary = if (chosen.isEmpty()) stringResource(R.string.feature_settings_playback_screen_on_none) else chosen.joinToString(", "),
+                    ) {
+                        places.forEach { (place, label) ->
+                            val checked = place in prefs.keepScreenOn
+                            BoomSettingsItem(
+                                icon = null,
+                                title = stringResource(label),
+                                onClick = { settings.setKeepScreenOn(place, !checked) },
+                                trailing = { Checkbox(checked = checked, onCheckedChange = { settings.setKeepScreenOn(place, it) }) },
+                            )
+                        }
                     }
                     BoomSettingsItem(
                         icon = null,

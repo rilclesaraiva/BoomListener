@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -21,11 +20,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,7 +36,10 @@ import com.boomlistener.core.common.ShareTarget
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
+import com.boomlistener.core.designsystem.component.BoomSettingsPanel
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Ajustes → Compartilhar: o app favorito, escolhido entre os que recebem
@@ -100,30 +106,39 @@ internal fun ShareSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifi
                     }
                 }
             }
-            item(key = "apps-title") {
-                BoomSettingsSection(title = stringResource(R.string.feature_settings_share_apps)) {
-                    BoomSettingsItem(
-                        icon = null,
-                        title = stringResource(R.string.feature_settings_share_none),
-                        onClick = { ShareTarget.setFavorite(context, null) },
-                        trailing = { RadioButton(selected = favorite == null, onClick = { ShareTarget.setFavorite(context, null) }) },
-                    )
-                }
-            }
-            items(apps, key = { it.packageName }) { app ->
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 1.dp)) {
-                    BoomSettingsItem(
-                        icon = null,
-                        title = app.label,
-                        subtitle = app.packageName,
-                        onClick = { ShareTarget.setFavorite(context, app.packageName) },
-                        trailing = {
-                            RadioButton(
-                                selected = favorite?.packageName == app.packageName,
+            item(key = "apps") {
+                val density = LocalDensity.current
+                val iconPx = with(density) { 44.dp.roundToPx() }
+                BoomSettingsSection(title = null) {
+                    BoomSettingsPanel(
+                        title = stringResource(R.string.feature_settings_share_apps),
+                        summary = favorite?.label ?: stringResource(R.string.feature_settings_share_none),
+                    ) {
+                        BoomSettingsItem(
+                            icon = null,
+                            title = stringResource(R.string.feature_settings_share_none),
+                            onClick = { ShareTarget.setFavorite(context, null) },
+                            trailing = { RadioButton(selected = favorite == null, onClick = { ShareTarget.setFavorite(context, null) }) },
+                        )
+                        apps.forEach { app ->
+                            val icon by produceState<ImageBitmap?>(null, app.packageName, iconPx) {
+                                value = withContext(Dispatchers.Default) { ShareTarget.icon(context, app.packageName, iconPx) }?.asImageBitmap()
+                            }
+                            BoomSettingsItem(
+                                icon = null,
+                                image = icon,
+                                title = app.label,
+                                subtitle = app.packageName,
                                 onClick = { ShareTarget.setFavorite(context, app.packageName) },
+                                trailing = {
+                                    RadioButton(
+                                        selected = favorite?.packageName == app.packageName,
+                                        onClick = { ShareTarget.setFavorite(context, app.packageName) },
+                                    )
+                                },
                             )
-                        },
-                    )
+                        }
+                    }
                 }
             }
             item { Spacer(Modifier.height(24.dp)) }

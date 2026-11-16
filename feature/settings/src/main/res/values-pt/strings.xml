@@ -96,6 +96,7 @@
     <string name="feature_settings_playback_gapless">Sem pausa entre faixas (gapless)</string>
     <string name="feature_settings_playback_gapless_summary">Álbuns sem silêncio entre as faixas tocam emendados. Vale a partir da próxima música</string>
     <string name="feature_settings_playback_screen_on">Manter a tela ativa em</string>
+    <string name="feature_settings_playback_screen_on_none">Nenhuma</string>
     <string name="feature_settings_playback_screen_on_player">Player em tela cheia (capa e letra)</string>
     <string name="feature_settings_playback_screen_on_lyrics">Só na letra</string>
     <string name="feature_settings_playback_screen_on_home">Aba Início</string>
