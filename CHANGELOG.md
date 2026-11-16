@@ -26,6 +26,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Keep the screen on** (Settings → Playback → Keep the screen on in): tick where the screen should stay awake while the app is open: the full-screen player (cover and lyrics), only the lyrics, the Home, Library or Profile tab, or the whole app. A switch below (on by default) keeps it awake only while music is playing, so a paused app lets the screen turn off. Nothing is on by default.
 
 ### Changed
+- **The quick "Open with" player now fades too:** pausing and playing in the small player that opens for audio files from other apps ramps the volume down and up, like the main player, and follows the same switch in Settings → Playback (off there, off here).
 - **Settings lists start closed:** "Keep the screen on in" (Settings → Playback) and the favorite sharing app (Settings → Sharing) are now a single closed row that shows what is chosen; tap it to open the list and pick. It closes again when you leave the screen. In Sharing, each app now shows its icon next to its name.
 - **Update notices:** the "Update notices" choice (Settings → System → Updates) now opens as a bottom panel instead of a centered window, like the other pickers.
 - **Minimum length label:** from 60 seconds up, the slider now shows minutes and seconds (for example "1:05 min") instead of a long number of seconds.

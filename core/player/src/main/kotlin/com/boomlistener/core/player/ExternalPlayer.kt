@@ -4,6 +4,8 @@
 package com.boomlistener.core.player
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -28,6 +30,9 @@ data class ExternalPlayerState(
  * na fila nem na música do player do app (que fica como estava, só pausa se o
  * Android tirar o foco de áudio dele). Vive enquanto o pop-up existe; sem
  * notificação nem controle de mídia. Usar só na thread principal.
+ *
+ * Tocar e pausar seguem o fade do player do app ([FadingPlayer]), pela mesma opção
+ * dos Ajustes (Reprodução): ligada ou desligada lá, vale aqui.
  */
 class ExternalPlayer(context: Context) {
     private val player = ExoPlayer.Builder(context.applicationContext)
@@ -41,13 +46,18 @@ class ExternalPlayer(context: Context) {
         .setHandleAudioBecomingNoisy(true)
         .build()
 
+    private val mixer = VolumeMixer(player, Handler(Looper.getMainLooper()))
+    private val settings = PlaybackSettingsData.internalGet(context.applicationContext)
+    private val fading = FadingPlayer(player, mixer) { settings.prefs.value.fadeOnPlayPause }
+
     private var released = false
 
     private val mutableState = MutableStateFlow(ExternalPlayerState())
     val state: StateFlow<ExternalPlayerState> = mutableState.asStateFlow()
 
     init {
-        player.addListener(object : Player.Listener {
+        // No FadingPlayer, não no ExoPlayer: é ele que avisa na hora que pausou/voltou a tocar durante a rampa.
+        fading.addListener(object : Player.Listener {
             override fun onEvents(player: Player, events: Player.Events) = refresh()
         })
     }
@@ -56,12 +66,12 @@ class ExternalPlayer(context: Context) {
         if (released) return
         player.setMediaItem(MediaItem.fromUri(uri))
         player.prepare()
-        player.play()
+        fading.play()
     }
 
     fun togglePlayPause() {
         if (released) return
-        if (player.isPlaying) player.pause() else player.play()
+        if (fading.isPlaying) fading.pause() else fading.play()
     }
 
     fun seekToFraction(fraction: Float) {
@@ -79,7 +89,7 @@ class ExternalPlayer(context: Context) {
         if (released) return
         val duration = player.duration.takeIf { it != C.TIME_UNSET } ?: 0L
         mutableState.value = ExternalPlayerState(
-            isPlaying = player.isPlaying,
+            isPlaying = fading.isPlaying,
             positionMs = player.currentPosition.coerceAtLeast(0),
             durationMs = duration,
         )
@@ -88,6 +98,7 @@ class ExternalPlayer(context: Context) {
     fun release() {
         if (released) return
         released = true
+        mixer.setFade(1f)
         player.release()
     }
 }
