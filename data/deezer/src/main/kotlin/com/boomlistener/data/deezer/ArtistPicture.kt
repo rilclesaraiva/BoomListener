@@ -7,6 +7,13 @@ import android.graphics.Bitmap
 import com.boomlistener.core.common.DiagnosticLog
 
 /**
+ * O Deezer devolve, para artista sem foto, o endereço de uma silhueta padrão (o código da
+ * imagem vem vazio: ".../images/artist//1000x1000..."). Isso não é foto: quem mostra
+ * usa a capa do lançamento mais novo no lugar.
+ */
+fun isDefaultArtistPicture(url: String): Boolean = url.contains("/images/artist//")
+
+/**
  * Foto de um artista pelo nome: o mesmo artista que a página dele acharia
  * ([pickArtist]: nome igual; entre homônimos, o mais conhecido). Nulo se não
  * achar, sem foto ou sem internet (aí quem mostra usa a inicial).
@@ -23,7 +30,7 @@ suspend fun DeezerRepository.artistPicture(name: String, sizePx: Int): Bitmap? {
         return null
     }
     val url = found.pictureUrl
-    if (url == null) {
+    if (url == null || isDefaultArtistPicture(url)) {
         DiagnosticLog.log("foto", "sem foto: o artista achado não tem imagem")
         return null
     }

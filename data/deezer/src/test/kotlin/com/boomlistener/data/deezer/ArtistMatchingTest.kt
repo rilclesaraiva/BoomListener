@@ -6,6 +6,8 @@ package com.boomlistener.data.deezer
 import com.boomlistener.core.model.ExternalArtist
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class ArtistMatchingTest {
@@ -96,5 +98,11 @@ class ArtistMatchingTest {
         assertEquals(1L, latestTrackOf(tracks, "Djavan")?.id)
         assertEquals(1L, latestTrackOf(tracks, "Caetano")?.id)
         assertEquals(2L, latestTrackOf(tracks, "beyonce")?.id)
+    }
+
+    @Test
+    fun silhuetaPadraoDoDeezerNaoContaComoFoto() {
+        assertTrue(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg"))
+        assertFalse(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/ab12cd34ef56/1000x1000-000000-80-0-0.jpg"))
     }
 }
