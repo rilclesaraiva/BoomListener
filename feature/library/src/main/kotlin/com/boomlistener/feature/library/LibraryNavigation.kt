@@ -18,6 +18,7 @@ import androidx.navigation.navArgument
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.deezer.DeezerData
+import com.boomlistener.data.deezer.artistLatestCover
 import com.boomlistener.data.deezer.artistPicture
 import com.boomlistener.data.library.FavoritesData
 import com.boomlistener.data.library.CollectionsLayoutData
@@ -82,6 +83,7 @@ fun NavGraphBuilder.libraryScreen(
                 searchArtistsOnline = deezer::searchArtists,
                 remoteImage = deezer::image,
                 artistPhoto = { name, sizePx -> deezer.artistPicture(name, sizePx) },
+                artistLatestCover = { name, sizePx -> deezer.artistLatestCover(name, sizePx) },
                 favoriteUris = FavoritesData.repository(context).favorites,
                 player = PlayerConnection.controller(context),
                 layout = CollectionsLayoutData.repository(context),

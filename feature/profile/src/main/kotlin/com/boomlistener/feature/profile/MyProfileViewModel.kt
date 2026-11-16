@@ -69,6 +69,8 @@ internal class MyProfileViewModel(
     private val remoteImage: suspend (url: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
     /** Foto do artista no Deezer pelo nome (o mesmo que a página dele acha); null nos testes. */
     private val artistPhoto: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
+    /** A capa do lançamento mais novo do artista no Deezer (a que a página dele usa sem foto). */
+    private val artistLatestCover: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val today: () -> LocalDate = { LocalDate.now(zone) },
 ) : ViewModel() {
@@ -181,6 +183,7 @@ internal class MyProfileViewModel(
             artistPhoto(name, sizePx)?.let { return it }
         }
         if (!coverFallback) return null
+        runCatching { artistLatestCover.invoke(name, sizePx) }.getOrNull()?.let { return it }
         val track = latestTrackOf(tracks.value, name) ?: return null
         return library.loadArtwork(track.uri, sizePx)
     }

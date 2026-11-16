@@ -25,6 +25,8 @@ internal class LibraryViewModel(
     private val player: PlaybackController,
     /** Foto do artista no Deezer pelo nome (null nos testes ou sem achar). */
     private val artistPhoto: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
+    /** A capa do lançamento mais novo do artista no Deezer (a que a página dele usa sem foto). */
+    private val artistLatestCover: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
 ) : ViewModel() {
 
     // null = ainda não carregou.
@@ -117,12 +119,13 @@ internal class LibraryViewModel(
 
     /**
      * A imagem do artista: a foto do Deezer pelo nome; sem ela (sem internet, artista
-     * que o Deezer não conhece) e com [coverFallback], a capa do último lançamento dele.
+     * que o Deezer não conhece) e com [coverFallback], o último lançamento dele (o do Deezer, senão o do aparelho).
      */
     suspend fun artistImage(name: String, sizePx: Int, coverFallback: Boolean): Bitmap? {
         if (name.isBlank()) return null
         runCatching { artistPhoto.invoke(name, sizePx) }.getOrNull()?.let { return it }
         if (!coverFallback) return null
+        runCatching { artistLatestCover.invoke(name, sizePx) }.getOrNull()?.let { return it }
         val track = latestTrackOf(allTracks.value.orEmpty(), name) ?: return null
         return repository.loadArtwork(track.uri, sizePx)
     }

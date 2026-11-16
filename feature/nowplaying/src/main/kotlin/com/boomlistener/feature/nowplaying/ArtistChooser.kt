@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import com.boomlistener.core.designsystem.component.BoomArtistChooserSheet
 import com.boomlistener.data.deezer.DeezerData
+import com.boomlistener.data.deezer.artistLatestCover
 import com.boomlistener.data.deezer.artistPicture
 import com.boomlistener.data.deezer.splitArtistNames
 
@@ -33,7 +34,7 @@ fun rememberArtistOpener(onOpenArtist: (String) -> Unit): (String) -> Unit {
         BoomArtistChooserSheet(
             fullName = full,
             artists = splitArtistNames(full),
-            photo = { name, sizePx -> deezer.artistPicture(name, sizePx)?.asImageBitmap() },
+            photo = { name, sizePx -> (deezer.artistPicture(name, sizePx) ?: deezer.artistLatestCover(name, sizePx))?.asImageBitmap() },
             onPick = { name ->
                 choosing = null
                 onOpenArtist(name)

@@ -113,6 +113,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.deezer.DeezerData
+import com.boomlistener.data.deezer.artistLatestCover
 import com.boomlistener.data.deezer.artistPicture
 
 @Composable
@@ -136,6 +137,7 @@ internal fun LibraryScreen(
             LibraryData.repository(context.applicationContext),
             PlayerConnection.controller(context.applicationContext),
             artistPhoto = { name, sizePx -> deezer.artistPicture(name, sizePx) },
+            artistLatestCover = { name, sizePx -> deezer.artistLatestCover(name, sizePx) },
         )
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
