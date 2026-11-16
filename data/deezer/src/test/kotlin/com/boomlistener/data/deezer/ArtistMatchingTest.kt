@@ -103,6 +103,7 @@ class ArtistMatchingTest {
     @Test
     fun silhuetaPadraoDoDeezerNaoContaComoFoto() {
         assertTrue(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg"))
+        assertTrue(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/d41d8cd98f00b204e9800998ecf8427e/1000x1000-000000-80-0-0.jpg"))
         assertFalse(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/ab12cd34ef56/1000x1000-000000-80-0-0.jpg"))
     }
 }

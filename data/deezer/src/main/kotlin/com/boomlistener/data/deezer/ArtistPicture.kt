@@ -6,12 +6,21 @@ package com.boomlistener.data.deezer
 import android.graphics.Bitmap
 import com.boomlistener.core.common.DiagnosticLog
 
+/** O código (MD5) do "vazio": o Deezer o usa no endereço da silhueta padrão de quem não tem foto. */
+private const val EMPTY_MD5 = "d41d8cd98f00b204e9800998ecf8427e"
+
 /**
- * O Deezer devolve, para artista sem foto, o endereço de uma silhueta padrão (o código da
- * imagem vem vazio: ".../images/artist//1000x1000..."). Isso não é foto: quem mostra
- * usa a capa do lançamento mais novo no lugar.
+ * O Deezer devolve, para artista sem foto, o endereço de uma silhueta padrão: o código
+ * da imagem no endereço vem vazio (".../images/artist//1000x1000...") ou é o MD5 do
+ * vazio. Isso não é foto: quem mostra usa a capa do lançamento mais novo no lugar.
  */
-fun isDefaultArtistPicture(url: String): Boolean = url.contains("/images/artist//")
+fun isDefaultArtistPicture(url: String): Boolean = url.contains("/images/artist//") || url.contains(EMPTY_MD5)
+
+/** O formato do código da imagem no endereço (só o tamanho dele, sem o endereço), para o registro de diagnóstico. */
+private fun pictureShape(url: String): String {
+    val code = url.substringAfter("/images/artist/", "").substringBefore('/')
+    return if (code.isEmpty()) "sem código" else "código de ${code.length} caracteres"
+}
 
 /**
  * Foto de um artista pelo nome: o mesmo artista que a página dele acharia
@@ -30,10 +39,15 @@ suspend fun DeezerRepository.artistPicture(name: String, sizePx: Int): Bitmap? {
         return null
     }
     val url = found.pictureUrl
-    if (url == null || isDefaultArtistPicture(url)) {
+    if (url == null) {
         DiagnosticLog.log("foto", "sem foto: o artista achado não tem imagem")
         return null
     }
+    if (isDefaultArtistPicture(url)) {
+        DiagnosticLog.log("foto", "sem foto: o Deezer só tem a silhueta padrão (${pictureShape(url)})")
+        return null
+    }
+    DiagnosticLog.log("foto", "foto do Deezer aceita (${pictureShape(url)})")
     return image(url, sizePx).also { if (it == null) DiagnosticLog.log("foto", "sem foto: a imagem não veio") }
 }
 
