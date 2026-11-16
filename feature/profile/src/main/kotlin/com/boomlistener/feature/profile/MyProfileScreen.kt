@@ -80,9 +80,12 @@ import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
 import com.boomlistener.core.designsystem.component.PinImages
+import com.boomlistener.core.designsystem.component.BoomImageCycle
 import com.boomlistener.core.designsystem.component.PinItem
+import com.boomlistener.core.designsystem.component.rememberImageSet
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.core.designsystem.component.rememberMemoryImage
+import com.boomlistener.data.deezer.splitArtistNames
 import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.SongStat
 import java.time.Instant
@@ -734,7 +737,8 @@ private fun PersonChip(
     onShuffle: () -> Unit,
 ) {
     val px = with(LocalDensity.current) { 72.dp.roundToPx() }
-    val photo = rememberMemoryImage(artistKey(name, px)) { viewModel.artistImage(name, px) }
+    val photos = rememberImageSet(remember(name, px) { artistAttempts(name, px, viewModel) })
+    val photo = photos.firstOrNull()
     // Segurar abre o menu do artista.
     val menuOpen = remember { mutableStateOf(false) }
     ProfileArtistMenuSheet(menuOpen, name, photo, onPlay = onPlay, onShuffle = onShuffle, onOpenArtist = onClick)
@@ -742,7 +746,7 @@ private fun PersonChip(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width(88.dp).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(top = 4.dp, bottom = TileBottom),
     ) {
-        Avatar(name, size = 72.dp, image = photo)
+        BoomImageCycle(photos) { shown -> Avatar(name, size = 72.dp, image = shown) }
         Spacer(Modifier.height(6.dp))
         Text(name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         caption?.let {
@@ -801,6 +805,24 @@ private fun coverKey(uri: String, px: Int, version: Int) = "cover:$uri@$px#$vers
 /** Chave da foto do artista no perfil (própria: aqui ela cai na capa de uma música dele quando não há foto). */
 private fun artistKey(name: String, px: Int) = "profileArtist:$name@$px"
 
+/** Chave da foto do Deezer, sem cair na capa: o que o rodízio de uma tag com vários artistas usa. */
+private fun artistPhotoOnlyKey(name: String, px: Int) = "profileArtistPhoto:$name@$px"
+
+/**
+ * As fotos de [name] por tentativas. Um artista só: a foto (ou a capa de uma música
+ * dele). Vários ("Delinquent, Kcat"): a foto do nome inteiro (bandas como "Earth,
+ * Wind & Fire"), senão a de cada artista, e só no fim a capa.
+ */
+private fun artistAttempts(name: String, px: Int, viewModel: MyProfileViewModel): List<List<PinItem>> {
+    val withCover = PinItem(artistKey(name, px)) { viewModel.artistImage(name, px) }
+    val parts = splitArtistNames(name).takeIf { it.size > 1 } ?: return listOf(listOf(withCover))
+    return listOf(
+        listOf(PinItem(artistPhotoOnlyKey(name, px)) { viewModel.artistImage(name, px, coverFallback = false) }),
+        parts.map { part -> PinItem(artistPhotoOnlyKey(part, px)) { viewModel.artistImage(part, px, coverFallback = false) } },
+        listOf(withCover),
+    )
+}
+
 /**
  * As imagens do perfil ficam prontas na memória (mais ouvidas, histórico e artistas):
  * deslizar as fileiras ou subir ao topo não deixa nenhuma piscar a inicial.
@@ -813,7 +835,7 @@ private fun PinProfileImages(state: MyProfileUiState, viewModel: MyProfileViewMo
     val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
     val items = buildList {
         state.stats.topArtists.forEach { artist ->
-            add(PinItem(artistKey(artist.name, artistPx)) { viewModel.artistImage(artist.name, artistPx) })
+            addAll(artistAttempts(artist.name, artistPx, viewModel).flatten())
         }
         (state.topSongs.map { it.uri } + state.recent.map { it.uri }).distinct().forEach { uri ->
             add(PinItem(coverKey(uri, coverPx, version)) { viewModel.artwork(uri, coverPx) })

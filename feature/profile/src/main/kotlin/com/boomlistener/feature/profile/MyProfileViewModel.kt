@@ -171,7 +171,7 @@ internal class MyProfileViewModel(
      * procurando pelo nome, como a página dele); sem ela (sem internet, artista
      * que o Deezer não conhece), a capa de uma música dele que está no aparelho.
      */
-    suspend fun artistImage(name: String, sizePx: Int): Bitmap? {
+    suspend fun artistImage(name: String, sizePx: Int, coverFallback: Boolean = true): Bitmap? {
         val key = name.normalizedForSearch()
         val followed = state.value?.following?.firstOrNull { it.name.normalizedForSearch() == key }
         if (followed != null) {
@@ -179,6 +179,7 @@ internal class MyProfileViewModel(
         } else {
             artistPhoto(name, sizePx)?.let { return it }
         }
+        if (!coverFallback) return null
         val track = tracks.value.firstOrNull { track ->
             track.artist?.let { artistOf(it).normalizedForSearch() == key } == true
         } ?: return null

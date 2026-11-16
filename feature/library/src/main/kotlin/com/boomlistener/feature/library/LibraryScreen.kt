@@ -81,6 +81,7 @@ import com.boomlistener.core.common.openUrl
 import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.common.openAppSettings
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomImageCycle
 import com.boomlistener.core.designsystem.component.BoomBouncingText
 import com.boomlistener.core.designsystem.component.BoomMenuSheet
 import com.boomlistener.core.designsystem.component.BoomMenuHeader
@@ -547,7 +548,7 @@ private fun PinHomeImages(
             (home.albums + home.artists).forEach { group ->
                 group.tracks.firstOrNull()?.let { track -> add(PinItem(coverKey(track.uri, tilePx, version)) { loadArtwork(track, tilePx) }) }
             }
-            home.artists.forEach { artist -> add(PinItem(artistPhotoKey(artist.name, tilePx)) { loadArtistPhoto(artist.name, tilePx) }) }
+            home.artists.forEach { artist -> addAll(artistPinItems(artist.name, tilePx, loadArtistPhoto)) }
         }
         state.tracks.take(HOME_PINNED_TRACKS).forEach { track ->
             add(PinItem(coverKey(track.uri, rowPx, version)) { loadArtwork(track, rowPx) })
@@ -672,8 +673,8 @@ private fun HomeArtist(
     // A foto do artista no Deezer; sem ela (sem internet, artista que o Deezer
     // não conhece), a capa de uma música dele.
     val songCover = rememberHomeCover(artist.tracks.firstOrNull(), version, HomeTile, loadArtwork)
-    val photo = rememberArtistPhoto(artist.name, HomeTile, loadArtistPhoto)
-    val cover = photo ?: songCover
+    val photos = rememberArtistPhotos(artist.name, HomeTile, loadArtistPhoto)
+    val cover = photos.firstOrNull() ?: songCover
     // Segurar o artista abre o menu dele.
     val menuOpen = remember { mutableStateOf(false) }
     val count = artist.tracks.size
@@ -685,7 +686,9 @@ private fun HomeArtist(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width(HomeTile).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = 8.dp),
     ) {
-        BoomArtwork(image = cover, fallbackText = artist.name, size = HomeTile, modifier = Modifier.clip(CircleShape))
+        BoomImageCycle(if (photos.size > 1) photos else listOfNotNull(cover)) { shown ->
+            BoomArtwork(image = shown, fallbackText = artist.name, size = HomeTile, modifier = Modifier.clip(CircleShape))
+        }
         Spacer(Modifier.height(8.dp))
         Text(
             artist.name,

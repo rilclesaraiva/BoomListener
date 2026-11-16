@@ -65,6 +65,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
+import com.boomlistener.core.designsystem.component.BoomImageCycle
 import com.boomlistener.core.designsystem.component.BoomFastScroller
 import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
@@ -365,8 +366,8 @@ private fun GroupRow(
 ) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
-    val photo = rememberArtistPhoto(artistName, BoomListArtworkSize, viewModel::artistPhoto)
-    val image = photo ?: images.firstOrNull()
+    val photos = rememberArtistPhotos(artistName, BoomListArtworkSize, viewModel::artistPhoto)
+    val image = photos.firstOrNull() ?: images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu?.invoke(menuOpen, image)
     ListItem(
@@ -384,11 +385,13 @@ private fun GroupRow(
             } else if (covers.size >= MOSAIC_SIZE) {
                 BoomMosaicArtwork(images)
             } else {
-                BoomArtwork(
-                    image = image,
-                    fallbackText = name,
-                    modifier = if (round) Modifier.clip(CircleShape) else Modifier,
-                )
+                BoomImageCycle(if (photos.size > 1) photos else listOfNotNull(image)) { shown ->
+                    BoomArtwork(
+                        image = shown,
+                        fallbackText = name,
+                        modifier = if (round) Modifier.clip(CircleShape) else Modifier,
+                    )
+                }
             }
         },
         headlineContent = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -415,8 +418,8 @@ private fun AlbumTile(
 ) {
     val px = with(LocalDensity.current) { 200.dp.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
-    val photo = rememberArtistPhoto(artistName, 200.dp, viewModel::artistPhoto)
-    val image = photo ?: images.firstOrNull()
+    val photos = rememberArtistPhotos(artistName, 200.dp, viewModel::artistPhoto)
+    val image = photos.firstOrNull() ?: images.firstOrNull()
     val menuOpen = remember { mutableStateOf(false) }
     menu(menuOpen, image)
     // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
@@ -433,12 +436,14 @@ private fun AlbumTile(
         } else if (covers.size >= MOSAIC_SIZE) {
             BoomMosaicArtwork(images, size = null, modifier = Modifier.fillMaxWidth().aspectRatio(1f))
         } else {
-            BoomArtwork(
-                image = image,
-                fallbackText = name,
-                size = null,
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f).then(if (round) Modifier.clip(CircleShape) else Modifier),
-            )
+            BoomImageCycle(if (photos.size > 1) photos else listOfNotNull(image)) { shown ->
+                BoomArtwork(
+                    image = shown,
+                    fallbackText = name,
+                    size = null,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).then(if (round) Modifier.clip(CircleShape) else Modifier),
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
         Text(
