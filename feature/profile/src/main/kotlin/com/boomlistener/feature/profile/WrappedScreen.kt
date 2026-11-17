@@ -12,7 +12,9 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -248,7 +250,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                         WrappedCard.Time -> TimeCard(report)
                         WrappedCard.Hour -> HourCard(report)
                         WrappedCard.Discoveries -> DiscoveriesCard(report, viewModel)
-                        WrappedCard.Sprint -> SprintWrappedCard(report)
+                        WrappedCard.Sprint -> SprintWrappedCard(report, viewModel)
                         WrappedCard.Top -> TopCard(report, viewModel, showActions = !capturing)
                     }
                     if (capturing) {
@@ -331,19 +333,90 @@ private fun ArtistAvatar(viewModel: MyProfileViewModel, name: String, size: andr
     BoomImageCycle(photos) { shown -> Avatar(name, size = size, image = shown) }
 }
 
+/** Linha-cartão translúcida, no tom do cartão: o fundo das listas que enchem a tela. */
+@Composable
+private fun RowCard(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    val ink = LocalContentColor.current
+    Surface(color = ink.copy(alpha = 0.14f), contentColor = ink, shape = MaterialTheme.shapes.extraLarge, modifier = modifier) {
+        Row(
+            Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            content = content,
+        )
+    }
+}
+
+/** Número de posição, grande, no destaque do cartão. */
+@Composable
+private fun RankNumber(position: Int) {
+    Text(
+        position.toString(),
+        style = MaterialTheme.typography.headlineLarge,
+        color = LocalWrappedAccent.current,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        modifier = Modifier.width(36.dp),
+    )
+}
+
 @Composable
 private fun ColumnScope.IntroCard(report: StatsReport, viewModel: MyProfileViewModel) {
-    Text(periodLabel(report), style = MaterialTheme.typography.labelLarge)
-    CardTitle(stringResource(R.string.feature_profile_wrapped_intro))
-    // Capas dos álbuns mais ouvidos (ou das músicas, sem álbum), em mosaico.
+    Text(periodLabel(report), style = MaterialTheme.typography.titleLarge)
+    Text(
+        stringResource(R.string.feature_profile_wrapped_intro),
+        style = MaterialTheme.typography.displayMedium,
+        color = LocalWrappedAccent.current,
+        maxLines = 3,
+        overflow = TextOverflow.Ellipsis,
+    )
+    // Capas dos álbuns mais ouvidos (ou das músicas, sem álbum), em mosaico que enche o que sobra da tela.
     val covers = remember(report) {
-        report.albums.map { it.coverUri to it.album }.ifEmpty { report.songs.map { it.uri to it.title } }.take(6)
+        report.albums.map { it.coverUri to it.album }.ifEmpty { report.songs.map { it.uri to it.title } }.take(5)
     }
-    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        covers.chunked(2).forEach { pair ->
-            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                pair.forEach { (uri, title) -> Cover(viewModel, uri, title, Modifier.weight(1f).fillMaxHeight()) }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
+    CoverMosaic(viewModel, covers, Modifier.weight(1f).fillMaxWidth())
+}
+
+@Composable
+private fun CoverMosaic(viewModel: MyProfileViewModel, covers: List<Pair<String, String>>, modifier: Modifier) {
+    val gap = Arrangement.spacedBy(8.dp)
+    @Composable
+    fun tile(index: Int, tileModifier: Modifier) = Cover(viewModel, covers[index].first, covers[index].second, tileModifier)
+    when (covers.size) {
+        0 -> Spacer(modifier)
+        1 -> tile(0, modifier)
+        2 -> Row(modifier, horizontalArrangement = gap) {
+            tile(0, Modifier.weight(1f).fillMaxHeight())
+            tile(1, Modifier.weight(1f).fillMaxHeight())
+        }
+        3 -> Row(modifier, horizontalArrangement = gap) {
+            tile(0, Modifier.weight(1.2f).fillMaxHeight())
+            Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = gap) {
+                tile(1, Modifier.weight(1f).fillMaxWidth())
+                tile(2, Modifier.weight(1f).fillMaxWidth())
+            }
+        }
+        4 -> Column(modifier, verticalArrangement = gap) {
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = gap) {
+                tile(0, Modifier.weight(1f).fillMaxHeight())
+                tile(1, Modifier.weight(1f).fillMaxHeight())
+            }
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = gap) {
+                tile(2, Modifier.weight(1f).fillMaxHeight())
+                tile(3, Modifier.weight(1f).fillMaxHeight())
+            }
+        }
+        else -> Column(modifier, verticalArrangement = gap) {
+            Row(Modifier.weight(1.5f).fillMaxWidth(), horizontalArrangement = gap) {
+                tile(0, Modifier.weight(1.2f).fillMaxHeight())
+                Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = gap) {
+                    tile(1, Modifier.weight(1f).fillMaxWidth())
+                    tile(2, Modifier.weight(1f).fillMaxWidth())
+                }
+            }
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = gap) {
+                tile(3, Modifier.weight(1f).fillMaxHeight())
+                tile(4, Modifier.weight(1f).fillMaxHeight())
             }
         }
     }
@@ -354,23 +427,35 @@ private fun ColumnScope.ArtistsCard(report: StatsReport, viewModel: MyProfileVie
     CardTitle(stringResource(R.string.feature_profile_wrapped_artists))
     val top = report.artists.take(MAX_TOP)
     top.firstOrNull()?.let { first ->
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            ArtistAvatar(viewModel, first.name, 112.dp)
-            Column(Modifier.weight(1f)) {
-                Text(first.name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(playsAndTime(first.plays, first.minutes), style = MaterialTheme.typography.bodyMedium)
+        // O número 1: bloco no destaque do cartão, com a foto grande e o nome em letras grandes.
+        Surface(
+            color = LocalWrappedAccent.current,
+            contentColor = MaterialTheme.colorScheme.surface,
+            shape = MaterialTheme.shapes.extraLarge,
+            modifier = Modifier.weight(1.5f).fillMaxWidth(),
+        ) {
+            Row(
+                Modifier.fillMaxSize().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                ArtistAvatar(viewModel, first.name, 104.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(first.name, style = MaterialTheme.typography.headlineLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(playsAndTime(first.plays, first.minutes), style = MaterialTheme.typography.titleSmall)
+                }
             }
         }
     }
     top.drop(1).forEachIndexed { index, artist ->
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text((index + 2).toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
-            ArtistAvatar(viewModel, artist.name, 48.dp)
+        RowCard(Modifier.weight(1f).fillMaxWidth()) {
+            RankNumber(index + 2)
+            ArtistAvatar(viewModel, artist.name, 56.dp)
             Column(Modifier.weight(1f)) {
-                Text(artist.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(artist.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     pluralStringResource(R.plurals.feature_profile_plays, artist.plays, artist.plays),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
         }
@@ -386,73 +471,141 @@ private fun ColumnScope.SongCard(report: StatsReport, viewModel: MyProfileViewMo
     CardTitle(
         stringResource(if (isTop) R.string.feature_profile_wrapped_song else R.string.feature_profile_wrapped_song_fallback),
     )
-    Cover(viewModel, song.uri, song.title, Modifier.fillMaxWidth().weight(1f, fill = false).aspectRatio(1f))
-    Text(song.title, style = MaterialTheme.typography.headlineSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-    song.artist?.let { Text(it, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-    Text(playsAndTime(song.plays, song.minutes), style = MaterialTheme.typography.bodyLarge)
+    // A capa enche o que sobra da tela, quadrada.
+    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Cover(viewModel, song.uri, song.title, Modifier.fillMaxHeight().aspectRatio(1f, matchHeightConstraintsFirst = true))
+    }
+    Column {
+        Text(song.title, style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        song.artist?.let { Text(it, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(song.plays.toString(), style = MaterialTheme.typography.displayLarge, color = LocalWrappedAccent.current, maxLines = 1)
+        Column {
+            Text(stringResource(R.string.feature_profile_wrapped_song_times), style = MaterialTheme.typography.titleLarge)
+            Text(minutesText(song.minutes), style = MaterialTheme.typography.bodyLarge)
+        }
+    }
 }
 
 @Composable
 private fun ColumnScope.GenresCard(report: StatsReport) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_genres))
-    val palette = WrappedColors.blocks
-    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        report.genres.take(MAX_GENRES).forEachIndexed { index, genre ->
-            val block = palette[index % palette.size]
-            Surface(
-                color = block.fill,
-                contentColor = block.onFill,
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.fillMaxWidth().weight(genre.share.coerceAtLeast(0.12f)),
-            ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) {
-                    Text(
-                        stringResource(R.string.feature_profile_stats_percent, (genre.share * 100).toInt()),
-                        style = MaterialTheme.typography.headlineSmall,
-                    )
-                    Text(genre.genre, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
+    // Mapa de blocos: cada gênero ocupa uma área proporcional ao quanto foi ouvido.
+    val genres = report.genres.take(MAX_GENRES)
+    if (genres.isNotEmpty()) GenreTreemap(genres, 0, horizontal = false, Modifier.weight(1f).fillMaxWidth())
+    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(report.genreCount.toString(), style = MaterialTheme.typography.displaySmall, color = LocalWrappedAccent.current)
+        Text(
+            pluralStringResource(R.plurals.feature_profile_stats_genres, report.genreCount),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+    }
+}
+
+/** Divide o espaço entre os gêneros: o primeiro fica com a sua fatia e o resto se divide no que sobrou, alternando a direção. */
+@Composable
+private fun GenreTreemap(genres: List<com.boomlistener.data.wellbeing.GenreRank>, start: Int, horizontal: Boolean, modifier: Modifier) {
+    val genre = genres[start]
+    if (start == genres.lastIndex) {
+        GenreTile(genre, start, modifier)
+        return
+    }
+    val first = genre.share.coerceAtLeast(MIN_GENRE_SHARE)
+    val rest = genres.drop(start + 1).sumOf { it.share.coerceAtLeast(MIN_GENRE_SHARE).toDouble() }.toFloat()
+    if (horizontal) {
+        Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            GenreTile(genre, start, Modifier.weight(first).fillMaxHeight())
+            GenreTreemap(genres, start + 1, false, Modifier.weight(rest).fillMaxHeight())
+        }
+    } else {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            GenreTile(genre, start, Modifier.weight(first).fillMaxWidth())
+            GenreTreemap(genres, start + 1, true, Modifier.weight(rest).fillMaxWidth())
         }
     }
-    Column {
-        Text(report.genreCount.toString(), style = MaterialTheme.typography.headlineSmall)
-        Text(pluralStringResource(R.plurals.feature_profile_stats_genres, report.genreCount), style = MaterialTheme.typography.labelLarge)
+}
+
+private const val MIN_GENRE_SHARE = 0.1f
+
+@Composable
+private fun GenreTile(genre: com.boomlistener.data.wellbeing.GenreRank, index: Int, modifier: Modifier) {
+    val block = WrappedColors.blocks[index % WrappedColors.blocks.size]
+    Surface(color = block.fill, contentColor = block.onFill, shape = MaterialTheme.shapes.extraLarge, modifier = modifier) {
+        Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.Bottom) {
+            Text(
+                stringResource(R.string.feature_profile_stats_percent, (genre.share * 100).toInt()),
+                style = if (index == 0) MaterialTheme.typography.displaySmall else MaterialTheme.typography.headlineSmall,
+                maxLines = 1,
+            )
+            Text(genre.genre, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 
 @Composable
 private fun ColumnScope.TimeCard(report: StatsReport) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_time))
-    Text(minutesText(report.minutes), style = MaterialTheme.typography.displayMedium, maxLines = 2, color = LocalWrappedAccent.current)
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        report.bestDay?.let { best ->
-            WrappedHighlight(stringResource(R.string.feature_profile_stats_record_day), best.date.format(DateShown), minutesText(best.minutes))
-        }
-        if (report.longestStreak > 1) {
-            WrappedHighlight(
-                stringResource(R.string.feature_profile_stats_streak),
-                pluralStringResource(R.plurals.feature_profile_stats_day_count, report.longestStreak, report.longestStreak),
-                null,
-            )
-        }
-        report.mostArtistsDay?.let { most ->
-            WrappedHighlight(
-                stringResource(R.string.feature_profile_stats_most_artists_day),
-                pluralStringResource(R.plurals.feature_profile_stats_artist_count, most.artists, most.artists),
-                most.date.format(DateShown),
-            )
-        }
+    // O número de minutos, enorme, é o assunto do cartão.
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            java.text.NumberFormat.getIntegerInstance().format(report.minutes),
+            style = MaterialTheme.typography.displayLarge,
+            color = LocalWrappedAccent.current,
+            maxLines = 1,
+            softWrap = false,
+        )
+        Text(stringResource(R.string.feature_profile_wrapped_minutes), style = MaterialTheme.typography.headlineMedium)
+        if (report.minutes >= 60) Text(minutesText(report.minutes), style = MaterialTheme.typography.titleMedium)
+    }
+    val blocks = WrappedColors.blocks
+    report.bestDay?.let { best ->
+        HighlightRow(
+            blocks[0], best.date.dayOfMonth.toString(),
+            stringResource(R.string.feature_profile_stats_record_day), best.date.format(DateShown), minutesText(best.minutes),
+            Modifier.weight(1f),
+        )
+    }
+    if (report.longestStreak > 1) {
+        HighlightRow(
+            blocks[1], report.longestStreak.toString(),
+            stringResource(R.string.feature_profile_stats_streak),
+            pluralStringResource(R.plurals.feature_profile_stats_day_count, report.longestStreak, report.longestStreak), null,
+            Modifier.weight(1f),
+        )
+    }
+    report.mostArtistsDay?.let { most ->
+        HighlightRow(
+            blocks[2], most.artists.toString(),
+            stringResource(R.string.feature_profile_stats_most_artists_day),
+            pluralStringResource(R.plurals.feature_profile_stats_artist_count, most.artists, most.artists), most.date.format(DateShown),
+            Modifier.weight(1f),
+        )
     }
 }
 
-/** Destaque do cartão de tempo, com o texto no tom do cartão (o da tela de Estatísticas é cinza). */
+/** Destaque do cartão de tempo: um bloco colorido com o número e, ao lado, o que ele significa. */
 @Composable
-private fun WrappedHighlight(label: String, value: String, detail: String?) {
-    Column {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = LocalContentColor.current.copy(alpha = 0.75f))
-        Text(value, style = MaterialTheme.typography.titleMedium)
-        detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = LocalContentColor.current.copy(alpha = 0.75f)) }
+private fun HighlightRow(
+    block: com.boomlistener.core.designsystem.theme.WrappedBlockColors,
+    number: String,
+    label: String,
+    value: String,
+    detail: String?,
+    modifier: Modifier,
+) {
+    RowCard(modifier.fillMaxWidth()) {
+        Surface(color = block.fill, contentColor = block.onFill, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxHeight().aspectRatio(1f)) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(number, style = MaterialTheme.typography.headlineLarge, maxLines = 1)
+            }
+        }
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.labelLarge, color = LocalContentColor.current.copy(alpha = 0.75f))
+            Text(value, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = LocalContentColor.current.copy(alpha = 0.75f)) }
+        }
     }
 }
 
@@ -460,19 +613,43 @@ private fun WrappedHighlight(label: String, value: String, detail: String?) {
 private fun ColumnScope.HourCard(report: StatsReport) {
     val hour = report.favoriteHour ?: return
     CardTitle(stringResource(R.string.feature_profile_wrapped_hour))
-    val shown = LocalTime.of(hour, 0).format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault()))
-    Text(shown, style = MaterialTheme.typography.displayLarge, color = LocalWrappedAccent.current)
-    Text(
-        stringResource(
-            when (hour) {
-                in 0..5 -> R.string.feature_profile_wrapped_hour_night
-                in 6..11 -> R.string.feature_profile_wrapped_hour_morning
-                in 12..17 -> R.string.feature_profile_wrapped_hour_afternoon
-                else -> R.string.feature_profile_wrapped_hour_evening
-            },
-        ),
-        style = MaterialTheme.typography.headlineSmall,
-    )
+    val format = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+    Column {
+        Text(LocalTime.of(hour, 0).format(format), style = MaterialTheme.typography.displayLarge, color = LocalWrappedAccent.current, maxLines = 1)
+        Text(
+            stringResource(
+                when (hour) {
+                    in 0..5 -> R.string.feature_profile_wrapped_hour_night
+                    in 6..11 -> R.string.feature_profile_wrapped_hour_morning
+                    in 12..17 -> R.string.feature_profile_wrapped_hour_afternoon
+                    else -> R.string.feature_profile_wrapped_hour_evening
+                },
+            ),
+            style = MaterialTheme.typography.headlineMedium,
+        )
+    }
+    // As 24 horas do dia em barras: a favorita no destaque do cartão.
+    val ink = LocalContentColor.current
+    val accent = LocalWrappedAccent.current
+    Row(
+        Modifier.weight(1f).fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        report.hourLevels.forEachIndexed { index, level ->
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight(level.coerceIn(0.03f, 1f))
+                    .background(if (index == hour) accent else ink.copy(alpha = 0.35f), MaterialTheme.shapes.extraSmall),
+            )
+        }
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        listOf(0, 6, 12, 18).forEach { mark ->
+            Text(LocalTime.of(mark, 0).format(format), style = MaterialTheme.typography.labelMedium)
+        }
+    }
     Text(stringResource(R.string.feature_profile_wrapped_hour_note), style = MaterialTheme.typography.bodyLarge)
 }
 
@@ -480,42 +657,77 @@ private fun ColumnScope.HourCard(report: StatsReport) {
 private fun ColumnScope.DiscoveriesCard(report: StatsReport, viewModel: MyProfileViewModel) {
     CardTitle(pluralStringResource(R.plurals.feature_profile_wrapped_discoveries, report.discoveryCount, report.discoveryCount))
     Text(stringResource(R.string.feature_profile_wrapped_discoveries_sub), style = MaterialTheme.typography.bodyLarge)
-    report.discoveries.forEach { name ->
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ArtistAvatar(viewModel, name, 56.dp)
-            Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+    // Grade de fotos grandes que enche a tela, duas por linha.
+    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        report.discoveries.chunked(2).forEach { pair ->
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                pair.forEach { name ->
+                    val ink = LocalContentColor.current
+                    Surface(
+                        color = ink.copy(alpha = 0.14f),
+                        contentColor = ink,
+                        shape = MaterialTheme.shapes.extraLarge,
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                    ) {
+                        Column(
+                            Modifier.fillMaxSize().padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            ArtistAvatar(viewModel, name, 88.dp)
+                            Text(
+                                name,
+                                style = MaterialTheme.typography.titleMedium,
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        }
+                    }
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
         }
     }
 }
 
 @Composable
-private fun ColumnScope.SprintWrappedCard(report: StatsReport) {
+private fun ColumnScope.SprintWrappedCard(report: StatsReport, viewModel: MyProfileViewModel) {
     val sprint = report.sprint ?: return
     CardTitle(stringResource(R.string.feature_profile_stats_sprint))
-    Text(stringResource(R.string.feature_profile_stats_sprint_sub), style = MaterialTheme.typography.bodyMedium)
     val locale = Locale.getDefault()
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Spacer(Modifier.weight(1f))
-        sprint.months.forEach { month ->
+    val rows = sprint.rows.sortedBy { it.ranks.lastOrNull() ?: Int.MAX_VALUE }
+    rows.forEach { row ->
+        val last = row.ranks.lastOrNull()
+        val previous = row.ranks.getOrNull(row.ranks.lastIndex - 1)
+        val previousMonth = sprint.months.getOrNull(sprint.months.lastIndex - 1)
+        RowCard(Modifier.weight(1f).fillMaxWidth()) {
             Text(
-                month.month.getDisplayName(TextStyle.SHORT, locale).replaceFirstChar { it.titlecase(locale) },
-                style = MaterialTheme.typography.labelMedium,
+                last?.toString() ?: stringResource(R.string.feature_profile_stats_none),
+                style = MaterialTheme.typography.headlineLarge,
+                color = LocalWrappedAccent.current,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
-                modifier = Modifier.width(40.dp),
+                modifier = Modifier.width(36.dp),
             )
-        }
-    }
-    sprint.rows.forEach { row ->
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(row.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            row.ranks.forEach { rank ->
-                Text(
-                    rank?.toString() ?: stringResource(R.string.feature_profile_stats_none),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(40.dp),
-                )
+            ArtistAvatar(viewModel, row.name, 56.dp)
+            Column(Modifier.weight(1f)) {
+                Text(row.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (previous != null && previousMonth != null) {
+                    val monthName = previousMonth.month.getDisplayName(TextStyle.SHORT, locale).replaceFirstChar { it.titlecase(locale) }
+                    Text("$monthName #$previous", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            val badge = when {
+                last == null -> stringResource(R.string.feature_profile_stats_none)
+                previous == null -> stringResource(R.string.feature_profile_stats_new)
+                previous > last -> stringResource(R.string.feature_profile_stats_up, previous - last)
+                previous < last -> stringResource(R.string.feature_profile_stats_down, last - previous)
+                else -> stringResource(R.string.feature_profile_stats_none)
+            }
+            Surface(color = LocalWrappedAccent.current, contentColor = MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.small) {
+                Text(badge, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), maxLines = 1)
             }
         }
     }
@@ -525,17 +737,16 @@ private fun ColumnScope.SprintWrappedCard(report: StatsReport) {
 private fun ColumnScope.TopCard(report: StatsReport, viewModel: MyProfileViewModel, showActions: Boolean) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_top))
     report.songs.take(MAX_TOP).forEachIndexed { index, song ->
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text((index + 1).toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
-            Cover(viewModel, song.uri, song.title, Modifier.size(56.dp))
+        RowCard(Modifier.weight(1f).fillMaxWidth()) {
+            RankNumber(index + 1)
+            Cover(viewModel, song.uri, song.title, Modifier.fillMaxHeight().aspectRatio(1f))
             Column(Modifier.weight(1f)) {
-                Text(song.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(song.artist.orEmpty(), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(song.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(song.artist.orEmpty(), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Text(pluralStringResource(R.plurals.feature_profile_plays, song.plays, song.plays), style = MaterialTheme.typography.labelMedium, maxLines = 1)
+            Text(song.plays.toString(), style = MaterialTheme.typography.titleLarge, color = LocalWrappedAccent.current, maxLines = 1)
         }
     }
-    Spacer(Modifier.weight(1f))
     if (!showActions) return
     var created by remember { mutableStateOf<Int?>(null) }
     val name = stringResource(R.string.feature_profile_wrapped_playlist_name, report.to.year)

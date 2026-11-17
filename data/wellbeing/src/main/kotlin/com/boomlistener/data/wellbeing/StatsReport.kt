@@ -66,6 +66,8 @@ data class StatsReport(
     val dataSince: LocalDate? = null,
     /** Hora do dia (0 a 23) com mais tempo ouvido; null sem tempo medido por hora (a medição é por mês). */
     val favoriteHour: Int? = null,
+    /** Tempo ouvido em cada hora do dia (24 valores de 0 a 1, a hora favorita = 1); vazio sem tempo por hora. */
+    val hourLevels: List<Float> = emptyList(),
     /** Artistas ouvidos pela primeira vez neste período, os mais ouvidos primeiro (até 5). */
     val discoveries: List<String> = emptyList(),
     val discoveryCount: Int = 0,
@@ -281,12 +283,13 @@ fun computeStatsReport(
         hasEstimated = (includeLegacy && summary.legacy.isNotEmpty()) || hasEstimatedRows(summary, from, to),
         dataSince = dataSince,
         favoriteHour = favoriteHour(summary, from, to),
+        hourLevels = hourLevels(summary, from, to),
         discoveries = discovered.take(DISCOVERY_SHOWN).map { spelling[it] ?: it },
         discoveryCount = discovered.size,
     )
 }
 
-private const val DISCOVERY_SHOWN = 5
+private const val DISCOVERY_SHOWN = 6
 
 /** O primeiro dia com alguma escuta no resumo. */
 fun firstDay(summary: DailySummary): LocalDate? =
@@ -294,16 +297,29 @@ fun firstDay(summary: DailySummary): LocalDate? =
         month.days.filterValues { rows -> rows.any { it.plays > 0 || it.listenedMs > 0 } }.keys.minOrNull()?.let { month.month.atDay(it.coerceIn(1, month.month.lengthOfMonth())) }
     }.minOrNull()
 
-/** Hora com mais tempo ouvido nos meses do período (o tempo por hora é guardado por mês). */
-private fun favoriteHour(summary: DailySummary, from: LocalDate?, to: LocalDate): Int? {
+/** Tempo ouvido em cada hora do dia nos meses do período (o tempo por hora é guardado por mês). */
+private fun hourTotals(summary: DailySummary, from: LocalDate?, to: LocalDate): LongArray {
     val totals = LongArray(24)
     for (month in summary.months) {
         if (month.hourMs.size != 24) continue
         if ((from != null && month.month.atEndOfMonth().isBefore(from)) || month.month.atDay(1).isAfter(to)) continue
         month.hourMs.forEachIndexed { hour, ms -> totals[hour] += ms }
     }
+    return totals
+}
+
+/** Hora com mais tempo ouvido nos meses do período. */
+private fun favoriteHour(summary: DailySummary, from: LocalDate?, to: LocalDate): Int? {
+    val totals = hourTotals(summary, from, to)
     val best = totals.max()
     return if (best <= 0) null else totals.indexOf(best)
+}
+
+/** As 24 horas em escala de 0 a 1 (a mais ouvida vale 1); lista vazia sem tempo por hora. */
+private fun hourLevels(summary: DailySummary, from: LocalDate?, to: LocalDate): List<Float> {
+    val totals = hourTotals(summary, from, to)
+    val best = totals.max()
+    return if (best <= 0) emptyList() else totals.map { it.toFloat() / best }
 }
 
 /** Dias que faltam para o Wrapped abrir (30 dias de escuta desde o primeiro dia); 0 = liberado. */

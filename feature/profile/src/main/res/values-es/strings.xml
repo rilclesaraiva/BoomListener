@@ -120,6 +120,8 @@
     <string name="feature_profile_wrapped_song_fallback">Una de tus más escuchadas</string>
     <string name="feature_profile_wrapped_genres">Tus estilos favoritos fueron…</string>
     <string name="feature_profile_wrapped_time">Escuchaste durante…</string>
+    <string name="feature_profile_wrapped_minutes">minutos</string>
+    <string name="feature_profile_wrapped_song_times">veces</string>
     <string name="feature_profile_wrapped_hour">Tu hora favorita para escuchar</string>
     <string name="feature_profile_wrapped_hour_night">Madrugada</string>
     <string name="feature_profile_wrapped_hour_morning">Mañana</string>

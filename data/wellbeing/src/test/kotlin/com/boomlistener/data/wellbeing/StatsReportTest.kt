@@ -214,9 +214,16 @@ class StatsReportTest {
     @Test
     fun horarioFavoritoVemDoTempoPorHoraEIgnoraMesesSemMedicao() {
         val comHoras = month(YearMonth.of(2026, 11), row(3, djavan, 1)).withHourTime(22, 5 * minute).withHourTime(8, 2 * minute).withHourTime(22, minute)
-        assertEquals(22, computeStatsReport(summary(comHoras), StatsPeriod.ThisYear, today, duration).favoriteHour)
+        val report = computeStatsReport(summary(comHoras), StatsPeriod.ThisYear, today, duration)
+        assertEquals(22, report.favoriteHour)
+        assertEquals(24, report.hourLevels.size)
+        assertEquals(1f, report.hourLevels[22], 0.0001f)
+        assertEquals(2f / 6f, report.hourLevels[8], 0.0001f)
+        assertEquals(0f, report.hourLevels[3], 0.0001f)
         val semHoras = month(YearMonth.of(2026, 11), row(3, djavan, 1))
-        assertNull(computeStatsReport(summary(semHoras), StatsPeriod.ThisYear, today, duration).favoriteHour)
+        val semMedicao = computeStatsReport(summary(semHoras), StatsPeriod.ThisYear, today, duration)
+        assertNull(semMedicao.favoriteHour)
+        assertTrue(semMedicao.hourLevels.isEmpty())
     }
 
     @Test
