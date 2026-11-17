@@ -17,9 +17,9 @@
         <item quantity="one">%1$d song</item>
         <item quantity="other">%1$d songs</item>
     </plurals>
-    <string name="feature_library_total_hours_minutes">%1$d h %2$d min</string>
-    <string name="feature_library_total_hours">%1$d h</string>
-    <string name="feature_library_total_minutes">%1$d min</string>
+    <string name="feature_library_home_total_hours_minutes">%1$d h %2$d min</string>
+    <string name="feature_library_home_total_hours">%1$d h</string>
+    <string name="feature_library_home_total_minutes">%1$d min</string>
     <string name="feature_library_select">Select</string>
     <string name="feature_library_shuffle_all">Shuffle</string>
     <string name="feature_library_add_to_playlist">Add to playlist</string>

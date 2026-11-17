@@ -336,9 +336,9 @@ private fun TrackList(
                         Text(
                             text = when {
                                 total.hours > 0 && total.minutes > 0 ->
-                                    stringResource(R.string.feature_library_total_hours_minutes, total.hours, total.minutes)
-                                total.hours > 0 -> stringResource(R.string.feature_library_total_hours, total.hours)
-                                else -> stringResource(R.string.feature_library_total_minutes, total.minutes)
+                                    stringResource(R.string.feature_library_home_total_hours_minutes, total.hours, total.minutes)
+                                total.hours > 0 -> stringResource(R.string.feature_library_home_total_hours, total.hours)
+                                else -> stringResource(R.string.feature_library_home_total_minutes, total.minutes)
                             },
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
