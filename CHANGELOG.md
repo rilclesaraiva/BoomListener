@@ -17,6 +17,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **The app now starts with its own colors and the dark theme:** "Wallpaper colors" is off by default (the app keeps its own look) and the default theme is Dark. Anything you already chose in Settings stays as it is. On Android 11 and older the "Wallpaper colors" option no longer appears, since it only works on Android 12 and newer.
 
 ### Fixed
+- **Hearts showing up by themselves when the song changes:** the floating hearts now only appear when you tap the cover.
 - **Artist circles that stayed empty:** when Deezer answered empty or failed while many pictures loaded at once, the circle kept the generic person icon until you left the screen. Now it asks again a couple of seconds later (twice at most), and finding the newest cover takes one request instead of three.
 - **Pictures flashing the initial letter or the cover while you scroll fast or jump back to the top:** covers and artist photos are now kept in memory (and the ones at the top of each list are prepared ahead), in Library (Genres, Artists, Playlists, Albums), Home and Profile. Scrolling the rows of Profile by hand no longer makes some artists lose their picture either.
 - **Artist photos at the top of the list showing the initial while you tap the tab to go back up:** the photos of the first artists (about a screen and a half in the grid, two in the list) are now loaded ahead and kept in memory, so they are already there when the list slides back to the top.

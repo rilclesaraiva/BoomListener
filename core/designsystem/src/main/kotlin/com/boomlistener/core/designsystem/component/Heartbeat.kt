@@ -36,8 +36,11 @@ private const val BeatSmall = 1.28f
 fun Modifier.heartbeat(trigger: Int): Modifier {
     val scale = remember { Animatable(1f) }
     val spec = boomFastSpatialSpec<Float>()
+    // Só bate quando o contador muda depois de entrar na tela (não ao reaparecer com valor antigo).
+    val seen = remember { intArrayOf(trigger) }
     LaunchedEffect(trigger) {
-        if (trigger <= 0) return@LaunchedEffect
+        if (trigger <= 0 || trigger == seen[0]) return@LaunchedEffect
+        seen[0] = trigger
         scale.animateTo(BeatBig, spec)
         scale.animateTo(1f, spec)
         scale.animateTo(BeatSmall, spec)
@@ -90,8 +93,12 @@ private fun beatScale(t: Float): Float {
 @Composable
 fun CoverHeartBurst(trigger: Int, modifier: Modifier = Modifier) {
     val clock = remember { Animatable(-1f) }
+    // Cada página da capa cria o seu: só anima quando o contador muda depois de a página existir
+    // (senão, ao passar de música, a página nova repetia o último toque).
+    val seen = remember { intArrayOf(trigger) }
     LaunchedEffect(trigger) {
-        if (trigger <= 0) return@LaunchedEffect
+        if (trigger <= 0 || trigger == seen[0]) return@LaunchedEffect
+        seen[0] = trigger
         clock.snapTo(0f)
         clock.animateTo(BurstMs.toFloat(), tween(BurstMs, easing = LinearEasing))
         clock.snapTo(-1f)
