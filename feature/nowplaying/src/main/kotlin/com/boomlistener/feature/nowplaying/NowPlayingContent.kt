@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.core.designsystem.component.CoverHeartBurst
 import com.boomlistener.core.designsystem.component.heartbeat
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.common.ExternalLinks
@@ -108,6 +109,10 @@ internal fun NowPlayingContent(
     // mesmo tom e combinam quando um vira o outro.
     val artworkColor = rememberPlayerTint(viewModel, item?.uri)
     val showLyrics by viewModel.showLyrics.collectAsStateWithLifecycle()
+    // Toque rápido na capa que toca = favoritar (só favorita, nunca desfaz) + coração animado.
+    val favoritesRepository = remember { FavoritesData.repository(context.applicationContext) }
+    val favorites by favoritesRepository.favorites.collectAsStateWithLifecycle()
+    var coverBurst by remember { mutableIntStateOf(0) }
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     // A posição da letra sobrevive a ir para a capa e voltar; música nova, do topo.
     val lyricsScroll = remember(item?.uri) { LyricsScroll() }
@@ -160,7 +165,7 @@ internal fun NowPlayingContent(
                     if (item != null) {
                         BoomMoreMenu(
                             actions = listOfNotNull(
-                                // Letra: o mesmo que tocar na capa.
+                                // Letra: abre e fecha por aqui (e tocar na letra volta para a capa).
                                 BoomMenuAction(
                                     stringResource(
                                         if (showLyrics) R.string.feature_nowplaying_hide_lyrics
@@ -242,7 +247,7 @@ internal fun NowPlayingContent(
                                 positionMs = state.positionMs,
                                 onSeek = viewModel::seekTo,
                                 onRetry = viewModel::retryLyrics,
-                                // Tocar na letra volta para a capa, como tocar na capa abriu a letra.
+                                // Tocar na letra volta para a capa.
                                 onTap = viewModel::toggleLyrics,
                                 scroll = lyricsScroll,
                             )
@@ -272,9 +277,15 @@ internal fun NowPlayingContent(
                                                 .clickable(
                                                     interactionSource = null,
                                                     indication = null,
-                                                    onClick = viewModel::toggleLyrics,
+                                                    onClick = {
+                                                        if (song.uri == item?.uri) {
+                                                            coverBurst++
+                                                            if (song.uri !in favorites) scope.launch { favoritesRepository.toggle(song.uri) }
+                                                        }
+                                                    },
                                                 ),
                                         )
+                                        if (song.uri == item?.uri) CoverHeartBurst(coverBurst, Modifier.matchParentSize())
                                         // Visualizador (menu ⋮ do player): só na capa da música que toca.
                                         if (playbackPrefs.visualizer && song.uri == item?.uri) {
                                             CoverVisualizer(

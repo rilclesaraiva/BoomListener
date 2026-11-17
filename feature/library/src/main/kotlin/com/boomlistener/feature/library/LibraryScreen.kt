@@ -332,7 +332,7 @@ private fun TrackList(
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        val total = remember(state.tracks) { totalDuration(state.tracks.sumOf { it.durationMs }) }
+                        val total = remember(state.tracks) { libraryTotalTime(state.tracks.sumOf { it.durationMs }) }
                         Text(
                             text = if (total.inHours) {
                                 pluralStringResource(R.plurals.feature_library_total_hours, total.hours, total.hours)

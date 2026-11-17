@@ -14,25 +14,25 @@ class LibraryDurationTest {
 
     @Test
     fun horasSaoArredondadasParaOMaisProximo() {
-        assertEquals(32, totalDuration(32 * hour + 20 * minute).hours)
-        assertEquals(33, totalDuration(32 * hour + 30 * minute).hours)
-        assertEquals(1, totalDuration(hour).hours)
-        assertTrue(totalDuration(hour).inHours)
+        assertEquals(32, libraryTotalTime(32 * hour + 20 * minute).hours)
+        assertEquals(33, libraryTotalTime(32 * hour + 30 * minute).hours)
+        assertEquals(1, libraryTotalTime(hour).hours)
+        assertTrue(libraryTotalTime(hour).inHours)
     }
 
     @Test
     fun menosDeUmaHoraMostraMinutos() {
-        val d = totalDuration(40 * minute)
+        val d = libraryTotalTime(40 * minute)
         assertFalse(d.inHours)
         assertEquals(40, d.minutes)
         // 29 min 59 s ainda é "minutos"; 30 min já arredonda para 1 hora.
-        assertEquals(29, totalDuration(29 * minute + 59_000L).minutes)
-        assertEquals(1, totalDuration(30 * minute).hours)
+        assertEquals(29, libraryTotalTime(29 * minute + 59_000L).minutes)
+        assertEquals(1, libraryTotalTime(30 * minute).hours)
     }
 
     @Test
     fun bibliotecaVaziaOuNegativaViraZeroMinutos() {
-        assertEquals(TotalDuration(0, 0), totalDuration(0L))
-        assertEquals(TotalDuration(0, 0), totalDuration(-5L))
+        assertEquals(LibraryTotalTime(0, 0), libraryTotalTime(0L))
+        assertEquals(LibraryTotalTime(0, 0), libraryTotalTime(-5L))
     }
 }

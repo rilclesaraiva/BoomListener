@@ -7,13 +7,13 @@ private const val HOUR_MS = 3_600_000L
 private const val MINUTE_MS = 60_000L
 
 /** Tempo total da biblioteca, pronto para virar texto: horas inteiras (arredondadas) ou, abaixo de 1 hora, minutos. */
-internal data class TotalDuration(val hours: Int, val minutes: Int) {
+internal data class LibraryTotalTime(val hours: Int, val minutes: Int) {
     val inHours: Boolean get() = hours > 0
 }
 
 /** 90 min → 2 h (arredonda para o mais próximo); 40 min → 40 min; 0 → 0 min. */
-internal fun totalDuration(durationMs: Long): TotalDuration {
+internal fun libraryTotalTime(durationMs: Long): LibraryTotalTime {
     val ms = durationMs.coerceAtLeast(0L)
     val hours = ((ms + HOUR_MS / 2) / HOUR_MS).toInt()
-    return if (hours >= 1) TotalDuration(hours, 0) else TotalDuration(0, (ms / MINUTE_MS).toInt())
+    return if (hours >= 1) LibraryTotalTime(hours, 0) else LibraryTotalTime(0, (ms / MINUTE_MS).toInt())
 }
