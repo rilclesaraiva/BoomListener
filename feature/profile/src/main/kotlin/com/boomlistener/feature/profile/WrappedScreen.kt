@@ -29,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -69,6 +70,7 @@ import com.boomlistener.core.designsystem.component.BoomImageCycle
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import com.boomlistener.core.designsystem.component.rememberImageSet
+import com.boomlistener.core.designsystem.theme.WrappedColors
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.data.wellbeing.StatsPeriod
 import com.boomlistener.data.wellbeing.StatsReport
@@ -77,6 +79,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
+
+/** O destaque do cartão que está sendo desenhado (títulos e números grandes). */
+private val LocalWrappedAccent = androidx.compose.runtime.compositionLocalOf { Color.Unspecified }
 
 /** Tempo de cada cartão antes de passar sozinho. */
 private const val PAGE_MS = 7_000f
@@ -124,6 +129,17 @@ internal fun WrappedScreen(
     val songUri = song?.uri
     LaunchedEffect(area, songUri) { songUri?.let(area::play) }
     BackHandler(onBack = onBack)
+    // Os cartões são sempre escuros: ícones claros na barra de cima enquanto o Wrapped está aberto.
+    val view = androidx.compose.ui.platform.LocalView.current
+    DisposableEffect(view) {
+        var host = view.context
+        while (host is android.content.ContextWrapper && host !is android.app.Activity) host = host.baseContext
+        val window = (host as? android.app.Activity)?.window
+        val controller = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+        val previous = controller?.isAppearanceLightStatusBars
+        controller?.isAppearanceLightStatusBars = false
+        onDispose { if (controller != null && previous != null) controller.isAppearanceLightStatusBars = previous }
+    }
 
     val current = report?.takeIf { it.period == period }
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
@@ -169,6 +185,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
         page += 1
     }
 
+    val barColors = WrappedColors.cards[page.coerceAtLeast(0) % WrappedColors.cards.size]
     val effects = boomEffectsSpec<Float>()
     val capture = remember { WrappedCapture() }
     var capturing by remember { mutableStateOf(false) }
@@ -199,11 +216,11 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
             modifier = Modifier.fillMaxSize(),
         ) { index ->
             val card = cards.getOrNull(index) ?: WrappedCard.Intro
-            val (container, onContainer) = cardColors(card)
+            val palette = WrappedColors.cards[index % WrappedColors.cards.size]
             // O desenho do cartão que está na tela fica guardado: é ele que vira a imagem de compartilhar.
             Surface(
-                color = container,
-                contentColor = onContainer,
+                color = palette.container,
+                contentColor = palette.onContainer,
                 modifier = Modifier.fillMaxSize().drawWithContent {
                     val picture = Picture()
                     val canvas = Canvas(picture.beginRecording(size.width.toInt(), size.height.toInt()))
@@ -213,6 +230,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                     drawContent()
                 },
             ) {
+              androidx.compose.runtime.CompositionLocalProvider(LocalWrappedAccent provides palette.accent) {
                 Column(
                     Modifier
                         .fillMaxSize()
@@ -241,6 +259,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                         )
                     }
                 }
+              }
             }
         }
         // Barras de progresso e fechar, por cima de tudo.
@@ -253,8 +272,8 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                     LinearProgressIndicator(
                         progress = { value },
                         modifier = Modifier.weight(1f).height(4.dp),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
+                        color = barColors.onContainer,
+                        trackColor = barColors.onContainer.copy(alpha = 0.3f),
                     )
                 }
             }
@@ -285,21 +304,9 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
     }
 }
 
-/** Cada cartão tem o seu par de cores do tema (fundo e texto). */
-@Composable
-private fun cardColors(card: WrappedCard): Pair<Color, Color> {
-    val colors = MaterialTheme.colorScheme
-    return when (card) {
-        WrappedCard.Intro, WrappedCard.Hour -> colors.primaryContainer to colors.onPrimaryContainer
-        WrappedCard.Song, WrappedCard.Top -> colors.tertiaryContainer to colors.onTertiaryContainer
-        WrappedCard.Time, WrappedCard.Discoveries -> colors.secondaryContainer to colors.onSecondaryContainer
-        WrappedCard.Artists, WrappedCard.Genres, WrappedCard.Sprint -> colors.surfaceContainerHigh to colors.onSurface
-    }
-}
-
 @Composable
 private fun CardTitle(text: String) {
-    Text(text, style = MaterialTheme.typography.headlineMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
+    Text(text, style = MaterialTheme.typography.headlineMedium, maxLines = 3, overflow = TextOverflow.Ellipsis, color = LocalWrappedAccent.current)
 }
 
 @Composable
@@ -388,20 +395,13 @@ private fun ColumnScope.SongCard(report: StatsReport, viewModel: MyProfileViewMo
 @Composable
 private fun ColumnScope.GenresCard(report: StatsReport) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_genres))
-    val colors = MaterialTheme.colorScheme
-    val palette = listOf(
-        colors.primary to colors.onPrimary,
-        colors.secondary to colors.onSecondary,
-        colors.tertiary to colors.onTertiary,
-        colors.inverseSurface to colors.inverseOnSurface,
-        colors.primaryContainer to colors.onPrimaryContainer,
-    )
+    val palette = WrappedColors.blocks
     Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         report.genres.take(MAX_GENRES).forEachIndexed { index, genre ->
-            val (fill, on) = palette[index % palette.size]
+            val block = palette[index % palette.size]
             Surface(
-                color = fill,
-                contentColor = on,
+                color = block.fill,
+                contentColor = block.onFill,
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier.fillMaxWidth().weight(genre.share.coerceAtLeast(0.12f)),
             ) {
@@ -424,20 +424,20 @@ private fun ColumnScope.GenresCard(report: StatsReport) {
 @Composable
 private fun ColumnScope.TimeCard(report: StatsReport) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_time))
-    Text(minutesText(report.minutes), style = MaterialTheme.typography.displayMedium, maxLines = 2)
+    Text(minutesText(report.minutes), style = MaterialTheme.typography.displayMedium, maxLines = 2, color = LocalWrappedAccent.current)
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         report.bestDay?.let { best ->
-            Highlight(stringResource(R.string.feature_profile_stats_record_day), best.date.format(DateShown), minutesText(best.minutes))
+            WrappedHighlight(stringResource(R.string.feature_profile_stats_record_day), best.date.format(DateShown), minutesText(best.minutes))
         }
         if (report.longestStreak > 1) {
-            Highlight(
+            WrappedHighlight(
                 stringResource(R.string.feature_profile_stats_streak),
                 pluralStringResource(R.plurals.feature_profile_stats_day_count, report.longestStreak, report.longestStreak),
                 null,
             )
         }
         report.mostArtistsDay?.let { most ->
-            Highlight(
+            WrappedHighlight(
                 stringResource(R.string.feature_profile_stats_most_artists_day),
                 pluralStringResource(R.plurals.feature_profile_stats_artist_count, most.artists, most.artists),
                 most.date.format(DateShown),
@@ -446,12 +446,22 @@ private fun ColumnScope.TimeCard(report: StatsReport) {
     }
 }
 
+/** Destaque do cartão de tempo, com o texto no tom do cartão (o da tela de Estatísticas é cinza). */
+@Composable
+private fun WrappedHighlight(label: String, value: String, detail: String?) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = LocalContentColor.current.copy(alpha = 0.75f))
+        Text(value, style = MaterialTheme.typography.titleMedium)
+        detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = LocalContentColor.current.copy(alpha = 0.75f)) }
+    }
+}
+
 @Composable
 private fun ColumnScope.HourCard(report: StatsReport) {
     val hour = report.favoriteHour ?: return
     CardTitle(stringResource(R.string.feature_profile_wrapped_hour))
     val shown = LocalTime.of(hour, 0).format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault()))
-    Text(shown, style = MaterialTheme.typography.displayLarge)
+    Text(shown, style = MaterialTheme.typography.displayLarge, color = LocalWrappedAccent.current)
     Text(
         stringResource(
             when (hour) {

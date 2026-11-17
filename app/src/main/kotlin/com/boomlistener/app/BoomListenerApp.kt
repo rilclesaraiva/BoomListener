@@ -157,6 +157,8 @@ fun BoomListenerApp() {
     val onTab = route.isEmpty() || route in topLevelRoutes
     val inSettings = route == SETTINGS_ROUTE || route.startsWith("$SETTINGS_ROUTE/")
     val inTagEditor = route.startsWith("tageditor")
+    // O Wrapped ocupa a tela toda (a música dele toca na própria área): sem mini player.
+    val inWrapped = route.startsWith("profile/wrapped")
     val barSpec = boomSpatialSpec<IntSize>()
     val barFade = boomEffectsSpec<Float>()
 
@@ -426,7 +428,7 @@ fun BoomListenerApp() {
       // assim ela não muda a cada quadro ao entrar nos Ajustes, o que fazia as
       // duas telas se refazerem (e desfocarem de novo) quadro a quadro.
       var miniPlayerMeasured by remember { mutableStateOf(0.dp) }
-      val miniPlayerVisible = !inSettings && !inTagEditor
+      val miniPlayerVisible = !inSettings && !inTagEditor && !inWrapped
       val miniPlayerHeight = if (miniPlayerVisible) miniPlayerMeasured else 0.dp
       // Altura da barra de abas, medida nela mesma pelo mesmo motivo.
       var navBarMeasured by remember { mutableStateOf<Dp?>(null) }
