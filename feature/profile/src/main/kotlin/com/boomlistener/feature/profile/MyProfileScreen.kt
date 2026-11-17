@@ -111,6 +111,7 @@ internal fun MyProfileScreen(
     viewModel: MyProfileViewModel,
     onOpenArtist: (String) -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenStats: () -> Unit,
     onOpenSettings: () -> Unit,
     songMenu: ProfileSongMenu,
     modifier: Modifier = Modifier,
@@ -158,45 +159,7 @@ internal fun MyProfileScreen(
                         )
                     }
                 }
-                item(key = "month") { MonthCard(current) }
-
-                if (current.topSongs.isNotEmpty()) {
-                    item(key = "top") {
-                        SectionTitle(stringResource(R.string.feature_profile_most_played), stringResource(R.string.feature_profile_most_played_sub))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                            itemsIndexed(current.topSongs, key = { _, song -> song.uri }) { index, song ->
-                                TopSongCard(index + 1, song, viewModel, songMenu, onClick = { viewModel.playTop(index) })
-                            }
-                        }
-                    }
-                }
-
-                item(key = "time") {
-                    SectionTitle(stringResource(R.string.feature_profile_listening_time), stringResource(R.string.feature_profile_last_7_days))
-                    // Um embaixo do outro, na largura da tela: nada fica cortado na borda.
-                    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        WeekCard(current)
-                        DayPartsCard(current)
-                    }
-                }
-
-                if (current.stats.topArtists.isNotEmpty()) {
-                    item(key = "artists") {
-                        SectionTitle(stringResource(R.string.feature_profile_top_artists), stringResource(R.string.feature_profile_last_30_days))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                            items(current.stats.topArtists, key = { it.name }) { artist ->
-                                PersonChip(
-                                    name = artist.name,
-                                    caption = pluralStringResource(R.plurals.feature_profile_plays, artist.plays, artist.plays),
-                                    viewModel = viewModel,
-                                    onClick = { onOpenArtist(artist.name) },
-                                    onPlay = { viewModel.playArtist(artist.name, shuffled = false) },
-                                    onShuffle = { viewModel.playArtist(artist.name, shuffled = true) },
-                                )
-                            }
-                        }
-                    }
-                }
+                item(key = "month") { MonthCard(current, onClick = onOpenStats) }
 
                 if (current.recent.isNotEmpty()) {
                     item(key = "history") {
@@ -558,12 +521,13 @@ private fun ImageEditBadge(busy: Boolean, label: String) {
 
 /** "Este mês": músicas, horas e artistas. */
 @Composable
-private fun MonthCard(state: MyProfileUiState) {
+private fun MonthCard(state: MyProfileUiState, onClick: () -> Unit) {
     val month = state.today.month.getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault())
         .replaceFirstChar { it.titlecase(Locale.getDefault()) }
     val hours = state.stats.monthMinutes / 60
     val minutes = state.stats.monthMinutes % 60
     Surface(
+        onClick = onClick,
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         shape = MaterialTheme.shapes.extraLarge,
@@ -587,6 +551,8 @@ private fun MonthCard(state: MyProfileUiState) {
                 )
                 BigNumber(state.stats.monthArtists.toString(), pluralStringResource(R.plurals.feature_profile_artists, state.stats.monthArtists), Modifier.weight(1f))
             }
+            Spacer(Modifier.height(16.dp))
+            Text(stringResource(R.string.feature_profile_stats_open), style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -600,7 +566,7 @@ private fun BigNumber(value: String, label: String, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun SectionTitle(title: String, subtitle: String?, onMore: (() -> Unit)? = null) {
+internal fun SectionTitle(title: String, subtitle: String?, onMore: (() -> Unit)? = null) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -620,40 +586,9 @@ private fun SectionTitle(title: String, subtitle: String?, onMore: (() -> Unit)?
     }
 }
 
-@Composable
-private fun TopSongCard(rank: Int, song: SongStat, viewModel: MyProfileViewModel, menu: ProfileSongMenu, onClick: () -> Unit) {
-    val cover = rememberLocalArtwork(viewModel, song.uri, CoverCard)
-    // Segurar abre o menu da música.
-    val menuOpen = remember { mutableStateOf(false) }
-    ProfileSongMenuSheet(menuOpen, song.uri, song.title, song.artist, cover, menu, onPlay = onClick)
-    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = TileBottom)) {
-        Box {
-            BoomArtwork(image = cover, fallbackText = song.title, size = CoverCard)
-            // Posição no ranking, num selo no canto.
-            Surface(
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape,
-                modifier = Modifier.padding(8.dp).size(28.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) { Text(rank.toString(), style = MaterialTheme.typography.labelLarge) }
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(song.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = TileTextInset))
-        Text(
-            pluralStringResource(R.plurals.feature_profile_plays, song.plays, song.plays),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            modifier = Modifier.padding(horizontal = TileTextInset),
-        )
-    }
-}
-
 /** Barras dos últimos 7 dias; o dia que você mais ouviu fica em destaque. */
 @Composable
-private fun WeekCard(state: MyProfileUiState) {
+internal fun WeekCard(state: MyProfileUiState) {
     val week = state.stats.week
     val max = (week.maxOfOrNull { it.minutes } ?: 0).coerceAtLeast(1)
     Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.extraLarge, modifier = Modifier.fillMaxWidth()) {
@@ -697,13 +632,13 @@ private fun WeekCard(state: MyProfileUiState) {
 }
 
 @Composable
-private fun shortDuration(minutes: Int): String =
+internal fun shortDuration(minutes: Int): String =
     if (minutes >= 60) stringResource(R.string.feature_profile_hours_short, minutes / 60, minutes % 60)
     else stringResource(R.string.feature_profile_minutes, minutes)
 
 /** Manhã, tarde, noite e madrugada: quando você mais ouve. */
 @Composable
-private fun DayPartsCard(state: MyProfileUiState) {
+internal fun DayPartsCard(state: MyProfileUiState) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.extraLarge, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.feature_profile_peak_hours), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -722,35 +657,6 @@ private fun DayPartsCard(state: MyProfileUiState) {
                     )
                 }
             }
-        }
-    }
-}
-
-/** Bolinha com nome embaixo (artista). */
-@Composable
-private fun PersonChip(
-    name: String,
-    caption: String?,
-    viewModel: MyProfileViewModel,
-    onClick: () -> Unit,
-    onPlay: () -> Unit,
-    onShuffle: () -> Unit,
-) {
-    val px = with(LocalDensity.current) { 72.dp.roundToPx() }
-    val photos = rememberImageSet(remember(name, px) { artistAttempts(name, px, viewModel) })
-    val photo = photos.firstOrNull()
-    // Segurar abre o menu do artista.
-    val menuOpen = remember { mutableStateOf(false) }
-    ProfileArtistMenuSheet(menuOpen, name, photo, onPlay = onPlay, onShuffle = onShuffle, onOpenArtist = onClick)
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(88.dp).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(top = 4.dp, bottom = TileBottom),
-    ) {
-        BoomImageCycle(photos) { shown -> Avatar(name, size = 72.dp, image = shown) }
-        Spacer(Modifier.height(6.dp))
-        Text(name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
-        caption?.let {
-            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
 }
@@ -793,7 +699,7 @@ private fun HistoryCard(entry: HistoryEntry, today: LocalDate, viewModel: MyProf
 }
 
 @Composable
-private fun rememberLocalArtwork(viewModel: MyProfileViewModel, uri: String?, size: Dp): ImageBitmap? {
+internal fun rememberLocalArtwork(viewModel: MyProfileViewModel, uri: String?, size: Dp): ImageBitmap? {
     val px = with(LocalDensity.current) { size.roundToPx() }
     val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
     return rememberMemoryImage(uri?.let { coverKey(it, px, version) }) { uri?.let { viewModel.artwork(it, px) } }
@@ -813,7 +719,7 @@ private fun artistPhotoOnlyKey(name: String, px: Int) = "profileArtistPhoto:$nam
  * lançamento dele. Vários ("Delinquent, Kcat"): a foto do nome inteiro (bandas como
  * "Earth, Wind & Fire"), senão a de cada artista (foto, ou a capa do último lançamento).
  */
-private fun artistAttempts(name: String, px: Int, viewModel: MyProfileViewModel): List<List<PinItem>> {
+internal fun artistAttempts(name: String, px: Int, viewModel: MyProfileViewModel): List<List<PinItem>> {
     fun withCover(n: String) = PinItem(artistKey(n, px)) { viewModel.artistImage(n, px) }
     val parts = splitArtistNames(name).takeIf { it.size > 1 } ?: return listOf(listOf(withCover(name)))
     return listOf(
@@ -823,20 +729,16 @@ private fun artistAttempts(name: String, px: Int, viewModel: MyProfileViewModel)
 }
 
 /**
- * As imagens do perfil ficam prontas na memória (mais ouvidas, histórico e artistas):
+ * As imagens do perfil ficam prontas na memória (histórico):
  * deslizar as fileiras ou subir ao topo não deixa nenhuma piscar a inicial.
  */
 @Composable
 private fun PinProfileImages(state: MyProfileUiState, viewModel: MyProfileViewModel) {
     val density = LocalDensity.current
     val coverPx = with(density) { CoverCard.roundToPx() }
-    val artistPx = with(density) { 72.dp.roundToPx() }
     val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
     val items = buildList {
-        state.stats.topArtists.forEach { artist ->
-            addAll(artistAttempts(artist.name, artistPx, viewModel).flatten())
-        }
-        (state.topSongs.map { it.uri } + state.recent.map { it.uri }).distinct().forEach { uri ->
+        state.recent.map { it.uri }.distinct().forEach { uri ->
             add(PinItem(coverKey(uri, coverPx, version)) { viewModel.artwork(uri, coverPx) })
         }
     }

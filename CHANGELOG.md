@@ -7,6 +7,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ## [Unreleased]
 
 ### Added
+- **New Statistics page:** your Profile now shows a short summary card (this month's songs, time and artists) and tapping it opens the full page, with the period you pick (4 weeks, this month, this year or all time): total time listened, plays, artists, genres and days, your record day, your longest streak and the day with the most different artists, and the Top 5 of artists, songs, albums and genres, each one opening a Top 100 with play counts. Artists show an arrow for how much they went up or down compared with the previous period (previous month, year or 4 weeks), and for the year there is a month-by-month view of how your Top 5 artists changed. The old "Most played", "Listening time" and "Your artists" rows moved into this page. Everything is calculated on your phone.
 - **Select several genres, artists, playlists or albums in Library:** hold one to open its panel and tap "Select" (tapping the picture still just opens it). Then tap others to mark them, or use "select all", and shuffle or play the songs of everything you marked (a radio of those artists or genres), or add them to a playlist. A song that is in two marked groups plays once.
 - **Total listening time on Home:** under the song count you now see how long your whole library lasts, in exact hours and minutes, e.g. "176 songs" and "10 h 24 min" (just minutes when it is under an hour).
 

@@ -17,10 +17,18 @@ import com.boomlistener.data.profile.MAX_BIO
 import com.boomlistener.data.profile.MyProfile
 import com.boomlistener.data.profile.ProfileImage
 import com.boomlistener.data.profile.ProfileRepository
+import com.boomlistener.data.wellbeing.DailyStatsRepository
+import com.boomlistener.data.wellbeing.DailySummary
 import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.ListeningHistoryRepository
 import com.boomlistener.data.wellbeing.ListeningStatsRepository
 import com.boomlistener.data.wellbeing.SongStat
+import com.boomlistener.data.wellbeing.StatsPeriod
+import com.boomlistener.data.wellbeing.StatsReport
+import com.boomlistener.data.wellbeing.computeStatsReport
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,6 +59,7 @@ internal sealed interface ImageChange {
 internal data class MyProfileUiState(
     val profile: MyProfile,
     val stats: ProfileStats,
+    /** A música mais ouvida (dá o tom do cabeçalho do perfil). */
     val topSongs: List<SongStat>,
     val recent: List<HistoryEntry>,
     val following: List<FollowedArtist>,
@@ -71,6 +80,8 @@ internal class MyProfileViewModel(
     private val artistPhoto: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
     /** A capa do lançamento mais novo do artista no Deezer (a que a página dele usa sem foto). */
     private val artistLatestCover: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
+    /** Resumo diário da escuta (tela de Estatísticas); null nos testes que não o usam. */
+    private val daily: DailyStatsRepository? = null,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val today: () -> LocalDate = { LocalDate.now(zone) },
 ) : ViewModel() {
@@ -94,6 +105,21 @@ internal class MyProfileViewModel(
             today = now,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    private val _period = MutableStateFlow(StatsPeriod.ThisMonth)
+
+    /** Período escolhido na tela de Estatísticas. */
+    val period: StateFlow<StatsPeriod> = _period.asStateFlow()
+
+    fun selectPeriod(period: StatsPeriod) {
+        _period.value = period
+    }
+
+    /** As contas da tela de Estatísticas para o período escolhido (null até carregar). */
+    val report: StateFlow<StatsReport?> = combine(daily?.summary ?: emptyFlow<DailySummary>(), _period, tracks) { summary, period, library ->
+        val durations = library.associate { it.uri to it.durationMs }
+        computeStatsReport(summary, period, today(), { uri -> durations[uri] ?: 0L })
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _saveFailed = MutableStateFlow(false)
     val saveFailed: StateFlow<Boolean> = _saveFailed.asStateFlow()
@@ -137,10 +163,10 @@ internal class MyProfileViewModel(
         }
     }
 
-    /** Toca as mais ouvidas a partir da escolhida (as que ainda estão no aparelho). */
-    fun playTop(index: Int) {
-        val current = state.value ?: return
-        playUris(current.topSongs.map { it.uri }, current.topSongs.getOrNull(index)?.uri)
+    /** Toca as músicas do ranking das Estatísticas a partir da escolhida (as que ainda estão no aparelho). */
+    fun playReportSongs(index: Int) {
+        val songs = report.value?.songs ?: return
+        playUris(songs.map { it.uri }, songs.getOrNull(index)?.uri)
     }
 
     /** Toca o histórico recente a partir da escolhida. */
@@ -189,7 +215,7 @@ internal class MyProfileViewModel(
     }
 
     private companion object {
-        const val TOP_SONGS = 12
+        const val TOP_SONGS = 1
         const val RECENT = 15
     }
 }

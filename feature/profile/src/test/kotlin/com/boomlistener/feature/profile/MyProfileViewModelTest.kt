@@ -16,7 +16,13 @@ import com.boomlistener.data.profile.ProfileImage
 import com.boomlistener.data.profile.ProfileRepository
 import com.boomlistener.data.profile.cleanProfileColor
 import kotlinx.coroutines.flow.StateFlow
+import com.boomlistener.data.wellbeing.DailyStatsRepository
+import com.boomlistener.data.wellbeing.DailySummary
+import com.boomlistener.data.wellbeing.DayRow
+import com.boomlistener.data.wellbeing.DaySong
 import com.boomlistener.data.wellbeing.HistoryEntry
+import com.boomlistener.data.wellbeing.MonthData
+import com.boomlistener.data.wellbeing.StatsPeriod
 import com.boomlistener.data.wellbeing.ListeningHistoryRepository
 import com.boomlistener.data.wellbeing.ListeningStatsRepository
 import com.boomlistener.data.wellbeing.SongStat
@@ -24,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -38,6 +45,7 @@ import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
 import java.time.ZoneId
 
 private val zone = ZoneId.of("America/Belem")
@@ -51,6 +59,14 @@ private class FakeHistory(entries: List<HistoryEntry>) : ListeningHistoryReposit
 private class FakeStats(private val top: List<SongStat>) : ListeningStatsRepository {
     override fun topSongs(limit: Int): Flow<List<SongStat>> = flowOf(top)
     override suspend fun recordPlay(uri: String, title: String, artist: String?, album: String?, timestampMs: Long) = Unit
+}
+
+private class FakeDaily(summary: DailySummary) : DailyStatsRepository {
+    override val summary: Flow<DailySummary> = flowOf(summary)
+    override suspend fun recordListen(uri: String, title: String, artist: String?, album: String?, genres: List<String>, timestampMs: Long) = Unit
+    override suspend fun recordTime(uri: String, title: String, artist: String?, album: String?, genres: List<String>, ms: Long, timestampMs: Long) = Unit
+    override suspend fun isMigrated() = true
+    override suspend fun migrateIfNeeded(genresOf: (String) -> List<String>) = Unit
 }
 
 private class FakeFollows : FollowRepository {
@@ -117,7 +133,7 @@ class MyProfileViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun juntaNumerosMaisOuvidasESeguidosETocaDoPerfil() = runTest(dispatcher) {
+    fun juntaNumerosMaisOuvidaESeguidosDoPerfil() = runTest(dispatcher) {
         val at = LocalDateTime.of(2026, 10, 17, 20, 0).atZone(zone).toInstant().toEpochMilli()
         val history = FakeHistory(listOf(HistoryEntry(acai.uri, acai.title, acai.artist, acai.album, at)))
         val top = listOf(SongStat(acai.uri, acai.title, acai.artist, acai.album, plays = 7, lastPlayedMs = at))
@@ -133,9 +149,7 @@ class MyProfileViewModelTest {
         assertEquals(1, state.stats.monthPlays)
         assertEquals(3, state.stats.monthMinutes) // Açaí tem 200 s
         assertEquals(listOf("Djavan"), state.following.map { it.name })
-
-        vm.playTop(0)
-        assertEquals(listOf(acai), player.played)
+        assertEquals(listOf(acai.uri), state.topSongs.map { it.uri })
     }
 
     @Test
@@ -206,5 +220,28 @@ class MyProfileViewModelTest {
         assertEquals("Chikoi The Maid", artistOf("Chikoi The Maid ft. Alguém"))
         assertEquals("Featherstone", artistOf("Featherstone"))
         assertEquals("https://api.deezer.com/artist/27/image?size=medium", deezerArtistImageUrl(27))
+    }
+
+    @Test
+    fun estatisticasMudamComOPeriodoEUsamADuracaoDaBiblioteca() = runTest(dispatcher) {
+        val song = DaySong(acai.uri, acai.title, acai.artist, acai.album, listOf("MPB"))
+        // Outubro: 3 reproduções antigas (tempo estimado); novembro: 1 reprodução com 2 min medidos.
+        val oct = MonthData(YearMonth.of(2026, 10), listOf(song), mapOf(5 to listOf(DayRow(0, 3, 0, 3))))
+        val nov = MonthData(YearMonth.of(2026, 11), listOf(song), mapOf(2 to listOf(DayRow(0, 1, 120_000, 0))))
+        val vm = MyProfileViewModel(
+            FakeProfile(), FakeHistory(emptyList()), FakeStats(emptyList()), FakeLibrary(), FakeFollows(), FakePlayer(),
+            daily = FakeDaily(DailySummary(listOf(oct, nov), emptyList(), 0)),
+            zone = zone, today = { LocalDate.of(2026, 11, 17) },
+        )
+        backgroundScope.launch(dispatcher) { vm.report.collect {} }
+
+        val month = vm.report.first { it?.period == StatsPeriod.ThisMonth && it.minutes == 2 }!!
+        assertEquals(1, month.plays)
+
+        vm.selectPeriod(StatsPeriod.ThisYear)
+        // Açaí tem 200 s: 3 × 200 s estimados + 2 min medidos = 12 min (quando a biblioteca já carregou).
+        val year = vm.report.first { it?.period == StatsPeriod.ThisYear && it.minutes == 12 }!!
+        assertEquals(4, year.plays)
+        assertEquals("Djavan", year.artists.single().name)
     }
 }

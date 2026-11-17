@@ -95,7 +95,9 @@ import kotlinx.coroutines.flow.first
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boomlistener.feature.profile.navigateToStats
 import com.boomlistener.feature.profile.profileScreen
+import com.boomlistener.feature.profile.statsScreen
 import com.boomlistener.feature.profile.ProfileSongMenu
 import com.boomlistener.core.designsystem.component.FavoriteShare
 import com.boomlistener.core.designsystem.component.LocalFavoriteShare
@@ -334,7 +336,17 @@ fun BoomListenerApp() {
             profileScreen(
                 onOpenArtist = openSongArtist,
                 onOpenHistory = openHistory,
+                onOpenStats = { navController.navigateToStats() },
                 onOpenSettings = openSettings,
+                songMenu = ProfileSongMenu(
+                    onOpenArtist = openSongArtist,
+                    onEditTags = { uri -> navController.navigateToTagEditor(uri) },
+                    onAddToPlaylist = { uri -> addToPlaylistUri = uri },
+                ),
+            )
+            statsScreen(
+                onBack = back,
+                onOpenArtist = openSongArtist,
                 songMenu = ProfileSongMenu(
                     onOpenArtist = openSongArtist,
                     onEditTags = { uri -> navController.navigateToTagEditor(uri) },

@@ -64,4 +64,47 @@
     <string name="feature_profile_play_next_done">Plays next</string>
     <string name="feature_profile_color_gradient">Gradient</string>
     <string name="feature_profile_color_solid">Solid</string>
+    <string name="feature_profile_stats_title">Statistics</string>
+    <string name="feature_profile_stats_open">See statistics</string>
+    <string name="feature_profile_stats_period_4weeks">4 weeks</string>
+    <string name="feature_profile_stats_period_month">This month</string>
+    <string name="feature_profile_stats_period_year">This year</string>
+    <string name="feature_profile_stats_period_all">All time</string>
+    <string name="feature_profile_stats_days_hours">%1$d d %2$d h of listening</string>
+    <string name="feature_profile_stats_estimated">Part of this time is estimated from the song length (listening from before this version).</string>
+    <string name="feature_profile_stats_record_day">Record day</string>
+    <string name="feature_profile_stats_streak">Longest streak</string>
+    <string name="feature_profile_stats_most_artists_day">Most artists in one day</string>
+    <plurals name="feature_profile_stats_genres">
+        <item quantity="one">genre</item>
+        <item quantity="other">genres</item>
+    </plurals>
+    <plurals name="feature_profile_stats_days">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
+    <plurals name="feature_profile_stats_day_count">
+        <item quantity="one">%1$d day in a row</item>
+        <item quantity="other">%1$d days in a row</item>
+    </plurals>
+    <plurals name="feature_profile_stats_artist_count">
+        <item quantity="one">%1$d artist</item>
+        <item quantity="other">%1$d artists</item>
+    </plurals>
+    <string name="feature_profile_stats_top_artists">Top artists</string>
+    <string name="feature_profile_stats_top_songs">Top songs</string>
+    <string name="feature_profile_stats_top_albums">Top albums</string>
+    <string name="feature_profile_stats_top_genres">Top genres</string>
+    <string name="feature_profile_stats_sprint">How your Top 5 changed</string>
+    <string name="feature_profile_stats_sprint_sub">Each artist\'s position, month by month</string>
+    <string name="feature_profile_stats_show_all">See Top %1$d</string>
+    <string name="feature_profile_stats_show_less">Show less</string>
+    <string name="feature_profile_stats_up">▲ %1$d</string>
+    <string name="feature_profile_stats_down">▼ %1$d</string>
+    <string name="feature_profile_stats_new">NEW</string>
+    <string name="feature_profile_stats_plays_time">%1$s · %2$s</string>
+    <string name="feature_profile_stats_percent">%1$d%%</string>
+    <string name="feature_profile_stats_none">–</string>
+    <string name="feature_profile_stats_empty_title">Nothing here yet</string>
+    <string name="feature_profile_stats_empty_message">Listen to some music and your statistics will show up here.</string>
 </resources>

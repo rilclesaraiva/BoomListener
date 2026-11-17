@@ -3,9 +3,11 @@
 
 package com.boomlistener.feature.profile
 
+import com.boomlistener.core.common.navigateOnce
 import com.boomlistener.core.designsystem.component.BoomNavScreen
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.boomlistener.core.player.PlayerConnection
@@ -15,6 +17,7 @@ import com.boomlistener.data.deezer.artistPicture
 import com.boomlistener.data.library.LibraryData
 import com.boomlistener.data.profile.ProfileData
 import com.boomlistener.data.releases.ReleasesData
+import com.boomlistener.data.wellbeing.DailyStatsData
 import com.boomlistener.data.wellbeing.HistoryData
 import com.boomlistener.data.wellbeing.StatsData
 
@@ -27,32 +30,54 @@ const val MY_PROFILE_ROUTE = "profile"
 fun NavGraphBuilder.profileScreen(
     onOpenArtist: (artistName: String) -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenStats: () -> Unit,
     onOpenSettings: () -> Unit,
     songMenu: ProfileSongMenu,
 ) {
     composable(MY_PROFILE_ROUTE) {
         val context = LocalContext.current.applicationContext
-        val viewModel = viewModel {
-            MyProfileViewModel(
-                profile = ProfileData.repository(context),
-                history = HistoryData.repository(context),
-                stats = StatsData.repository(context),
-                library = LibraryData.repository(context),
-                follows = ReleasesData.follows(context),
-                player = PlayerConnection.controller(context),
-                remoteImage = DeezerData.repository(context)::image,
-                artistPhoto = { name, sizePx -> DeezerData.repository(context).artistPicture(name, sizePx) },
-                artistLatestCover = { name, sizePx -> DeezerData.repository(context).artistLatestCover(name, sizePx) },
-            )
-        }
+        val viewModel = viewModel { createProfileViewModel(context) }
         BoomNavScreen(this, tab = true) {
             MyProfileScreen(
                 viewModel = viewModel,
                 onOpenArtist = onOpenArtist,
                 onOpenHistory = onOpenHistory,
+                onOpenStats = onOpenStats,
                 onOpenSettings = onOpenSettings,
                 songMenu = songMenu,
             )
         }
     }
 }
+
+/** Tela de Estatísticas: o resumo do Perfil abre esta página (com o voltar). */
+const val STATS_ROUTE = "profile/stats"
+
+fun NavController.navigateToStats() = navigateOnce(STATS_ROUTE) { launchSingleTop = true }
+
+fun NavGraphBuilder.statsScreen(
+    onBack: () -> Unit,
+    onOpenArtist: (artistName: String) -> Unit,
+    songMenu: ProfileSongMenu,
+) {
+    composable(STATS_ROUTE) {
+        val context = LocalContext.current.applicationContext
+        val viewModel = viewModel { createProfileViewModel(context) }
+        BoomNavScreen(this) {
+            StatsScreen(viewModel = viewModel, onBack = onBack, onOpenArtist = onOpenArtist, songMenu = songMenu)
+        }
+    }
+}
+
+private fun createProfileViewModel(context: android.content.Context) = MyProfileViewModel(
+    profile = ProfileData.repository(context),
+    history = HistoryData.repository(context),
+    stats = StatsData.repository(context),
+    library = LibraryData.repository(context),
+    follows = ReleasesData.follows(context),
+    player = PlayerConnection.controller(context),
+    remoteImage = DeezerData.repository(context)::image,
+    artistPhoto = { name, sizePx -> DeezerData.repository(context).artistPicture(name, sizePx) },
+    artistLatestCover = { name, sizePx -> DeezerData.repository(context).artistLatestCover(name, sizePx) },
+    daily = DailyStatsData.repository(context),
+)
