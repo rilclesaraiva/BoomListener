@@ -391,6 +391,7 @@ private fun Track.toMediaItem(): MediaItem =
                 .setTitle(title)
                 .setArtist(artist)
                 .setAlbumTitle(album)
+                .setGenre(genre)
                 .setTrackNumber(trackNumber)
                 .setRecordingYear(year)
                 .setIsPlayable(true)

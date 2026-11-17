@@ -85,6 +85,7 @@ class PlaybackService : MediaSessionService() {
 
     // "Mais ouvidas": decide o que conta (PlayCountTracker) e avisa o app.
     private val playCounter = PlayCountTracker()
+    private var currentPlay: CountedPlay? = null
     private val tickHandler = Handler(Looper.getMainLooper())
 
     // Lembrar onde parou: a fila e o ponto da música vão para um arquivo.
@@ -145,6 +146,9 @@ class PlaybackService : MediaSessionService() {
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 val item = mediaItem ?: return
+                // O que faltava ouvir da música que saiu vai para o resumo antes de começar a nova.
+                reportListenedTime(minMs = 1)
+                currentPlay = playOf(player, item.mediaId)
                 playCounter.start(
                     key = item.mediaId,
                     durationMs = player.duration.takeIf { it > 0 } ?: 0L,
@@ -179,7 +183,7 @@ class PlaybackService : MediaSessionService() {
                 if (isPlaying) tickHandler.post(transitionTick)
                 playCounter.setPlaying(isPlaying, SystemClock.elapsedRealtime())
                 tickHandler.removeCallbacks(tick)
-                if (isPlaying) tickHandler.post(tick) else reportIfCounted()
+                if (isPlaying) tickHandler.post(tick) else reportIfCounted(minListenedMs = 1)
                 scheduleSave()
             }
 
@@ -233,12 +237,20 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    private fun reportIfCounted() {
+    private fun reportIfCounted(minListenedMs: Long = LISTENED_TIME_STEP_MS) {
         val player = mediaSession?.player ?: return
         val now = SystemClock.elapsedRealtime()
         // Histórico (toda música ouvida 30 s) e "mais ouvidas" (com as regras do aleatório).
         playCounter.checkListened(now)?.let { key -> playOf(player, key)?.let { PlaybackHooks.onListened?.invoke(it) } }
         playCounter.check(now)?.let { key -> playOf(player, key)?.let { PlaybackHooks.onPlayCounted?.invoke(it) } }
+        reportListenedTime(minListenedMs)
+    }
+
+    /** Resumo diário: avisa o tempo ouvido (de verdade) da música atual, se já passou de [minMs]. */
+    private fun reportListenedTime(minMs: Long) {
+        val play = currentPlay ?: return
+        val ms = playCounter.takeListenedMs(SystemClock.elapsedRealtime(), minMs)
+        if (ms > 0) PlaybackHooks.onListenedTime?.invoke(ListenedTime(play, ms, System.currentTimeMillis()))
     }
 
     private fun playOf(player: Player, key: String): CountedPlay? {
@@ -250,6 +262,7 @@ class PlaybackService : MediaSessionService() {
             artist = metadata.artist?.toString(),
             album = metadata.albumTitle?.toString(),
             timestampMs = System.currentTimeMillis(),
+            genre = metadata.genre?.toString(),
         )
     }
 
@@ -276,6 +289,7 @@ class PlaybackService : MediaSessionService() {
                     .setTitle(item.title)
                     .setArtist(item.artist)
                     .setAlbumTitle(item.album)
+                    .setGenre(item.genre)
                     .setIsPlayable(true)
                     .setIsBrowsable(false)
                     .build(),
@@ -287,6 +301,7 @@ class PlaybackService : MediaSessionService() {
         title = mediaMetadata.title?.toString().orEmpty(),
         artist = mediaMetadata.artist?.toString(),
         album = mediaMetadata.albumTitle?.toString(),
+        genre = mediaMetadata.genre?.toString(),
     )
 
     /** Volume igualado pelo ReplayGain (só com a opção ligada). */
@@ -382,6 +397,7 @@ class PlaybackService : MediaSessionService() {
         tickHandler.removeCallbacks(transitionTick)
         tickHandler.removeCallbacks(tick)
         tickHandler.removeCallbacks(saveSoon)
+        reportIfCounted(minListenedMs = 1)
         saveSnapshot()
         mediaSession?.run {
             player.release()
@@ -409,6 +425,8 @@ class PlaybackService : MediaSessionService() {
 }
 
 /** Espera antes de aplicar a saída escolhida (junta toques seguidos). */
+/** Resumo diário: o tempo ouvido vai aos poucos, a cada ~15 s (e ao pausar ou trocar de música). */
+private const val LISTENED_TIME_STEP_MS = 15_000L
 private const val OUTPUT_SWITCH_DELAY_MS = 250L
 
 /** Até quanto tempo depois de o fone sair a música volta sozinha quando ele reconecta. */

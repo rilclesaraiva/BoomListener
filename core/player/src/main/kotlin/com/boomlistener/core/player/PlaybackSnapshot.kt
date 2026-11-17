@@ -8,7 +8,14 @@ import java.io.File
 import java.util.concurrent.Executors
 
 /** Uma música da fila guardada (o suficiente para remontar o item do player). */
-internal data class SnapshotItem(val uri: String, val title: String, val artist: String?, val album: String?)
+internal data class SnapshotItem(
+    val uri: String,
+    val title: String,
+    val artist: String?,
+    val album: String?,
+    /** Gênero da tag (campo 5; arquivos antigos, de 4 campos, voltam sem gênero). */
+    val genre: String? = null,
+)
 
 /**
  * Onde o player estava: a fila, qual música e em que ponto. Guardado para,
@@ -35,7 +42,7 @@ internal fun encodeSnapshot(snapshot: PlaybackSnapshot): String = buildString {
     append(HEADER).append('\t').append(snapshot.index).append('\t').append(snapshot.positionMs)
         .append('\t').append(snapshot.repeatMode).append('\t').append(if (snapshot.shuffle) 1 else 0).append('\n')
     fun line(item: SnapshotItem) {
-        append(listOf(item.uri, item.title, item.artist.orEmpty(), item.album.orEmpty()).joinToString("\t") { escape(it) })
+        append(listOf(item.uri, item.title, item.artist.orEmpty(), item.album.orEmpty(), item.genre.orEmpty()).joinToString("\t") { escape(it) })
         append('\n')
     }
     snapshot.items.forEach(::line)
@@ -52,7 +59,7 @@ internal fun decodeSnapshot(text: String): PlaybackSnapshot? {
     fun parse(line: String): SnapshotItem? {
         val fields = line.split('\t').map(::unescape)
         if (fields.size < 4 || fields[0].isEmpty()) return null
-        return SnapshotItem(fields[0], fields[1], fields[2].ifEmpty { null }, fields[3].ifEmpty { null })
+        return SnapshotItem(fields[0], fields[1], fields[2].ifEmpty { null }, fields[3].ifEmpty { null }, fields.getOrNull(4)?.ifEmpty { null })
     }
     val body = lines.drop(1)
     val mark = body.indexOf(ORIGINAL_MARK)

@@ -23,6 +23,21 @@ class PlaybackSnapshotTest {
     }
 
     @Test
+    fun generoVoltaEArquivoAntigoSemGeneroAindaAbre() {
+        val snapshot = PlaybackSnapshot(
+            items = listOf(SnapshotItem("content://1", "A", "B", "C", "Rock; Pop"), SnapshotItem("content://2", "D", null, null)),
+            index = 0,
+            positionMs = 0,
+            repeatMode = 0,
+        )
+        assertEquals(snapshot, decodeSnapshot(encodeSnapshot(snapshot)))
+        // Antes desta versão cada música tinha 4 campos.
+        val old = decodeSnapshot("boom-queue-v1\t0\t0\t0\ncontent://1\tA\tB\tC\n")!!
+        assertNull(old.items.single().genre)
+        assertEquals("C", old.items.single().album)
+    }
+
+    @Test
     fun arquivoEstranhoOuVazioNaoRestaura() {
         assertNull(decodeSnapshot(""))
         assertNull(decodeSnapshot("outra coisa\n"))

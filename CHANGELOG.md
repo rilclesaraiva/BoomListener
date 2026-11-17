@@ -10,6 +10,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Select several genres, artists, playlists or albums in Library:** hold one to open its panel and tap "Select" (tapping the picture still just opens it). Then tap others to mark them, or use "select all", and shuffle or play the songs of everything you marked (a radio of those artists or genres), or add them to a playlist. A song that is in two marked groups plays once.
 - **Total listening time on Home:** under the song count you now see how long your whole library lasts, in exact hours and minutes, e.g. "176 songs" and "10 h 24 min" (just minutes when it is under an hour).
 
+- **A daily listening summary that is never erased (groundwork for the new statistics):** the app now keeps, per day, which songs, artists, albums and genres you listened to and for how long you really listened (including songs you skipped), so your statistics can reach back beyond the 1 year / 5,000 plays of the history. Your existing history and most-played counts are brought in automatically the first time (time listened before this version is estimated from the song length). It stays on your phone and is part of your backup. Nothing new is shown yet.
+
 ### Changed
 - **Notification bells show the ringing bell when on:** the release-alert bell (Releases and artist pages) now has the little bars on both sides when alerts are on.
 - **Release date inside the release page:** the full release date (not only the year) is shown under the title of a release.

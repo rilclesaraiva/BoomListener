@@ -10,7 +10,12 @@ data class CountedPlay(
     val artist: String?,
     val album: String?,
     val timestampMs: Long,
+    /** Gênero da tag no momento da escuta ("Rock; Pop"), se a música tinha. */
+    val genre: String? = null,
 )
+
+/** Tempo realmente ouvido de uma música, medido pelo player (inclusive músicas puladas). */
+data class ListenedTime(val play: CountedPlay, val ms: Long, val timestampMs: Long)
 
 /**
  * Ganchos do player para o resto do app. O :app liga isto na inicialização
@@ -26,6 +31,10 @@ object PlaybackHooks {
      */
     @Volatile
     var onListened: ((CountedPlay) -> Unit)? = null
+
+    /** Resumo diário: quanto tempo se ouviu de verdade, aos poucos (a cada ~15 s, ao pausar e ao trocar de música). */
+    @Volatile
+    var onListenedTime: ((ListenedTime) -> Unit)? = null
 }
 
 /**
@@ -66,6 +75,7 @@ internal class PlayCountTracker(private val minListenMs: Long = 30_000) {
     private var listenedMs = 0L
     private var playingSinceMs: Long? = null
     private var thresholdMs = minListenMs
+    private var reportedMs = 0L
 
     /** Uma música começou (nova ou repetida). */
     fun start(key: String, durationMs: Long, chosen: Boolean, shuffle: Boolean, isPlaying: Boolean, nowMs: Long) {
@@ -74,6 +84,7 @@ internal class PlayCountTracker(private val minListenMs: Long = 30_000) {
         counted = false
         listenedReported = false
         listenedMs = 0
+        reportedMs = 0
         playingSinceMs = if (isPlaying) nowMs else null
         thresholdMs = if (durationMs in 1 until minListenMs) (durationMs * 8 / 10) else minListenMs
     }
@@ -107,5 +118,19 @@ internal class PlayCountTracker(private val minListenMs: Long = 30_000) {
         if (total < thresholdMs) return null
         counted = true
         return key
+    }
+
+    /**
+     * Resumo diário: o tempo ouvido desta música desde a última vez que foi
+     * pedido, ou 0 se for menos que [minMs] (para não gravar a cada segundo).
+     * Vale para qualquer música, ouvida 30 s ou pulada.
+     */
+    fun takeListenedMs(nowMs: Long, minMs: Long): Long {
+        if (key == null) return 0
+        val total = listenedMs + (playingSinceMs?.let { nowMs - it } ?: 0L)
+        val delta = total - reportedMs
+        if (delta < minMs || delta <= 0) return 0
+        reportedMs = total
+        return delta
     }
 }

@@ -71,4 +71,32 @@ class PlayCountTrackerTest {
         assertNull(tracker.checkListened(50_000)) // uma vez por reprodução
         assertNull(tracker.check(50_000)) // mas não conta nas mais ouvidas
     }
+
+    @Test
+    fun tempoOuvidoSaiAosPoucosEPausaNaoSoma() {
+        val tracker = PlayCountTracker()
+        tracker.start("a", minute, chosen = true, shuffle = false, isPlaying = true, nowMs = 0)
+        assertEquals(0L, tracker.takeListenedMs(10_000, minMs = 15_000)) // ainda pouco
+        assertEquals(20_000L, tracker.takeListenedMs(20_000, minMs = 15_000))
+        tracker.setPlaying(false, 25_000) // ouviu mais 5 s e pausou
+        assertEquals(5_000L, tracker.takeListenedMs(60_000, minMs = 1))
+        assertEquals(0L, tracker.takeListenedMs(90_000, minMs = 1)) // pausado: nada novo
+    }
+
+    @Test
+    fun musicaPuladaAntesDos30sTambemTemTempo() {
+        val tracker = PlayCountTracker()
+        tracker.start("a", minute, chosen = true, shuffle = false, isPlaying = true, nowMs = 0)
+        assertNull(tracker.checkListened(8_000))
+        assertEquals(8_000L, tracker.takeListenedMs(8_000, minMs = 1))
+    }
+
+    @Test
+    fun musicaNovaZeraOTempoJaEnviado() {
+        val tracker = PlayCountTracker()
+        tracker.start("a", minute, chosen = true, shuffle = false, isPlaying = true, nowMs = 0)
+        assertEquals(40_000L, tracker.takeListenedMs(40_000, minMs = 1))
+        tracker.start("b", minute, chosen = true, shuffle = false, isPlaying = true, nowMs = 40_000)
+        assertEquals(3_000L, tracker.takeListenedMs(43_000, minMs = 1))
+    }
 }
