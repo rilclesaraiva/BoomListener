@@ -98,6 +98,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.feature.profile.navigateToStats
 import com.boomlistener.feature.profile.profileScreen
 import com.boomlistener.feature.profile.statsScreen
+import com.boomlistener.feature.profile.navigateToWrapped
+import com.boomlistener.feature.profile.wrappedScreen
 import com.boomlistener.feature.profile.ProfileSongMenu
 import com.boomlistener.core.designsystem.component.FavoriteShare
 import com.boomlistener.core.designsystem.component.LocalFavoriteShare
@@ -344,7 +346,9 @@ fun BoomListenerApp() {
                     onAddToPlaylist = { uri -> addToPlaylistUri = uri },
                 ),
             )
+            wrappedScreen(onBack = back)
             statsScreen(
+                onOpenWrapped = { period -> navController.navigateToWrapped(period) },
                 onBack = back,
                 onOpenArtist = openSongArtist,
                 songMenu = ProfileSongMenu(

@@ -15,11 +15,13 @@ import com.boomlistener.data.deezer.DeezerData
 import com.boomlistener.data.deezer.artistLatestCover
 import com.boomlistener.data.deezer.artistPicture
 import com.boomlistener.data.library.LibraryData
+import com.boomlistener.data.library.PlaylistData
 import com.boomlistener.data.profile.ProfileData
 import com.boomlistener.data.releases.ReleasesData
 import com.boomlistener.data.wellbeing.DailyStatsData
 import com.boomlistener.data.wellbeing.HistoryData
 import com.boomlistener.data.wellbeing.StatsData
+import com.boomlistener.data.wellbeing.StatsPeriod
 
 /**
  * Aba Perfil: o seu perfil, só seu (foto, capa, cor, descrição) com as suas
@@ -56,6 +58,7 @@ const val STATS_ROUTE = "profile/stats"
 fun NavController.navigateToStats() = navigateOnce(STATS_ROUTE) { launchSingleTop = true }
 
 fun NavGraphBuilder.statsScreen(
+    onOpenWrapped: (period: String) -> Unit,
     onBack: () -> Unit,
     onOpenArtist: (artistName: String) -> Unit,
     songMenu: ProfileSongMenu,
@@ -64,7 +67,23 @@ fun NavGraphBuilder.statsScreen(
         val context = LocalContext.current.applicationContext
         val viewModel = viewModel { createProfileViewModel(context) }
         BoomNavScreen(this) {
-            StatsScreen(viewModel = viewModel, onBack = onBack, onOpenArtist = onOpenArtist, songMenu = songMenu)
+            StatsScreen(viewModel = viewModel, onBack = onBack, onOpenWrapped = onOpenWrapped, onOpenArtist = onOpenArtist, songMenu = songMenu)
+        }
+    }
+}
+
+/** Wrapped: cartões em sequência com o período escolhido nas Estatísticas. */
+const val WRAPPED_ROUTE = "profile/wrapped"
+
+fun NavController.navigateToWrapped(period: String) = navigateOnce("$WRAPPED_ROUTE/$period") { launchSingleTop = true }
+
+fun NavGraphBuilder.wrappedScreen(onBack: () -> Unit) {
+    composable("$WRAPPED_ROUTE/{period}") { entry ->
+        val context = LocalContext.current.applicationContext
+        val viewModel = viewModel { createProfileViewModel(context) }
+        val period = entry.arguments?.getString("period")?.let { name -> StatsPeriod.entries.firstOrNull { it.name == name } } ?: StatsPeriod.ThisYear
+        BoomNavScreen(this) {
+            WrappedScreen(viewModel = viewModel, period = period, onBack = onBack)
         }
     }
 }
@@ -80,4 +99,5 @@ private fun createProfileViewModel(context: android.content.Context) = MyProfile
     artistPhoto = { name, sizePx -> DeezerData.repository(context).artistPicture(name, sizePx) },
     artistLatestCover = { name, sizePx -> DeezerData.repository(context).artistLatestCover(name, sizePx) },
     daily = DailyStatsData.repository(context),
+    playlists = PlaylistData.repository(context),
 )

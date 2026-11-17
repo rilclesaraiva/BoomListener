@@ -55,6 +55,8 @@ import com.boomlistener.data.wellbeing.SongRank
 import com.boomlistener.data.wellbeing.Sprint
 import com.boomlistener.data.wellbeing.StatsPeriod
 import com.boomlistener.data.wellbeing.StatsReport
+import com.boomlistener.data.wellbeing.wrappedDaysLeft
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
@@ -72,6 +74,7 @@ internal fun StatsScreen(
     viewModel: MyProfileViewModel,
     onBack: () -> Unit,
     onOpenArtist: (String) -> Unit,
+    onOpenWrapped: (period: String) -> Unit,
     songMenu: ProfileSongMenu,
     modifier: Modifier = Modifier,
 ) {
@@ -119,6 +122,12 @@ internal fun StatsScreen(
                 }
             } else {
                 item(key = "summary") { SummaryCard(current) }
+                item(key = "wrapped") {
+                    WrappedEntry(
+                        daysLeft = wrappedDaysLeft(current.dataSince, state?.today ?: LocalDate.now()),
+                        onOpen = { onOpenWrapped(period.name) },
+                    )
+                }
                 if (current.bestDay != null || current.longestStreak > 1 || current.mostArtistsDay != null) {
                     item(key = "highlights") { HighlightsCard(current) }
                 }
@@ -166,6 +175,30 @@ internal fun StatsScreen(
     }
 }
 
+/** Atalho do Wrapped: abre com 30 dias de escuta; antes disso mostra quantos dias faltam. */
+@Composable
+private fun WrappedEntry(daysLeft: Int, onOpen: () -> Unit) {
+    val open = daysLeft == 0
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onOpen,
+        enabled = open,
+        color = if (open) colors.tertiaryContainer else colors.surfaceContainerHigh,
+        contentColor = if (open) colors.onTertiaryContainer else colors.onSurfaceVariant,
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.feature_profile_wrapped_title), style = MaterialTheme.typography.titleLarge)
+            Text(
+                if (open) stringResource(R.string.feature_profile_wrapped_sub)
+                else pluralStringResource(R.plurals.feature_profile_wrapped_wait, daysLeft, daysLeft),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
 @Composable
 private fun PeriodChips(selected: StatsPeriod, onSelect: (StatsPeriod) -> Unit) {
     Row(
@@ -194,7 +227,7 @@ private fun PeriodChips(selected: StatsPeriod, onSelect: (StatsPeriod) -> Unit) 
 }
 
 @Composable
-private fun minutesText(minutes: Int): String =
+internal fun minutesText(minutes: Int): String =
     if (minutes >= 60) stringResource(R.string.feature_profile_hours_minutes, minutes / 60, minutes % 60)
     else stringResource(R.string.feature_profile_minutes, minutes)
 
@@ -237,7 +270,7 @@ private fun BigStat(value: String, label: String, modifier: Modifier = Modifier)
     }
 }
 
-private val DateShown: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+internal val DateShown: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
 @Composable
 private fun HighlightsCard(report: StatsReport) {
@@ -269,7 +302,7 @@ private fun HighlightsCard(report: StatsReport) {
 }
 
 @Composable
-private fun Highlight(label: String, value: String, detail: String?) {
+internal fun Highlight(label: String, value: String, detail: String?) {
     Column {
         Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.titleMedium)
@@ -330,7 +363,7 @@ private fun ChangeBadge(change: RankChange) {
 }
 
 @Composable
-private fun playsAndTime(plays: Int, minutes: Int): String =
+internal fun playsAndTime(plays: Int, minutes: Int): String =
     stringResource(
         R.string.feature_profile_stats_plays_time,
         pluralStringResource(R.plurals.feature_profile_plays, plays, plays),

@@ -21,7 +21,7 @@ BoomListener ("the app") is a free, open-source music player for Android that pl
 The app keeps the following in its private storage on your device:
 
 - the list of songs Android gives it (title, artist, album, length, file location) and the covers inside your files;
-- your playlists, favorites, play counts, listening history and listening stats, including a daily summary of what you listened to (songs, artists, genres and how long you listened);
+- your playlists, favorites, play counts, listening history and listening stats, including a daily summary of what you listened to (songs, artists, genres and how long you listened, including which hours of the day);
 - your profile (name, description, color, photo and cover), which is only shown to you;
 - your settings, the artists you follow and which release alerts you have seen;
 - an optional diagnostic log (Settings → System → Diagnostics; off by default) with screen names, counts, states, and playback and network errors (such as seeks, volume and failed photo downloads), but never song titles, artists or file locations. It stays on your phone unless you choose to share it;

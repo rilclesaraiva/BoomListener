@@ -107,4 +107,36 @@
     <string name="feature_profile_stats_none">–</string>
     <string name="feature_profile_stats_empty_title">Todavía no hay nada</string>
     <string name="feature_profile_stats_empty_message">Escucha algo de música y tus estadísticas aparecerán aquí.</string>
+    <string name="feature_profile_wrapped_title">Wrapped</string>
+    <string name="feature_profile_wrapped_sub">Tu escucha en tarjetas</string>
+    <plurals name="feature_profile_wrapped_wait">
+        <item quantity="one">Se abre en %1$d día</item>
+        <item quantity="other">Se abre en %1$d días</item>
+    </plurals>
+    <string name="feature_profile_wrapped_close">Cerrar</string>
+    <string name="feature_profile_wrapped_intro">¿Qué escuchaste más? Vamos a verlo…</string>
+    <string name="feature_profile_wrapped_artists">Los artistas que más escuchaste fueron…</string>
+    <string name="feature_profile_wrapped_song">No pudiste dejar esta</string>
+    <string name="feature_profile_wrapped_song_fallback">Una de tus más escuchadas</string>
+    <string name="feature_profile_wrapped_genres">Tus estilos favoritos fueron…</string>
+    <string name="feature_profile_wrapped_time">Escuchaste durante…</string>
+    <string name="feature_profile_wrapped_hour">Tu hora favorita para escuchar</string>
+    <string name="feature_profile_wrapped_hour_night">Madrugada</string>
+    <string name="feature_profile_wrapped_hour_morning">Mañana</string>
+    <string name="feature_profile_wrapped_hour_afternoon">Tarde</string>
+    <string name="feature_profile_wrapped_hour_evening">Noche</string>
+    <string name="feature_profile_wrapped_hour_note">Donde estuvo la mayor parte de tu tiempo de escucha.</string>
+    <plurals name="feature_profile_wrapped_discoveries">
+        <item quantity="one">Descubriste %1$d artista nuevo</item>
+        <item quantity="other">Descubriste %1$d artistas nuevos</item>
+    </plurals>
+    <string name="feature_profile_wrapped_discoveries_sub">Artistas que no habías escuchado antes de este período.</string>
+    <string name="feature_profile_wrapped_top">Tus canciones más escuchadas</string>
+    <string name="feature_profile_wrapped_playlist_create">Crear lista con el Top 100</string>
+    <plurals name="feature_profile_wrapped_playlist_created">
+        <item quantity="one">Lista creada con %1$d canción</item>
+        <item quantity="other">Lista creada con %1$d canciones</item>
+    </plurals>
+    <string name="feature_profile_wrapped_playlist_name">Wrapped %1$s</string>
+    <string name="feature_profile_wrapped_playlist_none">Ninguna canción de este período está en tu dispositivo.</string>
 </resources>

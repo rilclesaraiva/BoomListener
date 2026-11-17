@@ -62,6 +62,13 @@ data class StatsReport(
     val sprint: Sprint?,
     /** Parte dos minutos é estimada pela duração das músicas (escuta de antes do resumo). */
     val hasEstimated: Boolean,
+    /** Primeiro dia com escuta no resumo (null sem dados): trava do Wrapped e base das descobertas. */
+    val dataSince: LocalDate? = null,
+    /** Hora do dia (0 a 23) com mais tempo ouvido; null sem tempo medido por hora (a medição é por mês). */
+    val favoriteHour: Int? = null,
+    /** Artistas ouvidos pela primeira vez neste período, os mais ouvidos primeiro (até 5). */
+    val discoveries: List<String> = emptyList(),
+    val discoveryCount: Int = 0,
 )
 
 const val TOP_LIMIT = 100
@@ -243,6 +250,17 @@ fun computeStatsReport(
     val legacyPlays = if (includeLegacy) summary.legacy.sumOf { it.plays } else 0
     val totalMs = days.sumOf { it.ms } + if (includeLegacy) summary.legacy.sumOf { it.plays * durationOf.orDefault(it.uri) } else 0L
 
+    val dataSince = firstDay(summary)
+    val firstSeen = HashMap<String, LocalDate>()
+    if (from != null && dataSince != null && dataSince.isBefore(from)) {
+        for (day in daysIn(summary, null, to, durationOf)) {
+            if (day.plays <= 0) continue
+            val key = day.song.artist?.trim()?.lowercase()?.takeIf { it.isNotEmpty() } ?: continue
+            firstSeen.merge(key, day.date) { a, b -> if (a.isBefore(b)) a else b }
+        }
+    }
+    val discovered = if (from == null || firstSeen.isEmpty()) emptyList() else artistOrder.map { it.first }.filter { key -> firstSeen[key]?.let { !it.isBefore(from) } == true }
+
     return StatsReport(
         period = period,
         from = from,
@@ -261,8 +279,44 @@ fun computeStatsReport(
         genres = genreRanks,
         sprint = sprintOf(days, artists.take(SPRINT_TOP).map { it.name }),
         hasEstimated = (includeLegacy && summary.legacy.isNotEmpty()) || hasEstimatedRows(summary, from, to),
+        dataSince = dataSince,
+        favoriteHour = favoriteHour(summary, from, to),
+        discoveries = discovered.take(DISCOVERY_SHOWN).map { spelling[it] ?: it },
+        discoveryCount = discovered.size,
     )
 }
+
+private const val DISCOVERY_SHOWN = 5
+
+/** O primeiro dia com alguma escuta no resumo. */
+fun firstDay(summary: DailySummary): LocalDate? =
+    summary.months.mapNotNull { month ->
+        month.days.filterValues { rows -> rows.any { it.plays > 0 || it.listenedMs > 0 } }.keys.minOrNull()?.let { month.month.atDay(it.coerceIn(1, month.month.lengthOfMonth())) }
+    }.minOrNull()
+
+/** Hora com mais tempo ouvido nos meses do período (o tempo por hora é guardado por mês). */
+private fun favoriteHour(summary: DailySummary, from: LocalDate?, to: LocalDate): Int? {
+    val totals = LongArray(24)
+    for (month in summary.months) {
+        if (month.hourMs.size != 24) continue
+        if ((from != null && month.month.atEndOfMonth().isBefore(from)) || month.month.atDay(1).isAfter(to)) continue
+        month.hourMs.forEachIndexed { hour, ms -> totals[hour] += ms }
+    }
+    val best = totals.max()
+    return if (best <= 0) null else totals.indexOf(best)
+}
+
+/** Dias que faltam para o Wrapped abrir (30 dias de escuta desde o primeiro dia); 0 = liberado. */
+fun wrappedDaysLeft(dataSince: LocalDate?, today: LocalDate): Int {
+    if (dataSince == null) return WRAPPED_MIN_DAYS
+    val ready = dataSince.plusDays(WRAPPED_MIN_DAYS.toLong())
+    return if (today.isBefore(ready)) java.time.temporal.ChronoUnit.DAYS.between(today, ready).toInt() else 0
+}
+
+const val WRAPPED_MIN_DAYS = 30
+
+/** A música que toca no Wrapped: a mais ouvida que ainda existe no aparelho, senão a seguinte, e assim por diante. */
+fun wrappedSong(songs: List<SongRank>, exists: (String) -> Boolean): SongRank? = songs.firstOrNull { exists(it.uri) }
 
 private fun hasEstimatedRows(summary: DailySummary, from: LocalDate?, to: LocalDate): Boolean =
     summary.months.any { month ->

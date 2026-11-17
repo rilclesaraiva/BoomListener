@@ -9,7 +9,9 @@ import android.graphics.Bitmap
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlaybackController
 import com.boomlistener.core.player.PlaybackState
+import com.boomlistener.core.model.Playlist
 import com.boomlistener.data.library.LibraryRepository
+import com.boomlistener.data.library.PlaylistRepository
 import com.boomlistener.data.profile.MAX_BIO
 import com.boomlistener.data.profile.MyProfile
 import com.boomlistener.data.profile.ProfileImage
@@ -67,6 +69,17 @@ private class FakeDaily(summary: DailySummary) : DailyStatsRepository {
     override suspend fun recordTime(uri: String, title: String, artist: String?, album: String?, genres: List<String>, ms: Long, timestampMs: Long) = Unit
     override suspend fun isMigrated() = true
     override suspend fun migrateIfNeeded(genresOf: (String) -> List<String>) = Unit
+}
+
+private class FakePlaylists : PlaylistRepository {
+    val created = mutableListOf<Pair<String, List<String>>>()
+    override val playlists: Flow<List<Playlist>> = flowOf(emptyList())
+    override suspend fun create(name: String, trackUris: List<String>): Long { created += name to trackUris; return created.size.toLong() }
+    override suspend fun rename(id: Long, name: String) = Unit
+    override suspend fun delete(id: Long) = Unit
+    override suspend fun addTracks(id: Long, uris: List<String>) = 0
+    override suspend fun removeAt(id: Long, index: Int) = Unit
+    override suspend fun move(id: Long, from: Int, to: Int) = Unit
 }
 
 private class FakeFollows : FollowRepository {
@@ -243,5 +256,28 @@ class MyProfileViewModelTest {
         val year = vm.report.first { it?.period == StatsPeriod.ThisYear && it.minutes == 12 }!!
         assertEquals(4, year.plays)
         assertEquals("Djavan", year.artists.single().name)
+    }
+
+    @Test
+    fun wrappedTocaAMaisOuvidaQueAindaExisteECriaAPlaylistSoComAsDoAparelho() = runTest(dispatcher) {
+        val gone = DaySong("content://apagada", "Sumiu", "Djavan", null, emptyList())
+        val here = DaySong(acai.uri, acai.title, acai.artist, acai.album, listOf("MPB"))
+        // A mais ouvida (3 vezes) saiu do aparelho; a Açaí (1 vez) ainda está.
+        val nov = MonthData(YearMonth.of(2026, 11), listOf(gone, here), mapOf(2 to listOf(DayRow(0, 3, 0, 0), DayRow(1, 1, 0, 0))))
+        val playlists = FakePlaylists()
+        val vm = MyProfileViewModel(
+            FakeProfile(), FakeHistory(emptyList()), FakeStats(emptyList()), FakeLibrary(), FakeFollows(), FakePlayer(),
+            daily = FakeDaily(DailySummary(listOf(nov), emptyList(), 0)), playlists = playlists,
+            zone = zone, today = { LocalDate.of(2026, 11, 17) },
+        )
+        backgroundScope.launch(dispatcher) { vm.report.collect {} }
+        backgroundScope.launch(dispatcher) { vm.wrappedSong.collect {} }
+
+        assertEquals(acai.uri, vm.wrappedSong.first { it != null }!!.uri)
+
+        var count = -1
+        vm.createTopPlaylist("Wrapped 2026") { count = it }
+        assertEquals(1, count)
+        assertEquals(listOf("Wrapped 2026" to listOf(acai.uri)), playlists.created)
     }
 }

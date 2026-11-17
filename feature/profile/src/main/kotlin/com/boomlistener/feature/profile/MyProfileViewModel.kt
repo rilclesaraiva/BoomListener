@@ -9,7 +9,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlaybackController
+import com.boomlistener.core.player.AreaPlayer
 import com.boomlistener.data.library.LibraryRepository
+import com.boomlistener.data.library.PlaylistRepository
 import com.boomlistener.data.releases.FollowRepository
 import com.boomlistener.data.releases.FollowedArtist
 import com.boomlistener.core.common.normalizedForSearch
@@ -22,10 +24,12 @@ import com.boomlistener.data.wellbeing.DailySummary
 import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.ListeningHistoryRepository
 import com.boomlistener.data.wellbeing.ListeningStatsRepository
+import com.boomlistener.data.wellbeing.SongRank
 import com.boomlistener.data.wellbeing.SongStat
 import com.boomlistener.data.wellbeing.StatsPeriod
 import com.boomlistener.data.wellbeing.StatsReport
 import com.boomlistener.data.wellbeing.computeStatsReport
+import com.boomlistener.data.wellbeing.wrappedSong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOn
@@ -82,6 +86,8 @@ internal class MyProfileViewModel(
     private val artistLatestCover: suspend (name: String, sizePx: Int) -> Bitmap? = { _, _ -> null },
     /** Resumo diário da escuta (tela de Estatísticas); null nos testes que não o usam. */
     private val daily: DailyStatsRepository? = null,
+    /** Para a playlist do Top 100 do Wrapped; null nos testes que não a usam. */
+    private val playlists: PlaylistRepository? = null,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val today: () -> LocalDate = { LocalDate.now(zone) },
 ) : ViewModel() {
@@ -120,6 +126,27 @@ internal class MyProfileViewModel(
         val durations = library.associate { it.uri to it.durationMs }
         computeStatsReport(summary, period, today(), { uri -> durations[uri] ?: 0L })
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** A música que toca no Wrapped: a mais ouvida do período que ainda está no aparelho (senão a seguinte). */
+    val wrappedSong: StateFlow<SongRank?> = combine(report, tracks) { current, library ->
+        val existing = library.mapTo(HashSet()) { it.uri }
+        current?.let { wrappedSong(it.songs) { uri -> uri in existing } }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** O player só do Wrapped (pausa o principal ao abrir e o devolve ao fechar). */
+    fun areaPlayer(context: android.content.Context) = AreaPlayer(context, player)
+
+    /** Cria a playlist com as músicas do Top 100 do período que ainda estão no aparelho; devolve quantas entraram (0 = não criou). */
+    fun createTopPlaylist(name: String, onDone: (Int) -> Unit) {
+        val repository = playlists ?: return onDone(0)
+        val existing = tracks.value.mapTo(HashSet()) { it.uri }
+        val uris = report.value?.songs.orEmpty().map { it.uri }.filter { it in existing }
+        if (uris.isEmpty()) return onDone(0)
+        viewModelScope.launch {
+            repository.create(name, uris)
+            onDone(uris.size)
+        }
+    }
 
     private val _saveFailed = MutableStateFlow(false)
     val saveFailed: StateFlow<Boolean> = _saveFailed.asStateFlow()

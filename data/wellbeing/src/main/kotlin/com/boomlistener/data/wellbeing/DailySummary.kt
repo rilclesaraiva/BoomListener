@@ -41,6 +41,11 @@ data class MonthData(
     val month: YearMonth,
     val songs: List<DaySong>,
     val days: Map<Int, List<DayRow>>,
+    /**
+     * Tempo ouvido por hora do dia (24 posições, na hora local de quem ouviu) neste mês;
+     * vazio se nada foi medido (meses migrados do histórico não têm). Base do "horário favorito".
+     */
+    val hourMs: List<Long> = emptyList(),
 ) {
     companion object {
         fun empty(month: YearMonth) = MonthData(month, emptyList(), emptyMap())
@@ -113,6 +118,13 @@ internal fun MonthData.withTime(song: DaySong, day: Int, ms: Long): MonthData {
     return copy(songs = newSongs, days = days + (day to newRows))
 }
 
+/** Soma [ms] de tempo ouvido na [hour] (0 a 23) do dia. */
+internal fun MonthData.withHourTime(hour: Int, ms: Long): MonthData {
+    if (ms <= 0 || hour !in 0..23) return this
+    val hours = hourMs.ifEmpty { List(24) { 0L } }
+    return copy(hourMs = hours.mapIndexed { index, value -> if (index == hour) value + ms else value })
+}
+
 /** Junta dois resumos do mesmo mês (o que já era gravado + o que veio da migração). */
 internal fun MonthData.merge(other: MonthData): MonthData {
     var allSongs = songs
@@ -140,7 +152,8 @@ internal fun MonthData.merge(other: MonthData): MonthData {
         }
         merged[day] = current
     }
-    return MonthData(month, allSongs, merged)
+    val hours = if (hourMs.isEmpty() && other.hourMs.isEmpty()) emptyList() else List(24) { (hourMs.getOrNull(it) ?: 0L) + (other.hourMs.getOrNull(it) ?: 0L) }
+    return MonthData(month, allSongs, merged, hours)
 }
 
 /**
@@ -201,7 +214,9 @@ internal fun encodeMonth(data: MonthData): String {
         rows.forEach { row -> array.put(JSONArray(listOf(row.song, row.plays, row.listenedMs, row.estimatedPlays))) }
         days.put(day.toString(), array)
     }
-    return JSONObject().put("v", 1).put("songs", songs).put("days", days).toString()
+    val json = JSONObject().put("v", 1).put("songs", songs).put("days", days)
+    if (data.hourMs.isNotEmpty()) json.put("h", JSONArray(data.hourMs))
+    return json.toString()
 }
 
 /** Lê um mês; arquivo quebrado ou de formato desconhecido vira null (nunca derruba o app). */
@@ -228,7 +243,9 @@ internal fun decodeMonth(month: YearMonth, text: String): MonthData? = runCatchi
             DayRow(row.getInt(0), row.getInt(1), row.getLong(2), row.getInt(3))
         }.filter { it.song in songs.indices }
     }
-    MonthData(month, songs, days)
+    val hoursJson = json.optJSONArray("h")
+    val hours = if (hoursJson != null && hoursJson.length() == 24) (0 until 24).map { hoursJson.optLong(it) } else emptyList()
+    MonthData(month, songs, days, hours)
 }.getOrNull()
 
 internal fun encodeLegacy(legacy: List<LegacySong>): String {

@@ -197,4 +197,42 @@ class StatsReportTest {
         assertNull(report.sprint)
         assertTrue(report.artists.isEmpty())
     }
+
+    @Test
+    fun descobertasSaoArtistasQueSoAparecemNoPeriodo() {
+        val oct = month(YearMonth.of(2026, 10), row(5, djavan, 4))
+        val nov = month(YearMonth.of(2026, 11), row(3, djavan, 2), row(4, earth, 6), row(5, kcat, 1))
+        val report = computeStatsReport(summary(oct, nov), StatsPeriod.ThisMonth, today, duration)
+        assertEquals(listOf("Earth, Wind & Fire", "Delinquent, KCAT"), report.discoveries)
+        assertEquals(2, report.discoveryCount)
+        assertEquals(LocalDate.of(2026, 10, 5), report.dataSince)
+        // Sem nada antes do período, tudo seria "novo": não há descobertas a mostrar.
+        assertTrue(computeStatsReport(summary(nov), StatsPeriod.ThisMonth, today, duration).discoveries.isEmpty())
+        assertTrue(computeStatsReport(summary(oct, nov), StatsPeriod.AllTime, today, duration).discoveries.isEmpty())
+    }
+
+    @Test
+    fun horarioFavoritoVemDoTempoPorHoraEIgnoraMesesSemMedicao() {
+        val comHoras = month(YearMonth.of(2026, 11), row(3, djavan, 1)).withHourTime(22, 5 * minute).withHourTime(8, 2 * minute).withHourTime(22, minute)
+        assertEquals(22, computeStatsReport(summary(comHoras), StatsPeriod.ThisYear, today, duration).favoriteHour)
+        val semHoras = month(YearMonth.of(2026, 11), row(3, djavan, 1))
+        assertNull(computeStatsReport(summary(semHoras), StatsPeriod.ThisYear, today, duration).favoriteHour)
+    }
+
+    @Test
+    fun wrappedAbreComUmMesDeDados() {
+        assertEquals(WRAPPED_MIN_DAYS, wrappedDaysLeft(null, today))
+        assertEquals(13, wrappedDaysLeft(LocalDate.of(2026, 10, 31), today))
+        assertEquals(0, wrappedDaysLeft(LocalDate.of(2026, 10, 18), today))
+        assertEquals(0, wrappedDaysLeft(LocalDate.of(2025, 1, 1), today))
+    }
+
+    @Test
+    fun musicaDoWrappedPulaAsApagadas() {
+        val songs = listOf(SongRank("a", "A", null, 9, 1), SongRank("b", "B", null, 5, 1), SongRank("c", "C", null, 2, 1))
+        assertEquals("a", wrappedSong(songs) { true }?.uri)
+        assertEquals("b", wrappedSong(songs) { it != "a" }?.uri)
+        assertEquals("c", wrappedSong(songs) { it == "c" }?.uri)
+        assertNull(wrappedSong(songs) { false })
+    }
 }

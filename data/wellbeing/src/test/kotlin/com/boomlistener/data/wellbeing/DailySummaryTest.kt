@@ -157,4 +157,18 @@ class DailySummaryTest {
         val meta = DailyMeta(123, true)
         assertEquals(meta, decodeMeta(encodeMeta(meta)))
     }
+
+    @Test
+    fun tempoPorHoraVaiEVoltaDoArquivoESomaNaJuncao() {
+        val nov = YearMonth.of(2026, 11)
+        val a = MonthData.empty(nov).withHourTime(21, 1000).withHourTime(21, 500)
+        assertEquals(1500L, a.hourMs[21])
+        assertEquals(a, decodeMonth(nov, encodeMonth(a)))
+        val b = MonthData.empty(nov).withHourTime(3, 200)
+        assertEquals(1500L, a.merge(b).hourMs[21])
+        assertEquals(200L, a.merge(b).hourMs[3])
+        // Arquivo sem o campo (versão anterior) continua lendo, sem horas.
+        assertTrue(decodeMonth(nov, "{\"v\":1,\"songs\":[],\"days\":{}}")!!.hourMs.isEmpty())
+        assertTrue(MonthData.empty(nov).merge(MonthData.empty(nov)).hourMs.isEmpty())
+    }
 }

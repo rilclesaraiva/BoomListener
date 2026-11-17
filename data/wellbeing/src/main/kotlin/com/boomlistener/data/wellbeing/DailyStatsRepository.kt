@@ -141,10 +141,11 @@ internal class FileDailyStatsRepository(
         ensureLoaded()
         withContext(Dispatchers.IO) {
             mutex.withLock {
-                val date = Instant.ofEpochMilli(timestampMs).atZone(zone()).toLocalDate()
+                val moment = Instant.ofEpochMilli(timestampMs).atZone(zone())
+                val date = moment.toLocalDate()
                 val month = YearMonth.from(date)
                 val song = DaySong(uri, title, artist, album, genres)
-                update(month) { (it ?: MonthData.empty(month)).withTime(song, date.dayOfMonth, ms) }
+                update(month) { (it ?: MonthData.empty(month)).withTime(song, date.dayOfMonth, ms).withHourTime(moment.hour, ms) }
             }
         }
     }
