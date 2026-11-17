@@ -79,6 +79,11 @@ internal fun StatsScreen(
     val report by viewModel.report.collectAsStateWithLifecycle()
     val period by viewModel.period.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    // Textos lidos aqui: o corpo do LazyColumn não é um contexto composable.
+    val topArtistsTitle = stringResource(R.string.feature_profile_stats_top_artists)
+    val topSongsTitle = stringResource(R.string.feature_profile_stats_top_songs)
+    val topAlbumsTitle = stringResource(R.string.feature_profile_stats_top_albums)
+    val topGenresTitle = stringResource(R.string.feature_profile_stats_top_genres)
 
     BoomScreenScaffold(
         title = stringResource(R.string.feature_profile_stats_title),
@@ -119,25 +124,25 @@ internal fun StatsScreen(
                 }
                 rankedSection(
                     key = "artists",
-                    title = stringResource(R.string.feature_profile_stats_top_artists),
+                    title = topArtistsTitle,
                     items = current.artists,
                     period = period,
                 ) { index, artist -> ArtistRow(index + 1, artist, viewModel, onOpenArtist) }
                 rankedSection(
                     key = "songs",
-                    title = stringResource(R.string.feature_profile_stats_top_songs),
+                    title = topSongsTitle,
                     items = current.songs,
                     period = period,
                 ) { index, song -> SongRow(index + 1, song, viewModel, songMenu) }
                 rankedSection(
                     key = "albums",
-                    title = stringResource(R.string.feature_profile_stats_top_albums),
+                    title = topAlbumsTitle,
                     items = current.albums,
                     period = period,
                 ) { index, album -> AlbumRow(index + 1, album, viewModel) }
                 rankedSection(
                     key = "genres",
-                    title = stringResource(R.string.feature_profile_stats_top_genres),
+                    title = topGenresTitle,
                     items = current.genres,
                     period = period,
                 ) { index, genre -> GenreRow(index + 1, genre, maxShare = current.genres.firstOrNull()?.share ?: 1f) }

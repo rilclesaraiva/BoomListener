@@ -132,9 +132,9 @@ private fun artistTallies(days: List<Day>): Pair<Map<String, Tally>, Map<String,
         val tally = tallies.getOrPut(key) { Tally() }
         tally.plays += day.plays
         tally.ms += day.ms
-        spellings.getOrPut(key) { HashMap() }.merge(name, 1) { a, b -> a + b }
+        spellings.getOrPut(key) { HashMap() }.merge(name, maxOf(day.plays, 1)) { a, b -> a + b }
     }
-    return tallies to spellings.mapValues { (_, count) -> count.entries.maxWith(compareBy<Map.Entry<String, Int>> { it.value }.thenBy { it.key }).key }
+    return tallies to spellings.mapValues { (_, count) -> count.entries.maxWith(compareBy<Map.Entry<String, Int>> { it.value }.thenByDescending { it.key }).key }
 }
 
 /** Quanto subiu/desceu cada artista em relação ao período anterior. */

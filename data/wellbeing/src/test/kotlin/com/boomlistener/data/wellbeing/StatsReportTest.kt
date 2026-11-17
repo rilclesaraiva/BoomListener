@@ -49,7 +49,7 @@ class StatsReportTest {
         assertEquals(LocalDate.of(2026, 11, 1) to today, periodRange(StatsPeriod.ThisMonth, today))
         assertEquals(LocalDate.of(2026, 1, 1) to today, periodRange(StatsPeriod.ThisYear, today))
         assertEquals(null to today, periodRange(StatsPeriod.AllTime, today))
-        assertEquals(LocalDate.of(2026, 9, 24) to LocalDate.of(2026, 10, 20), previousRange(StatsPeriod.Last4Weeks, today))
+        assertEquals(LocalDate.of(2026, 9, 23) to LocalDate.of(2026, 10, 20), previousRange(StatsPeriod.Last4Weeks, today))
         assertEquals(LocalDate.of(2026, 10, 1) to LocalDate.of(2026, 10, 31), previousRange(StatsPeriod.ThisMonth, today))
         assertEquals(LocalDate.of(2025, 1, 1) to LocalDate.of(2025, 12, 31), previousRange(StatsPeriod.ThisYear, today))
         assertNull(previousRange(StatsPeriod.AllTime, today))
