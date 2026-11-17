@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.boomlistener.core.designsystem.component.BoomSongDetails
-import com.boomlistener.core.designsystem.component.BoomSongDetailsDialog
+import com.boomlistener.core.designsystem.component.BoomSongDetailsSheet
 import com.boomlistener.data.library.LibraryData
 
 /** "Detalhes" de uma música (arquivo, formato, taxa de bits). Devolve a função que abre a janela. */
@@ -40,7 +40,7 @@ internal fun rememberSongDetails(): (uri: String, title: String) -> Unit {
                 sampleRateHz = found.sampleRateHz,
             )
         }
-        BoomSongDetailsDialog(title = title, details = details, onDismiss = { open = null })
+        BoomSongDetailsSheet(title = title, details = details, onDismiss = { open = null })
     }
     return remember { { uri, title -> open = uri to title } }
 }

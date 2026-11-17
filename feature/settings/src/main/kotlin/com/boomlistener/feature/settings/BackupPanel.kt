@@ -5,10 +5,7 @@ package com.boomlistener.feature.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,16 +23,17 @@ import androidx.compose.ui.unit.dp
 import android.net.Uri
 import com.boomlistener.core.designsystem.component.BoomAccent
 import com.boomlistener.core.designsystem.component.BoomIcons
-import com.boomlistener.core.designsystem.component.BoomPageTitle
-import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
-import com.boomlistener.core.designsystem.component.BoomSettingsSection
+import com.boomlistener.core.designsystem.component.BoomSettingsPanel
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
-/** Ajustes → Backup: salvar os dados do app num arquivo e trazê-los de volta. */
+/**
+ * Ajustes → Sistema → Seus dados: painel fechado "Backup" que, ao tocar, abre salvar os dados do
+ * app num arquivo e trazê-los de volta.
+ */
 @Composable
-internal fun BackupScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
+internal fun BackupPanel(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val version = appVersionName(context)
@@ -83,49 +81,37 @@ internal fun BackupScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         )
     }
 
-    BoomScreenScaffold(
+    BoomSettingsPanel(
         title = stringResource(R.string.feature_settings_backup),
-        onBack = onBack,
+        summary = stringResource(R.string.feature_settings_backup_summary),
+        icon = BoomIcons.Backup,
         modifier = modifier,
-        topBar = {},
-    ) { padding ->
-        LazyColumn(contentPadding = padding) {
-            item(key = "pageTitle") {
-                BoomPageTitle(stringResource(R.string.feature_settings_backup), hasBack = true, large = true)
-            }
-            item(key = "actions") {
-                BoomSettingsSection(title = null) {
-                    BoomSettingsItem(
-                        icon = BoomIcons.Backup,
-                        accent = BoomAccent.Primary,
-                        title = stringResource(R.string.feature_settings_backup_export),
-                        subtitle = stringResource(R.string.feature_settings_backup_export_summary),
-                        enabled = !working,
-                        onClick = { exportLauncher.launch("boomlistener-backup-${LocalDate.now()}.zip") },
-                    )
-                    BoomSettingsItem(
-                        icon = BoomIcons.Restore,
-                        accent = BoomAccent.Secondary,
-                        title = stringResource(R.string.feature_settings_backup_restore),
-                        subtitle = stringResource(R.string.feature_settings_backup_restore_summary),
-                        enabled = !working,
-                        onClick = { restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) },
-                    )
-                }
-            }
-            item(key = "status") {
-                val text = when {
-                    working -> stringResource(R.string.feature_settings_backup_working)
-                    else -> message?.let { stringResource(it) }
-                }
-                Text(
-                    text ?: stringResource(R.string.feature_settings_backup_note),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                )
-            }
-            item { Spacer(Modifier.height(24.dp)) }
+    ) {
+        BoomSettingsItem(
+            icon = BoomIcons.Backup,
+            accent = BoomAccent.Primary,
+            title = stringResource(R.string.feature_settings_backup_export),
+            subtitle = stringResource(R.string.feature_settings_backup_export_summary),
+            enabled = !working,
+            onClick = { exportLauncher.launch("boomlistener-backup-${LocalDate.now()}.zip") },
+        )
+        BoomSettingsItem(
+            icon = BoomIcons.Restore,
+            accent = BoomAccent.Secondary,
+            title = stringResource(R.string.feature_settings_backup_restore),
+            subtitle = stringResource(R.string.feature_settings_backup_restore_summary),
+            enabled = !working,
+            onClick = { restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) },
+        )
+        val text = when {
+            working -> stringResource(R.string.feature_settings_backup_working)
+            else -> message?.let { stringResource(it) }
         }
+        Text(
+            text ?: stringResource(R.string.feature_settings_backup_note),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+        )
     }
 }

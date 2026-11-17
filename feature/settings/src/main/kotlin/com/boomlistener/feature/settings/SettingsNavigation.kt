@@ -16,7 +16,6 @@ internal const val ABOUT_ROUTE = "settings/about"
 internal const val LIBRARY_SETTINGS_ROUTE = "settings/library"
 internal const val PLAYBACK_SETTINGS_ROUTE = "settings/playback"
 internal const val SHARE_SETTINGS_ROUTE = "settings/share"
-internal const val BACKUP_ROUTE = "settings/backup"
 internal const val SYSTEM_SETTINGS_ROUTE = "settings/system"
 
 fun NavController.navigateToSettings() = navigateOnce(SETTINGS_ROUTE) { launchSingleTop = true }
@@ -41,9 +40,6 @@ fun NavGraphBuilder.settingsScreen(navController: NavController, onOpenTagAudit:
     composable(LIBRARY_SETTINGS_ROUTE) { BoomNavScreen(this) { LibrarySettingsScreen(onBack = back, onOpenTagAudit = onOpenTagAudit) } }
     composable(PLAYBACK_SETTINGS_ROUTE) { BoomNavScreen(this) { PlaybackSettingsScreen(onBack = back) } }
     composable(SHARE_SETTINGS_ROUTE) { BoomNavScreen(this) { ShareSettingsScreen(onBack = back) } }
-    composable(BACKUP_ROUTE) { BoomNavScreen(this) { BackupScreen(onBack = back) } }
-    composable(SYSTEM_SETTINGS_ROUTE) { BoomNavScreen(this) {
-            SystemSettingsScreen(onBack = back, onOpenBackup = { navController.navigateOnce(BACKUP_ROUTE) })
-        } }
+    composable(SYSTEM_SETTINGS_ROUTE) { BoomNavScreen(this) { SystemSettingsScreen(onBack = back) } }
     composable(ABOUT_ROUTE) { BoomNavScreen(this) { AboutScreen(onBack = back) } }
 }

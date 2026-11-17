@@ -18,7 +18,6 @@
     <string name="core_designsystem_details_sample_rate">Frecuencia de muestreo</string>
     <string name="core_designsystem_details_hz">%1$d Hz</string>
     <string name="core_designsystem_details_modified">Modificado</string>
-    <string name="core_designsystem_details_close">Cerrar</string>
     <string name="core_designsystem_releases">Lanzamientos</string>
     <string name="core_designsystem_artists_title">Artistas de esta canción</string>
     <string name="core_designsystem_artist_full_name">Nombre completo, como en la etiqueta</string>

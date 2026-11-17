@@ -326,11 +326,23 @@ private fun TrackList(
                         Text(stringResource(R.string.feature_library_play), style = MaterialTheme.typography.titleMedium)
                     }
                     Spacer(Modifier.weight(1f))
-                    Text(
-                        text = pluralStringResource(R.plurals.feature_library_count, state.tracks.size, state.tracks.size),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = pluralStringResource(R.plurals.feature_library_count, state.tracks.size, state.tracks.size),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        val total = remember(state.tracks) { totalDuration(state.tracks.sumOf { it.durationMs }) }
+                        Text(
+                            text = if (total.inHours) {
+                                pluralStringResource(R.plurals.feature_library_total_hours, total.hours, total.hours)
+                            } else {
+                                pluralStringResource(R.plurals.feature_library_total_minutes, total.minutes, total.minutes)
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             if (home != null) {

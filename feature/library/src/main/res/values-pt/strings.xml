@@ -17,6 +17,14 @@
         <item quantity="one">%1$d música</item>
         <item quantity="other">%1$d músicas</item>
     </plurals>
+    <plurals name="feature_library_total_hours">
+        <item quantity="one">%1$d hora</item>
+        <item quantity="other">%1$d horas</item>
+    </plurals>
+    <plurals name="feature_library_total_minutes">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minutos</item>
+    </plurals>
     <string name="feature_library_shuffle_all">Aleatório</string>
     <string name="feature_library_add_to_playlist">Adicionar à playlist</string>
     <string name="feature_library_albums">Álbuns</string>

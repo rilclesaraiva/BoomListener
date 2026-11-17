@@ -54,7 +54,7 @@ import com.boomlistener.core.player.PlaybackSettingsData
  * dos seus dados.
  */
 @Composable
-internal fun SystemSettingsScreen(onBack: () -> Unit, onOpenBackup: () -> Unit, modifier: Modifier = Modifier) {
+internal fun SystemSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val host = LocalContext.current
     val context = host.applicationContext
     val playback = remember { PlaybackSettingsData.get(context) }
@@ -138,12 +138,7 @@ internal fun SystemSettingsScreen(onBack: () -> Unit, onOpenBackup: () -> Unit, 
             item(key = "data") {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_system_data)) {
                     // Backup dos dados do app num arquivo (e restaurar, inclusive num celular novo).
-                    BoomSettingsItem(
-                        icon = BoomIcons.Backup,
-                        title = stringResource(R.string.feature_settings_backup),
-                        subtitle = stringResource(R.string.feature_settings_backup_summary),
-                        onClick = onOpenBackup,
-                    )
+                    BackupPanel()
                 }
             }
             item(key = "diagnostic") {

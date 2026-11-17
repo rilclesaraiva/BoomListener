@@ -7,14 +7,15 @@ import android.text.format.DateFormat
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,19 +37,20 @@ data class BoomSongDetails(
 )
 
 /**
- * Janela "Detalhes" de uma música: onde está, tamanho, formato, taxa de bits…
+ * Painel "Detalhes" de uma música (sobe de baixo, como os outros): onde está, tamanho,
+ * formato, taxa de bits… Fecha descendo ou tocando fora; sem botão de fechar.
  * [details] null = ainda carregando. O texto pode ser selecionado (para copiar o caminho).
  */
 @Composable
-fun BoomSongDetailsDialog(title: String, details: BoomSongDetails?, onDismiss: () -> Unit) {
+fun BoomSongDetailsSheet(title: String, details: BoomSongDetails?, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title, maxLines = 2) },
-        text = {
+    BoomModalSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 2)
+            Spacer(Modifier.height(16.dp))
             if (details == null) {
                 CircularProgressIndicator()
-                return@AlertDialog
+                return@Column
             }
             val rows = listOfNotNull(
                 details.path?.let { stringResource(R.string.core_designsystem_details_path) to it },
@@ -76,11 +78,8 @@ fun BoomSongDetailsDialog(title: String, details: BoomSongDetails?, onDismiss: (
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.core_designsystem_details_close)) }
-        },
-    )
+        }
+    }
 }
 
 /** 254000 → "4:14"; com hora, "1:02:03". */

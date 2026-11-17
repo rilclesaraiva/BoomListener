@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
@@ -35,13 +36,14 @@ fun BoomSettingsPanel(
     title: String,
     summary: String?,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(if (open) 180f else 0f, boomSpatialSpec(), label = "panelArrow")
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         BoomSettingsItem(
-            icon = null,
+            icon = icon,
             title = title,
             subtitle = summary,
             onClick = { open = !open },
