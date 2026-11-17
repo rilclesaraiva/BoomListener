@@ -278,6 +278,16 @@ fun BoomListenerApp() {
     }
     // Tocou no aviso de lançamento: abre a tela de Lançamentos (player fechado).
     val openReleasesRequest by AppRequests.openReleases.collectAsState()
+    // Tocou no aviso do Wrapped: abre o Wrapped do ano.
+    val openWrappedRequest by AppRequests.openWrapped.collectAsState()
+    LaunchedEffect(openWrappedRequest) {
+        if (openWrappedRequest) {
+            AppRequests.openWrapped.value = false
+            navController.currentBackStackEntryFlow.first()
+            playerSheet.collapse()
+            navController.navigateToWrapped(com.boomlistener.data.wellbeing.StatsPeriod.ThisYear.name)
+        }
+    }
     LaunchedEffect(openReleasesRequest) {
         if (openReleasesRequest) {
             AppRequests.openReleases.value = false
@@ -339,6 +349,7 @@ fun BoomListenerApp() {
                 onOpenArtist = openSongArtist,
                 onOpenHistory = openHistory,
                 onOpenStats = { navController.navigateToStats() },
+                onOpenWrapped = { period -> navController.navigateToWrapped(period) },
                 onOpenSettings = openSettings,
                 songMenu = ProfileSongMenu(
                     onOpenArtist = openSongArtist,

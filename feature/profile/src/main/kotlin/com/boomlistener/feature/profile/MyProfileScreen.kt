@@ -112,11 +112,13 @@ internal fun MyProfileScreen(
     onOpenArtist: (String) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenStats: () -> Unit,
+    onOpenWrapped: (period: String) -> Unit,
     onOpenSettings: () -> Unit,
     songMenu: ProfileSongMenu,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val wrappedCard by viewModel.wrappedCard.collectAsStateWithLifecycle()
     val saveFailed by viewModel.saveFailed.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -156,6 +158,14 @@ internal fun MyProfileScreen(
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 20.dp),
+                        )
+                    }
+                }
+                if (wrappedCard) {
+                    item(key = "wrapped-ready") {
+                        WrappedReadyCard(
+                            onOpen = { onOpenWrapped(com.boomlistener.data.wellbeing.StatsPeriod.ThisYear.name) },
+                            onDismiss = viewModel::dismissWrappedCard,
                         )
                     }
                 }
@@ -743,4 +753,24 @@ private fun PinProfileImages(state: MyProfileUiState, viewModel: MyProfileViewMo
         }
     }
     PinImages("profileImages", items)
+}
+
+/** Dezembro sem a notificação ter saído (sem permissão): o Wrapped do ano espera aqui. */
+@Composable
+private fun WrappedReadyCard(onOpen: () -> Unit, onDismiss: () -> Unit) {
+    androidx.compose.material3.Surface(
+        onClick = onOpen,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Row(Modifier.padding(start = 20.dp, top = 16.dp, bottom = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.feature_profile_wrapped_card_title), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.feature_profile_wrapped_card_sub), style = MaterialTheme.typography.bodyMedium)
+            }
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.feature_profile_wrapped_card_dismiss)) }
+        }
+    }
 }

@@ -7,6 +7,7 @@ import com.boomlistener.core.common.DiagnosticLog
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import com.boomlistener.feature.profile.WrappedNotification
 import com.boomlistener.feature.releases.ReleaseAlerts
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.activity.ComponentActivity
@@ -21,6 +22,7 @@ import com.boomlistener.core.designsystem.theme.BoomTheme
 /** Pedidos vindos de fora da tela (ex.: tocar no aviso de lançamento). */
 internal object AppRequests {
     val openReleases = MutableStateFlow(false)
+    val openWrapped = MutableStateFlow(false)
 }
 
 /** Menor largura (dp) a partir da qual a tela é de tablet (a mesma divisa do Android). */
@@ -63,6 +65,10 @@ class MainActivity : ComponentActivity() {
         if (intent?.getBooleanExtra(ReleaseAlerts.EXTRA_OPEN_RELEASES, false) == true) {
             AppRequests.openReleases.value = true
             intent.removeExtra(ReleaseAlerts.EXTRA_OPEN_RELEASES)
+        }
+        if (intent?.getBooleanExtra(WrappedNotification.EXTRA_OPEN_WRAPPED, false) == true) {
+            AppRequests.openWrapped.value = true
+            intent.removeExtra(WrappedNotification.EXTRA_OPEN_WRAPPED)
         }
     }
 }

@@ -29,9 +29,13 @@ import com.boomlistener.data.wellbeing.SongStat
 import com.boomlistener.data.wellbeing.StatsPeriod
 import com.boomlistener.data.wellbeing.StatsReport
 import com.boomlistener.data.wellbeing.computeStatsReport
+import com.boomlistener.data.wellbeing.WrappedAlertsRepository
+import com.boomlistener.data.wellbeing.firstDay
+import com.boomlistener.data.wellbeing.wrappedCardVisible
 import com.boomlistener.data.wellbeing.wrappedSong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -88,6 +92,8 @@ internal class MyProfileViewModel(
     private val daily: DailyStatsRepository? = null,
     /** Para a playlist do Top 100 do Wrapped; null nos testes que não a usam. */
     private val playlists: PlaylistRepository? = null,
+    /** Aviso de fim de ano do Wrapped (cartão no Perfil); null nos testes que não o usam. */
+    private val wrappedAlerts: WrappedAlertsRepository? = null,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val today: () -> LocalDate = { LocalDate.now(zone) },
 ) : ViewModel() {
@@ -132,6 +138,23 @@ internal class MyProfileViewModel(
         val existing = library.mapTo(HashSet()) { it.uri }
         current?.let { wrappedSong(it.songs) { uri -> uri in existing } }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    private val dismissedYear = MutableStateFlow(wrappedAlerts?.dismissedYear ?: 0)
+
+    /** Mostra o cartão "Seu Wrapped está pronto" no Perfil (dezembro, sem a notificação ter saído). */
+    val wrappedCard: StateFlow<Boolean> = combine(
+        daily?.summary ?: emptyFlow<DailySummary>(),
+        wrappedAlerts?.enabled ?: flowOf(false),
+        dismissedYear,
+    ) { summary, enabled, dismissed ->
+        wrappedCardVisible(today(), enabled, wrappedAlerts?.notifiedYear ?: 0, dismissed, firstDay(summary))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun dismissWrappedCard() {
+        val year = today().year
+        wrappedAlerts?.dismissedYear = year
+        dismissedYear.value = year
+    }
 
     /** O player só do Wrapped (pausa o principal ao abrir e o devolve ao fechar). */
     fun areaPlayer(context: android.content.Context) = AreaPlayer(context, player)

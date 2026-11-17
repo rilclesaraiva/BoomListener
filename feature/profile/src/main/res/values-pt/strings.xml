@@ -142,4 +142,11 @@
     <string name="feature_profile_wrapped_tester">Build de teste: toque para abrir mesmo assim</string>
     <string name="feature_profile_wrapped_share">Compartilhar</string>
     <string name="feature_profile_wrapped_brand">BoomListener</string>
+    <string name="feature_profile_wrapped_channel_name">Wrapped</string>
+    <string name="feature_profile_wrapped_channel_description">Aviso de que o seu Wrapped de fim de ano está pronto</string>
+    <string name="feature_profile_wrapped_notification_title">Seu Wrapped de %1$d está pronto</string>
+    <string name="feature_profile_wrapped_notification_text">Veja o que você mais ouviu neste ano.</string>
+    <string name="feature_profile_wrapped_card_title">Seu Wrapped está pronto</string>
+    <string name="feature_profile_wrapped_card_sub">Abra o seu ano em cartões</string>
+    <string name="feature_profile_wrapped_card_dismiss">Dispensar</string>
 </resources>

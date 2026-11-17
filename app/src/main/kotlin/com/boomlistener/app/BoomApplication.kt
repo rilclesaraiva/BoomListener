@@ -14,6 +14,7 @@ import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.StatsData
 import com.boomlistener.data.wellbeing.splitGenres
 import com.boomlistener.data.profile.ProfileData
+import com.boomlistener.feature.profile.WrappedNotification
 import com.boomlistener.feature.releases.ReleaseAlerts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,7 @@ class BoomApplication : Application() {
         ProfileData.repository(this)
         // Confere lançamentos dos artistas seguidos a cada ~12 h (avisos no celular).
         ReleaseAlerts.schedule(this)
+        WrappedNotification.schedule(this)
         PlaybackHooks.onListened = { play ->
             appScope.launch {
                 history.record(HistoryEntry(play.uri, play.title, play.artist, play.album, play.timestampMs))

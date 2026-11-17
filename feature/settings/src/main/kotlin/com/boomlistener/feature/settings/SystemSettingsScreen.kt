@@ -40,6 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.common.OfflineMode
 import com.boomlistener.core.common.openUrl
 import com.boomlistener.data.lastfm.LastfmData
+import com.boomlistener.data.wellbeing.WrappedAlertsData
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
@@ -123,6 +124,20 @@ internal fun SystemSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modif
                 }
             }
             item(key = "updates") { UpdatesSettingsSection() }
+            item(key = "notifications") {
+                val wrappedAlerts = remember { WrappedAlertsData.repository(context) }
+                val wrappedOn by wrappedAlerts.enabled.collectAsStateWithLifecycle()
+                BoomSettingsSection(title = stringResource(R.string.feature_settings_system_notifications)) {
+                    // Aviso de fim de ano do Wrapped: só sai se as notificações já estiverem permitidas (nunca pede a permissão).
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_settings_wrapped_alert),
+                        subtitle = stringResource(R.string.feature_settings_wrapped_alert_summary),
+                        onClick = { wrappedAlerts.setEnabled(!wrappedOn) },
+                        trailing = { Switch(checked = wrappedOn, onCheckedChange = wrappedAlerts::setEnabled) },
+                    )
+                }
+            }
             item(key = "background") {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_system_background)) {
                     // Tirar dos recentes encerra a música e o app (desligado: continua tocando).

@@ -22,6 +22,7 @@ import com.boomlistener.data.wellbeing.DailyStatsData
 import com.boomlistener.data.wellbeing.HistoryData
 import com.boomlistener.data.wellbeing.StatsData
 import com.boomlistener.data.wellbeing.StatsPeriod
+import com.boomlistener.data.wellbeing.WrappedAlertsData
 
 /**
  * Aba Perfil: o seu perfil, só seu (foto, capa, cor, descrição) com as suas
@@ -33,6 +34,7 @@ fun NavGraphBuilder.profileScreen(
     onOpenArtist: (artistName: String) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenStats: () -> Unit,
+    onOpenWrapped: (period: String) -> Unit,
     onOpenSettings: () -> Unit,
     songMenu: ProfileSongMenu,
 ) {
@@ -45,6 +47,7 @@ fun NavGraphBuilder.profileScreen(
                 onOpenArtist = onOpenArtist,
                 onOpenHistory = onOpenHistory,
                 onOpenStats = onOpenStats,
+                onOpenWrapped = onOpenWrapped,
                 onOpenSettings = onOpenSettings,
                 songMenu = songMenu,
             )
@@ -100,4 +103,5 @@ private fun createProfileViewModel(context: android.content.Context) = MyProfile
     artistLatestCover = { name, sizePx -> DeezerData.repository(context).artistLatestCover(name, sizePx) },
     daily = DailyStatsData.repository(context),
     playlists = PlaylistData.repository(context),
+    wrappedAlerts = WrappedAlertsData.repository(context),
 )

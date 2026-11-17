@@ -50,7 +50,7 @@ The app identifies itself to MusicBrainz, LRCLIB and GitHub with its name ("Boom
 ## Permissions
 
 - **Music and audio** (`READ_MEDIA_AUDIO`, or storage read access on Android 12 and older): to find and play the songs on your phone.
-- **Notifications** (Android 13 and newer): only for release alerts, which you can turn off. The playback controls in the notification area don't need it.
+- **Notifications** (Android 13 and newer): only for release alerts and for a once-a-year notification in December when your Wrapped is ready; you can turn each off (Settings → System → Notifications for the Wrapped one). The app never asks for this permission because of the Wrapped: without it, a card in your Profile is shown instead. The playback controls in the notification area don't need it.
 - **Internet**: for the lookups listed above.
 - **Foreground service (media playback)**: to keep playing with the screen off.
 - **Write to storage** (Android 8 and 9 only): to save tags you edit. On Android 10 and newer, Android asks you file by file instead.

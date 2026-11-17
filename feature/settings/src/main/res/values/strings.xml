@@ -195,4 +195,7 @@
     <string name="feature_settings_update_prompts_always">Show notices normally</string>
     <string name="feature_settings_library_tag_scan">Tag scan</string>
     <string name="feature_settings_library_tag_scan_summary">Find songs missing tags, covers or lyrics</string>
+    <string name="feature_settings_system_notifications">Notifications</string>
+    <string name="feature_settings_wrapped_alert">Year-end Wrapped</string>
+    <string name="feature_settings_wrapped_alert_summary">A notification on December 1 when your Wrapped is ready. Only sent if notifications are already allowed.</string>
 </resources>

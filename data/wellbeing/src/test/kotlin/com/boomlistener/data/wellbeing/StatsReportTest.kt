@@ -235,4 +235,28 @@ class StatsReportTest {
         assertEquals("c", wrappedSong(songs) { it == "c" }?.uri)
         assertNull(wrappedSong(songs) { false })
     }
+
+    @Test
+    fun avisoDoWrappedSoEmDezembroComDadosELigado() {
+        val since = LocalDate.of(2026, 3, 1)
+        val dec = LocalDate.of(2026, 12, 1)
+        assertTrue(wrappedAlertDue(dec, true, 0, since))
+        assertFalse(wrappedAlertDue(dec, false, 0, since)) // opção desligada
+        assertFalse(wrappedAlertDue(dec, true, 2026, since)) // já avisou neste ano
+        assertTrue(wrappedAlertDue(dec.plusYears(1), true, 2026, since)) // outro ano
+        assertFalse(wrappedAlertDue(LocalDate.of(2026, 11, 30), true, 0, since)) // ainda não é dezembro
+        assertFalse(wrappedAlertDue(LocalDate.of(2027, 1, 2), true, 0, since)) // passou: não manda o do ano antigo
+        assertFalse(wrappedAlertDue(dec, true, 0, null)) // sem escuta
+        assertFalse(wrappedAlertDue(dec, true, 0, LocalDate.of(2026, 11, 20))) // menos de 30 dias
+    }
+
+    @Test
+    fun cartaoDoPerfilSomeQuandoDispensado() {
+        val since = LocalDate.of(2026, 3, 1)
+        val dec = LocalDate.of(2026, 12, 5)
+        assertTrue(wrappedCardVisible(dec, true, 0, 0, since))
+        assertFalse(wrappedCardVisible(dec, true, 0, 2026, since))
+        assertFalse(wrappedCardVisible(dec, true, 2026, 0, since)) // a notificação já saiu
+        assertFalse(wrappedCardVisible(dec, false, 0, 0, since))
+    }
 }

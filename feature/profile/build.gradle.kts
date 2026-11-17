@@ -19,5 +19,9 @@ dependencies {
     implementation(project(":data:wellbeing"))
     implementation(project(":data:releases"))
 
+    // Aviso de fim de ano do Wrapped (conferência diária e NotificationCompat).
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.core)
+
     testImplementation(libs.kotlinx.coroutines.test)
 }

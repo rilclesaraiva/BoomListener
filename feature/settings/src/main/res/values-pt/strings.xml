@@ -198,4 +198,7 @@
     <string name="feature_settings_update_prompts_always">Avisar normalmente</string>
     <string name="feature_settings_library_tag_scan">Escaneamento de tags</string>
     <string name="feature_settings_library_tag_scan_summary">Ache músicas sem tags, capa ou letra</string>
+    <string name="feature_settings_system_notifications">Notificações</string>
+    <string name="feature_settings_wrapped_alert">Wrapped de fim de ano</string>
+    <string name="feature_settings_wrapped_alert_summary">Uma notificação em dezembro quando o seu Wrapped estiver pronto. Só é enviada se as notificações já estiverem permitidas.</string>
 </resources>
