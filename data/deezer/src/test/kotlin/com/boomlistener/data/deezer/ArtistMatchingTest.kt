@@ -108,4 +108,23 @@ class ArtistMatchingTest {
         assertTrue(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/f0f2ae4b9f95cc09b9e3e9663569f2ce/1000x1000-000000-80-0-0.jpg"))
         assertFalse(isDefaultArtistPicture("https://cdn-images.dzcdn.net/images/artist/ab12cd34ef56/1000x1000-000000-80-0-0.jpg"))
     }
+
+    @Test
+    fun parecidosNaoIncluemOProprioArtistaNemHomonimoSemFoto() {
+        val self = artist(1, "Freddie Dredd")
+        val related = listOf(
+            artist(2, "Freddie Dredd"),
+            artist(3, "Haarper"),
+            artist(1, "Outro nome"),
+            artist(4, "haarper"),
+            artist(5, "1nonly"),
+        )
+        assertEquals(listOf(3L, 5L), relatedWithoutSelf(related, self).map { it.id })
+    }
+
+    @Test
+    fun parecidosIgnoramAcentoNoNomeDoProprio() {
+        val self = artist(1, "João Gilberto")
+        assertEquals(listOf(9L), relatedWithoutSelf(listOf(artist(2, "Joao Gilberto"), artist(9, "Caetano")), self).map { it.id })
+    }
 }

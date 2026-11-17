@@ -72,6 +72,18 @@ fun pickArtist(tagName: String, candidates: List<ExternalArtist>): ExternalArtis
         .maxByOrNull { it.fans }
 }
 
+/**
+ * "Artistas parecidos" sem o próprio artista: o Deezer às vezes lista, entre os parecidos, um perfil
+ * duplicado com o mesmo nome (sem foto) ou o mesmo id. Abrir esse "parecido" levaria à mesma página
+ * (e parecia não fazer nada). Também tira repetidos, mantendo o primeiro.
+ */
+fun relatedWithoutSelf(related: List<ExternalArtist>, self: ExternalArtist): List<ExternalArtist> {
+    val selfName = self.name.normalizedForSearch()
+    return related
+        .filter { it.id != self.id && it.name.normalizedForSearch() != selfName }
+        .distinctBy { it.name.normalizedForSearch() }
+}
+
 private val EDITION = Regex("""\s*[(\[][^)\]]*(edition|deluxe|remaster|version|expanded|anniversary|bonus)[^)\]]*[)\]]""", RegexOption.IGNORE_CASE)
 private val SUFFIX = Regex("""\s+-\s+(single|ep)$""", RegexOption.IGNORE_CASE)
 

@@ -64,14 +64,15 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
                 val top = async { getJson("$API/artist/${artist.id}/top?limit=10") }
                 val albums = async { getJson("$API/artist/${artist.id}/albums?limit=200") }
                 val related = async { getJson("$API/artist/${artist.id}/related?limit=12") }
+                val self = details.await()
                 ProfileResult.Found(
                     ArtistProfile(
-                        artist = details.await(),
+                        artist = self,
                         topTracks = top.await().optJSONArray("data").objects().map { it.toPopularTrack() },
                         releases = albums.await().optJSONArray("data").objects()
                             .map { it.toRelease() }
                             .sortedByDescending { it.releaseDate.orEmpty() },
-                        related = related.await().optJSONArray("data").objects().map { it.toArtist() },
+                        related = relatedWithoutSelf(related.await().optJSONArray("data").objects().map { it.toArtist() }, self),
                     ),
                 )
             }
