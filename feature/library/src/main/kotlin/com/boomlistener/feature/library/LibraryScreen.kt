@@ -334,10 +334,11 @@ private fun TrackList(
                         )
                         val total = remember(state.tracks) { libraryTotalTime(state.tracks.sumOf { it.durationMs }) }
                         Text(
-                            text = if (total.inHours) {
-                                pluralStringResource(R.plurals.feature_library_total_hours, total.hours, total.hours)
-                            } else {
-                                pluralStringResource(R.plurals.feature_library_total_minutes, total.minutes, total.minutes)
+                            text = when {
+                                total.hours > 0 && total.minutes > 0 ->
+                                    stringResource(R.string.feature_library_total_hours_minutes, total.hours, total.minutes)
+                                total.hours > 0 -> stringResource(R.string.feature_library_total_hours, total.hours)
+                                else -> stringResource(R.string.feature_library_total_minutes, total.minutes)
                             },
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
