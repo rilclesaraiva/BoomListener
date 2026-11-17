@@ -634,8 +634,11 @@ private fun RelatedArtist(artist: ExternalArtist, viewModel: ArtistViewModel, on
         Text(
             text = artist.name,
             style = MaterialTheme.typography.labelLarge,
-            maxLines = 2,
+            // Uma linha só: o nome comprido termina em "…" em vez de quebrar no meio da palavra,
+            // e a altura da fileira não muda (o que está abaixo dela não se mexe).
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
     }
 }
