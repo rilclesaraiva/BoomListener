@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
+import com.boomlistener.core.designsystem.component.heartbeat
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
@@ -545,8 +547,14 @@ private fun FavoriteButton(uri: String) {
     val favorites by repository.favorites.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val favorite = uri in favorites
-    IconButton(onClick = { scope.launch { repository.toggle(uri) } }) {
+    // "Tum tum": a cada vez que a música vira favorita, o coração pulsa e sobe duas vezes.
+    var beat by remember { mutableIntStateOf(0) }
+    IconButton(onClick = {
+        if (!favorite) beat++
+        scope.launch { repository.toggle(uri) }
+    }) {
         Icon(
+            modifier = Modifier.heartbeat(beat),
             imageVector = if (favorite) BoomIcons.Favorite else BoomIcons.FavoriteBorder,
             contentDescription = stringResource(if (favorite) R.string.feature_nowplaying_unfavorite else R.string.feature_nowplaying_favorite),
             tint = if (favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,

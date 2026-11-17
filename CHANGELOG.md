@@ -10,6 +10,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Total listening time on Home:** under the song count you now see how long your whole library lasts, e.g. "176 songs" and "32 hours" (in minutes when it is under an hour).
 
 ### Changed
+- **Favoriting pulses the heart:** tapping the heart on the player now makes it grow and rise twice, quickly ("tum tum").
 - **Song details open as a bottom panel:** like the other panels, it slides up, dims what is behind, and closes by swiping down or tapping outside (no Close button anymore).
 - **Backup is now a collapsed row in Settings → System:** tap it to open "Save backup" and "Restore backup" right there, instead of opening another page.
 - **The app now starts with its own colors and the dark theme:** "Wallpaper colors" is off by default (the app keeps its own look) and the default theme is Dark. Anything you already chose in Settings stays as it is. On Android 11 and older the "Wallpaper colors" option no longer appears, since it only works on Android 12 and newer.
