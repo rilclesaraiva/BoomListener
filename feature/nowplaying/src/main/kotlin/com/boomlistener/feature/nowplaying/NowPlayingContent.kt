@@ -13,6 +13,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -53,6 +54,7 @@ import com.boomlistener.core.designsystem.component.BoomGroupButtonStyle
 import com.boomlistener.core.designsystem.component.BoomGroupButton
 import com.boomlistener.core.designsystem.component.BoomButtonGroup
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -109,7 +111,7 @@ internal fun NowPlayingContent(
     // mesmo tom e combinam quando um vira o outro.
     val artworkColor = rememberPlayerTint(viewModel, item?.uri)
     val showLyrics by viewModel.showLyrics.collectAsStateWithLifecycle()
-    // Toque rápido na capa que toca = favoritar (só favorita, nunca desfaz) + coração animado.
+    // Dois toques rápidos na capa que toca = favoritar (só favorita, nunca desfaz) + coração animado.
     val favoritesRepository = remember { FavoritesData.repository(context.applicationContext) }
     val favorites by favoritesRepository.favorites.collectAsStateWithLifecycle()
     var coverBurst by remember { mutableIntStateOf(0) }
@@ -165,7 +167,7 @@ internal fun NowPlayingContent(
                     if (item != null) {
                         BoomMoreMenu(
                             actions = listOfNotNull(
-                                // Letra: abre e fecha por aqui (e tocar na letra volta para a capa).
+                                // Letra: o mesmo que tocar na capa.
                                 BoomMenuAction(
                                     stringResource(
                                         if (showLyrics) R.string.feature_nowplaying_hide_lyrics
@@ -274,16 +276,18 @@ internal fun NowPlayingContent(
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 // Sem a cor por cima ao segurar: a capa é a arte, não um botão.
-                                                .clickable(
-                                                    interactionSource = null,
-                                                    indication = null,
-                                                    onClick = {
-                                                        if (song.uri == item?.uri) {
-                                                            coverBurst++
-                                                            if (song.uri !in favorites) scope.launch { favoritesRepository.toggle(song.uri) }
-                                                        }
-                                                    },
-                                                ),
+                                                // Um toque abre/fecha a letra; dois toques rápidos favoritam (só favorita, nunca desfaz).
+                                                .pointerInput(song.uri, item?.uri) {
+                                                    detectTapGestures(
+                                                        onTap = { viewModel.toggleLyrics() },
+                                                        onDoubleTap = {
+                                                            if (song.uri == item?.uri) {
+                                                                coverBurst++
+                                                                if (song.uri !in favorites) scope.launch { favoritesRepository.toggle(song.uri) }
+                                                            }
+                                                        },
+                                                    )
+                                                },
                                         )
                                         if (song.uri == item?.uri) CoverHeartBurst(coverBurst, Modifier.matchParentSize())
                                         // Visualizador (menu ⋮ do player): só na capa da música que toca.

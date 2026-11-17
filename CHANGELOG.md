@@ -12,7 +12,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ### Changed
 - **Favoriting pulses the heart:** tapping the heart on the player now makes it swell in place twice, like a heartbeat ("tum tum").
-- **Tap the cover to like:** a quick tap on the cover of the song that is playing adds it to your favorites (it never removes it) with a big heart that beats twice and then three hearts that float up, swaying and fading away. Lyrics are still in the ⋮ menu, and tapping the lyrics goes back to the cover.
+- **Double-tap the cover to like:** two quick taps on the cover of the song that is playing add it to your favorites (it never removes it) with a big heart that beats twice and then three hearts that float up, swaying and fading away. A single tap still opens the lyrics, and tapping the lyrics goes back to the cover.
 - **Song details open as a bottom panel:** like the other panels, it slides up, dims what is behind, and closes by swiping down or tapping outside (no Close button anymore).
 - **Backup is now a collapsed row in Settings → System:** tap it to open "Save backup" and "Restore backup" right there, instead of opening another page.
 - **The app now starts with its own colors and the dark theme:** "Wallpaper colors" is off by default (the app keeps its own look) and the default theme is Dark. Anything you already chose in Settings stays as it is. On Android 11 and older the "Wallpaper colors" option no longer appears, since it only works on Android 12 and newer.
