@@ -43,7 +43,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - Nenhuma cor, fonte ou forma "na mão" numa tela: `MaterialTheme.colorScheme`, `.typography`, `.shapes`, `.motionScheme`. Valores próprios só em `core/designsystem`. Cores em par com o "on" correspondente.
 - Componentes do `androidx.compose.material3`; componente próprio só sem equivalente, em `core/designsystem`. APIs experimentais só dentro de `core/designsystem`, embrulhadas.
 - Edge-to-edge, temas claro, escuro e AMOLED, cor dinâmica no Android 12+.
-- Todo movimento usa `boomSpatialSpec`/`boomFastSpatialSpec`/`boomEffectsSpec`/`boomScreenSpec` (nada de `tween(300)` à mão). Únicas exceções: a animação do ícone em Sobre (`BoomLogo`) e o coração da capa (`CoverHeartBurst`, tempos próprios do pulsar e dos balões), ambas em core/designsystem, coreografias de marca (decisões de 15/11 e 17/11/2026). Tela/painel novo tem transição e "voltar" que fecha só ele; tela nova da navegação usa `BoomNavScreen`. Painéis de baixo sempre `BoomModalSheet`.
+- Todo movimento usa `boomSpatialSpec`/`boomFastSpatialSpec`/`boomEffectsSpec`/`boomScreenSpec` (nada de `tween(300)` à mão). Única exceção: a animação do ícone em Sobre (`BoomLogo`, core/designsystem), coreografia de marca com tempos próprios (decisão de 15/11/2026). Tela/painel novo tem transição e "voltar" que fecha só ele; tela nova da navegação usa `BoomNavScreen`. Painéis de baixo sempre `BoomModalSheet`.
 - Toda opção dos Ajustes mora numa categoria (Aparência, Reprodução, Biblioteca, Compartilhamento, Sistema). Se nenhuma serve, perguntar. A tela inicial de Ajustes só tem essas cinco categorias e o Sobre (que é informação, não opção): nada de item solto lá (verificar atualizações e avisos de atualização ficam em Sistema → Atualizações).
 
 ## Idiomas do app
@@ -93,6 +93,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - **Página do artista com tag de vários artistas** ("Delinquent, KCAT"): continua buscando o nome exato e pode abrir com "0 música" (16/11/2026, decisão do mantenedor): existem artistas cujo nome real é escrito assim, com vírgula. Só os círculos de foto (lista, grade, Início, Perfil, "Artistas desta música") separam os nomes. Não propor de novo juntar as músicas.
 
 ## Decisões recusadas (não propor de novo sem o mantenedor pedir)
+- **Animação de corações na capa do player** (toque/duplo toque na capa favoritando, com coração grande e balões; 17/11/2026): fica só o "tum tum" do botão de coração; um toque na capa abre a letra, como antes.
 - **Baseline Profile** (28/10/2026).
 - **Visualizador osciloscópio XY** (0.52.0, removido na 0.52.2): pesado e ruidoso no Canvas. Se voltar: OpenGL (feixe gaussiano, fósforo, interpolação); ficou a ideia de um tipo próprio "Boom" (onda de choque a cada batida).
 - Capas de playlist em 2 (metades) ou 3 ("Y") partes: só o mosaico 2 × 2 (0.51.1).

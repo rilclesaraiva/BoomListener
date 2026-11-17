@@ -13,7 +13,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -54,7 +53,6 @@ import com.boomlistener.core.designsystem.component.BoomGroupButtonStyle
 import com.boomlistener.core.designsystem.component.BoomGroupButton
 import com.boomlistener.core.designsystem.component.BoomButtonGroup
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -64,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
-import com.boomlistener.core.designsystem.component.CoverHeartBurst
 import com.boomlistener.core.designsystem.component.heartbeat
 import com.boomlistener.core.designsystem.component.BoomPlaceholder
 import com.boomlistener.core.common.ExternalLinks
@@ -111,10 +108,6 @@ internal fun NowPlayingContent(
     // mesmo tom e combinam quando um vira o outro.
     val artworkColor = rememberPlayerTint(viewModel, item?.uri)
     val showLyrics by viewModel.showLyrics.collectAsStateWithLifecycle()
-    // Dois toques rápidos na capa que toca = favoritar (só favorita, nunca desfaz) + coração animado.
-    val favoritesRepository = remember { FavoritesData.repository(context.applicationContext) }
-    val favorites by favoritesRepository.favorites.collectAsStateWithLifecycle()
-    var coverBurst by remember { mutableIntStateOf(0) }
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     // A posição da letra sobrevive a ir para a capa e voltar; música nova, do topo.
     val lyricsScroll = remember(item?.uri) { LyricsScroll() }
@@ -249,7 +242,7 @@ internal fun NowPlayingContent(
                                 positionMs = state.positionMs,
                                 onSeek = viewModel::seekTo,
                                 onRetry = viewModel::retryLyrics,
-                                // Tocar na letra volta para a capa.
+                                // Tocar na letra volta para a capa, como tocar na capa abriu a letra.
                                 onTap = viewModel::toggleLyrics,
                                 scroll = lyricsScroll,
                             )
@@ -276,20 +269,12 @@ internal fun NowPlayingContent(
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 // Sem a cor por cima ao segurar: a capa é a arte, não um botão.
-                                                // Um toque abre/fecha a letra; dois toques rápidos favoritam (só favorita, nunca desfaz).
-                                                .pointerInput(song.uri, item?.uri) {
-                                                    detectTapGestures(
-                                                        onTap = { viewModel.toggleLyrics() },
-                                                        onDoubleTap = {
-                                                            if (song.uri == item?.uri) {
-                                                                coverBurst++
-                                                                if (song.uri !in favorites) scope.launch { favoritesRepository.toggle(song.uri) }
-                                                            }
-                                                        },
-                                                    )
-                                                },
+                                                .clickable(
+                                                    interactionSource = null,
+                                                    indication = null,
+                                                    onClick = viewModel::toggleLyrics,
+                                                ),
                                         )
-                                        if (song.uri == item?.uri) CoverHeartBurst(coverBurst, Modifier.matchParentSize())
                                         // Visualizador (menu ⋮ do player): só na capa da música que toca.
                                         if (playbackPrefs.visualizer && song.uri == item?.uri) {
                                             CoverVisualizer(
