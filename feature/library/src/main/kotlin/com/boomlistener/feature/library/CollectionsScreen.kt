@@ -206,7 +206,9 @@ internal fun CollectionsScreen(
                         // tamanho da das notificações, na cor da página, então
                         // digitando ela fica logo abaixo dessa faixa (sólida), nunca
                         // por baixo dela.
-                        stickyHeader(key = "artistSearch") {
+                        // Com artistas marcados a busca deixa de ser presa no topo (como no Início): fica no lugar dela na lista,
+                        // senão ficaria por baixo da barra da seleção.
+                        val artistSearchHeader: @Composable () -> Unit = {
                             BoomStickyHeader(stuck = artistSearchStuck, modifier = Modifier.onSizeChanged { artistSearchPx = it.height }) {
                                     BoomSearchField(
                                         query = artistSearch.query,
@@ -220,6 +222,11 @@ internal fun CollectionsScreen(
                                         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 40.dp, top = 4.dp, bottom = 8.dp),
                                     )
                             }
+                        }
+                        if (selection.isActive) {
+                            item(key = "artistSearch") { artistSearchHeader() }
+                        } else {
+                            stickyHeader(key = "artistSearch") { artistSearchHeader() }
                         }
                         if (current.artists.isEmpty() && !searching) {
                             item(key = "empty") { EmptySection(R.string.feature_library_artists_empty) }
