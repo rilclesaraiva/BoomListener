@@ -82,6 +82,7 @@ internal fun StatsScreen(
     val report by viewModel.report.collectAsStateWithLifecycle()
     val period by viewModel.period.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    val testerMode by com.boomlistener.core.common.DiagnosticLog.enabled.collectAsStateWithLifecycle()
     // Textos lidos aqui: o corpo do LazyColumn não é um contexto composable.
     val topArtistsTitle = stringResource(R.string.feature_profile_stats_top_artists)
     val topSongsTitle = stringResource(R.string.feature_profile_stats_top_songs)
@@ -125,6 +126,8 @@ internal fun StatsScreen(
                 item(key = "wrapped") {
                     WrappedEntry(
                         daysLeft = wrappedDaysLeft(current.dataSince, state?.today ?: LocalDate.now()),
+                        // Só para testar nas builds de vistoria (sai com o Registro de diagnóstico, antes de qualquer release).
+                        tester = testerMode,
                         onOpen = { onOpenWrapped(period.name) },
                     )
                 }
@@ -177,12 +180,12 @@ internal fun StatsScreen(
 
 /** Atalho do Wrapped: abre com 30 dias de escuta; antes disso mostra quantos dias faltam. */
 @Composable
-private fun WrappedEntry(daysLeft: Int, onOpen: () -> Unit) {
+private fun WrappedEntry(daysLeft: Int, tester: Boolean, onOpen: () -> Unit) {
     val open = daysLeft == 0
     val colors = MaterialTheme.colorScheme
     Surface(
         onClick = onOpen,
-        enabled = open,
+        enabled = open || tester,
         color = if (open) colors.tertiaryContainer else colors.surfaceContainerHigh,
         contentColor = if (open) colors.onTertiaryContainer else colors.onSurfaceVariant,
         shape = MaterialTheme.shapes.extraLarge,
@@ -195,6 +198,7 @@ private fun WrappedEntry(daysLeft: Int, onOpen: () -> Unit) {
                 else pluralStringResource(R.plurals.feature_profile_wrapped_wait, daysLeft, daysLeft),
                 style = MaterialTheme.typography.bodyMedium,
             )
+            if (!open && tester) Text(stringResource(R.string.feature_profile_wrapped_tester), style = MaterialTheme.typography.labelMedium)
         }
     }
 }

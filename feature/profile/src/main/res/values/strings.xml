@@ -139,4 +139,5 @@
     </plurals>
     <string name="feature_profile_wrapped_playlist_name">Wrapped %1$s</string>
     <string name="feature_profile_wrapped_playlist_none">No songs from this period are on your device.</string>
+    <string name="feature_profile_wrapped_tester">Test build: tap to open anyway</string>
 </resources>
