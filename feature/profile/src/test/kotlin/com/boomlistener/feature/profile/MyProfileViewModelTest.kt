@@ -258,26 +258,34 @@ class MyProfileViewModelTest {
         assertEquals("Djavan", year.artists.single().name)
     }
 
-    @Test
-    fun wrappedTocaAMaisOuvidaQueAindaExisteECriaAPlaylistSoComAsDoAparelho() = runTest(dispatcher) {
+    private fun wrappedViewModel(playlists: FakePlaylists): MyProfileViewModel {
         val gone = DaySong("content://apagada", "Sumiu", "Djavan", null, emptyList())
         val here = DaySong(acai.uri, acai.title, acai.artist, acai.album, listOf("MPB"))
         // A mais ouvida (3 vezes) saiu do aparelho; a Açaí (1 vez) ainda está.
         val nov = MonthData(YearMonth.of(2026, 11), listOf(gone, here), mapOf(2 to listOf(DayRow(0, 3, 0, 0), DayRow(1, 1, 0, 0))))
-        val playlists = FakePlaylists()
-        val vm = MyProfileViewModel(
+        return MyProfileViewModel(
             FakeProfile(), FakeHistory(emptyList()), FakeStats(emptyList()), FakeLibrary(), FakeFollows(), FakePlayer(),
             daily = FakeDaily(DailySummary(listOf(nov), emptyList(), 0)), playlists = playlists,
             zone = zone, today = { LocalDate.of(2026, 11, 17) },
         )
-        backgroundScope.launch(dispatcher) { vm.report.collect {} }
+    }
+
+    @Test
+    fun wrappedTocaAMaisOuvidaQueAindaExiste() = runTest(dispatcher) {
+        val vm = wrappedViewModel(FakePlaylists())
         backgroundScope.launch(dispatcher) { vm.wrappedSong.collect {} }
-
         assertEquals(acai.uri, vm.wrappedSong.first { it != null }!!.uri)
+    }
 
-        var count = -1
-        vm.createTopPlaylist("Wrapped 2026") { count = it }
-        assertEquals(1, count)
+    @Test
+    fun playlistDoWrappedTemSoAsMusicasQueAindaExistem() = runTest(dispatcher) {
+        val playlists = FakePlaylists()
+        val vm = wrappedViewModel(playlists)
+        backgroundScope.launch(dispatcher) { vm.wrappedSong.collect {} }
+        vm.wrappedSong.first { it != null }
+        val done = kotlinx.coroutines.CompletableDeferred<Int>()
+        vm.createTopPlaylist("Wrapped 2026") { done.complete(it) }
+        assertEquals(1, done.await())
         assertEquals(listOf("Wrapped 2026" to listOf(acai.uri)), playlists.created)
     }
 }
