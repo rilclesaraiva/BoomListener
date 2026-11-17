@@ -69,6 +69,7 @@ enum class BoomMenuKind {
     PlayNow,
     PlayNext,
     Mix,
+    Select,
     Favorite,
     AddToPlaylist,
     RemoveFromPlaylist,
@@ -97,6 +98,7 @@ internal val BoomMenuKind.icon: ImageVector?
         BoomMenuKind.PlayNow -> BoomIcons.Play
         BoomMenuKind.PlayNext -> BoomIcons.QueuePlayNext
         BoomMenuKind.Mix -> BoomIcons.Shuffle
+        BoomMenuKind.Select -> BoomIcons.SelectAll
         BoomMenuKind.Favorite -> BoomIcons.FavoriteBorder
         BoomMenuKind.AddToPlaylist -> BoomIcons.PlaylistAdd
         BoomMenuKind.RemoveFromPlaylist -> BoomIcons.RemoveCircle

@@ -37,7 +37,8 @@ internal fun AlbumMenuSheet(
     tracks: List<Track>,
     cover: ImageBitmap?,
     actions: AlbumMenuActions,
-) = GroupMenuSheet(open, name, artist, tracks, cover, actions, artistToOpen = artist, youtubeQuery = name to artist)
+    onSelect: (() -> Unit)? = null,
+) = GroupMenuSheet(open, name, artist, tracks, cover, actions, artistToOpen = artist, youtubeQuery = name to artist, onSelect = onSelect)
 
 /**
  * Menu de um grupo de músicas, aberto ao segurar: tocar, aleatório,
@@ -56,6 +57,8 @@ internal fun GroupMenuSheet(
     artistToOpen: String? = null,
     youtubeQuery: Pair<String, String?>? = null,
     round: Boolean = false,
+    /** "Selecionar": começa a marcar vários grupos (a Biblioteca); null = a opção não aparece. */
+    onSelect: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     BoomMenuSheet(
@@ -63,6 +66,7 @@ internal fun GroupMenuSheet(
         actions = listOfNotNull(
             BoomMenuAction(stringResource(R.string.feature_library_play), kind = BoomMenuKind.PlayNow) { actions.play(tracks) },
             BoomMenuAction(stringResource(R.string.feature_library_shuffle_all), kind = BoomMenuKind.Mix) { actions.shuffle(tracks) },
+            onSelect?.let { select -> BoomMenuAction(stringResource(R.string.feature_library_select), kind = BoomMenuKind.Select) { select() } },
             BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
                 actions.addToPlaylist(tracks)
             },

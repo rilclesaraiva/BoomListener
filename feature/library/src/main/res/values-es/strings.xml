@@ -25,6 +25,7 @@
         <item quantity="one">%1$d minuto</item>
         <item quantity="other">%1$d minutos</item>
     </plurals>
+    <string name="feature_library_select">Seleccionar</string>
     <string name="feature_library_shuffle_all">Aleatorio</string>
     <string name="feature_library_add_to_playlist">Añadir a una playlist</string>
     <string name="feature_library_albums">Álbumes</string>

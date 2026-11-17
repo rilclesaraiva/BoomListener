@@ -7,6 +7,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ## [Unreleased]
 
 ### Added
+- **Select several genres, artists, playlists or albums in Library:** hold one to open its panel and tap "Select" (tapping the picture still just opens it). Then tap others to mark them, or use "select all", and shuffle or play the songs of everything you marked (a radio of those artists or genres), or add them to a playlist. A song that is in two marked groups plays once.
 - **Total listening time on Home:** under the song count you now see how long your whole library lasts, e.g. "176 songs" and "32 hours" (in minutes when it is under an hour).
 
 ### Changed

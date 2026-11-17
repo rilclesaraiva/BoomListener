@@ -72,6 +72,13 @@ import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import androidx.compose.foundation.background
+import com.boomlistener.core.designsystem.component.BoomMenuKind
+import com.boomlistener.core.designsystem.component.BoomMenuAction
+import com.boomlistener.core.designsystem.component.recedeWhileSelecting
+import com.boomlistener.core.designsystem.component.rememberBoomSelection
+import com.boomlistener.core.designsystem.component.BoomSelectionBar
+import com.boomlistener.core.designsystem.component.BoomSelection
 import com.boomlistener.core.designsystem.component.BoomSearchField
 import com.boomlistener.core.designsystem.component.BoomTopActions
 import com.boomlistener.core.designsystem.component.BoomPageTitle
@@ -117,6 +124,8 @@ internal fun CollectionsScreen(
     }
 
     val searchScope = rememberCoroutineScope()
+    // Vários grupos marcados (gêneros, artistas, playlists ou álbuns): fazer uma rádio com eles.
+    val selection = rememberBoomSelection()
     // Álbum inteiro (menu do álbum) a caminho de uma playlist.
     var addManyToPlaylist by remember { mutableStateOf<List<String>?>(null) }
     val albumMenu = AlbumMenuActions(
@@ -147,7 +156,12 @@ internal fun CollectionsScreen(
                     onOpenAlbum = onOpenAlbum,
                     onOpenPlaylist = onOpenPlaylist,
                     onOpenFavorites = onOpenFavorites,
+                    onSelect = selection::toggle,
                 )
+                // Trocar de pílula ou de lista tira da seleção o que não está mais na tela.
+                LaunchedEffect(current.selected) { selection.clear() }
+                val entryKeys = entries.map { it.key }
+                LaunchedEffect(entryKeys) { selection.retain(entryKeys.toSet()) }
                 if (current.selected == CollectionKind.Artists && !searching) {
                     // A subida pela aba cai perto do topo: as primeiras fotos ficam prontas (uma tela e meia na grade, duas na lista).
                     val topNames = remember(entries, grid) { entries.mapNotNull { it.artistName }.take(if (grid) PINNED_GRID else PINNED_LIST) }
@@ -160,7 +174,7 @@ internal fun CollectionsScreen(
               val artistSearchRoom = rememberSearchRoom(listState, SEARCH_ITEM_INDEX, entries to artistSearch)
               LazyColumn(state = listState, contentPadding = padding) {
                 item(key = "pageTitle") {
-                    BoomPageTitle(stringResource(R.string.feature_library_collections_title)) {
+                    BoomPageTitle(stringResource(R.string.feature_library_collections_title), modifier = Modifier.recedeWhileSelecting(selection)) {
                         BoomTopActions(onOpenReleases = onOpenReleases, onOpenSettings = onOpenSettings)
                     }
                 }
@@ -184,7 +198,7 @@ internal fun CollectionsScreen(
                 when (current.selected) {
                     CollectionKind.Genres -> {
                         if (current.genres.isEmpty()) item(key = "empty") { EmptySection(R.string.feature_library_genres_empty) }
-                        groupItems(entries, grid, viewModel)
+                        groupItems(entries, grid, viewModel, selection)
                     }
                     CollectionKind.Artists -> {
                         // Busca em pílula: os seus artistas e, do Deezer, os que você não tem.
@@ -210,7 +224,7 @@ internal fun CollectionsScreen(
                         if (current.artists.isEmpty() && !searching) {
                             item(key = "empty") { EmptySection(R.string.feature_library_artists_empty) }
                         }
-                        groupItems(entries, grid, viewModel)
+                        groupItems(entries, grid, viewModel, selection)
                         if (searching) {
                             onlineArtists(
                                 search = artistSearch,
@@ -235,15 +249,34 @@ internal fun CollectionsScreen(
                             }
                         }
                         // Favoritas vêm sempre primeiro (o coração no player e nos menus).
-                        groupItems(entries, grid, viewModel)
+                        groupItems(entries, grid, viewModel, selection)
                         if (current.playlists.isEmpty()) item(key = "empty") { EmptySection(R.string.feature_library_playlists_empty) }
                     }
                     CollectionKind.Albums -> {
                         if (current.albums.isEmpty()) item(key = "empty") { EmptySection(R.string.feature_library_albums_empty) }
-                        groupItems(entries, grid, viewModel)
+                        groupItems(entries, grid, viewModel, selection)
                     }
                 }
               }
+                val pickedTracks = distinctTracks(entries.filter { selection.isSelected(it.key) }.map { it.tracks })
+                BoomSelectionBar(
+                    selection = selection,
+                    allIds = entryKeys,
+                    actions = listOf(
+                        BoomMenuAction(stringResource(R.string.feature_library_shuffle_all), kind = BoomMenuKind.Mix) {
+                            viewModel.shuffleTracks(pickedTracks)
+                            selection.clear()
+                        },
+                        BoomMenuAction(stringResource(R.string.feature_library_play), kind = BoomMenuKind.PlayNow) {
+                            viewModel.playTracks(pickedTracks)
+                            selection.clear()
+                        },
+                        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
+                            addManyToPlaylist = pickedTracks.map { it.uri }
+                        },
+                    ),
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
                 // Letra de cada linha da lista, na mesma ordem dos itens acima.
                 val labels = remember(current, artistSearch, grid) { collectionLabels(current, artistSearch, entries, grid) }
                 // A barrinha é só dos grupos: o trilho começa onde o primeiro grupo
@@ -364,6 +397,8 @@ private fun GroupRow(
     menu: (@Composable (open: MutableState<Boolean>, image: ImageBitmap?) -> Unit)? = null,
     /** Artista: a foto do Deezer no lugar da capa. */
     artistName: String? = null,
+    /** Marcado na seleção de vários grupos. */
+    selected: Boolean = false,
 ) {
     val px = with(LocalDensity.current) { BoomListArtworkSize.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
@@ -398,6 +433,12 @@ private fun GroupRow(
         },
         headlineContent = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = { Text(subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        trailingContent = if (selected) {
+            { Icon(BoomIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+        } else null,
+        colors = androidx.compose.material3.ListItemDefaults.colors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent,
+        ),
     )
 }
 
@@ -417,6 +458,8 @@ private fun AlbumTile(
     fallbackIcon: ImageVector? = null,
     /** Artista: a foto do Deezer no lugar da capa. */
     artistName: String? = null,
+    /** Marcado na seleção de vários grupos. */
+    selected: Boolean = false,
 ) {
     val px = with(LocalDensity.current) { 200.dp.roundToPx() }
     val images = rememberCovers(covers, px, viewModel)
@@ -426,7 +469,12 @@ private fun AlbumTile(
     val menuOpen = remember { mutableStateOf(false) }
     menu(menuOpen, image)
     // Canto menor e folga embaixo: o arredondado do toque não corta as letras.
-    Column(modifier.clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = 8.dp)) {
+    Column(
+        modifier.clip(MaterialTheme.shapes.medium)
+            .then(if (selected) Modifier.background(MaterialTheme.colorScheme.primaryContainer) else Modifier)
+            .clickableWithMenu(menuOpen, onClick = onClick)
+            .padding(bottom = 8.dp),
+    ) {
         if (image == null && fallbackIcon != null && covers.size < MOSAIC_SIZE) {
             Surface(
                 color = MaterialTheme.colorScheme.secondaryContainer,
@@ -449,13 +497,16 @@ private fun AlbumTile(
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text(
-            name,
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
+        Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (selected) Icon(BoomIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        }
         if (artist.isNotEmpty()) {
             Text(
                 artist,
@@ -625,12 +676,13 @@ private fun collectionEntries(
     onOpenAlbum: (String) -> Unit,
     onOpenPlaylist: (Long) -> Unit,
     onOpenFavorites: () -> Unit,
+    onSelect: (key: String) -> Unit,
 ): List<GroupEntry> {
     val countOf: @Composable (Int) -> String = { pluralStringResource(R.plurals.feature_library_count, it, it) }
     return when (state.selected) {
         CollectionKind.Genres -> state.genres.map { group ->
             GroupEntry("g:" + group.key, group.name, countOf(group.tracks.size), group.tracks, onClick = { onOpenGenre(group.key) }) { open, image ->
-                GroupMenuSheet(open, group.name, countText(group.tracks.size), group.tracks, image, albumMenu)
+                GroupMenuSheet(open, group.name, countText(group.tracks.size), group.tracks, image, albumMenu, onSelect = { onSelect("g:" + group.key) })
             }
         }
         CollectionKind.Artists -> {
@@ -644,6 +696,7 @@ private fun collectionEntries(
                     GroupMenuSheet(
                         open, group.name, countText(group.tracks.size), group.tracks, image, albumMenu,
                         artistToOpen = group.name, youtubeQuery = group.name to null, round = true,
+                        onSelect = { onSelect("a:" + group.key) },
                     )
                 }
             }
@@ -655,14 +708,14 @@ private fun collectionEntries(
                     "favorites", favoritesName, countOf(state.favorites.size), state.favorites,
                     fallbackIcon = BoomIcons.Favorite, mosaic = true, onClick = onOpenFavorites,
                 ) { open, image ->
-                    GroupMenuSheet(open, favoritesName, countText(state.favorites.size), state.favorites, image, albumMenu)
+                    GroupMenuSheet(open, favoritesName, countText(state.favorites.size), state.favorites, image, albumMenu, onSelect = { onSelect("favorites") })
                 },
             ) + state.playlists.map { summary ->
                 GroupEntry(
                     "p:" + summary.playlist.id, summary.playlist.name, countOf(summary.tracks.size), summary.tracks,
                     fallbackIcon = BoomIcons.Playlist, mosaic = true, onClick = { onOpenPlaylist(summary.playlist.id) },
                 ) { open, image ->
-                    GroupMenuSheet(open, summary.playlist.name, countText(summary.tracks.size), summary.tracks, image, albumMenu)
+                    GroupMenuSheet(open, summary.playlist.name, countText(summary.tracks.size), summary.tracks, image, albumMenu, onSelect = { onSelect("p:" + summary.playlist.id) })
                 }
             }
         }
@@ -671,14 +724,14 @@ private fun collectionEntries(
                 "al:" + album.key, album.name, listOfNotNull(album.subtitle, album.year?.toString()).joinToString(" · "), album.tracks,
                 onClick = { onOpenAlbum(album.key) },
             ) { open, image ->
-                AlbumMenuSheet(open, album.name, album.subtitle, album.tracks, image, albumMenu)
+                AlbumMenuSheet(open, album.name, album.subtitle, album.tracks, image, albumMenu, onSelect = { onSelect("al:" + album.key) })
             }
         }
     }
 }
 
 /** Os grupos em lista (uma linha cada) ou em grade (dois blocos por linha). */
-private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, viewModel: CollectionsViewModel) {
+private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, viewModel: CollectionsViewModel, selection: BoomSelection) {
     if (grid) {
         items(entries.chunked(2), key = { "grid:" + it.first().key }) { pair ->
             Row(
@@ -694,7 +747,8 @@ private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, v
                         round = entry.round,
                         fallbackIcon = entry.fallbackIcon,
                         menu = entry.menu,
-                        onClick = entry.onClick,
+                        onClick = { if (selection.isActive) selection.toggle(entry.key) else entry.onClick() },
+                        selected = selection.isSelected(entry.key),
                         artistName = entry.artistName,
                         modifier = Modifier.weight(1f),
                     )
@@ -712,7 +766,8 @@ private fun LazyListScope.groupItems(entries: List<GroupEntry>, grid: Boolean, v
                 round = entry.round,
                 fallbackIcon = entry.fallbackIcon,
                 menu = entry.menu,
-                onClick = entry.onClick,
+                onClick = { if (selection.isActive) selection.toggle(entry.key) else entry.onClick() },
+                selected = selection.isSelected(entry.key),
                 artistName = entry.artistName,
                 modifier = Modifier.animateItem(),
             )

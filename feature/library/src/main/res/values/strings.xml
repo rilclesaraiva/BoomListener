@@ -25,6 +25,7 @@
         <item quantity="one">%1$d minute</item>
         <item quantity="other">%1$d minutes</item>
     </plurals>
+    <string name="feature_library_select">Select</string>
     <string name="feature_library_shuffle_all">Shuffle</string>
     <string name="feature_library_add_to_playlist">Add to playlist</string>
     <string name="feature_library_albums">Albums</string>
