@@ -7,16 +7,21 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import androidx.compose.ui.graphics.layer.GraphicsLayer
+import android.graphics.Picture
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Guarda a camada do cartão que está na tela (o que vira a imagem de compartilhar). */
+/** Guarda o desenho do cartão que está na tela (o que vira a imagem de compartilhar). */
 internal class WrappedCapture {
-    var layer: GraphicsLayer? = null
+    var picture: Picture? = null
 }
+
+internal fun Picture.toBitmap(): Bitmap =
+    Bitmap.createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1), Bitmap.Config.ARGB_8888).also {
+        android.graphics.Canvas(it).drawPicture(this)
+    }
 
 /**
  * Grava o cartão como PNG no cache, na pasta "share" que o FileProvider do app já

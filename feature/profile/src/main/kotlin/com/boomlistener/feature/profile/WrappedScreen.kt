@@ -44,13 +44,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import android.graphics.Picture
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.layer.toImageBitmap
-import androidx.compose.ui.graphics.rememberGraphicsLayer
 import kotlinx.coroutines.launch
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -201,15 +200,17 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
         ) { index ->
             val card = cards.getOrNull(index) ?: WrappedCard.Intro
             val (container, onContainer) = cardColors(card)
-            // A camada do cartão que está na tela: é ela que vira a imagem de compartilhar.
-            val layer = rememberGraphicsLayer()
-            SideEffect { if (index == page) capture.layer = layer }
+            // O desenho do cartão que está na tela fica guardado: é ele que vira a imagem de compartilhar.
             Surface(
                 color = container,
                 contentColor = onContainer,
                 modifier = Modifier.fillMaxSize().drawWithContent {
-                    layer.record { this@drawWithContent.drawContent() }
-                    drawLayer(layer)
+                    val picture = Picture()
+                    val canvas = Canvas(picture.beginRecording(size.width.toInt(), size.height.toInt()))
+                    draw(this, layoutDirection, canvas, size) { this@drawWithContent.drawContent() }
+                    picture.endRecording()
+                    if (index == page) capture.picture = picture
+                    drawContent()
                 },
             ) {
                 Column(
@@ -260,14 +261,14 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 IconButton(
                     onClick = {
-                        val layer = capture.layer ?: return@IconButton
+                        if (capture.picture == null) return@IconButton
                         if (capturing) return@IconButton
                         scope.launch {
                             // Mostra a marca (e esconde os botões) por um quadro, tira a foto do cartão e volta ao normal.
                             capturing = true
                             paused = true
                             repeat(2) { androidx.compose.runtime.withFrameNanos { } }
-                            val image = runCatching { layer.toImageBitmap().asAndroidBitmap() }.getOrNull()
+                            val image = capture.picture?.toBitmap()
                             capturing = false
                             paused = false
                             if (image != null) runCatching { context.shareWrappedCard(image, chooser) }
