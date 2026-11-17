@@ -16,8 +16,9 @@ import kotlinx.coroutines.flow.map
 
 /** As escolhas do usuário nos Ajustes. Ficam só no aparelho. */
 data class UserPreferences(
-    val themeMode: ThemeMode = ThemeMode.System,
-    val dynamicColor: Boolean = true,
+    val themeMode: ThemeMode = ThemeMode.Dark,
+    /** Desligado por padrão: o app usa a cor própria dele. A opção só existe no Android 12+. */
+    val dynamicColor: Boolean = false,
     /** Desfoca a tela de trás quando outra entra por cima (telas e o player). */
     val backgroundBlur: Boolean = true,
 )
@@ -43,7 +44,7 @@ internal class DataStoreUserPreferencesRepository(context: Context) : UserPrefer
     override val preferences: Flow<UserPreferences> = store.data.map { prefs ->
         UserPreferences(
             themeMode = parseThemeMode(prefs[Keys.THEME_MODE]),
-            dynamicColor = prefs[Keys.DYNAMIC_COLOR] ?: true,
+            dynamicColor = prefs[Keys.DYNAMIC_COLOR] ?: false,
             backgroundBlur = prefs[Keys.BACKGROUND_BLUR] ?: true,
         )
     }
@@ -61,9 +62,9 @@ internal class DataStoreUserPreferencesRepository(context: Context) : UserPrefer
     }
 }
 
-/** Valor salvo → tema. Valor desconhecido (de uma versão futura, por exemplo) vira "Sistema". */
+/** Valor salvo → tema. Sem valor salvo ou desconhecido (de uma versão futura, por exemplo) vira "Escuro". */
 internal fun parseThemeMode(saved: String?): ThemeMode =
-    ThemeMode.entries.firstOrNull { it.name == saved } ?: ThemeMode.System
+    ThemeMode.entries.firstOrNull { it.name == saved } ?: ThemeMode.Dark
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */
 object PreferencesData {

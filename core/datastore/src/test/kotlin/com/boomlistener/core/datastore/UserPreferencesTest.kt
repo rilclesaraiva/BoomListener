@@ -14,8 +14,14 @@ class UserPreferencesTest {
     }
 
     @Test
-    fun temaDesconhecidoViraSistema() {
-        assertEquals(ThemeMode.System, parseThemeMode(null))
-        assertEquals(ThemeMode.System, parseThemeMode("Neon"))
+    fun temaAusenteOuDesconhecidoViraEscuro() {
+        assertEquals(ThemeMode.Dark, parseThemeMode(null))
+        assertEquals(ThemeMode.Dark, parseThemeMode("Neon"))
+    }
+
+    @Test
+    fun padroesSaoTemaEscuroECorPropria() {
+        assertEquals(ThemeMode.Dark, UserPreferences().themeMode)
+        assertEquals(false, UserPreferences().dynamicColor)
     }
 }

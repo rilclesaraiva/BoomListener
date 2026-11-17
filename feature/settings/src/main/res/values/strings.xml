@@ -27,7 +27,6 @@
     <string name="feature_settings_colors">Colors</string>
     <string name="feature_settings_dynamic_color">Wallpaper colors</string>
     <string name="feature_settings_dynamic_color_summary">The app uses the colors of your wallpaper</string>
-    <string name="feature_settings_dynamic_color_unavailable">Available on Android 12 and newer</string>
     <string name="feature_settings_source">Source code</string>
     <string name="feature_settings_source_summary">github.com/rilclesaraiva/BoomListener</string>
     <string name="feature_settings_about_text">A local music player. Free, no ads, no account. Made in Brazil, with AI assistance under the author’s direction and review.</string>

@@ -111,7 +111,7 @@ Base: **Material 3 Expressive**, a evolução do M3 lançada com o Android 16. E
 **Versão da biblioteca:** `androidx.compose.material3` **1.5.0-beta01** (versão no catálogo). A 1.4.0 estável ainda não tem a maior parte dos componentes Expressive. Quando a 1.5.0 sair estável, troca-se só a versão no catálogo.
 
 **Tema (`core/designsystem`, `BoomTheme` com `MaterialExpressiveTheme`)**
-- **Cor:** cor dinâmica no Android 12+ (papel de parede); sem ela, os esquemas próprios `BoomLightColors`/`BoomDarkColors`. O AMOLED é o tema escuro com os fundos pretos (`toAmoled`). Usamos papéis (`primary`, `secondary`, `tertiary`, `surface…`), nunca hex. No player, as cores vêm da capa (Palette): `artworkTopTint`, `artworkButtonColors`.
+- **Cor:** padrão é o tema Escuro com a cor própria (`dynamicColor = false`); a cor dinâmica (papel de parede) é opção em Ajustes → Aparência e **só aparece no Android 12+**; sem ela, os esquemas próprios `BoomLightColors`/`BoomDarkColors`. O AMOLED é o tema escuro com os fundos pretos (`toAmoled`). Usamos papéis (`primary`, `secondary`, `tertiary`, `surface…`), nunca hex. No player, as cores vêm da capa (Palette): `artworkTopTint`, `artworkButtonColors`.
 - **Tipografia:** a escala padrão do M3 (`Typography()`, sem fonte própria), sempre por `MaterialTheme.typography`.
 - **Forma:** os tamanhos padrão (`Shapes()`), sempre por `MaterialTheme.shapes`.
 - **Movimento:** `MotionScheme.expressive()` (molas), usado só por `boomSpatialSpec` etc.; nunca durações escritas à mão.

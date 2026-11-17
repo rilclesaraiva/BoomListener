@@ -27,7 +27,6 @@
     <string name="feature_settings_colors">Cores</string>
     <string name="feature_settings_dynamic_color">Cores do papel de parede</string>
     <string name="feature_settings_dynamic_color_summary">O app usa as cores do seu papel de parede</string>
-    <string name="feature_settings_dynamic_color_unavailable">Disponível a partir do Android 12</string>
     <string name="feature_settings_source">Código-fonte</string>
     <string name="feature_settings_source_summary">github.com/rilclesaraiva/BoomListener</string>
     <string name="feature_settings_about_text">Reprodutor de música local, gratuito, sem anúncios e sem conta. Feito no Brasil, com auxílio de IA, sob direção e revisão do autor.</string>

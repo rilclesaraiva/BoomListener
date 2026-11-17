@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -44,10 +45,10 @@ class AppearanceViewModelTest {
         backgroundScope.launch(dispatcher) { viewModel.preferences.collect {} }
 
         viewModel.setThemeMode(ThemeMode.Amoled)
-        viewModel.setDynamicColor(false)
+        viewModel.setDynamicColor(true)
 
         assertEquals(ThemeMode.Amoled, viewModel.preferences.value.themeMode)
-        assertFalse(viewModel.preferences.value.dynamicColor)
+        assertTrue(viewModel.preferences.value.dynamicColor)
     }
 
     @Test

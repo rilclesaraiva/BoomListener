@@ -79,22 +79,17 @@ internal fun AppearanceScreen(
                     }
                 }
             }
-            item {
+            if (dynamicAvailable) item {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_colors)) {
                     BoomSettingsItem(
                         icon = null,
                         title = stringResource(R.string.feature_settings_dynamic_color),
-                        subtitle = stringResource(
-                            if (dynamicAvailable) R.string.feature_settings_dynamic_color_summary
-                            else R.string.feature_settings_dynamic_color_unavailable,
-                        ),
-                        enabled = dynamicAvailable,
+                        subtitle = stringResource(R.string.feature_settings_dynamic_color_summary),
                         onClick = { viewModel.setDynamicColor(!prefs.dynamicColor) },
                         trailing = {
                             Switch(
-                                checked = dynamicAvailable && prefs.dynamicColor,
+                                checked = prefs.dynamicColor,
                                 onCheckedChange = { viewModel.setDynamicColor(it) },
-                                enabled = dynamicAvailable,
                             )
                         },
                     )
