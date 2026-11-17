@@ -44,7 +44,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.toImageBitmap
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import kotlinx.coroutines.launch
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -164,6 +171,11 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
     }
 
     val effects = boomEffectsSpec<Float>()
+    val capture = remember { WrappedCapture() }
+    var capturing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val chooser = stringResource(R.string.feature_profile_wrapped_share)
     Box(
         Modifier
             .fillMaxSize()
@@ -189,7 +201,17 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
         ) { index ->
             val card = cards.getOrNull(index) ?: WrappedCard.Intro
             val (container, onContainer) = cardColors(card)
-            Surface(color = container, contentColor = onContainer, modifier = Modifier.fillMaxSize()) {
+            // A camada do cartão que está na tela: é ela que vira a imagem de compartilhar.
+            val layer = rememberGraphicsLayer()
+            SideEffect { if (index == page) capture.layer = layer }
+            Surface(
+                color = container,
+                contentColor = onContainer,
+                modifier = Modifier.fillMaxSize().drawWithContent {
+                    layer.record { this@drawWithContent.drawContent() }
+                    drawLayer(layer)
+                },
+            ) {
                 Column(
                     Modifier
                         .fillMaxSize()
@@ -208,7 +230,14 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                         WrappedCard.Hour -> HourCard(report)
                         WrappedCard.Discoveries -> DiscoveriesCard(report, viewModel)
                         WrappedCard.Sprint -> SprintWrappedCard(report)
-                        WrappedCard.Top -> TopCard(report, viewModel)
+                        WrappedCard.Top -> TopCard(report, viewModel, showActions = !capturing)
+                    }
+                    if (capturing) {
+                        Text(
+                            stringResource(R.string.feature_profile_wrapped_brand),
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        )
                     }
                 }
             }
@@ -229,6 +258,24 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                IconButton(
+                    onClick = {
+                        val layer = capture.layer ?: return@IconButton
+                        if (capturing) return@IconButton
+                        scope.launch {
+                            // Mostra a marca (e esconde os botões) por um quadro, tira a foto do cartão e volta ao normal.
+                            capturing = true
+                            paused = true
+                            repeat(2) { androidx.compose.runtime.withFrameNanos { } }
+                            val image = runCatching { layer.toImageBitmap().asAndroidBitmap() }.getOrNull()
+                            capturing = false
+                            paused = false
+                            if (image != null) runCatching { context.shareWrappedCard(image, chooser) }
+                        }
+                    },
+                ) {
+                    Icon(BoomIcons.Share, contentDescription = stringResource(R.string.feature_profile_wrapped_share))
+                }
                 IconButton(onClick = onBack) {
                     Icon(BoomIcons.Close, contentDescription = stringResource(R.string.feature_profile_wrapped_close))
                 }
@@ -464,7 +511,7 @@ private fun ColumnScope.SprintWrappedCard(report: StatsReport) {
 }
 
 @Composable
-private fun ColumnScope.TopCard(report: StatsReport, viewModel: MyProfileViewModel) {
+private fun ColumnScope.TopCard(report: StatsReport, viewModel: MyProfileViewModel, showActions: Boolean) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_top))
     report.songs.take(MAX_TOP).forEachIndexed { index, song ->
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -478,6 +525,7 @@ private fun ColumnScope.TopCard(report: StatsReport, viewModel: MyProfileViewMod
         }
     }
     Spacer(Modifier.weight(1f))
+    if (!showActions) return
     var created by remember { mutableStateOf<Int?>(null) }
     val name = stringResource(R.string.feature_profile_wrapped_playlist_name, report.to.year)
     val none = stringResource(R.string.feature_profile_wrapped_playlist_none)
