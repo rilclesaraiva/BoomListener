@@ -280,7 +280,7 @@ private fun Actions(
             Spacer(Modifier.width(8.dp))
             FilledTonalIconButton(onClick = onToggleAlerts) {
                 Icon(
-                    if (alertsOn) BoomIcons.Releases else BoomIcons.NotificationsOff,
+                    if (alertsOn) BoomIcons.NotificationsActive else BoomIcons.NotificationsOff,
                     contentDescription = stringResource(
                         if (alertsOn) R.string.feature_artist_alerts_on else R.string.feature_artist_alerts_off,
                     ),

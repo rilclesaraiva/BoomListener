@@ -90,6 +90,9 @@ fun MiniPlayer(
     // Quanto o mini player foi puxado para baixo (px), no gesto de encerrar.
     // É estado simples, atualizado na hora a cada movimento do dedo.
     var dismissOffset by remember { mutableFloatStateOf(0f) }
+    // Quanto o dedo desceu de fato (antes do "ímã"): é o que decide se o mini player se solta.
+    var pullPx by remember { mutableFloatStateOf(0f) }
+    val stickPx = with(LocalDensity.current) { MiniPlayerStick.toPx() }
     var heightPx by remember { mutableFloatStateOf(1f) }
 
     // Só volta o mini player para o lugar quando algo começar a tocar de novo
@@ -108,9 +111,11 @@ fun MiniPlayer(
         modifier = modifier,
     ) {
         val dragState = rememberDraggableState { delta ->
-            val pullingDown = dismissOffset > 0f || (delta > 0f && sheetState.progress == 0f)
+            val pullingDown = pullPx > 0f || (delta > 0f && sheetState.progress == 0f)
             if (pullingDown) {
-                dismissOffset = (dismissOffset + delta).coerceAtLeast(0f)
+                // Perto da posição de baixo ele "gruda" (cede só um pouco); passando do ímã, desgruda e segue o dedo.
+                pullPx = (pullPx + delta).coerceAtLeast(0f)
+                dismissOffset = magnetOffset(pullPx, stickPx)
             } else {
                 sheetState.dragBy(-delta)
             }
@@ -130,8 +135,12 @@ fun MiniPlayer(
                     state = dragState,
                     orientation = Orientation.Vertical,
                     onDragStopped = { velocity ->
+                        val pulled = pullPx
+                        pullPx = 0f
                         if (dismissOffset > 0f) {
-                            val dismiss = dismissOffset > heightPx * 0.4f || velocity > 1500f
+                            // Solto ainda no ímã: volta ao lugar, mesmo com um deslize rápido sem querer.
+                            val released = pulled > stickPx
+                            val dismiss = released && (dismissOffset > heightPx * 0.4f || velocity > 1500f)
                             if (dismiss) {
                                 // Primeiro encerra a música de verdade; depois
                                 // termina de levar o mini player para baixo
@@ -225,3 +234,6 @@ private fun MiniPlayerSong(song: NowPlayingItem, viewModel: NowPlayingViewModel,
         }
     }
 }
+
+/** Quanto o dedo precisa descer, a partir da posição de baixo, para o mini player se soltar do "ímã". */
+private val MiniPlayerStick = 48.dp

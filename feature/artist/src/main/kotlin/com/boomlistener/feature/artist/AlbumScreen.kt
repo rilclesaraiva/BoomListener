@@ -3,6 +3,10 @@
 
 package com.boomlistener.feature.artist
 
+import com.boomlistener.core.model.Release
+import java.time.format.FormatStyle
+import java.time.format.DateTimeFormatter
+import java.time.LocalDate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -136,7 +140,7 @@ private fun AlbumContent(state: AlbumUiState.Ready, viewModel: AlbumViewModel) {
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = listOfNotNull(album.artistName.ifBlank { null }, release.year, typeName).joinToString(" • "),
+                    text = listOfNotNull(album.artistName.ifBlank { null }, releaseDateText(release), typeName).joinToString(" • "),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -232,4 +236,12 @@ private fun rememberAlbumImage(viewModel: AlbumViewModel, url: String?, sizePx: 
         value = url?.let { viewModel.image(it, sizePx)?.asImageBitmap() }
     }
     return image
+}
+
+/** A data completa do lançamento (ex.: "10 de nov. de 2026"); sem dia certo, só o ano. */
+@Composable
+private fun releaseDateText(release: Release): String? = remember(release.releaseDate) {
+    release.releaseDate?.let {
+        runCatching { LocalDate.parse(it).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) }.getOrNull()
+    } ?: release.year
 }

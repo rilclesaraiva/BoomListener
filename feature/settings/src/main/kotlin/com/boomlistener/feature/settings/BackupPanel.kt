@@ -5,10 +5,12 @@ package com.boomlistener.feature.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -107,11 +109,14 @@ internal fun BackupPanel(modifier: Modifier = Modifier) {
             working -> stringResource(R.string.feature_settings_backup_working)
             else -> message?.let { stringResource(it) }
         }
-        Text(
-            text ?: stringResource(R.string.feature_settings_backup_note),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-        )
+        // Dentro do bloco (mesma cor dos itens): o fim do painel fica arredondado como os outros.
+        Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text ?: stringResource(R.string.feature_settings_backup_note),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp),
+            )
+        }
     }
 }

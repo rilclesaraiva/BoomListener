@@ -73,7 +73,7 @@ internal fun ReleaseAlertsButton(onMessage: (String) -> Unit) {
         },
     ) {
         if (on) {
-            Icon(BoomIcons.Releases, contentDescription = stringResource(R.string.feature_releases_alerts_on))
+            Icon(BoomIcons.NotificationsActive, contentDescription = stringResource(R.string.feature_releases_alerts_on))
         } else {
             Icon(BoomIcons.NotificationsOff, contentDescription = stringResource(R.string.feature_releases_alerts_off))
         }
