@@ -14,6 +14,6 @@ internal data class LibraryTotalTime(val hours: Int, val minutes: Int) {
 /** 90 min → 2 h (arredonda para o mais próximo); 40 min → 40 min; 0 → 0 min. */
 internal fun libraryTotalTime(durationMs: Long): LibraryTotalTime {
     val ms = durationMs.coerceAtLeast(0L)
-    val hours = ((ms + HOUR_MS / 2) / HOUR_MS).toInt()
-    return if (hours >= 1) LibraryTotalTime(hours, 0) else LibraryTotalTime(0, (ms / MINUTE_MS).toInt())
+    if (ms < HOUR_MS) return LibraryTotalTime(0, (ms / MINUTE_MS).toInt())
+    return LibraryTotalTime(((ms + HOUR_MS / 2) / HOUR_MS).toInt(), 0)
 }

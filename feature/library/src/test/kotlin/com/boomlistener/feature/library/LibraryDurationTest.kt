@@ -25,9 +25,9 @@ class LibraryDurationTest {
         val d = libraryTotalTime(40 * minute)
         assertFalse(d.inHours)
         assertEquals(40, d.minutes)
-        // 29 min 59 s ainda é "minutos"; 30 min já arredonda para 1 hora.
-        assertEquals(29, libraryTotalTime(29 * minute + 59_000L).minutes)
-        assertEquals(1, libraryTotalTime(30 * minute).hours)
+        // 59 min 59 s ainda é "minutos"; 1 hora exata já é "1 hora".
+        assertEquals(59, libraryTotalTime(59 * minute + 59_000L).minutes)
+        assertEquals(1, libraryTotalTime(hour).hours)
     }
 
     @Test
