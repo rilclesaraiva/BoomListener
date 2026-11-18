@@ -158,6 +158,8 @@ internal fun AppearanceScreen(
                     }
                 }
             }
+            // O bichinho do perfil: liga/desliga, troca e fundo da caixa.
+            item { PetSettingsSection() }
             item {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_effects)) {
                     // Desfoque da tela de trás (o Android só desfoca a partir do 12).

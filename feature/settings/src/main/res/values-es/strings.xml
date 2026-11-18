@@ -198,4 +198,25 @@
     <string name="feature_settings_system_notifications">Notificaciones</string>
     <string name="feature_settings_wrapped_alert">Wrapped de fin de año</string>
     <string name="feature_settings_wrapped_alert_summary">Una notificación en diciembre cuando tu Wrapped esté listo. Solo se envía si las notificaciones ya están permitidas.</string>
+    <string name="feature_settings_pet">Mascota del perfil</string>
+    <string name="feature_settings_pet_show">Mostrar en el Perfil</string>
+    <string name="feature_settings_pet_show_summary">Un personaje que pasea en una caja en tu Perfil.</string>
+    <string name="feature_settings_pet_choose">Elegir una mascota</string>
+    <string name="feature_settings_pet_change">Cambiar la mascota</string>
+    <string name="feature_settings_pet_choose_summary">Un paquete de shimeji (.zip) o una imagen.</string>
+    <string name="feature_settings_pet_failed">Ese archivo no funcionó. Prueba con un .zip de shimeji o una imagen PNG.</string>
+    <string name="feature_settings_pet_remove">Quitar la mascota</string>
+    <string name="feature_settings_pet_background">Fondo de la caja de la mascota</string>
+    <string name="feature_settings_pet_bg_default">Predeterminado</string>
+    <string name="feature_settings_pet_bg_default_summary">Suave y translúcido, con el color de tu perfil</string>
+    <string name="feature_settings_pet_bg_color">Color</string>
+    <string name="feature_settings_pet_bg_color_summary">Elegir un color</string>
+    <string name="feature_settings_pet_bg_image">Imagen</string>
+    <string name="feature_settings_pet_bg_image_summary">Una foto o GIF de tu galería</string>
+    <string name="feature_settings_pet_bg_none">Sin fondo</string>
+    <string name="feature_settings_pet_bg_none_summary">Parece que camina por la propia página</string>
+    <string name="feature_settings_pet_color_title">Color de fondo</string>
+    <string name="feature_settings_pet_color_hint">Código hex, como #7A3CFF</string>
+    <string name="feature_settings_pet_color_invalid">Usa un color como #7A3CFF</string>
+    <string name="feature_settings_pet_color_save">Guardar</string>
 </resources>
