@@ -204,21 +204,19 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
     val barColors = WrappedColors.cards[page.coerceAtLeast(0) % WrappedColors.cards.size]
     val effects = boomEffectsSpec<Float>()
     val capture = remember { WrappedCapture() }
-    var capturing by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
+    val summaryIndex = cards.indexOf(WrappedCard.Summary)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val chooser = stringResource(R.string.feature_profile_wrapped_share)
-    // Compartilhar: a imagem do cartão que está na tela (no resumo, o resumo inteiro).
+    // Compartilhar manda sempre o resumo (a última tela), de qualquer cartão: ele é desenhado
+    // escondido, por trás de tudo, e o desenho dele é o que vira a imagem.
     val share: () -> Unit = {
-        if (capture.picture != null && !capturing) {
+        if (capture.picture != null && !sharing) {
             scope.launch {
-                // Mostra a marca (e esconde os botões) por um quadro, tira a foto do cartão e volta ao normal.
-                capturing = true
-                paused = true
-                repeat(2) { androidx.compose.runtime.withFrameNanos { } }
+                sharing = true
                 val image = capture.picture?.toBitmap()
-                capturing = false
-                paused = false
+                sharing = false
                 if (image != null) runCatching { context.shareWrappedCard(image, chooser) }
             }
         }
@@ -242,6 +240,35 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                 )
             },
     ) {
+        if (summaryIndex >= 0) {
+            val summaryPalette = WrappedColors.cards[summaryIndex % WrappedColors.cards.size]
+            Surface(
+                color = summaryPalette.container,
+                contentColor = summaryPalette.onContainer,
+                modifier = Modifier.fillMaxSize().drawWithContent {
+                    val picture = Picture()
+                    val canvas = Canvas(picture.beginRecording(size.width.toInt(), size.height.toInt()))
+                    draw(this, layoutDirection, canvas, size) { this@drawWithContent.drawContent() }
+                    picture.endRecording()
+                    // Só guarda o desenho: nada aparece aqui (o resumo de verdade é o cartão da frente).
+                    capture.picture = picture
+                },
+            ) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    LocalWrappedAccent provides summaryPalette.accent,
+                    LocalWrappedBackdrop provides summaryPalette.container,
+                ) {
+                    CardColumn {
+                        SummaryCard(report, viewModel, showActions = false, onShare = {})
+                        Text(
+                            stringResource(R.string.feature_profile_wrapped_brand),
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        )
+                    }
+                }
+            }
+        }
         AnimatedContent(
             targetState = page,
             transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
@@ -250,50 +277,26 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
         ) { index ->
             val card = cards.getOrNull(index) ?: WrappedCard.Intro
             val palette = WrappedColors.cards[index % WrappedColors.cards.size]
-            // O desenho do cartão que está na tela fica guardado: é ele que vira a imagem de compartilhar.
-            Surface(
-                color = palette.container,
-                contentColor = palette.onContainer,
-                modifier = Modifier.fillMaxSize().drawWithContent {
-                    val picture = Picture()
-                    val canvas = Canvas(picture.beginRecording(size.width.toInt(), size.height.toInt()))
-                    draw(this, layoutDirection, canvas, size) { this@drawWithContent.drawContent() }
-                    picture.endRecording()
-                    if (index == page) capture.picture = picture
-                    drawContent()
-                },
-            ) {
-              androidx.compose.runtime.CompositionLocalProvider(LocalWrappedAccent provides palette.accent, LocalWrappedBackdrop provides palette.container) {
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding()
-                        .navigationBarsPadding()
-                        .padding(top = 56.dp, bottom = LocalBottomOverlay.current + 24.dp)
-                        .padding(horizontal = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+            Surface(color = palette.container, contentColor = palette.onContainer, modifier = Modifier.fillMaxSize()) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    LocalWrappedAccent provides palette.accent,
+                    LocalWrappedBackdrop provides palette.container,
                 ) {
-                    when (card) {
-                        WrappedCard.Intro -> IntroCard(report, viewModel)
-                        WrappedCard.Artists -> ArtistsCard(report, viewModel)
-                        WrappedCard.Song -> SongCard(report, viewModel)
-                        WrappedCard.Genres -> GenresCard(report)
-                        WrappedCard.Time -> TimeCard(report)
-                        WrappedCard.Hour -> HourCard(report)
-                        WrappedCard.Discoveries -> DiscoveriesCard(report, viewModel)
-                        WrappedCard.Sprint -> SprintWrappedCard(report, viewModel)
-                        WrappedCard.Top -> TopCard(report, viewModel, showActions = !capturing)
-                        WrappedCard.Summary -> SummaryCard(report, viewModel, showActions = !capturing, onShare = share)
-                    }
-                    if (capturing) {
-                        Text(
-                            stringResource(R.string.feature_profile_wrapped_brand),
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                        )
+                    CardColumn {
+                        when (card) {
+                            WrappedCard.Intro -> IntroCard(report, viewModel)
+                            WrappedCard.Artists -> ArtistsCard(report, viewModel)
+                            WrappedCard.Song -> SongCard(report, viewModel)
+                            WrappedCard.Genres -> GenresCard(report)
+                            WrappedCard.Time -> TimeCard(report)
+                            WrappedCard.Hour -> HourCard(report)
+                            WrappedCard.Discoveries -> DiscoveriesCard(report, viewModel)
+                            WrappedCard.Sprint -> SprintWrappedCard(report, viewModel)
+                            WrappedCard.Top -> TopCard(report, viewModel, showActions = true)
+                            WrappedCard.Summary -> SummaryCard(report, viewModel, showActions = true, onShare = share)
+                        }
                     }
                 }
-              }
             }
         }
         // Barras de progresso e fechar, por cima de tudo.
@@ -324,7 +327,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                         )
                     }
                 }
-                IconButton(
+                if (summaryIndex >= 0) IconButton(
                     onClick = share,
                 ) {
                     Icon(BoomIcons.Share, contentDescription = stringResource(R.string.feature_profile_wrapped_share))
@@ -335,6 +338,21 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
             }
         }
     }
+}
+
+/** A coluna de conteúdo de um cartão, com as margens de tela inteira. */
+@Composable
+private fun CardColumn(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(top = 56.dp, bottom = LocalBottomOverlay.current + 24.dp)
+            .padding(horizontal = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        content = content,
+    )
 }
 
 @Composable
