@@ -479,19 +479,24 @@ private fun ColumnScope.ArtistsCard(report: StatsReport, viewModel: MyProfileVie
     CardTitle(stringResource(R.string.feature_profile_wrapped_artists))
     val top = report.artists.take(MAX_TOP)
     // Pódio: o 1º no centro, grande e mais alto; o 2º à esquerda e o 3º à direita, nos degraus menores.
-    Row(
-        Modifier.weight(1f).fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        listOf(1, 0, 2).forEach { index ->
-            top.getOrNull(index)?.let { artist ->
-                PodiumColumn(
-                    rank = index + 1,
-                    artist = artist,
-                    viewModel = viewModel,
-                    modifier = Modifier.weight(if (index == 0) 1.3f else 1f),
-                )
+    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+        // Os degraus crescem para encher a altura: o 1º ocupa o que sobra depois da foto e do texto dele.
+        val firstStep = (maxHeight - PODIUM_FIRST_HEAD).coerceAtLeast(PODIUM_MIN_STEP)
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+            listOf(1, 0, 2).forEach { index ->
+                top.getOrNull(index)?.let { artist ->
+                    PodiumColumn(
+                        rank = index + 1,
+                        artist = artist,
+                        viewModel = viewModel,
+                        step = when (index) {
+                            0 -> firstStep
+                            1 -> firstStep * PODIUM_SECOND_SHARE
+                            else -> firstStep * PODIUM_THIRD_SHARE
+                        },
+                        modifier = Modifier.weight(if (index == 0) 1.3f else 1f),
+                    )
+                }
             }
         }
     }
@@ -513,15 +518,10 @@ private fun ColumnScope.ArtistsCard(report: StatsReport, viewModel: MyProfileVie
 
 /** Uma coluna do pódio: foto, nome, quantas vezes e o degrau com a posição. */
 @Composable
-private fun PodiumColumn(rank: Int, artist: ArtistRank, viewModel: MyProfileViewModel, modifier: Modifier) {
+private fun PodiumColumn(rank: Int, artist: ArtistRank, viewModel: MyProfileViewModel, step: androidx.compose.ui.unit.Dp, modifier: Modifier) {
     val first = rank == 1
-    val step = when (rank) {
-        1 -> PODIUM_STEP_FIRST
-        2 -> PODIUM_STEP_SECOND
-        else -> PODIUM_STEP_THIRD
-    }
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        ArtistAvatar(viewModel, artist.name, if (first) 92.dp else 64.dp)
+        ArtistAvatar(viewModel, artist.name, if (first) 104.dp else 72.dp)
         Spacer(Modifier.height(8.dp))
         Text(
             artist.name,
@@ -551,9 +551,11 @@ private fun PodiumColumn(rank: Int, artist: ArtistRank, viewModel: MyProfileView
     }
 }
 
-private val PODIUM_STEP_FIRST = 120.dp
-private val PODIUM_STEP_SECOND = 84.dp
-private val PODIUM_STEP_THIRD = 56.dp
+/** Altura da foto e do texto do 1º (acima do degrau dele). */
+private val PODIUM_FIRST_HEAD = 200.dp
+private val PODIUM_MIN_STEP = 56.dp
+private const val PODIUM_SECOND_SHARE = 0.72f
+private const val PODIUM_THIRD_SHARE = 0.52f
 
 @Composable
 private fun ColumnScope.SongCard(report: StatsReport, viewModel: MyProfileViewModel) {
