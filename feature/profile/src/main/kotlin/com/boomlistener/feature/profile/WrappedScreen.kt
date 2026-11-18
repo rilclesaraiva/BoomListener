@@ -6,6 +6,7 @@ package com.boomlistener.feature.profile
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -50,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.rememberCoroutineScope
 import android.graphics.Picture
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.drawscope.draw
@@ -77,6 +79,7 @@ import com.boomlistener.core.designsystem.theme.WrappedColors
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.data.wellbeing.StatsPeriod
 import com.boomlistener.data.wellbeing.StatsReport
+import com.boomlistener.data.wellbeing.smoothHourLevels
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -171,6 +174,8 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
     }
     var page by remember(cards) { mutableIntStateOf(0) }
     var paused by remember { mutableStateOf(false) }
+    // Segurando o dedo na tela: barras e botões se esvaem; ao soltar, voltam com a mesma animação.
+    var holding by remember { mutableStateOf(false) }
     // Som da música da área: o botão do topo silencia só ela (o player principal já está pausado).
     var muted by remember { mutableStateOf(false) }
     LaunchedEffect(muted) { onMutedChange(muted) }
@@ -205,8 +210,10 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                 detectTapGestures(
                     onPress = {
                         paused = true
+                        holding = true
                         tryAwaitRelease()
                         paused = false
+                        holding = false
                     },
                     onTap = { offset ->
                         if (offset.x < size.width * TAP_BACK_SHARE) page = (page - 1).coerceAtLeast(0)
@@ -269,7 +276,8 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
             }
         }
         // Barras de progresso e fechar, por cima de tudo.
-        Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        val chromeAlpha by animateFloatAsState(if (holding) 0f else 1f, effects, label = "wrapped-chrome")
+        Column(Modifier.fillMaxWidth().alpha(chromeAlpha).statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                 cards.indices.forEach { index ->
                     val value by remember(index, page) {
@@ -649,7 +657,7 @@ private fun ColumnScope.HourCard(report: StatsReport) {
         )
     }
     // A curva do dia: quanto você ouviu em cada hora, com a favorita marcada.
-    DayCurve(report.hourLevels, hour, Modifier.weight(1f).fillMaxWidth())
+    DayCurve(remember(report) { smoothHourLevels(report.hourLevels) }, hour, Modifier.weight(1f).fillMaxWidth())
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         listOf(0, 12, 23).forEach { mark ->
             Text(LocalTime.of(mark, 0).format(format), style = MaterialTheme.typography.labelMedium)

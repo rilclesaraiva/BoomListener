@@ -266,4 +266,20 @@ class StatsReportTest {
         assertFalse(wrappedCardVisible(dec, true, 2026, 0, since)) // a notificação já saiu
         assertFalse(wrappedCardVisible(dec, false, 0, 0, since))
     }
+
+    @Test
+    fun curvaDoDiaSuavizaOsPicosEEmendaAMeiaNoite() {
+        val pico = List(24) { if (it == 12) 1f else 0f }
+        val suave = smoothHourLevels(pico)
+        assertEquals(24, suave.size)
+        assertEquals(1f, suave[12], 0.0001f)
+        assertEquals(suave[11], suave[13], 0.0001f) // simétrica
+        assertTrue(suave[11] > 0.5f && suave[9] > 0f && suave[8] == 0f)
+        // Uma escuta às 23 h chega até a madrugada seguinte.
+        val noite = smoothHourLevels(List(24) { if (it == 23) 1f else 0f })
+        assertTrue(noite[0] > 0f && noite[2] > 0f)
+        // Sem dados ou fora das 24 posições: devolve como veio.
+        assertTrue(smoothHourLevels(emptyList()).isEmpty())
+        assertEquals(List(24) { 0f }, smoothHourLevels(List(24) { 0f }))
+    }
 }

@@ -315,6 +315,23 @@ private fun favoriteHour(summary: DailySummary, from: LocalDate?, to: LocalDate)
     return if (best <= 0) null else totals.indexOf(best)
 }
 
+/**
+ * Suaviza as 24 horas para desenhar a curva do dia: cada hora recebe um pouco das vizinhas
+ * (a meia-noite emenda com as 23 h) e o resultado volta à escala de 0 a 1. Com poucos dias
+ * de escuta os dados são picos finos; assim a curva fica uma colina, não uma agulha.
+ */
+fun smoothHourLevels(levels: List<Float>): List<Float> {
+    if (levels.size != 24) return levels
+    val weights = floatArrayOf(1f, 2f, 3f, 4f, 3f, 2f, 1f)
+    val smooth = List(24) { hour ->
+        var sum = 0f
+        weights.forEachIndexed { index, weight -> sum += weight * levels[(hour + index - 3 + 24) % 24] }
+        sum
+    }
+    val best = smooth.max()
+    return if (best <= 0f) levels else smooth.map { it / best }
+}
+
 /** As 24 horas em escala de 0 a 1 (a mais ouvida vale 1); lista vazia sem tempo por hora. */
 private fun hourLevels(summary: DailySummary, from: LocalDate?, to: LocalDate): List<Float> {
     val totals = hourTotals(summary, from, to)
