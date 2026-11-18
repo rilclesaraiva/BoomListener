@@ -262,7 +262,7 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
                 total += bytes.size
                 if (total > MAX_TOTAL_BYTES) break
                 if (name.endsWith(".xml")) {
-                    val text = bytes.toString(Charsets.UTF_8)
+                    val text = bytes.toString(Charsets.UTF_8).removePrefix("\uFEFF")
                     if (xml == null && text.contains("<Action")) xml = text
                 } else if (bytes.size > PNG_HEADER.size && bytes.copyOfRange(0, PNG_HEADER.size).contentEquals(PNG_HEADER)) {
                     val target = File(staging, name)
