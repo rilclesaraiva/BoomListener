@@ -166,4 +166,39 @@ class PetEngineTest {
         assertEquals("a.png", frameAt(frames, -5)?.file)
         assertNull(frameAt(emptyList(), 10))
     }
+
+    @Test
+    fun `with wall and ceiling poses it climbs, stays in the box and comes back down`() {
+        val abilities = setOf(PetPose.Stand, PetPose.Walk, PetPose.Run, PetPose.Crawl, PetPose.GrabWall, PetPose.ClimbWall, PetPose.ClimbCeiling)
+        val seen = mutableSetOf<PetMode>()
+        for (seed in 1..10) {
+            val pet = PetEngine(Random(seed), abilities).apply { layout(300f, 160f, 80f, 90f) }
+            repeat(6_000) {
+                pet.update(50, false)
+                seen += pet.mode
+                assertTrue("x=${pet.x}", pet.x in 0f..220f)
+                assertTrue("y=${pet.y}", pet.y in 0f..70f)
+                if (pet.mode == PetMode.WallHold || pet.mode == PetMode.WallClimb) {
+                    assertEquals(if (pet.facingRight) 220f else 0f, pet.x, 0.01f)
+                }
+                if (pet.mode == PetMode.CeilingClimb) assertEquals(0f, pet.y, 0.01f)
+            }
+        }
+        assertTrue(PetMode.WallHold in seen)
+        assertTrue(PetMode.WallClimb in seen)
+        assertTrue(PetMode.CeilingClimb in seen)
+        assertTrue(PetMode.Run in seen)
+        assertTrue(PetMode.Crawl in seen)
+    }
+
+    @Test
+    fun `without those poses it never runs, crawls or climbs`() {
+        val pet = engine(5)
+        val seen = mutableSetOf<PetMode>()
+        repeat(6_000) {
+            pet.update(50, false)
+            seen += pet.mode
+        }
+        assertTrue(seen.none { it in setOf(PetMode.Run, PetMode.Crawl, PetMode.WallHold, PetMode.WallClimb, PetMode.CeilingClimb) })
+    }
 }

@@ -9,7 +9,7 @@ import java.io.ByteArrayInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 
 /** As poses que o bichinho do perfil sabe fazer. Faltando uma no pacote, a tela usa a mais parecida. */
-enum class PetPose { Stand, Walk, Sit, Sleep, Fall, Drag, Dance }
+enum class PetPose { Stand, Walk, Sit, Sleep, Fall, Drag, Dance, Run, Crawl, GrabWall, ClimbWall, ClimbCeiling }
 
 /** Um quadro: o arquivo de imagem (nome em minúsculas, sem pasta) e por quanto tempo fica na tela. */
 data class PetFrame(val file: String, val durationMs: Int)
@@ -26,6 +26,11 @@ data class PetPack(val name: String, val poses: Map<PetPose, List<PetFrame>>) {
             PetPose.Fall -> listOf(PetPose.Fall, PetPose.Drag, PetPose.Stand)
             PetPose.Drag -> listOf(PetPose.Drag, PetPose.Fall, PetPose.Stand)
             PetPose.Dance -> listOf(PetPose.Dance, PetPose.Walk, PetPose.Stand)
+            PetPose.Run -> listOf(PetPose.Run, PetPose.Walk, PetPose.Stand)
+            PetPose.Crawl -> listOf(PetPose.Crawl, PetPose.Walk, PetPose.Stand)
+            PetPose.GrabWall -> listOf(PetPose.GrabWall, PetPose.ClimbWall, PetPose.Stand)
+            PetPose.ClimbWall -> listOf(PetPose.ClimbWall, PetPose.GrabWall, PetPose.Stand)
+            PetPose.ClimbCeiling -> listOf(PetPose.ClimbCeiling, PetPose.Stand)
         }
         return chain.firstNotNullOfOrNull { poses[it]?.takeIf { f -> f.isNotEmpty() } }.orEmpty()
     }
@@ -49,7 +54,15 @@ private val POSE_NAMES: Map<PetPose, List<String>> = mapOf(
     PetPose.Fall to listOf("fall", "falling"),
     PetPose.Drag to listOf("pinched", "dragged", "resisting"),
     PetPose.Dance to listOf("dance"),
+    PetPose.Run to listOf("run", "dash"),
+    PetPose.Crawl to listOf("creep", "crawl"),
+    PetPose.GrabWall to listOf("grabwall"),
+    PetPose.ClimbWall to listOf("climbwall"),
+    PetPose.ClimbCeiling to listOf("climbceiling"),
 )
+
+/** Poses que só valem com o nome exato da ação (nada de "contém"): "run" pegaria "RunWithIe", que carrega uma janela. */
+private val EXACT_NAME_ONLY = setOf(PetPose.Run, PetPose.Crawl, PetPose.GrabWall, PetPose.ClimbWall, PetPose.ClimbCeiling)
 
 /** O nome do arquivo sem pasta, em minúsculas ("/img/Shime1.PNG" → "shime1.png"). */
 fun petBaseName(path: String): String = path.replace('\\', '/').substringAfterLast('/').trim().lowercase()
@@ -71,7 +84,9 @@ fun parsePetActions(xml: String, available: Set<String>): Map<PetPose, List<PetF
         val action = actions.item(i) as? org.w3c.dom.Element ?: continue
         val name = action.getAttribute("Name").trim().lowercase()
         if (name.isEmpty() || name in byName) continue
-        val poses = action.getElementsByTagName("Pose")
+        // Ações como ClimbWall têm duas <Animation> (subindo e descendo): vale a primeira.
+        val animation = action.getElementsByTagName("Animation").item(0) as? org.w3c.dom.Element
+        val poses = (animation ?: action).getElementsByTagName("Pose")
         val frames = buildList {
             for (j in 0 until poses.length) {
                 val pose = poses.item(j) as? org.w3c.dom.Element ?: continue
@@ -87,7 +102,7 @@ fun parsePetActions(xml: String, available: Set<String>): Map<PetPose, List<PetF
     val result = LinkedHashMap<PetPose, List<PetFrame>>()
     for ((pose, names) in POSE_NAMES) {
         val found = names.firstNotNullOfOrNull { byName[it] }
-            ?: names.firstNotNullOfOrNull { wanted -> byName.entries.firstOrNull { it.key.contains(wanted) }?.value }
+            ?: names.takeIf { pose !in EXACT_NAME_ONLY }?.firstNotNullOfOrNull { wanted -> byName.entries.firstOrNull { it.key.contains(wanted) }?.value }
         if (found != null) result[pose] = found
     }
     return result

@@ -131,4 +131,38 @@ class PetPackTest {
         assertEquals("", odd.backgroundColor)
         assertEquals(true, odd.enabled)
     }
+
+    @Test
+    fun `reads run crawl wall and ceiling poses, first animation only, exact names only`() {
+        val extra = """
+            <Mascot><ActionList>
+              <Action Name="Stand"><Animation><Pose Image="/a.png" Duration="10"/></Animation></Action>
+              <Action Name="Run"><Animation><Pose Image="/r1.png" Duration="2"/><Pose Image="/r2.png" Duration="2"/></Animation></Action>
+              <Action Name="Creep"><Animation><Pose Image="/c1.png" Duration="4"/></Animation></Action>
+              <Action Name="ClimbWall" BorderType="Wall">
+                <Animation Condition="up"><Pose Image="/w1.png" Duration="4"/><Pose Image="/w2.png" Duration="4"/></Animation>
+                <Animation Condition="down"><Pose Image="/w2.png" Duration="4"/><Pose Image="/w1.png" Duration="4"/><Pose Image="/w3.png" Duration="4"/></Animation>
+              </Action>
+              <Action Name="GrabWall"><Animation><Pose Image="/w1.png" Duration="250"/></Animation></Action>
+              <Action Name="ClimbCeiling"><Animation><Pose Image="/t1.png" Duration="4"/></Animation></Action>
+              <Action Name="RunWithIe"><Animation><Pose Image="/ie.png" Duration="2"/></Animation></Action>
+            </ActionList></Mascot>
+        """.trimIndent()
+        val all = setOf("a.png", "r1.png", "r2.png", "c1.png", "w1.png", "w2.png", "w3.png", "t1.png", "ie.png")
+        val poses = parsePetActions(extra, all)
+        assertEquals(listOf("r1.png", "r2.png"), poses.getValue(PetPose.Run).map { it.file })
+        assertEquals(listOf("c1.png"), poses.getValue(PetPose.Crawl).map { it.file })
+        assertEquals(listOf("w1.png", "w2.png"), poses.getValue(PetPose.ClimbWall).map { it.file })
+        assertEquals(listOf("w1.png"), poses.getValue(PetPose.GrabWall).map { it.file })
+        assertEquals(listOf("t1.png"), poses.getValue(PetPose.ClimbCeiling).map { it.file })
+        // Sem "Run" de verdade, "RunWithIe" (carrega uma janela) não serve.
+        val noRun = parsePetActions(extra.replace("""<Action Name="Run">""", """<Action Name="Nothing">"""), all)
+        assertNull(noRun[PetPose.Run])
+    }
+
+    @Test
+    fun `pack json round trips the new poses`() {
+        val pack = PetPack("x", mapOf(PetPose.Stand to listOf(PetFrame("a.png", 100)), PetPose.ClimbWall to listOf(PetFrame("w.png", 160))))
+        assertEquals(pack, petFromJson(petToJson(pack)))
+    }
 }

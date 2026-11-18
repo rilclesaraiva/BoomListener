@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.profile
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -134,15 +135,20 @@ private const val PET_BACKGROUND_ALPHA = 0.4f
 @Composable
 private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repository: PetRepository, modifier: Modifier) {
     // Os quadros do bichinho, lidos do arquivo uma vez por pacote.
-    val bitmaps by produceState<Map<String, ImageBitmap>>(emptyMap(), pack, state.packVersion) {
+    val loaded by produceState(PetImages(), pack, state.packVersion) {
         value = withContext(Dispatchers.Default) {
-            pack.files.mapNotNull { file ->
-                repository.frame(file)?.let { bytes ->
-                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()?.let { file to it }
-                }
-            }.toMap()
+            val bitmaps = HashMap<String, ImageBitmap>()
+            val margins = HashMap<String, Pair<Float, Float>>()
+            pack.files.forEach { file ->
+                val bytes = repository.frame(file) ?: return@forEach
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@forEach
+                margins[file] = transparentMargins(bitmap)
+                bitmaps[file] = bitmap.asImageBitmap()
+            }
+            PetImages(bitmaps, margins)
         }
     }
+    val bitmaps = loaded.bitmaps
     val stand = pack.frames(PetPose.Stand).firstOrNull()?.let { bitmaps[it.file] }
     val shape = MaterialTheme.shapes.extraLarge
     val boxModifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(PetBoxHeight)
@@ -156,7 +162,7 @@ private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repositor
         // dp na tela por pixel da imagem: todos os quadros usam a mesma escala (o parado dá a altura).
         val dpPerPixel = PetSpriteHeight.value / stand.height
         val spriteWidth = stand.width * dpPerPixel
-        val engine = remember(pack) { PetEngine() }
+        val engine = remember(pack) { PetEngine(abilities = pack.poses.keys) }
         var laidOut by remember(engine) { mutableStateOf(false) }
         LaunchedEffect(engine, maxWidth, maxHeight, spriteWidth) {
             engine.layout(maxWidth.value, maxHeight.value, spriteWidth, PetSpriteHeight.value)
@@ -215,8 +221,15 @@ private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repositor
             val scale = dpPerPixel * density
             val width = image.width * scale
             val height = image.height * scale
-            val centerX = (engine.x + spriteWidth / 2) * density
-            val bottom = (engine.y + PetSpriteHeight.value) * density
+            var centerX = (engine.x + spriteWidth / 2) * density
+            var bottom = (engine.y + PetSpriteHeight.value) * density
+            // Na parede e no teto o desenho encosta na borda da caixa pela parte pintada, não pela borda da imagem.
+            val (marginLeft, marginTop) = frame?.let { loaded.margins[it.file] } ?: (0f to 0f)
+            when (engine.mode) {
+                PetMode.WallHold, PetMode.WallClimb -> centerX += (if (engine.facingRight) 1 else -1) * marginLeft * width
+                PetMode.CeilingClimb -> bottom -= marginTop * height
+                else -> Unit
+            }
             withTransform({
                 // Os desenhos olham para a esquerda: espelha quando ele vai para a direita.
                 if (engine.facingRight) scale(-1f, 1f, pivot = Offset(centerX, 0f))
@@ -231,6 +244,35 @@ private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repositor
         }
     }
 }
+
+/** Os quadros já lidos e, de cada um, a folga transparente à esquerda e em cima (fração da largura e da altura). */
+private class PetImages(
+    val bitmaps: Map<String, ImageBitmap> = emptyMap(),
+    val margins: Map<String, Pair<Float, Float>> = emptyMap(),
+)
+
+/** Folga transparente à esquerda e em cima do desenho, em fração do tamanho da imagem. */
+private fun transparentMargins(bitmap: Bitmap): Pair<Float, Float> {
+    val width = bitmap.width
+    val height = bitmap.height
+    if (width <= 0 || height <= 0) return 0f to 0f
+    val pixels = IntArray(width * height)
+    bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+    var left = width
+    var top = height
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            if ((pixels[y * width + x] ushr 24) > ALPHA_VISIBLE) {
+                if (x < left) left = x
+                if (y < top) top = y
+            }
+        }
+    }
+    if (left == width) return 0f to 0f
+    return left.toFloat() / width to top.toFloat() / height
+}
+
+private const val ALPHA_VISIBLE = 16
 
 /** O que fica atrás do bichinho: o padrão do perfil, uma cor, uma imagem (pode ser GIF) ou nada. */
 @Composable

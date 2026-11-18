@@ -8,7 +8,7 @@ import com.boomlistener.data.profile.PetPose
 import kotlin.random.Random
 
 /** O que o bichinho está fazendo. */
-internal enum class PetMode { Idle, Walk, Sit, Sleep, Dance, Held, Fall }
+internal enum class PetMode { Idle, Walk, Sit, Sleep, Dance, Held, Fall, Run, Crawl, WallHold, WallClimb, CeilingClimb }
 
 /** A pose do pacote que desenha cada modo. */
 internal fun PetMode.pose(): PetPose = when (this) {
@@ -19,6 +19,11 @@ internal fun PetMode.pose(): PetPose = when (this) {
     PetMode.Dance -> PetPose.Dance
     PetMode.Held -> PetPose.Drag
     PetMode.Fall -> PetPose.Fall
+    PetMode.Run -> PetPose.Run
+    PetMode.Crawl -> PetPose.Crawl
+    PetMode.WallHold -> PetPose.GrabWall
+    PetMode.WallClimb -> PetPose.ClimbWall
+    PetMode.CeilingClimb -> PetPose.ClimbCeiling
 }
 
 /**
@@ -41,7 +46,11 @@ internal fun frameAt(frames: List<PetFrame>, elapsedMs: Long): PetFrame? {
  * relógio de verdade (quem usa passa o tempo que se passou), por isso dá para testar.
  * O desenho dos pacotes de shimeji olha para a esquerda; [facingRight] diz quando é preciso espelhar.
  */
-internal class PetEngine(private val random: Random = Random.Default) {
+internal class PetEngine(
+    private val random: Random = Random.Default,
+    /** As poses que o pacote tem: ele só corre, rasteja ou sobe na parede e no teto se houver a pose. */
+    private val abilities: Set<PetPose> = emptySet(),
+) {
     private var boxWidth = 0f
     private var boxHeight = 0f
     private var spriteWidth = 0f
@@ -64,6 +73,8 @@ internal class PetEngine(private val random: Random = Random.Default) {
     private var timeLeftMs = 1_500L
     private var velocityY = 0f
     private var walkDirection = -1
+    private var seekWall = false
+    private var climbTargetY = 0f
 
     private val maxX get() = (boxWidth - spriteWidth).coerceAtLeast(0f)
     private val groundY get() = (boxHeight - spriteHeight).coerceAtLeast(0f)
@@ -76,7 +87,8 @@ internal class PetEngine(private val random: Random = Random.Default) {
         this.spriteWidth = spriteWidth
         this.spriteHeight = spriteHeight
         x = if (first) maxX / 2 else x.coerceIn(0f, maxX)
-        y = if (mode == PetMode.Held || mode == PetMode.Fall) y.coerceIn(0f, groundY) else groundY
+        y = if (mode in GROUND_MODES) groundY else y.coerceIn(0f, groundY)
+        if (mode == PetMode.WallHold || mode == PetMode.WallClimb) x = if (facingRight) maxX else 0f
     }
 
     /** Anda [elapsedMs] no tempo. [playing]: há música tocando (ele dança; sem música, volta ao normal). */
@@ -88,10 +100,34 @@ internal class PetEngine(private val random: Random = Random.Default) {
         when (mode) {
             PetMode.Held -> Unit
             PetMode.Fall -> fall(seconds)
+            PetMode.WallClimb -> {
+                y -= CLIMB_SPEED * seconds
+                if (y <= climbTargetY) {
+                    y = climbTargetY
+                    if (climbTargetY <= 0f && PetPose.ClimbCeiling in abilities) {
+                        val fromLeft = !facingRight
+                        enter(PetMode.CeilingClimb)
+                        walkDirection = if (fromLeft) 1 else -1
+                        facingRight = walkDirection > 0
+                    } else {
+                        dropFromWall()
+                    }
+                }
+            }
+            PetMode.CeilingClimb -> {
+                x += walkDirection * CLIMB_SPEED * seconds
+                facingRight = walkDirection > 0
+                timeLeftMs -= step
+                if (x <= 0f || x >= maxX || timeLeftMs <= 0) {
+                    x = x.coerceIn(0f, maxX)
+                    dropFromWall()
+                }
+            }
             else -> {
-                if (playing && mode != PetMode.Dance) enter(PetMode.Dance)
+                val ground = mode in GROUND_MODES
+                if (playing && ground && mode != PetMode.Dance) enter(PetMode.Dance)
                 if (!playing && mode == PetMode.Dance) enter(PetMode.Idle)
-                if (mode == PetMode.Walk) walk(seconds)
+                if (mode == PetMode.Walk || mode == PetMode.Run || mode == PetMode.Crawl) walk(seconds)
                 timeLeftMs -= step
                 if (timeLeftMs <= 0 && mode != PetMode.Dance) chooseNext()
             }
@@ -112,16 +148,38 @@ internal class PetEngine(private val random: Random = Random.Default) {
         }
     }
 
+    /** Solta-se da parede ou do teto: cai até o chão, como o FallFromWall do shimeji. */
+    private fun dropFromWall() {
+        mode = PetMode.Fall
+        modeTimeMs = 0
+        velocityY = 0f
+        seekWall = false
+    }
+
     private fun walk(seconds: Float) {
-        x += walkDirection * WALK_SPEED * seconds
+        val speed = when (mode) {
+            PetMode.Run -> RUN_SPEED
+            PetMode.Crawl -> CRAWL_SPEED
+            else -> WALK_SPEED
+        }
+        x += walkDirection * speed * seconds
         if (x <= 0f) {
             x = 0f
+            if (seekWall) return attachToWall(right = false)
             walkDirection = 1
         } else if (x >= maxX) {
             x = maxX
+            if (seekWall) return attachToWall(right = true)
             walkDirection = -1
         }
         facingRight = walkDirection > 0
+    }
+
+    /** Chegou à beira da caixa: agarra na parede (o desenho olha para a esquerda: espelhado, é a parede da direita). */
+    private fun attachToWall(right: Boolean) {
+        enter(PetMode.WallHold)
+        facingRight = right
+        x = if (right) maxX else 0f
     }
 
     private fun enter(next: PetMode) {
@@ -132,28 +190,53 @@ internal class PetEngine(private val random: Random = Random.Default) {
             PetMode.Walk -> random.nextLong(2_500, 6_000)
             PetMode.Sit -> random.nextLong(3_000, 6_000)
             PetMode.Sleep -> random.nextLong(6_000, 12_000)
+            PetMode.Run -> random.nextLong(1_500, 3_500)
+            PetMode.Crawl -> random.nextLong(2_500, 5_000)
+            PetMode.WallHold -> random.nextLong(800, 2_000)
+            PetMode.CeilingClimb -> random.nextLong(3_000, 6_000)
             else -> Long.MAX_VALUE / 2
         }
-        if (next == PetMode.Walk) {
+        seekWall = false
+        if (next == PetMode.Walk || next == PetMode.Run || next == PetMode.Crawl) {
             walkDirection = if (random.nextBoolean()) 1 else -1
             facingRight = walkDirection > 0
         }
     }
 
     private fun chooseNext() {
+        if (mode == PetMode.WallHold) return startClimb()
         val roll = random.nextFloat()
-        enter(
-            when (mode) {
-                PetMode.Idle -> when {
-                    roll < 0.55f -> PetMode.Walk
-                    roll < 0.75f -> PetMode.Sit
-                    roll < 0.85f -> PetMode.Sleep
-                    else -> PetMode.Idle
-                }
-                PetMode.Sit -> if (roll < 0.3f) PetMode.Sleep else PetMode.Idle
+        // Caminhar vira, às vezes, correr, rastejar ou ir até a parede (se o pacote tiver essas poses).
+        val next = when (mode) {
+            PetMode.Idle -> when {
+                roll < 0.40f -> PetMode.Walk
+                roll < 0.55f -> PetMode.Sit
+                roll < 0.63f -> PetMode.Sleep
+                roll < 0.73f && PetPose.Run in abilities -> PetMode.Run
+                roll < 0.81f && PetPose.Crawl in abilities -> PetMode.Crawl
+                roll < 0.93f && PetPose.ClimbWall in abilities -> PetMode.Walk.also { wallNext = true }
                 else -> PetMode.Idle
-            },
-        )
+            }
+            PetMode.Sit -> if (roll < 0.3f) PetMode.Sleep else PetMode.Idle
+            else -> PetMode.Idle
+        }
+        enter(next)
+        if (wallNext) {
+            wallNext = false
+            seekWall = true
+            timeLeftMs = Long.MAX_VALUE / 2
+        }
+    }
+
+    private var wallNext = false
+
+    /** Agarrado na parede: sobe até uma altura (ou até o teto, se o pacote tiver o teto). */
+    private fun startClimb() {
+        val toCeiling = PetPose.ClimbCeiling in abilities && random.nextFloat() < 0.5f
+        climbTargetY = if (toCeiling) 0f else groundY * random.nextFloat() * 0.6f
+        mode = PetMode.WallClimb
+        modeTimeMs = 0
+        timeLeftMs = Long.MAX_VALUE / 2
     }
 
     /** O dedo pegou o bichinho: ele para de fazer o que fazia e vai junto. */
@@ -189,7 +272,11 @@ internal class PetEngine(private val random: Random = Random.Default) {
     }
 
     private companion object {
+        val GROUND_MODES = setOf(PetMode.Idle, PetMode.Walk, PetMode.Sit, PetMode.Sleep, PetMode.Dance, PetMode.Run, PetMode.Crawl)
         const val MAX_STEP_MS = 64L
+        const val RUN_SPEED = 90f
+        const val CRAWL_SPEED = 20f
+        const val CLIMB_SPEED = 30f
         const val GRAVITY = 900f
         const val WALK_SPEED = 36f
         const val POKE_SPEED = 260f
