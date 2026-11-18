@@ -224,8 +224,11 @@ private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repositor
             var centerX = (engine.x + spriteWidth / 2) * density
             var bottom = (engine.y + PetSpriteHeight.value) * density
             // Na parede e no teto o desenho encosta na borda da caixa pela parte pintada, não pela borda da imagem.
-            // Pacotes cujos desenhos olham para a direita só espelham quando ele vai para a esquerda.
-            val flipped = engine.facingRight != pack.facesRight
+            // No chão, pacotes cujos desenhos olham para a direita só espelham quando ele vai para a esquerda.
+            // Na parede e no teto vale o padrão dos shimejis em todos os pacotes: sem espelhar = parede da
+            // esquerda / andando para a esquerda (a cabeça vai na frente); espelhado = o contrário.
+            val onSurface = engine.mode == PetMode.WallHold || engine.mode == PetMode.WallClimb || engine.mode == PetMode.CeilingClimb
+            val flipped = if (onSurface) engine.facingRight else engine.facingRight != pack.facesRight
             val (marginLeft, marginTop, marginRight) = frame?.let { loaded.margins[it.file] } ?: Triple(0f, 0f, 0f)
             when (engine.mode) {
                 PetMode.WallHold, PetMode.WallClimb -> {
