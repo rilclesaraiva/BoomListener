@@ -123,6 +123,7 @@ internal fun MyProfileScreen(
     val insights by viewModel.insights.collectAsStateWithLifecycle()
     val testerMode by com.boomlistener.core.common.DiagnosticLog.enabled.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf(false) }
+    var testerHidden by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(MY_PROFILE_ROUTE, listState)
     state?.let { PinProfileImages(it, viewModel) }
@@ -165,12 +166,16 @@ internal fun MyProfileScreen(
                 }
                 // Convite do Wrapped (dezembro). Com o registro de diagnóstico ligado (builds de
                 // teste) aparece sempre, para abrir o Wrapped a qualquer hora.
-                if (wrappedCard || testerMode) {
+                if (wrappedCard || (testerMode && !testerHidden)) {
                     item(key = "wrapped-ready") {
                         WrappedReadyCard(
                             year = current.today.year,
                             onOpen = { onOpenWrapped(com.boomlistener.data.wellbeing.StatsPeriod.ThisYear.name) },
-                            onDismiss = viewModel::dismissWrappedCard,
+                            onDismiss = {
+                                viewModel.dismissWrappedCard()
+                                // Nas builds de teste o cartão é forçado: dispensar o esconde até reabrir o app.
+                                testerHidden = true
+                            },
                         )
                     }
                 }

@@ -371,16 +371,15 @@ internal fun WrappedReadyCard(year: Int, onOpen: () -> Unit, onDismiss: () -> Un
             // Enfeite: círculos no canto, no tom do cartão.
             Box(Modifier.align(Alignment.TopEnd).offset(x = 30.dp, y = (-30).dp).size(140.dp).clip(CircleShape).background(colors.tertiary.copy(alpha = 0.25f)))
             Box(Modifier.align(Alignment.TopEnd).offset(x = (-34).dp, y = 48.dp).size(64.dp).clip(CircleShape).background(colors.tertiary.copy(alpha = 0.5f)))
-            Column(Modifier.padding(20.dp)) {
+            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 10.dp)) {
                 Text(stringResource(R.string.feature_profile_wrapped_card_label, year), style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(4.dp))
                 Text(
                     stringResource(R.string.feature_profile_wrapped_card_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(end = 96.dp),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(end = 64.dp),
                 )
                 Text(stringResource(R.string.feature_profile_wrapped_card_sub), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Button(
                         onClick = onOpen,

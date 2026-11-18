@@ -76,6 +76,7 @@ import com.boomlistener.core.designsystem.component.BoomImageCycle
 import com.boomlistener.core.designsystem.component.BoomLoading
 import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import com.boomlistener.core.designsystem.component.rememberImageSet
+import com.boomlistener.core.designsystem.component.WrappedBackdrop
 import com.boomlistener.core.designsystem.theme.WrappedColors
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.data.wellbeing.StatsPeriod
@@ -257,6 +258,8 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                     capture.picture = picture
                 },
             ) {
+                Box(Modifier.fillMaxSize()) {
+                WrappedBackdrop(summaryPalette, summaryIndex)
                 androidx.compose.runtime.CompositionLocalProvider(
                     LocalWrappedAccent provides summaryPalette.accent,
                     LocalWrappedBackdrop provides summaryPalette.container,
@@ -270,6 +273,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                         )
                     }
                 }
+                }
             }
         }
         AnimatedContent(
@@ -281,6 +285,8 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
             val card = cards.getOrNull(index) ?: WrappedCard.Intro
             val palette = WrappedColors.cards[index % WrappedColors.cards.size]
             Surface(color = palette.container, contentColor = palette.onContainer, modifier = Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize()) {
+                WrappedBackdrop(palette, index)
                 androidx.compose.runtime.CompositionLocalProvider(
                     LocalWrappedAccent provides palette.accent,
                     LocalWrappedBackdrop provides palette.container,
@@ -299,6 +305,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                             WrappedCard.Summary -> SummaryCard(report, viewModel, showActions = true, onShare = share)
                         }
                     }
+                }
                 }
             }
         }
