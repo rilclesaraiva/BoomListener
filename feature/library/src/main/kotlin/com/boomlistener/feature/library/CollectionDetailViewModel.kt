@@ -46,6 +46,8 @@ internal sealed interface CollectionDetailUiState {
         val isPlaylist: Boolean,
         /** É a lista de favoritas (o nome vem do texto da tela, no idioma do celular). */
         val isFavorites: Boolean = false,
+        /** Playlist travada (a do Wrapped): sem renomear nem adicionar músicas. */
+        val locked: Boolean = false,
     ) : CollectionDetailUiState
 }
 
@@ -85,7 +87,7 @@ internal class CollectionDetailViewModel(
                 )
                 ref is CollectionRef.Playlist -> lists.firstOrNull { it.id == ref.id }
                     ?.let { summarize(it, all) }
-                    ?.let { CollectionDetailUiState.Ready(it.playlist.name, null, null, it.tracks, isPlaylist = true) }
+                    ?.let { CollectionDetailUiState.Ready(it.playlist.name, null, null, it.tracks, isPlaylist = true, locked = it.playlist.locked) }
                     ?: CollectionDetailUiState.Missing
                 ref is CollectionRef.Genre -> groupByGenre(all).firstOrNull { it.key == ref.key }
                     ?.let { CollectionDetailUiState.Ready(it.name, null, null, it.tracks, isPlaylist = false) }

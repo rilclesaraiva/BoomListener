@@ -77,7 +77,7 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
                     headlineContent = { Text(stringResource(R.string.feature_library_new_playlist)) },
                 )
             }
-            items(playlists, key = { it.id }) { playlist ->
+            items(playlists.filterNot { it.locked }, key = { it.id }) { playlist ->
                 val inside = trackUris.isNotEmpty() && playlist.trackUris.containsAll(trackUris)
                 ListItem(
                     modifier = Modifier.clickable {

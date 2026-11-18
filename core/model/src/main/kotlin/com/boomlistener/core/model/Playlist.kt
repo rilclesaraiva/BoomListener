@@ -13,4 +13,6 @@ data class Playlist(
     val trackUris: List<String>,
     val createdAtMs: Long,
     val updatedAtMs: Long,
+    /** Travada (a do Wrapped): não pode ser renomeada nem receber músicas; só ouvir, tirar ou apagar. */
+    val locked: Boolean = false,
 )

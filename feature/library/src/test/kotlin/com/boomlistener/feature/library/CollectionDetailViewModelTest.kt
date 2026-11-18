@@ -41,6 +41,17 @@ class CollectionDetailViewModelTest {
     }
 
     @Test
+    fun playlistDoWrappedVemTravada() = runTest(dispatcher) {
+        val playlists = FakePlaylists(listOf(Playlist(8, "Wrapped 2026", listOf("content://1"), 0, 0, locked = true), Playlist(9, "Minha", emptyList(), 0, 0)))
+        val travada = CollectionDetailViewModel(CollectionRef.Playlist(8), FakeLibraryRepository(sampleTracks), playlists, FakePlaybackController())
+        val comum = CollectionDetailViewModel(CollectionRef.Playlist(9), FakeLibraryRepository(sampleTracks), playlists, FakePlaybackController())
+        backgroundScope.launch(dispatcher) { travada.state.collect {} }
+        backgroundScope.launch(dispatcher) { comum.state.collect {} }
+        assertEquals(true, (travada.state.value as CollectionDetailUiState.Ready).locked)
+        assertEquals(false, (comum.state.value as CollectionDetailUiState.Ready).locked)
+    }
+
+    @Test
     fun playlistReordenaTiraERenomeia() = runTest(dispatcher) {
         val playlists = FakePlaylists(listOf(Playlist(7, "Viagem", listOf("content://1", "content://2", "content://3"), 0, 0)))
         val vm = CollectionDetailViewModel(CollectionRef.Playlist(7), FakeLibraryRepository(sampleTracks), playlists, FakePlaybackController())

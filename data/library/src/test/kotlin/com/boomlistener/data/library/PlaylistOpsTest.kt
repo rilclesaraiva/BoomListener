@@ -3,7 +3,9 @@
 
 package com.boomlistener.data.library
 
+import com.boomlistener.core.model.Playlist
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -41,5 +43,30 @@ class PlaylistOpsTest {
         val first = newPlaylist(emptyList(), "a", emptyList(), nowMs = 100)
         val second = newPlaylist(listOf(first), "b", emptyList(), nowMs = 100) // mesmo instante
         assertTrue(second.id > first.id)
+    }
+
+    @Test
+    fun playlistTravadaVoltaTravadaEArquivoAntigoAbreDestravado() {
+        val travada = Playlist(1, "Wrapped 2026", listOf("a", "b"), 10, 20, locked = true)
+        val comum = Playlist(2, "Minha", listOf("c"), 11, 21)
+        val lidas = parsePlaylists(playlistsToJson(listOf(travada, comum)))
+        assertEquals(listOf(travada, comum), lidas)
+        // Arquivo gravado antes do campo existir: nada vem travado.
+        val antigo = """[{"id":3,"name":"Velha","tracks":["x"],"created":1,"updated":2}]"""
+        assertFalse(parsePlaylists(antigo).single().locked)
+        // A playlist comum não ganha o campo no arquivo.
+        assertFalse(playlistsToJson(listOf(comum)).contains("locked"))
+    }
+
+    @Test
+    fun playlistTravadaNaoRenomeiaNemRecebeMusicas() {
+        val travada = Playlist(1, "Wrapped 2026", listOf("a"), 10, 20, locked = true)
+        assertEquals(travada, renamed(travada, "Outro nome"))
+        assertEquals(travada to 0, addedTo(travada, listOf("b", "c")))
+        val comum = travada.copy(locked = false)
+        assertEquals("Outro nome", renamed(comum, " Outro  nome ").name)
+        val (depois, entraram) = addedTo(comum, listOf("a", "b"))
+        assertEquals(listOf("a", "b"), depois.trackUris)
+        assertEquals(1, entraram)
     }
 }

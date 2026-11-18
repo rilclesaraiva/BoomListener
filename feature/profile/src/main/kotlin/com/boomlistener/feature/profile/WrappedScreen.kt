@@ -11,6 +11,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.ColumnScope
@@ -339,7 +340,7 @@ private fun RowCard(modifier: Modifier = Modifier, content: @Composable RowScope
     val ink = LocalContentColor.current
     Surface(color = ink.copy(alpha = 0.14f), contentColor = ink, shape = MaterialTheme.shapes.extraLarge, modifier = modifier) {
         Row(
-            Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             content = content,
@@ -472,8 +473,10 @@ private fun ColumnScope.SongCard(report: StatsReport, viewModel: MyProfileViewMo
         stringResource(if (isTop) R.string.feature_profile_wrapped_song else R.string.feature_profile_wrapped_song_fallback),
     )
     // A capa enche o que sobra da tela, quadrada.
-    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-        Cover(viewModel, song.uri, song.title, Modifier.fillMaxHeight().aspectRatio(1f, matchHeightConstraintsFirst = true))
+    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+        // O lado é o menor entre a largura e a altura livres: quadrada e sempre dentro das margens.
+        val side = if (maxWidth < maxHeight) maxWidth else maxHeight
+        Cover(viewModel, song.uri, song.title, Modifier.size(side))
     }
     Column {
         Text(song.title, style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -547,8 +550,8 @@ private fun GenreTile(genre: com.boomlistener.data.wellbeing.GenreRank, index: I
 @Composable
 private fun ColumnScope.TimeCard(report: StatsReport) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_time))
-    // O número de minutos, enorme, é o assunto do cartão.
-    Column(Modifier.fillMaxWidth()) {
+    // O número de minutos, enorme, é o assunto do cartão e ocupa o que sobra acima dos destaques.
+    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.Center) {
         Text(
             java.text.NumberFormat.getIntegerInstance().format(report.minutes),
             style = MaterialTheme.typography.displayLarge,
@@ -564,7 +567,7 @@ private fun ColumnScope.TimeCard(report: StatsReport) {
         HighlightRow(
             blocks[0], best.date.dayOfMonth.toString(),
             stringResource(R.string.feature_profile_stats_record_day), best.date.format(DateShown), minutesText(best.minutes),
-            Modifier.weight(1f),
+            Modifier,
         )
     }
     if (report.longestStreak > 1) {
@@ -572,7 +575,7 @@ private fun ColumnScope.TimeCard(report: StatsReport) {
             blocks[1], report.longestStreak.toString(),
             stringResource(R.string.feature_profile_stats_streak),
             pluralStringResource(R.plurals.feature_profile_stats_day_count, report.longestStreak, report.longestStreak), null,
-            Modifier.weight(1f),
+            Modifier,
         )
     }
     report.mostArtistsDay?.let { most ->
@@ -580,12 +583,12 @@ private fun ColumnScope.TimeCard(report: StatsReport) {
             blocks[2], most.artists.toString(),
             stringResource(R.string.feature_profile_stats_most_artists_day),
             pluralStringResource(R.plurals.feature_profile_stats_artist_count, most.artists, most.artists), most.date.format(DateShown),
-            Modifier.weight(1f),
+            Modifier,
         )
     }
 }
 
-/** Destaque do cartão de tempo: um bloco colorido com o número e, ao lado, o que ele significa. */
+/** Destaque do cartão de tempo: o número grande, na cor do bloco, e ao lado o que ele significa. */
 @Composable
 private fun HighlightRow(
     block: com.boomlistener.core.designsystem.theme.WrappedBlockColors,
@@ -596,14 +599,17 @@ private fun HighlightRow(
     modifier: Modifier,
 ) {
     RowCard(modifier.fillMaxWidth()) {
-        Surface(color = block.fill, contentColor = block.onFill, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxHeight().aspectRatio(1f)) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(number, style = MaterialTheme.typography.headlineLarge, maxLines = 1)
-            }
-        }
+        Text(
+            number,
+            style = MaterialTheme.typography.displayMedium,
+            color = block.fill,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            modifier = Modifier.width(96.dp),
+        )
         Column(Modifier.weight(1f)) {
             Text(label, style = MaterialTheme.typography.labelLarge, color = LocalContentColor.current.copy(alpha = 0.75f))
-            Text(value, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(value, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
             detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = LocalContentColor.current.copy(alpha = 0.75f)) }
         }
     }

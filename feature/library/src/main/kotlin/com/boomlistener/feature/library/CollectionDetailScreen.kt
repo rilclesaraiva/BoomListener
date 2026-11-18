@@ -125,9 +125,12 @@ internal fun CollectionDetailScreen(
     val playlistMenu: @Composable () -> Unit = {
             if (ready?.isPlaylist == true) {
                 BoomMoreMenu(
-                    actions = listOf(
-                        BoomMenuAction(stringResource(R.string.feature_library_add_songs), kind = BoomMenuKind.AddToPlaylist) { addingSongs = true },
-                        BoomMenuAction(stringResource(R.string.feature_library_rename_playlist), kind = BoomMenuKind.Rename) { renaming = true },
+                    actions = listOfNotNull(
+                        // A playlist do Wrapped é travada: sem adicionar músicas nem renomear.
+                        BoomMenuAction(stringResource(R.string.feature_library_add_songs), kind = BoomMenuKind.AddToPlaylist) { addingSongs = true }
+                            .takeUnless { ready.locked },
+                        BoomMenuAction(stringResource(R.string.feature_library_rename_playlist), kind = BoomMenuKind.Rename) { renaming = true }
+                            .takeUnless { ready.locked },
                         BoomMenuAction(stringResource(R.string.feature_library_delete_playlist), kind = BoomMenuKind.Delete) { confirmDelete = true },
                     ),
                     header = BoomMenuHeader(
@@ -172,7 +175,7 @@ internal fun CollectionDetailScreen(
         }
     }
 
-    if (addingSongs && ready?.isPlaylist == true) {
+    if (addingSongs && ready?.isPlaylist == true && !ready.locked) {
         AddSongsSheet(viewModel = viewModel, onDismiss = { addingSongs = false })
     }
 
@@ -182,7 +185,7 @@ internal fun CollectionDetailScreen(
     addManyToPlaylist?.let { uris ->
         AddToPlaylistSheet(trackUris = uris, onDismiss = { addManyToPlaylist = null })
     }
-    if (renaming && ready != null) {
+    if (renaming && ready != null && !ready.locked) {
         PlaylistNameDialog(
             title = stringResource(R.string.feature_library_rename_playlist),
             initialName = ready.name,
@@ -409,8 +412,10 @@ private fun Header(
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
         ) {
             if (state.isPlaylist) {
-                FilledTonalIconButton(onClick = onAddSongs, modifier = Modifier.size(48.dp)) {
-                    Icon(BoomIcons.Add, contentDescription = stringResource(R.string.feature_library_add_songs))
+                if (!state.locked) {
+                    FilledTonalIconButton(onClick = onAddSongs, modifier = Modifier.size(48.dp)) {
+                        Icon(BoomIcons.Add, contentDescription = stringResource(R.string.feature_library_add_songs))
+                    }
                 }
                 playlistMenu()
             }

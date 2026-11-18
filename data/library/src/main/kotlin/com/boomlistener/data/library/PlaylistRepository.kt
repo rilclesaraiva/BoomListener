@@ -25,6 +25,9 @@ interface PlaylistRepository {
 
     /** Cria e devolve o id. */
     suspend fun create(name: String, trackUris: List<String> = emptyList()): Long
+
+    /** Cria uma playlist travada (a do Wrapped): sem renomear e sem receber músicas depois. */
+    suspend fun createLocked(name: String, trackUris: List<String> = emptyList()): Long = create(name, trackUris)
     suspend fun rename(id: Long, name: String)
     suspend fun delete(id: Long)
 
@@ -74,8 +77,13 @@ internal class FilePlaylistRepository(context: Context) : PlaylistRepository {
         (list + created) to created.id
     }
 
+    override suspend fun createLocked(name: String, trackUris: List<String>): Long = update { list ->
+        val created = newPlaylist(list, name, trackUris, System.currentTimeMillis()).copy(locked = true)
+        (list + created) to created.id
+    }
+
     override suspend fun rename(id: Long, name: String) = update { list ->
-        list.edit(id) { it.copy(name = cleanName(name, it.name)) } to Unit
+        list.edit(id) { renamed(it, name) } to Unit
     }
 
     override suspend fun delete(id: Long) = update { list -> list.filterNot { it.id == id } to Unit }
@@ -83,9 +91,9 @@ internal class FilePlaylistRepository(context: Context) : PlaylistRepository {
     override suspend fun addTracks(id: Long, uris: List<String>): Int = update { list ->
         var added = 0
         val updated = list.edit(id) { playlist ->
-            val (result, count) = addUnique(playlist.trackUris, uris)
+            val (result, count) = addedTo(playlist, uris)
             added = count
-            playlist.copy(trackUris = result)
+            result
         }
         updated to added
     }
@@ -114,6 +122,17 @@ internal class FilePlaylistRepository(context: Context) : PlaylistRepository {
         val now = System.currentTimeMillis()
         return map { if (it.id == id) change(it).copy(updatedAtMs = now) else it }
     }
+}
+
+/** Renomeia, menos a travada (a do Wrapped), que fica como está. */
+internal fun renamed(playlist: Playlist, name: String): Playlist =
+    if (playlist.locked) playlist else playlist.copy(name = cleanName(name, playlist.name))
+
+/** Acrescenta músicas, menos na travada (a do Wrapped). Devolve a playlist e quantas entraram. */
+internal fun addedTo(playlist: Playlist, uris: List<String>): Pair<Playlist, Int> {
+    if (playlist.locked) return playlist to 0
+    val (result, count) = addUnique(playlist.trackUris, uris)
+    return playlist.copy(trackUris = result) to count
 }
 
 /** Playlist nova com id único e nome limpo (vazio vira "Playlist 1", "Playlist 2"…). */
@@ -147,9 +166,12 @@ internal fun <T> moveItem(list: List<T>, from: Int, to: Int): List<T> {
     return mutable
 }
 
-private fun readPlaylists(file: File): List<Playlist> {
-    if (!file.exists()) return emptyList()
-    val array = JSONArray(file.readText())
+private fun readPlaylists(file: File): List<Playlist> =
+    if (file.exists()) parsePlaylists(file.readText()) else emptyList()
+
+/** Lê o arquivo de playlists; o campo "locked" é opcional (arquivos antigos abrem destravados). */
+internal fun parsePlaylists(text: String): List<Playlist> {
+    val array = JSONArray(text)
     return (0 until array.length()).map { index ->
         val json = array.getJSONObject(index)
         val tracks = json.optJSONArray("tracks")
@@ -159,24 +181,29 @@ private fun readPlaylists(file: File): List<Playlist> {
             trackUris = (0 until (tracks?.length() ?: 0)).map { tracks!!.getString(it) },
             createdAtMs = json.optLong("created"),
             updatedAtMs = json.optLong("updated"),
+            locked = json.optBoolean("locked", false),
         )
     }
 }
 
-private fun writePlaylists(file: File, playlists: List<Playlist>) {
+internal fun playlistsToJson(playlists: List<Playlist>): String {
     val array = JSONArray()
     playlists.forEach { playlist ->
-        array.put(
-            JSONObject()
-                .put("id", playlist.id)
-                .put("name", playlist.name)
-                .put("tracks", JSONArray(playlist.trackUris))
-                .put("created", playlist.createdAtMs)
-                .put("updated", playlist.updatedAtMs),
-        )
+        val json = JSONObject()
+            .put("id", playlist.id)
+            .put("name", playlist.name)
+            .put("tracks", JSONArray(playlist.trackUris))
+            .put("created", playlist.createdAtMs)
+            .put("updated", playlist.updatedAtMs)
+        if (playlist.locked) json.put("locked", true)
+        array.put(json)
     }
+    return array.toString()
+}
+
+private fun writePlaylists(file: File, playlists: List<Playlist>) {
     val temp = File(file.parentFile, file.name + ".tmp")
-    temp.writeText(array.toString())
+    temp.writeText(playlistsToJson(playlists))
     temp.renameTo(file)
 }
 

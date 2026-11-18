@@ -166,7 +166,7 @@ internal class MyProfileViewModel(
         val uris = report.value?.songs.orEmpty().map { it.uri }.filter { it in existing }
         if (uris.isEmpty()) return onDone(0)
         viewModelScope.launch {
-            repository.create(name, uris)
+            repository.createLocked(name, uris)
             onDone(uris.size)
         }
     }
