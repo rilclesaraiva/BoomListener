@@ -5,6 +5,8 @@ package com.boomlistener.feature.profile
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +35,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +55,7 @@ import com.boomlistener.core.designsystem.theme.boomFastSpatialSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import com.boomlistener.data.wellbeing.ListeningCalendar
 import kotlinx.coroutines.delay
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
@@ -224,10 +229,16 @@ internal fun BigNumber(value: String, label: String, modifier: Modifier = Modifi
     }
 }
 
-/** Calendário de escuta: um quadradinho por dia, mais forte quanto mais você ouviu. Só informa: quem abre as Estatísticas é o cartão laranja. */
+/**
+ * Calendário de escuta: um quadradinho por dia, mais forte quanto mais você ouviu. Tocar num dia
+ * mostra a data e o tempo dele (tocar de novo, ou em outro, troca/limpa). Não abre nada: quem abre
+ * as Estatísticas é o cartão laranja.
+ */
 @Composable
 internal fun CalendarCard(calendar: ListeningCalendar) {
     val gap = 3.dp
+    var selected by remember { mutableStateOf<LocalDate?>(null) }
+    val selectedDay = remember(calendar, selected) { calendar.weeks.flatten().firstOrNull { it != null && it.date == selected } }
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = MaterialTheme.shapes.extraLarge,
@@ -258,7 +269,17 @@ internal fun CalendarCard(calendar: ListeningCalendar) {
                                 Modifier
                                     .fillMaxWidth()
                                     .aspectRatio(1f)
-                                    .then(if (day == null) Modifier else Modifier.clip(MaterialTheme.shapes.extraSmall).background(calendarLevelColor(day.level))),
+                                    .then(
+                                        if (day == null) {
+                                            Modifier
+                                        } else {
+                                            Modifier
+                                                .clip(MaterialTheme.shapes.extraSmall)
+                                                .background(calendarLevelColor(day.level))
+                                                .then(if (day.date == selected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, MaterialTheme.shapes.extraSmall) else Modifier)
+                                                .clickable { selected = if (selected == day.date) null else day.date }
+                                        },
+                                    ),
                             )
                         }
                     }
@@ -267,7 +288,12 @@ internal fun CalendarCard(calendar: ListeningCalendar) {
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    pluralStringResource(R.plurals.feature_profile_calendar_streak, calendar.longestStreak, calendar.longestStreak),
+                    selectedDay?.let { day ->
+                        val date = day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
+                        // Dia com escuta menor que 1 minuto conta como 1 minuto, para não mostrar "0 min".
+                        if (day.level == 0) stringResource(R.string.feature_profile_calendar_day_none, date)
+                        else stringResource(R.string.feature_profile_calendar_day, date, shortDuration(day.minutes.coerceAtLeast(1)))
+                    } ?: pluralStringResource(R.plurals.feature_profile_calendar_streak, calendar.longestStreak, calendar.longestStreak),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),

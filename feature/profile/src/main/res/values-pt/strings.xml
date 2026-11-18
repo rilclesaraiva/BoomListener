@@ -176,4 +176,6 @@
         <item quantity="one">Maior sequência: %1$d dia</item>
         <item quantity="other">Maior sequência: %1$d dias</item>
     </plurals>
+    <string name="feature_profile_calendar_day">%1$s · %2$s de escuta</string>
+    <string name="feature_profile_calendar_day_none">%1$s · sem escuta</string>
 </resources>

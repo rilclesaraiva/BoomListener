@@ -176,4 +176,6 @@
         <item quantity="one">Longest streak: %1$d day</item>
         <item quantity="other">Longest streak: %1$d days</item>
     </plurals>
+    <string name="feature_profile_calendar_day">%1$s · %2$s of listening</string>
+    <string name="feature_profile_calendar_day_none">%1$s · no listening</string>
 </resources>

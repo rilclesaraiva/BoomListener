@@ -176,4 +176,6 @@
         <item quantity="one">Mayor racha: %1$d día</item>
         <item quantity="other">Mayor racha: %1$d días</item>
     </plurals>
+    <string name="feature_profile_calendar_day">%1$s · %2$s de escucha</string>
+    <string name="feature_profile_calendar_day_none">%1$s · sin escucha</string>
 </resources>
