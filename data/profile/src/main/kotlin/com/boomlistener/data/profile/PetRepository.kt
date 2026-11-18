@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import com.boomlistener.core.common.DiagnosticLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -204,18 +205,25 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
                 staging.mkdirs()
                 val name = parsed.lastPathSegment.orEmpty().substringAfterLast('/').substringBeforeLast('.')
                 var xml: String? = null
-                val opened = context.contentResolver.openInputStream(parsed) ?: return@runCatching false
+                DiagnosticLog.log("bichinho", "importando")
+                val opened = context.contentResolver.openInputStream(parsed)
+                if (opened == null) {
+                    DiagnosticLog.log("bichinho", "o sistema não abriu o arquivo (openInputStream = null)")
+                    return@runCatching false
+                }
                 opened.use { raw ->
                     val input = BufferedInputStream(raw)
                     input.mark(8)
                     val head = ByteArray(4).also { input.read(it) }
                     input.reset()
+                    DiagnosticLog.log("bichinho", "início do arquivo: ${head.joinToString(" ") { "%02X".format(it) }}")
                     if (head[0] == 'P'.code.toByte() && head[1] == 'K'.code.toByte()) {
                         // Zip lido pelo índice (ZipFile): o que vem de programas como o Shimeji-ee às vezes tem
                         // arquivos sem compressão com "descritor", que a leitura em sequência recusa.
                         val temp = File(dir, "import.zip")
                         try {
                             temp.outputStream().use { out -> copyLimited(input, out, MAX_ZIP_BYTES) }
+                            DiagnosticLog.log("bichinho", "zip copiado: ${temp.length()} bytes")
                             xml = unzipPack(temp, staging)
                         } finally {
                             temp.delete()
@@ -225,8 +233,10 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
                     }
                 }
                 val available = staging.list()?.filter { it.endsWith(".png") }?.toSet().orEmpty()
+                DiagnosticLog.log("bichinho", "imagens guardadas: ${available.size}, actions.xml: ${if (xml != null) "achado (${xml!!.length} caracteres)" else "não achado"}")
                 val pack = buildPetPack(name, xml, available)
                 if (pack == null) {
+                    DiagnosticLog.log("bichinho", "pacote recusado: nenhuma pose utilizável (parado/andando)")
                     staging.deleteRecursively()
                     return@runCatching false
                 }
@@ -240,7 +250,11 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
                 packFile.writeText(petToJson(pack))
                 saveSettings(settings.copy(packVersion = System.currentTimeMillis()))
                 publish(pack)
+                DiagnosticLog.log("bichinho", "importado: ${pack.files.size} imagens, ${pack.poses.size} ações")
                 true
+            }.onFailure {
+                DiagnosticLog.log("bichinho", "erro ao importar: ${it::class.qualifiedName}: ${it.message}")
+                DiagnosticLog.log("bichinho", it.stackTrace.take(4).joinToString(" | "))
             }.getOrDefault(false)
         }
     }
@@ -250,15 +264,19 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
         var xml: String? = null
         var entries = 0
         var total = 0
+        var pngs = 0
+        var skipped = 0
         ZipFile(file).use { zip ->
+            DiagnosticLog.log("bichinho", "zip aberto: ${zip.size()} entradas")
             val all = zip.entries()
             while (all.hasMoreElements()) {
                 val entry = all.nextElement()
                 if (entry.isDirectory) continue
                 if (++entries > MAX_ENTRIES) break
                 val name = petEntryName(entry.name) ?: continue
-                if (entry.size > MAX_ENTRY_BYTES) continue
-                val bytes = zip.getInputStream(entry).use { readLimited(it, MAX_ENTRY_BYTES) } ?: continue
+                if (entry.size > MAX_ENTRY_BYTES) { skipped++; continue }
+                val bytes = zip.getInputStream(entry).use { readLimited(it, MAX_ENTRY_BYTES) }
+                if (bytes == null) { skipped++; continue }
                 total += bytes.size
                 if (total > MAX_TOTAL_BYTES) break
                 if (name.endsWith(".xml")) {
@@ -267,8 +285,12 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
                 } else if (bytes.size > PNG_HEADER.size && bytes.copyOfRange(0, PNG_HEADER.size).contentEquals(PNG_HEADER)) {
                     val target = File(staging, name)
                     if (!target.exists()) target.writeBytes(bytes)
+                    pngs++
+                } else {
+                    skipped++
                 }
             }
+            DiagnosticLog.log("bichinho", "lidas ${entries} entradas: $pngs PNG, $skipped ignoradas (grandes ou inválidas)")
         }
         return xml
     }
