@@ -17,6 +17,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **A daily listening summary that is never erased (groundwork for the new statistics):** the app now keeps, per day, which songs, artists, albums and genres you listened to and for how long you really listened (including songs you skipped), so your statistics can reach back beyond the 1 year / 5,000 plays of the history. Your existing history and most-played counts are brought in automatically the first time (time listened before this version is estimated from the song length). It stays on your phone and is part of your backup. Nothing new is shown yet.
 
 ### Changed
+- **Wrapped artists card is now a podium:** your top artist stands big in the middle, the 2nd and 3rd on steps beside it, and the 4th and 5th get their own rows with their little photos.
 - **Softer status bar:** a light dark fade now sits under the status bar, so the clock and icons stay readable when covers or titles scroll behind them.
 - **History:** the day label stuck at the top now moves aside so the back button no longer covers it.
 - **Scroll handle:** in playlists, albums and the history, the fast-scroll handle no longer climbs over the cover and title; it starts where the first song starts.

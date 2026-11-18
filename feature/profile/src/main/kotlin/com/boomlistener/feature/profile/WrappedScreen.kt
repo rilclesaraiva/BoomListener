@@ -12,6 +12,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.background
@@ -78,6 +79,7 @@ import com.boomlistener.core.designsystem.component.rememberImageSet
 import com.boomlistener.core.designsystem.theme.WrappedColors
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.data.wellbeing.StatsPeriod
+import com.boomlistener.data.wellbeing.ArtistRank
 import com.boomlistener.data.wellbeing.StatsReport
 import com.boomlistener.data.wellbeing.smoothHourLevels
 import java.time.LocalTime
@@ -476,31 +478,28 @@ private fun CoverMosaic(viewModel: MyProfileViewModel, covers: List<Pair<String,
 private fun ColumnScope.ArtistsCard(report: StatsReport, viewModel: MyProfileViewModel) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_artists))
     val top = report.artists.take(MAX_TOP)
-    top.firstOrNull()?.let { first ->
-        // O número 1: bloco no destaque do cartão, com a foto grande e o nome em letras grandes.
-        Surface(
-            color = LocalWrappedAccent.current,
-            contentColor = LocalWrappedBackdrop.current,
-            shape = MaterialTheme.shapes.extraLarge,
-            modifier = Modifier.weight(1.5f).fillMaxWidth(),
-        ) {
-            Row(
-                Modifier.fillMaxSize().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                ArtistAvatar(viewModel, first.name, 104.dp)
-                Column(Modifier.weight(1f)) {
-                    Text(first.name, style = MaterialTheme.typography.headlineLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(playsAndTime(first.plays, first.minutes), style = MaterialTheme.typography.titleSmall)
-                }
+    // Pódio: o 1º no centro, grande e mais alto; o 2º à esquerda e o 3º à direita, nos degraus menores.
+    Row(
+        Modifier.weight(1f).fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        listOf(1, 0, 2).forEach { index ->
+            top.getOrNull(index)?.let { artist ->
+                PodiumColumn(
+                    rank = index + 1,
+                    artist = artist,
+                    viewModel = viewModel,
+                    modifier = Modifier.weight(if (index == 0) 1.3f else 1f),
+                )
             }
         }
     }
-    top.drop(1).forEachIndexed { index, artist ->
-        RowCard(Modifier.weight(1f).fillMaxWidth()) {
-            RankNumber(index + 2)
-            ArtistAvatar(viewModel, artist.name, 56.dp)
+    // 4º e 5º: linhas com o ícone (foto) de cada um ao lado do nome.
+    top.drop(3).forEachIndexed { index, artist ->
+        RowCard(Modifier.fillMaxWidth()) {
+            RankNumber(index + 4)
+            ArtistAvatar(viewModel, artist.name, 40.dp)
             Column(Modifier.weight(1f)) {
                 Text(artist.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
@@ -511,6 +510,50 @@ private fun ColumnScope.ArtistsCard(report: StatsReport, viewModel: MyProfileVie
         }
     }
 }
+
+/** Uma coluna do pódio: foto, nome, quantas vezes e o degrau com a posição. */
+@Composable
+private fun PodiumColumn(rank: Int, artist: ArtistRank, viewModel: MyProfileViewModel, modifier: Modifier) {
+    val first = rank == 1
+    val step = when (rank) {
+        1 -> PODIUM_STEP_FIRST
+        2 -> PODIUM_STEP_SECOND
+        else -> PODIUM_STEP_THIRD
+    }
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        ArtistAvatar(viewModel, artist.name, if (first) 92.dp else 64.dp)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            artist.name,
+            style = if (first) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            pluralStringResource(R.plurals.feature_profile_plays, artist.plays, artist.plays),
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+        )
+        if (first) Text(minutesText(artist.minutes), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        val ink = LocalContentColor.current
+        Surface(
+            color = if (first) LocalWrappedAccent.current else ink.copy(alpha = 0.14f),
+            contentColor = if (first) LocalWrappedBackdrop.current else LocalWrappedAccent.current,
+            shape = MaterialTheme.shapes.large.copy(bottomStart = CornerSize(0.dp), bottomEnd = CornerSize(0.dp)),
+            modifier = Modifier.fillMaxWidth().height(step),
+        ) {
+            Box(Modifier.fillMaxSize().padding(top = 8.dp), contentAlignment = Alignment.TopCenter) {
+                Text(rank.toString(), style = MaterialTheme.typography.headlineLarge, maxLines = 1)
+            }
+        }
+    }
+}
+
+private val PODIUM_STEP_FIRST = 120.dp
+private val PODIUM_STEP_SECOND = 84.dp
+private val PODIUM_STEP_THIRD = 56.dp
 
 @Composable
 private fun ColumnScope.SongCard(report: StatsReport, viewModel: MyProfileViewModel) {
