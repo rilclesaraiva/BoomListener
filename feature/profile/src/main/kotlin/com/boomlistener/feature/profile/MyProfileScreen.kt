@@ -123,6 +123,7 @@ internal fun MyProfileScreen(
     // O cartão do mês usa as contas do mês atual (as mesmas das Estatísticas).
     LaunchedEffect(Unit) { viewModel.selectPeriod(com.boomlistener.data.wellbeing.StatsPeriod.ThisMonth) }
     val monthReport by viewModel.report.collectAsStateWithLifecycle()
+    val playing by viewModel.isPlaying.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(MY_PROFILE_ROUTE, listState)
@@ -174,6 +175,8 @@ internal fun MyProfileScreen(
                 item(key = "month") {
                     MonthCard(current, monthReport?.takeIf { it.period == com.boomlistener.data.wellbeing.StatsPeriod.ThisMonth }, onClick = onOpenStats)
                 }
+                // O bichinho do perfil: passeia numa caixa (ou convida a escolher um).
+                item(key = "pet") { PetBox(playing = playing) }
             }
         }
     }

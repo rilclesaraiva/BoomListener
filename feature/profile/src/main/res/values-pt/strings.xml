@@ -161,4 +161,8 @@
     <string name="feature_profile_wrapped_card_title">Seu Wrapped está pronto</string>
     <string name="feature_profile_wrapped_card_sub">Abra o seu ano em cartões</string>
     <string name="feature_profile_wrapped_card_dismiss">Dispensar</string>
+    <string name="feature_profile_pet_add_title">Adicione um bichinho</string>
+    <string name="feature_profile_pet_add_body">Escolha um pacote de shimeji (.zip) ou uma imagem. Ele passeia por aqui e dança quando toca música.</string>
+    <string name="feature_profile_pet_failed">Esse arquivo não funcionou. Tente um .zip de shimeji ou uma imagem PNG.</string>
+    <string name="feature_profile_pet_description">Seu bichinho</string>
 </resources>

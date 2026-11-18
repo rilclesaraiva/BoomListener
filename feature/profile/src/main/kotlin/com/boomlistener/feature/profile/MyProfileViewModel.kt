@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -97,6 +98,12 @@ internal class MyProfileViewModel(
 ) : ViewModel() {
 
     private val tracks = MutableStateFlow<List<Track>>(emptyList())
+
+    /** Tem música tocando agora (o bichinho do perfil dança). */
+    val isPlaying: StateFlow<Boolean> = player.state
+        .map { it.isPlaying }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     val state: StateFlow<MyProfileUiState?> = combine(
         profile.profile,
