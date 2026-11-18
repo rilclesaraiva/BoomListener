@@ -20,7 +20,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.boomlistener.data.profile.ProfileImage
@@ -55,6 +57,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,14 +82,13 @@ import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.LocalBottomOverlay
 import com.boomlistener.core.designsystem.component.ScrollToTopOnReselect
 import com.boomlistener.core.designsystem.component.artworkTintedBackground
-import com.boomlistener.core.designsystem.component.PinImages
 import com.boomlistener.core.designsystem.component.BoomImageCycle
 import com.boomlistener.core.designsystem.component.PinItem
 import com.boomlistener.core.designsystem.component.rememberImageSet
 import com.boomlistener.core.designsystem.component.rememberArtworkColor
 import com.boomlistener.core.designsystem.component.rememberMemoryImage
 import com.boomlistener.data.deezer.splitArtistNames
-import com.boomlistener.data.wellbeing.HistoryEntry
+import com.boomlistener.data.wellbeing.StatsReport
 import com.boomlistener.data.wellbeing.SongStat
 import java.time.Instant
 import java.time.LocalDate
@@ -95,7 +97,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
-private val CoverCard = 136.dp
 
 // Folga para o canto arredondado do toque não cortar as letras.
 private val TileBottom = 8.dp
@@ -114,16 +115,17 @@ internal fun MyProfileScreen(
     onOpenStats: () -> Unit,
     onOpenWrapped: (period: String) -> Unit,
     onOpenSettings: () -> Unit,
-    songMenu: ProfileSongMenu,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val wrappedCard by viewModel.wrappedCard.collectAsStateWithLifecycle()
     val saveFailed by viewModel.saveFailed.collectAsStateWithLifecycle()
+    // O cartão do mês usa as contas do mês atual (as mesmas das Estatísticas).
+    LaunchedEffect(Unit) { viewModel.selectPeriod(com.boomlistener.data.wellbeing.StatsPeriod.ThisMonth) }
+    val monthReport by viewModel.report.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(MY_PROFILE_ROUTE, listState)
-    state?.let { PinProfileImages(it, viewModel) }
 
     // Cor sólida: a página inteira na cor escolhida (preto puro fica preto puro),
     // com textos e cartões em tons que combinam com ela.
@@ -148,7 +150,7 @@ internal fun MyProfileScreen(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 item(key = "title") {
-                    ProfileTitleBar(onEdit = { editing = true }, onOpenSettings = onOpenSettings)
+                    ProfileTitleBar(onOpenHistory = onOpenHistory, onEdit = { editing = true }, onOpenSettings = onOpenSettings)
                 }
                 item(key = "header") {
                     Header(current, viewModel, onEdit = { editing = true })
@@ -169,21 +171,8 @@ internal fun MyProfileScreen(
                         )
                     }
                 }
-                item(key = "month") { MonthCard(current, onClick = onOpenStats) }
-
-                if (current.recent.isNotEmpty()) {
-                    item(key = "history") {
-                        SectionTitle(
-                            stringResource(R.string.feature_profile_history),
-                            null,
-                            onMore = onOpenHistory,
-                        )
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                            items(current.recent, key = { "${it.timestampMs}-${it.uri}" }) { entry ->
-                                HistoryCard(entry, current.today, viewModel, songMenu, onClick = { viewModel.playRecent(entry) })
-                            }
-                        }
-                    }
+                item(key = "month") {
+                    MonthCard(current, monthReport?.takeIf { it.period == com.boomlistener.data.wellbeing.StatsPeriod.ThisMonth }, onClick = onOpenStats)
                 }
             }
         }
@@ -195,10 +184,13 @@ internal fun MyProfileScreen(
     }
 }
 
-/** Título "Seu perfil" com editar e Ajustes: o topo da página, não uma barra presa na tela. */
+/** Título "Seu perfil" com histórico, editar e Ajustes: o topo da página, não uma barra presa na tela. */
 @Composable
-private fun ProfileTitleBar(onEdit: () -> Unit, onOpenSettings: () -> Unit) {
+private fun ProfileTitleBar(onOpenHistory: () -> Unit, onEdit: () -> Unit, onOpenSettings: () -> Unit) {
     BoomPageTitle(stringResource(R.string.feature_profile_my_profile)) {
+        IconButton(onClick = onOpenHistory) {
+            Icon(BoomIcons.History, contentDescription = stringResource(R.string.feature_profile_history))
+        }
         IconButton(onClick = onEdit) {
             Icon(BoomIcons.Edit, contentDescription = stringResource(R.string.feature_profile_edit_profile))
         }
@@ -529,40 +521,87 @@ private fun ImageEditBadge(busy: Boolean, label: String) {
     }
 }
 
-/** "Este mês": músicas, horas e artistas. */
+/**
+ * "Este mês": um cartão resumido das Estatísticas (músicas, tempo, artistas e o que mais marcou o
+ * mês). Fica na cor da sua página, 60% translúcido: dá para ver o fundo através dele.
+ */
 @Composable
-private fun MonthCard(state: MyProfileUiState, onClick: () -> Unit) {
+private fun MonthCard(state: MyProfileUiState, report: StatsReport?, onClick: () -> Unit) {
     val month = state.today.month.getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault())
         .replaceFirstChar { it.titlecase(Locale.getDefault()) }
-    val hours = state.stats.monthMinutes / 60
-    val minutes = state.stats.monthMinutes % 60
+    val plays = report?.plays ?: state.stats.monthPlays
+    val totalMinutes = report?.minutes ?: state.stats.monthMinutes
+    val artistCount = report?.artistCount ?: state.stats.monthArtists
+    val scheme = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        color = scheme.surfaceContainerHighest.copy(alpha = MONTH_CARD_ALPHA),
+        contentColor = scheme.onSurface,
         shape = MaterialTheme.shapes.extraLarge,
+        border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(BoomIcons.History, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.feature_profile_this_month).uppercase(), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.weight(1f))
                 Text(month, style = MaterialTheme.typography.titleSmall)
             }
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BigNumber(state.stats.monthPlays.toString(), pluralStringResource(R.plurals.feature_profile_songs, state.stats.monthPlays), Modifier.weight(1f))
-                BigNumber(
-                    if (hours > 0) stringResource(R.string.feature_profile_hours_minutes, hours, minutes) else stringResource(R.string.feature_profile_minutes, minutes),
-                    stringResource(R.string.feature_profile_listened),
-                    Modifier.weight(1.4f),
-                )
-                BigNumber(state.stats.monthArtists.toString(), pluralStringResource(R.plurals.feature_profile_artists, state.stats.monthArtists), Modifier.weight(1f))
+                BigNumber(plays.toString(), pluralStringResource(R.plurals.feature_profile_songs, plays), Modifier.weight(1f))
+                BigNumber(minutesText(totalMinutes), stringResource(R.string.feature_profile_listened), Modifier.weight(1.4f))
+                BigNumber(artistCount.toString(), pluralStringResource(R.plurals.feature_profile_artists, artistCount), Modifier.weight(1f))
+            }
+            // O que mais marcou o mês, em células de duas colunas (só as que têm dados).
+            val cells = report?.let { monthHighlights(it) }.orEmpty()
+            if (cells.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider(color = scheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(Modifier.height(16.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    cells.chunked(2).forEach { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            pair.forEach { cell -> HighlightCell(cell, Modifier.weight(1f)) }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.feature_profile_stats_open), style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.feature_profile_stats_open), style = MaterialTheme.typography.labelLarge, color = scheme.primary)
+        }
+    }
+}
+
+/** Opacidade do cartão do mês: 60% translúcido = 40% opaco. */
+private const val MONTH_CARD_ALPHA = 0.4f
+
+private class MonthHighlight(val label: String, val value: String, val detail: String?)
+
+@Composable
+private fun monthHighlights(report: StatsReport): List<MonthHighlight> = buildList {
+    report.artists.firstOrNull()?.let {
+        add(MonthHighlight(stringResource(R.string.feature_profile_card_top_artist), it.name, pluralStringResource(R.plurals.feature_profile_plays, it.plays, it.plays)))
+    }
+    report.songs.firstOrNull()?.let {
+        add(MonthHighlight(stringResource(R.string.feature_profile_card_top_song), it.title, it.artist))
+    }
+    report.genres.firstOrNull()?.let {
+        add(MonthHighlight(stringResource(R.string.feature_profile_card_top_genre), it.genre, stringResource(R.string.feature_profile_stats_percent, (it.share * 100).toInt())))
+    }
+    report.bestDay?.let {
+        add(MonthHighlight(stringResource(R.string.feature_profile_stats_record_day), it.date.format(DateShown), minutesText(it.minutes)))
+    }
+}
+
+@Composable
+private fun HighlightCell(cell: MonthHighlight, modifier: Modifier) {
+    Column(modifier) {
+        Text(cell.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(cell.value, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        cell.detail?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -672,43 +711,6 @@ internal fun DayPartsCard(state: MyProfileUiState) {
 }
 
 @Composable
-private fun HistoryCard(entry: HistoryEntry, today: LocalDate, viewModel: MyProfileViewModel, menu: ProfileSongMenu, onClick: () -> Unit) {
-    val cover = rememberLocalArtwork(viewModel, entry.uri, CoverCard)
-    // Segurar abre o menu da música.
-    val menuOpen = remember { mutableStateOf(false) }
-    ProfileSongMenuSheet(menuOpen, entry.uri, entry.title, entry.artist, cover, menu, onPlay = onClick)
-    val date = remember(entry.timestampMs) { Instant.ofEpochMilli(entry.timestampMs).atZone(ZoneId.systemDefault()).toLocalDate() }
-    val label = when (date) {
-        today -> stringResource(R.string.feature_profile_today)
-        today.minusDays(1) -> stringResource(R.string.feature_profile_yesterday)
-        else -> date.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
-    }
-    Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = TileBottom)) {
-        Box(contentAlignment = Alignment.BottomStart) {
-            BoomArtwork(image = cover, fallbackText = entry.title, size = CoverCard)
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                shape = CircleShape,
-                modifier = Modifier.padding(8.dp),
-            ) {
-                Text(label, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(entry.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = TileTextInset))
-        Text(
-            entry.artist.orEmpty(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = TileTextInset),
-        )
-    }
-}
-
-@Composable
 internal fun rememberLocalArtwork(viewModel: MyProfileViewModel, uri: String?, size: Dp): ImageBitmap? {
     val px = with(LocalDensity.current) { size.roundToPx() }
     val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
@@ -736,23 +738,6 @@ internal fun artistAttempts(name: String, px: Int, viewModel: MyProfileViewModel
         listOf(PinItem(artistPhotoOnlyKey(name, px)) { viewModel.artistImage(name, px, coverFallback = false) }),
         parts.map { withCover(it) },
     )
-}
-
-/**
- * As imagens do perfil ficam prontas na memória (histórico):
- * deslizar as fileiras ou subir ao topo não deixa nenhuma piscar a inicial.
- */
-@Composable
-private fun PinProfileImages(state: MyProfileUiState, viewModel: MyProfileViewModel) {
-    val density = LocalDensity.current
-    val coverPx = with(density) { CoverCard.roundToPx() }
-    val version by viewModel.libraryVersion.collectAsStateWithLifecycle()
-    val items = buildList {
-        state.recent.map { it.uri }.distinct().forEach { uri ->
-            add(PinItem(coverKey(uri, coverPx, version)) { viewModel.artwork(uri, coverPx) })
-        }
-    }
-    PinImages("profileImages", items)
 }
 
 /** Dezembro sem a notificação ter saído (sem permissão): o Wrapped do ano espera aqui. */

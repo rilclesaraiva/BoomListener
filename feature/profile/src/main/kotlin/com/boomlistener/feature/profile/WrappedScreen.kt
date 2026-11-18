@@ -228,11 +228,12 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                 detectTapGestures(
                     onPress = {
                         paused = true
-                        holding = true
                         tryAwaitRelease()
                         paused = false
                         holding = false
                     },
+                    // Segurou: pausa e esvai as barras; soltar depois disso NÃO vale como toque (não troca de cartão).
+                    onLongPress = { holding = true },
                     onTap = { offset ->
                         if (offset.x < size.width * TAP_BACK_SHARE) page = (page - 1).coerceAtLeast(0)
                         else page = (page + 1).coerceAtMost(cards.lastIndex)

@@ -66,6 +66,9 @@
     <string name="feature_profile_color_solid">Sólida</string>
     <string name="feature_profile_stats_title">Estatísticas</string>
     <string name="feature_profile_stats_open">Ver estatísticas</string>
+    <string name="feature_profile_card_top_artist">Artista do mês</string>
+    <string name="feature_profile_card_top_song">Música do mês</string>
+    <string name="feature_profile_card_top_genre">Gênero do mês</string>
     <string name="feature_profile_stats_period_4weeks">4 semanas</string>
     <string name="feature_profile_stats_period_month">Este mês</string>
     <string name="feature_profile_stats_period_year">Este ano</string>

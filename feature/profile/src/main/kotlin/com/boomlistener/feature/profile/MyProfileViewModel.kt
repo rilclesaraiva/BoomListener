@@ -21,7 +21,6 @@ import com.boomlistener.data.profile.ProfileImage
 import com.boomlistener.data.profile.ProfileRepository
 import com.boomlistener.data.wellbeing.DailyStatsRepository
 import com.boomlistener.data.wellbeing.DailySummary
-import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.ListeningHistoryRepository
 import com.boomlistener.data.wellbeing.ListeningStatsRepository
 import com.boomlistener.data.wellbeing.SongRank
@@ -69,7 +68,6 @@ internal data class MyProfileUiState(
     val stats: ProfileStats,
     /** A música mais ouvida (dá o tom do cabeçalho do perfil). */
     val topSongs: List<SongStat>,
-    val recent: List<HistoryEntry>,
     val following: List<FollowedArtist>,
     val today: LocalDate,
 )
@@ -112,7 +110,6 @@ internal class MyProfileViewModel(
             profile = me,
             stats = computeProfileStats(entries, library.associate { it.uri to it.durationMs }, now, zone),
             topSongs = top,
-            recent = entries.take(RECENT),
             following = following,
             today = now,
         )
@@ -219,20 +216,6 @@ internal class MyProfileViewModel(
         playUris(songs.map { it.uri }, songs.getOrNull(index)?.uri)
     }
 
-    /** Toca o histórico recente a partir da escolhida. */
-    fun playRecent(entry: HistoryEntry) {
-        val current = state.value ?: return
-        playUris(current.recent.map { it.uri }.distinct(), entry.uri)
-    }
-
-    /** Toca as músicas de um artista que estão no aparelho (do menu do artista). */
-    fun playArtist(name: String, shuffled: Boolean) {
-        val key = name.normalizedForSearch()
-        val songs = tracks.value.filter { track -> track.artist?.let { artistOf(it).normalizedForSearch() == key } == true }
-        if (songs.isEmpty()) return
-        if (shuffled) player.playShuffled(songs) else player.play(songs, 0)
-    }
-
     private fun playUris(uris: List<String>, start: String?) {
         val byUri = tracks.value.associateBy { it.uri }
         val queue = uris.mapNotNull { byUri[it] }
@@ -266,6 +249,5 @@ internal class MyProfileViewModel(
 
     private companion object {
         const val TOP_SONGS = 1
-        const val RECENT = 15
     }
 }

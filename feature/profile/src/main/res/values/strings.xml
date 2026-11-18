@@ -66,6 +66,9 @@
     <string name="feature_profile_color_solid">Solid</string>
     <string name="feature_profile_stats_title">Statistics</string>
     <string name="feature_profile_stats_open">See statistics</string>
+    <string name="feature_profile_card_top_artist">Top artist</string>
+    <string name="feature_profile_card_top_song">Top song</string>
+    <string name="feature_profile_card_top_genre">Top genre</string>
     <string name="feature_profile_stats_period_4weeks">4 weeks</string>
     <string name="feature_profile_stats_period_month">This month</string>
     <string name="feature_profile_stats_period_year">This year</string>

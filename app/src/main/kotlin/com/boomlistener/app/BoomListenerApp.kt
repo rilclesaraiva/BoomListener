@@ -353,11 +353,6 @@ fun BoomListenerApp() {
                 onOpenStats = { navController.navigateToStats() },
                 onOpenWrapped = { period -> navController.navigateToWrapped(period) },
                 onOpenSettings = openSettings,
-                songMenu = ProfileSongMenu(
-                    onOpenArtist = openSongArtist,
-                    onEditTags = { uri -> navController.navigateToTagEditor(uri) },
-                    onAddToPlaylist = { uri -> addToPlaylistUri = uri },
-                ),
             )
             wrappedScreen(onBack = back)
             statsScreen(
