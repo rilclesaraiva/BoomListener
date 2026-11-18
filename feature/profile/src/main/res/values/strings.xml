@@ -122,6 +122,9 @@
     <string name="feature_profile_wrapped_time">You listened for…</string>
     <string name="feature_profile_wrapped_minutes">minutes</string>
     <string name="feature_profile_wrapped_song_times">times</string>
+    <string name="feature_profile_wrapped_mute">Mute the music</string>
+    <string name="feature_profile_wrapped_unmute">Unmute the music</string>
+    <string name="feature_profile_wrapped_times_short">%1$d×</string>
     <string name="feature_profile_wrapped_hour">Your favorite time to listen</string>
     <string name="feature_profile_wrapped_hour_night">Late night</string>
     <string name="feature_profile_wrapped_hour_morning">Morning</string>

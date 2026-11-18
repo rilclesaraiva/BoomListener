@@ -149,13 +149,13 @@ internal fun WrappedScreen(
         if (current == null) {
             BoomLoading(Modifier.fillMaxSize())
         } else {
-            WrappedCards(current, viewModel, hasSong = song != null, onBack = onBack)
+            WrappedCards(current, viewModel, hasSong = song != null, onMutedChange = area::setMuted, onBack = onBack)
         }
     }
 }
 
 @Composable
-private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, hasSong: Boolean, onBack: () -> Unit) {
+private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, hasSong: Boolean, onMutedChange: (Boolean) -> Unit, onBack: () -> Unit) {
     val cards = remember(report, hasSong) {
         buildList {
             add(WrappedCard.Intro)
@@ -171,6 +171,9 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
     }
     var page by remember(cards) { mutableIntStateOf(0) }
     var paused by remember { mutableStateOf(false) }
+    // Som da música da área: o botão do topo silencia só ela (o player principal já está pausado).
+    var muted by remember { mutableStateOf(false) }
+    LaunchedEffect(muted) { onMutedChange(muted) }
     val progress = remember(page, cards) { mutableFloatStateOf(0f) }
 
     // Passa sozinho a cada PAGE_MS (pelo relógio dos quadros: não é um movimento do tema); segurar pausa.
@@ -277,10 +280,21 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                         modifier = Modifier.weight(1f).height(4.dp),
                         color = barColors.onContainer,
                         trackColor = barColors.onContainer.copy(alpha = 0.3f),
+                        drawStopIndicator = {},
                     )
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                if (hasSong) {
+                    IconButton(onClick = { muted = !muted }) {
+                        Icon(
+                            if (muted) BoomIcons.VolumeOff else BoomIcons.VolumeUp,
+                            contentDescription = stringResource(
+                                if (muted) R.string.feature_profile_wrapped_unmute else R.string.feature_profile_wrapped_mute,
+                            ),
+                        )
+                    }
+                }
                 IconButton(
                     onClick = {
                         if (capture.picture == null) return@IconButton
@@ -634,29 +648,44 @@ private fun ColumnScope.HourCard(report: StatsReport) {
             style = MaterialTheme.typography.headlineMedium,
         )
     }
-    // As 24 horas do dia em barras: a favorita no destaque do cartão.
-    val ink = LocalContentColor.current
-    val accent = LocalWrappedAccent.current
-    Row(
-        Modifier.weight(1f).fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        report.hourLevels.forEachIndexed { index, level ->
-            Box(
-                Modifier
-                    .weight(1f)
-                    .fillMaxHeight(level.coerceIn(0.03f, 1f))
-                    .background(if (index == hour) accent else ink.copy(alpha = 0.35f), MaterialTheme.shapes.extraSmall),
-            )
-        }
-    }
+    // A curva do dia: quanto você ouviu em cada hora, com a favorita marcada.
+    DayCurve(report.hourLevels, hour, Modifier.weight(1f).fillMaxWidth())
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        listOf(0, 6, 12, 18).forEach { mark ->
+        listOf(0, 12, 23).forEach { mark ->
             Text(LocalTime.of(mark, 0).format(format), style = MaterialTheme.typography.labelMedium)
         }
     }
     Text(stringResource(R.string.feature_profile_wrapped_hour_note), style = MaterialTheme.typography.bodyLarge)
+}
+
+@Composable
+private fun DayCurve(levels: List<Float>, favorite: Int, modifier: Modifier) {
+    val ink = LocalContentColor.current
+    val accent = LocalWrappedAccent.current
+    androidx.compose.foundation.Canvas(modifier) {
+        if (levels.size < 2) return@Canvas
+        val inset = 10.dp.toPx()
+        val top = inset
+        val bottom = size.height - 2f
+        fun x(i: Int) = inset + (size.width - 2 * inset) * i / (levels.size - 1)
+        fun y(i: Int) = bottom - (bottom - top) * levels[i].coerceIn(0f, 1f)
+        val line = androidx.compose.ui.graphics.Path().apply {
+            moveTo(x(0), y(0))
+            for (i in 1 until levels.size) {
+                val middle = (x(i - 1) + x(i)) / 2f
+                cubicTo(middle, y(i - 1), middle, y(i), x(i), y(i))
+            }
+        }
+        val area = androidx.compose.ui.graphics.Path().apply {
+            addPath(line)
+            lineTo(x(levels.lastIndex), size.height)
+            lineTo(x(0), size.height)
+            close()
+        }
+        drawPath(area, ink.copy(alpha = 0.28f))
+        drawPath(line, accent, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
+        drawCircle(accent, radius = 8.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x(favorite), y(favorite)))
+    }
 }
 
 @Composable
@@ -742,15 +771,29 @@ private fun ColumnScope.SprintWrappedCard(report: StatsReport, viewModel: MyProf
 @Composable
 private fun ColumnScope.TopCard(report: StatsReport, viewModel: MyProfileViewModel, showActions: Boolean) {
     CardTitle(stringResource(R.string.feature_profile_wrapped_top))
-    report.songs.take(MAX_TOP).forEachIndexed { index, song ->
+    // A capa marca a música; a barra mostra quanto cada uma foi ouvida em relação à mais ouvida.
+    val top = report.songs.take(MAX_TOP)
+    val most = (top.maxOfOrNull { it.plays } ?: 1).coerceAtLeast(1)
+    val ink = LocalContentColor.current
+    val accent = LocalWrappedAccent.current
+    top.forEach { song ->
         RowCard(Modifier.weight(1f).fillMaxWidth()) {
-            RankNumber(index + 1)
             Cover(viewModel, song.uri, song.title, Modifier.fillMaxHeight().aspectRatio(1f))
-            Column(Modifier.weight(1f)) {
-                Text(song.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(song.artist.orEmpty(), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(song.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text(
+                        stringResource(R.string.feature_profile_wrapped_times_short, song.plays),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = accent,
+                        maxLines = 1,
+                    )
+                }
+                Text(song.artist.orEmpty(), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Box(Modifier.fillMaxWidth().height(6.dp).background(ink.copy(alpha = 0.2f), MaterialTheme.shapes.extraSmall)) {
+                    Box(Modifier.fillMaxWidth(song.plays.toFloat() / most).fillMaxHeight().background(accent, MaterialTheme.shapes.extraSmall))
+                }
             }
-            Text(song.plays.toString(), style = MaterialTheme.typography.titleLarge, color = LocalWrappedAccent.current, maxLines = 1)
         }
     }
     if (!showActions) return
