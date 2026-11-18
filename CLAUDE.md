@@ -94,6 +94,7 @@ Módulos Gradle com dependências só em uma direção: `app → feature → dat
 - **Página do artista com tag de vários artistas** ("Delinquent, KCAT"): continua buscando o nome exato e pode abrir com "0 música" (16/11/2026, decisão do mantenedor): existem artistas cujo nome real é escrito assim, com vírgula. Só os círculos de foto (lista, grade, Início, Perfil, "Artistas desta música") separam os nomes. Não propor de novo juntar as músicas.
 
 ## Decisões recusadas (não propor de novo sem o mantenedor pedir)
+- **Bichinho/shimeji no Perfil** (18/11/2026, o mantenedor desistiu depois de testar: caixa, tela toda, pacotes .zip, parede e teto): removido por inteiro. O Perfil volta a ter o cartão laranja do mês (que abre as Estatísticas), Mais ouvidas, Tempo de escuta, Seus artistas e a fileira Histórico. Sem conquistas também (recusadas no mesmo dia).
 - **Animação de corações na capa do player** (toque/duplo toque na capa favoritando, com coração grande e balões; 17/11/2026): fica só o "tum tum" do botão de coração; um toque na capa abre a letra, como antes.
 - **Baseline Profile** (28/10/2026).
 - **Visualizador osciloscópio XY** (0.52.0, removido na 0.52.2): pesado e ruidoso no Canvas. Se voltar: OpenGL (feixe gaussiano, fósforo, interpolação); ficou a ideia de um tipo próprio "Boom" (onda de choque a cada batida).
