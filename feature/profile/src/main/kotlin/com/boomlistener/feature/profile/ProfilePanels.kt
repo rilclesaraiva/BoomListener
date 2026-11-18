@@ -224,12 +224,11 @@ internal fun BigNumber(value: String, label: String, modifier: Modifier = Modifi
     }
 }
 
-/** Calendário de escuta: um quadradinho por dia, mais forte quanto mais você ouviu. Tocar abre as Estatísticas. */
+/** Calendário de escuta: um quadradinho por dia, mais forte quanto mais você ouviu. Só informa: quem abre as Estatísticas é o cartão laranja. */
 @Composable
-internal fun CalendarCard(calendar: ListeningCalendar, onClick: () -> Unit) {
+internal fun CalendarCard(calendar: ListeningCalendar) {
     val gap = 3.dp
     Surface(
-        onClick = onClick,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = MaterialTheme.shapes.extraLarge,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -248,7 +247,6 @@ internal fun CalendarCard(calendar: ListeningCalendar, onClick: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Text(stringResource(R.string.feature_profile_see_all), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(gap)) {

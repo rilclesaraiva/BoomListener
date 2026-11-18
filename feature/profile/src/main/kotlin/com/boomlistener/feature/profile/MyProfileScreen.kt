@@ -178,7 +178,7 @@ internal fun MyProfileScreen(
                 item(key = "month") { MonthCard(current, insights?.highlights.orEmpty(), viewModel, onClick = onOpenStats) }
 
                 insights?.calendar?.takeIf { it.longestStreak > 0 }?.let { calendar ->
-                    item(key = "calendar") { CalendarCard(calendar, onClick = onOpenStats) }
+                    item(key = "calendar") { CalendarCard(calendar) }
                 }
 
                 item(key = "continue") { ContinueCard(viewModel) }
