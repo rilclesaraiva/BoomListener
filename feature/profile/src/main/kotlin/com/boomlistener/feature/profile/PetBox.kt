@@ -9,7 +9,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,11 +32,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
@@ -65,7 +61,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
-private val PetBoxHeight = 168.dp
 private val PetSpriteHeight = 88.dp
 private val PetGrabSlop = 12.dp
 
@@ -80,18 +75,41 @@ private val PET_MIME_TYPES = arrayOf(
 )
 
 /**
- * O bichinho do perfil: uma caixa arredondada onde ele passeia, senta, dorme e reage ao toque
- * (e dança quando [playing]). Sem bichinho importado, mostra um convite para escolher o arquivo.
- * Some se a pessoa desligar nos Ajustes.
+ * O bichinho do perfil passeia pela tela toda do Perfil ([PetRoamer], por cima da página), com o fundo
+ * escolhido atrás dela ([PetScreenBackground]). Sem bichinho importado, a página mostra um convite
+ * ([PetInvitationCard]). Tudo some se a pessoa desligar nos Ajustes.
  */
 @Composable
-internal fun PetBox(playing: Boolean, modifier: Modifier = Modifier) {
+private fun rememberPetState(): Pair<PetRepository, PetState> {
     val context = LocalContext.current.applicationContext
     val repository = remember { PetData.repository(context) }
     val state by repository.state.collectAsStateWithLifecycle()
-    if (!state.loaded || !state.enabled) return
+    return repository to state
+}
+
+/** O convite para escolher um bichinho: só aparece enquanto não há nenhum. */
+@Composable
+internal fun PetInvitationCard(modifier: Modifier = Modifier) {
+    val (repository, state) = rememberPetState()
+    if (!state.loaded || !state.enabled || state.pack != null) return
+    PetInvitation(repository, modifier)
+}
+
+/** O fundo escolhido (cor ou imagem/GIF) para a tela toda; com o padrão, nada: vale a cor do próprio perfil. */
+@Composable
+internal fun PetScreenBackground(modifier: Modifier = Modifier) {
+    val (repository, state) = rememberPetState()
+    if (!state.loaded || !state.enabled || state.pack == null) return
+    PetBackground(state, repository, modifier)
+}
+
+/** O bichinho andando por cima da página, dentro de [modifier] (o chão é a borda de baixo). */
+@Composable
+internal fun PetRoamer(playing: Boolean, modifier: Modifier = Modifier) {
+    val (repository, state) = rememberPetState()
     val pack = state.pack
-    if (pack == null) PetInvitation(repository, modifier) else PetStage(state, pack, playing, repository, modifier)
+    if (!state.loaded || !state.enabled || pack == null) return
+    PetStage(state, pack, playing, repository, modifier)
 }
 
 @Composable
@@ -150,15 +168,9 @@ private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repositor
     }
     val bitmaps = loaded.bitmaps
     val stand = pack.frames(PetPose.Stand).firstOrNull()?.let { bitmaps[it.file] }
-    val shape = MaterialTheme.shapes.extraLarge
-    val boxModifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(PetBoxHeight)
-    if (stand == null) {
-        Box(boxModifier)
-        return
-    }
+    if (stand == null) return
     val description = stringResource(R.string.feature_profile_pet_description)
-    BoxWithConstraints(boxModifier) {
-        PetBackground(state, repository, shape, Modifier.fillMaxSize())
+    BoxWithConstraints(modifier) {
         // dp na tela por pixel da imagem: todos os quadros usam a mesma escala (o parado dá a altura).
         val dpPerPixel = PetSpriteHeight.value / stand.height
         val spriteWidth = stand.width * dpPerPixel
@@ -286,19 +298,12 @@ private fun transparentMargins(bitmap: Bitmap): Triple<Float, Float, Float> {
 
 private const val ALPHA_VISIBLE = 16
 
-/** O que fica atrás do bichinho: o padrão do perfil, uma cor, uma imagem (pode ser GIF) ou nada. */
+/** O que fica atrás da página: uma cor ou uma imagem (pode ser GIF); com o padrão (ou nenhum), nada. */
 @Composable
-private fun PetBackground(state: PetState, repository: PetRepository, shape: Shape, modifier: Modifier) {
-    val scheme = MaterialTheme.colorScheme
+private fun PetBackground(state: PetState, repository: PetRepository, modifier: Modifier) {
     when (state.backgroundKind) {
-        PetBackgroundKind.Profile -> Box(
-            modifier
-                .clip(shape)
-                .background(scheme.surfaceContainerHighest.copy(alpha = PET_BACKGROUND_ALPHA))
-                .border(1.dp, scheme.outlineVariant.copy(alpha = 0.5f), shape),
-        )
         PetBackgroundKind.Color -> parseProfileColor(state.backgroundColor)?.let { color ->
-            Box(modifier.clip(shape).background(color))
+            Box(modifier.background(color))
         }
         PetBackgroundKind.Image -> {
             val picture by produceState<ProfilePicture?>(null, state.backgroundVersion) {
@@ -310,8 +315,8 @@ private fun PetBackground(state: PetState, repository: PetRepository, shape: Sha
                     }
                 }
             }
-            picture?.let { ProfilePictureView(it, modifier.clip(shape)) }
+            picture?.let { ProfilePictureView(it, modifier) }
         }
-        PetBackgroundKind.None -> Unit
+        PetBackgroundKind.Profile, PetBackgroundKind.None -> Unit
     }
 }

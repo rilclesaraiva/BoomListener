@@ -86,7 +86,7 @@ internal fun PetSettingsSection() {
     }
     BoomSettingsSection(title = stringResource(R.string.feature_settings_pet_background)) {
         BackgroundOption(
-            selected = pet.backgroundKind == PetBackgroundKind.Profile,
+            selected = pet.backgroundKind == PetBackgroundKind.Profile || pet.backgroundKind == PetBackgroundKind.None,
             title = stringResource(R.string.feature_settings_pet_bg_default),
             summary = stringResource(R.string.feature_settings_pet_bg_default_summary),
         ) { scope.launch { repository.setBackground(PetBackgroundKind.Profile) } }
@@ -100,11 +100,6 @@ internal fun PetSettingsSection() {
             title = stringResource(R.string.feature_settings_pet_bg_image),
             summary = stringResource(R.string.feature_settings_pet_bg_image_summary),
         ) { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
-        BackgroundOption(
-            selected = pet.backgroundKind == PetBackgroundKind.None,
-            title = stringResource(R.string.feature_settings_pet_bg_none),
-            summary = stringResource(R.string.feature_settings_pet_bg_none_summary),
-        ) { scope.launch { repository.setBackground(PetBackgroundKind.None) } }
     }
 
     if (colorDialog) {

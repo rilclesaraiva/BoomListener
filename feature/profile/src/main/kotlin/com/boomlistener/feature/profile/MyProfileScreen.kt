@@ -32,6 +32,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -145,38 +148,51 @@ internal fun MyProfileScreen(
                 BoomLoading(Modifier.padding(padding))
                 return@BoomScreenScaffold
             }
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(bottom = 32.dp + LocalBottomOverlay.current),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                item(key = "title") {
-                    ProfileTitleBar(onOpenHistory = onOpenHistory, onEdit = { editing = true }, onOpenSettings = onOpenSettings)
-                }
-                item(key = "header") {
-                    Header(current, viewModel, onEdit = { editing = true })
-                    if (saveFailed) {
-                        Text(
-                            stringResource(R.string.feature_profile_save_failed),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                        )
+            Box(Modifier.fillMaxSize()) {
+                // O fundo escolhido para o bichinho (cor ou imagem) fica atrás da página toda.
+                PetScreenBackground(Modifier.fillMaxSize())
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(bottom = 32.dp + LocalBottomOverlay.current),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    item(key = "title") {
+                        ProfileTitleBar(onOpenHistory = onOpenHistory, onEdit = { editing = true }, onOpenSettings = onOpenSettings)
                     }
-                }
-                if (wrappedCard) {
-                    item(key = "wrapped-ready") {
-                        WrappedReadyCard(
-                            onOpen = { onOpenWrapped(com.boomlistener.data.wellbeing.StatsPeriod.ThisYear.name) },
-                            onDismiss = viewModel::dismissWrappedCard,
-                        )
+                    item(key = "header") {
+                        Header(current, viewModel, onEdit = { editing = true })
+                        if (saveFailed) {
+                            Text(
+                                stringResource(R.string.feature_profile_save_failed),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(horizontal = 20.dp),
+                            )
+                        }
                     }
+                    if (wrappedCard) {
+                        item(key = "wrapped-ready") {
+                            WrappedReadyCard(
+                                onOpen = { onOpenWrapped(com.boomlistener.data.wellbeing.StatsPeriod.ThisYear.name) },
+                                onDismiss = viewModel::dismissWrappedCard,
+                            )
+                        }
+                    }
+                    item(key = "month") {
+                        MonthCard(current, monthReport?.takeIf { it.period == com.boomlistener.data.wellbeing.StatsPeriod.ThisMonth }, onClick = onOpenStats)
+                    }
+                    // Sem bichinho, um convite para escolher um (com ele, ele anda pela tela toda, ver abaixo).
+                    item(key = "pet") { PetInvitationCard() }
                 }
-                item(key = "month") {
-                    MonthCard(current, monthReport?.takeIf { it.period == com.boomlistener.data.wellbeing.StatsPeriod.ThisMonth }, onClick = onOpenStats)
-                }
-                // O bichinho do perfil: passeia numa caixa (ou convida a escolher um).
-                item(key = "pet") { PetBox(playing = playing) }
+                // O bichinho passeia por cima da página inteira, do teto (logo abaixo da barra de status) ao chão
+                // (logo acima da barra de baixo); só o que toca nele é dele, o resto rola a página normalmente.
+                PetRoamer(
+                    playing = playing,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(bottom = LocalBottomOverlay.current),
+                )
             }
         }
     }
