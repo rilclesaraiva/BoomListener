@@ -1,0 +1,134 @@
+// BoomListener — Copyright (C) 2026 rilclesaraiva — licenciado sob GNU GPLv3.
+// Texto completo: https://github.com/rilclesaraiva/BoomListener/blob/main/LICENSE
+
+package com.boomlistener.data.profile
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class PetPackTest {
+    private val files = setOf("shime1.png", "shime2.png", "shime3.png", "shime4.png", "shime5.png", "shime11.png")
+
+    private val xml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Mascot xmlns="http://www.group-finity.com/Mascot">
+          <ActionList>
+            <Action Name="Stand" Type="Embedded" Class="com.group_finity.mascot.action.Stay">
+              <Animation><Pose Image="/shime1.png" ImageAnchor="64,128" Velocity="0,0" Duration="250"/></Animation>
+            </Action>
+            <Action Name="Walk" Type="Embedded" Class="com.group_finity.mascot.action.Move">
+              <Animation>
+                <Pose Image="/shime1.png" ImageAnchor="64,128" Velocity="-2,0" Duration="6"/>
+                <Pose Image="/shime2.png" ImageAnchor="64,128" Velocity="-2,0" Duration="6"/>
+                <Pose Image="/shime1.png" ImageAnchor="64,128" Velocity="-2,0" Duration="6"/>
+                <Pose Image="/shime3.png" ImageAnchor="64,128" Velocity="-2,0" Duration="6"/>
+              </Animation>
+            </Action>
+            <Action Name="Sit" Type="Embedded" Class="com.group_finity.mascot.action.Stay">
+              <Animation><Pose Image="/shime11.png" ImageAnchor="64,128" Velocity="0,0" Duration="250"/></Animation>
+            </Action>
+            <Action Name="Fall" Type="Embedded" Class="com.group_finity.mascot.action.Move">
+              <Animation><Pose Image="/shime4.png" ImageAnchor="64,128" Velocity="0,0" Duration="1"/></Animation>
+            </Action>
+            <Action Name="Pinched" Type="Embedded" Class="com.group_finity.mascot.action.Move">
+              <Animation><Pose Image="/shime5.png" ImageAnchor="64,128" Velocity="0,0" Duration="1"/></Animation>
+            </Action>
+            <Action Name="Falling" Type="Sequence"><ActionReference Name="Fall"/></Action>
+          </ActionList>
+        </Mascot>
+    """.trimIndent()
+
+    @Test
+    fun `reads poses from the pack actions file`() {
+        val poses = parsePetActions(xml, files)
+        assertEquals(listOf("shime1.png"), poses.getValue(PetPose.Stand).map { it.file })
+        assertEquals(listOf("shime1.png", "shime2.png", "shime1.png", "shime3.png"), poses.getValue(PetPose.Walk).map { it.file })
+        assertEquals(240, poses.getValue(PetPose.Walk).first().durationMs)
+        assertEquals(listOf("shime11.png"), poses.getValue(PetPose.Sit).map { it.file })
+        assertEquals(listOf("shime4.png"), poses.getValue(PetPose.Fall).map { it.file })
+        assertEquals(listOf("shime5.png"), poses.getValue(PetPose.Drag).map { it.file })
+    }
+
+    @Test
+    fun `frames pointing to images that are not in the pack are skipped`() {
+        val poses = parsePetActions(xml, setOf("shime1.png"))
+        assertEquals(listOf("shime1.png", "shime1.png"), poses.getValue(PetPose.Walk).map { it.file })
+        assertNull(poses[PetPose.Sit])
+    }
+
+    @Test
+    fun `xml with a doctype or entities is refused`() {
+        val bad = "<?xml version=\"1.0\"?><!DOCTYPE a [<!ENTITY x \"y\">]><Action Name=\"Stand\"/>"
+        assertTrue(parsePetActions(bad, files).isEmpty())
+        assertTrue(parsePetActions("não é xml", files).isEmpty())
+    }
+
+    @Test
+    fun `image names with capital letters and folders still match`() {
+        val named = xml.replace("/shime1.png", "img/Shime1.PNG")
+        val poses = parsePetActions(named, files)
+        assertEquals("shime1.png", poses.getValue(PetPose.Stand).first().file)
+    }
+
+    @Test
+    fun `a pack without an actions file falls back to the image numbers`() {
+        val pack = buildPetPack("Teste", null, files)!!
+        assertEquals(listOf("shime1.png"), pack.poses.getValue(PetPose.Stand).map { it.file })
+        assertEquals(listOf("shime1.png", "shime2.png", "shime1.png", "shime3.png"), pack.poses.getValue(PetPose.Walk).map { it.file })
+    }
+
+    @Test
+    fun `numbers are compared as numbers not as text`() {
+        val poses = fallbackPetPoses(setOf("shime10.png", "shime2.png", "shime1.png"))
+        assertEquals(listOf("shime1.png", "shime2.png", "shime1.png", "shime10.png"), poses.getValue(PetPose.Walk).map { it.file })
+    }
+
+    @Test
+    fun `no images means no pet`() {
+        assertNull(buildPetPack("Vazio", xml, emptySet()))
+        assertNull(buildPetPack("Vazio", null, setOf("leiame.txt")))
+    }
+
+    @Test
+    fun `missing poses fall back to a similar one and then to standing`() {
+        val pack = buildPetPack("Só parado", null, setOf("a.png"))!!
+        assertEquals(listOf("a.png"), pack.frames(PetPose.Walk).map { it.file })
+        assertEquals(listOf("a.png"), pack.frames(PetPose.Dance).map { it.file })
+        val full = buildPetPack("Completo", xml, files)!!
+        assertEquals(full.frames(PetPose.Walk), full.frames(PetPose.Dance))
+        assertEquals(listOf("shime11.png"), full.frames(PetPose.Sleep).map { it.file })
+    }
+
+    @Test
+    fun `pack goes to json and back`() {
+        val pack = buildPetPack("Teste", xml, files)!!
+        assertEquals(pack, petFromJson(petToJson(pack)))
+        assertNotNull(pack.files.firstOrNull { it == "shime11.png" })
+        assertNull(petFromJson("não é json"))
+        assertNull(petFromJson("""{"name":"x","poses":{"Walk":[{"f":"a.png","d":100}]}}"""))
+    }
+
+    @Test
+    fun `only png and xml entries are kept and only by base name`() {
+        assertEquals("shime1.png", petEntryName("img/Shime/shime1.PNG"))
+        assertEquals("actions.xml", petEntryName("conf\\actions.xml"))
+        assertEquals("shime2.png", petEntryName("../../shime2.png"))
+        assertNull(petEntryName("leia-me.txt"))
+        assertNull(petEntryName("pasta/"))
+        assertNull(petEntryName(".hidden.png"))
+        assertNull(petEntryName("a..b.png"))
+    }
+
+    @Test
+    fun `pet settings round trip and old or broken values fall back to defaults`() {
+        val settings = PetSettings(enabled = false, packVersion = 7, backgroundKind = PetBackgroundKind.Color, backgroundColor = "#112233", backgroundVersion = 3)
+        assertEquals(settings, petSettingsFromJson(petSettingsToJson(settings)))
+        val odd = petSettingsFromJson("""{"bg":"Inexistente","bgColor":"vermelho"}""")
+        assertEquals(PetBackgroundKind.Profile, odd.backgroundKind)
+        assertEquals("", odd.backgroundColor)
+        assertEquals(true, odd.enabled)
+    }
+}
