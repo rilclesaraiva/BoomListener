@@ -6,7 +6,6 @@ package com.boomlistener.feature.profile
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,15 +18,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,18 +42,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomImageCycle
 import com.boomlistener.core.designsystem.component.rememberImageSet
 import com.boomlistener.core.designsystem.theme.boomFastSpatialSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
+import com.boomlistener.data.wellbeing.CalendarDay
 import com.boomlistener.data.wellbeing.ListeningCalendar
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -231,7 +234,7 @@ internal fun BigNumber(value: String, label: String, modifier: Modifier = Modifi
 
 /**
  * Calendário de escuta: um quadradinho por dia, mais forte quanto mais você ouviu. Tocar num dia
- * mostra a data e o tempo dele (tocar de novo, ou em outro, troca/limpa). Não abre nada: quem abre
+ * mostra a data e o tempo dele (tocar de novo limpa) e arrastar o dedo na horizontal passa de dia em dia. Não abre nada: quem abre
  * as Estatísticas é o cartão laranja.
  */
 @Composable
@@ -260,7 +263,39 @@ internal fun CalendarCard(calendar: ListeningCalendar) {
                 }
             }
             Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                modifier = Modifier.pointerInput(calendar) {
+                    val gapPx = gap.toPx()
+                    // O quadrado sob o dedo (os quadrados são redondos de lado igual; fora da grade, o mais próximo).
+                    fun dayAt(position: Offset): CalendarDay? {
+                        val columns = calendar.weeks.size
+                        val cell = (size.width - gapPx * (columns - 1)) / columns
+                        val column = (position.x / (cell + gapPx)).toInt().coerceIn(0, columns - 1)
+                        val row = (position.y / (cell + gapPx)).toInt().coerceIn(0, 6)
+                        return calendar.weeks[column][row]
+                    }
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val tapped = dayAt(down.position)
+                        // Só o arrasto na horizontal é nosso; na vertical a página rola normalmente.
+                        val drag = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
+                        if (drag == null) {
+                            // Toque sem arrastar: marca o dia, ou desmarca se já era o marcado.
+                            val up = currentEvent.changes.firstOrNull { it.id == down.id }
+                            if (tapped != null && up != null && !up.pressed && !up.isConsumed) {
+                                selected = if (selected == tapped.date) null else tapped.date
+                            }
+                        } else {
+                            dayAt(drag.position)?.let { selected = it.date }
+                            horizontalDrag(drag.id) { change ->
+                                change.consume()
+                                dayAt(change.position)?.let { selected = it.date }
+                            }
+                        }
+                    }
+                },
+            ) {
                 calendar.weeks.forEach { week ->
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(gap)) {
                         week.forEach { day ->
@@ -277,7 +312,6 @@ internal fun CalendarCard(calendar: ListeningCalendar) {
                                                 .clip(MaterialTheme.shapes.extraSmall)
                                                 .background(calendarLevelColor(day.level))
                                                 .then(if (day.date == selected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, MaterialTheme.shapes.extraSmall) else Modifier)
-                                                .clickable { selected = if (selected == day.date) null else day.date }
                                         },
                                     ),
                             )
@@ -316,47 +350,6 @@ private fun calendarLevelColor(level: Int) = when (level) {
     2 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
     3 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
     else -> MaterialTheme.colorScheme.primary
-}
-
-/** "Continuar de onde parou": a música carregada no player, com a barra de onde ela está. */
-@Composable
-internal fun ContinueCard(viewModel: MyProfileViewModel) {
-    // Só este cartão acompanha a posição da música: o resto do Perfil não refaz a cada instante.
-    val playback by viewModel.playback.collectAsStateWithLifecycle()
-    val item = playback.item ?: return
-    val cover = rememberLocalArtwork(viewModel, item.uri, 64.dp)
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = MaterialTheme.shapes.extraLarge,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            BoomArtwork(image = cover, fallbackText = item.title, size = 64.dp)
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(if (playback.isPlaying) R.string.feature_profile_continue_playing else R.string.feature_profile_continue_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(item.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    item.artist.orEmpty(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(6.dp))
-                LinearProgressIndicator(progress = { playback.progress }, modifier = Modifier.fillMaxWidth(), drawStopIndicator = {})
-            }
-            FilledIconButton(onClick = viewModel::togglePlayPause) {
-                Icon(
-                    if (playback.isPlaying) BoomIcons.Pause else BoomIcons.Play,
-                    contentDescription = stringResource(if (playback.isPlaying) R.string.feature_profile_pause else R.string.feature_profile_play),
-                )
-            }
-        }
-    }
 }
 
 /**

@@ -162,9 +162,6 @@
     <string name="feature_profile_calendar_title">Your listening calendar</string>
     <string name="feature_profile_calendar_less">less</string>
     <string name="feature_profile_calendar_more">more</string>
-    <string name="feature_profile_continue_title">Continue where you left off</string>
-    <string name="feature_profile_continue_playing">Playing now</string>
-    <string name="feature_profile_pause">Pause</string>
     <string name="feature_profile_following">Following</string>
     <string name="feature_profile_wrapped_card_label">WRAPPED %1$d</string>
     <string name="feature_profile_wrapped_card_open">See now</string>

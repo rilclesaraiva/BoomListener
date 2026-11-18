@@ -103,7 +103,7 @@ private val TileTextInset = 4.dp
 /**
  * O seu perfil, no estilo de um "cartão de ouvinte": cabeçalho no tom da sua
  * música mais ouvida, os números e destaques do mês (que abrem as Estatísticas),
- * o calendário de escuta, o que estava tocando, o histórico e quem você segue.
+ * o calendário de escuta, o histórico e quem você segue.
  * Tudo calculado no celular.
  */
 @Composable
@@ -180,8 +180,6 @@ internal fun MyProfileScreen(
                 insights?.calendar?.takeIf { it.longestStreak > 0 }?.let { calendar ->
                     item(key = "calendar") { CalendarCard(calendar) }
                 }
-
-                item(key = "continue") { ContinueCard(viewModel) }
 
                 if (current.recent.isNotEmpty()) {
                     item(key = "history") {

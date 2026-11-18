@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlaybackController
-import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.AreaPlayer
 import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.library.PlaylistRepository
@@ -132,11 +131,6 @@ internal class MyProfileViewModel(
             calendar = computeCalendar(summary, now, WeekFields.of(Locale.getDefault()).firstDayOfWeek, durationOf),
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
-    /** O player (a música carregada e onde parou), para o cartão "Continuar de onde parou". */
-    val playback: StateFlow<PlaybackState> get() = player.state
-
-    fun togglePlayPause() = player.togglePlayPause()
 
     private val _period = MutableStateFlow(StatsPeriod.ThisMonth)
 
