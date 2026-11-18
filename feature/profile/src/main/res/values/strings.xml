@@ -65,10 +65,6 @@
     <string name="feature_profile_color_gradient">Gradient</string>
     <string name="feature_profile_color_solid">Solid</string>
     <string name="feature_profile_stats_title">Statistics</string>
-    <string name="feature_profile_stats_open">See statistics</string>
-    <string name="feature_profile_card_top_artist">Top artist</string>
-    <string name="feature_profile_card_top_song">Top song</string>
-    <string name="feature_profile_card_top_genre">Top genre</string>
     <string name="feature_profile_stats_period_4weeks">4 weeks</string>
     <string name="feature_profile_stats_period_month">This month</string>
     <string name="feature_profile_stats_period_year">This year</string>
@@ -161,8 +157,4 @@
     <string name="feature_profile_wrapped_card_title">Your Wrapped is ready</string>
     <string name="feature_profile_wrapped_card_sub">Open your year in cards</string>
     <string name="feature_profile_wrapped_card_dismiss">Dismiss</string>
-    <string name="feature_profile_pet_add_title">Add a little companion</string>
-    <string name="feature_profile_pet_add_body">Pick a shimeji pack (.zip) or an image. It wanders around here and dances when music plays.</string>
-    <string name="feature_profile_pet_failed">That file didn\'t work. Try a shimeji .zip or a PNG image.</string>
-    <string name="feature_profile_pet_description">Your companion</string>
 </resources>

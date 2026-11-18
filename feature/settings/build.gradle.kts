@@ -15,7 +15,6 @@ dependencies {
     implementation(project(":data:lastfm"))
     implementation(project(":data:library"))
     implementation(project(":data:wellbeing"))
-    implementation(project(":data:profile"))
     implementation(project(":core:player"))
     // Escolher onde salvar / qual backup abrir (seletor de arquivos do sistema).
     implementation(libs.androidx.activity.compose)

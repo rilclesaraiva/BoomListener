@@ -21,6 +21,7 @@ import com.boomlistener.data.profile.ProfileImage
 import com.boomlistener.data.profile.ProfileRepository
 import com.boomlistener.data.wellbeing.DailyStatsRepository
 import com.boomlistener.data.wellbeing.DailySummary
+import com.boomlistener.data.wellbeing.HistoryEntry
 import com.boomlistener.data.wellbeing.ListeningHistoryRepository
 import com.boomlistener.data.wellbeing.ListeningStatsRepository
 import com.boomlistener.data.wellbeing.SongRank
@@ -41,7 +42,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -67,8 +67,9 @@ internal sealed interface ImageChange {
 internal data class MyProfileUiState(
     val profile: MyProfile,
     val stats: ProfileStats,
-    /** A música mais ouvida (dá o tom do cabeçalho do perfil). */
+    /** As músicas mais ouvidas (a primeira dá o tom do cabeçalho do perfil). */
     val topSongs: List<SongStat>,
+    val recent: List<HistoryEntry>,
     val following: List<FollowedArtist>,
     val today: LocalDate,
 )
@@ -99,12 +100,6 @@ internal class MyProfileViewModel(
 
     private val tracks = MutableStateFlow<List<Track>>(emptyList())
 
-    /** Tem música tocando agora (o bichinho do perfil dança). */
-    val isPlaying: StateFlow<Boolean> = player.state
-        .map { it.isPlaying }
-        .distinctUntilChanged()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
     val state: StateFlow<MyProfileUiState?> = combine(
         profile.profile,
         history.history,
@@ -117,6 +112,7 @@ internal class MyProfileViewModel(
             profile = me,
             stats = computeProfileStats(entries, library.associate { it.uri to it.durationMs }, now, zone),
             topSongs = top,
+            recent = entries.take(RECENT),
             following = following,
             today = now,
         )
@@ -217,6 +213,18 @@ internal class MyProfileViewModel(
         }
     }
 
+    /** Toca as mais ouvidas a partir da escolhida (as que ainda estão no aparelho). */
+    fun playTop(index: Int) {
+        val current = state.value ?: return
+        playUris(current.topSongs.map { it.uri }, current.topSongs.getOrNull(index)?.uri)
+    }
+
+    /** Toca o histórico recente a partir da escolhida. */
+    fun playRecent(entry: HistoryEntry) {
+        val current = state.value ?: return
+        playUris(current.recent.map { it.uri }.distinct(), entry.uri)
+    }
+
     /** Toca as músicas do ranking das Estatísticas a partir da escolhida (as que ainda estão no aparelho). */
     fun playReportSongs(index: Int) {
         val songs = report.value?.songs ?: return
@@ -263,6 +271,7 @@ internal class MyProfileViewModel(
     }
 
     private companion object {
-        const val TOP_SONGS = 1
+        const val TOP_SONGS = 12
+        const val RECENT = 15
     }
 }

@@ -201,23 +201,4 @@
     <string name="feature_settings_system_notifications">Notificações</string>
     <string name="feature_settings_wrapped_alert">Wrapped de fim de ano</string>
     <string name="feature_settings_wrapped_alert_summary">Uma notificação em dezembro quando o seu Wrapped estiver pronto. Só é enviada se as notificações já estiverem permitidas.</string>
-    <string name="feature_settings_pet">Bichinho do perfil</string>
-    <string name="feature_settings_pet_show">Mostrar no Perfil</string>
-    <string name="feature_settings_pet_show_summary">Um personagem que passeia pela tela toda do seu Perfil.</string>
-    <string name="feature_settings_pet_choose">Escolher um bichinho</string>
-    <string name="feature_settings_pet_change">Trocar o bichinho</string>
-    <string name="feature_settings_pet_choose_summary">Um pacote de shimeji (.zip) ou uma imagem.</string>
-    <string name="feature_settings_pet_failed">Esse arquivo não funcionou. Tente um .zip de shimeji ou uma imagem PNG.</string>
-    <string name="feature_settings_pet_remove">Remover o bichinho</string>
-    <string name="feature_settings_pet_background">Fundo do Perfil</string>
-    <string name="feature_settings_pet_bg_default">Padrão</string>
-    <string name="feature_settings_pet_bg_default_summary">A cor do seu perfil, como sempre</string>
-    <string name="feature_settings_pet_bg_color">Cor</string>
-    <string name="feature_settings_pet_bg_color_summary">Escolher uma cor</string>
-    <string name="feature_settings_pet_bg_image">Imagem</string>
-    <string name="feature_settings_pet_bg_image_summary">Uma foto ou GIF da galeria</string>
-    <string name="feature_settings_pet_color_title">Cor do fundo</string>
-    <string name="feature_settings_pet_color_hint">Código hex, como #7A3CFF</string>
-    <string name="feature_settings_pet_color_invalid">Use uma cor como #7A3CFF</string>
-    <string name="feature_settings_pet_color_save">Salvar</string>
 </resources>

@@ -65,10 +65,6 @@
     <string name="feature_profile_color_gradient">Degradado</string>
     <string name="feature_profile_color_solid">Sólido</string>
     <string name="feature_profile_stats_title">Estadísticas</string>
-    <string name="feature_profile_stats_open">Ver estadísticas</string>
-    <string name="feature_profile_card_top_artist">Artista del mes</string>
-    <string name="feature_profile_card_top_song">Canción del mes</string>
-    <string name="feature_profile_card_top_genre">Género del mes</string>
     <string name="feature_profile_stats_period_4weeks">4 semanas</string>
     <string name="feature_profile_stats_period_month">Este mes</string>
     <string name="feature_profile_stats_period_year">Este año</string>
@@ -161,8 +157,4 @@
     <string name="feature_profile_wrapped_card_title">Tu Wrapped está listo</string>
     <string name="feature_profile_wrapped_card_sub">Abre tu año en tarjetas</string>
     <string name="feature_profile_wrapped_card_dismiss">Descartar</string>
-    <string name="feature_profile_pet_add_title">Añade una mascota</string>
-    <string name="feature_profile_pet_add_body">Elige un paquete de shimeji (.zip) o una imagen. Pasea por aquí y baila cuando suena música.</string>
-    <string name="feature_profile_pet_failed">Ese archivo no funcionó. Prueba con un .zip de shimeji o una imagen PNG.</string>
-    <string name="feature_profile_pet_description">Tu mascota</string>
 </resources>

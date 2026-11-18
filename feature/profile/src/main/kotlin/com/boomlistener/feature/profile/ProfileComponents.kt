@@ -140,7 +140,7 @@ internal fun rememberPickedImage(uri: String?): ProfilePicture? {
     return picture
 }
 
-internal fun looksLikeGif(bytes: ByteArray) =
+private fun looksLikeGif(bytes: ByteArray) =
     bytes.size >= 6 && String(bytes, 0, 6, Charsets.US_ASCII).let { it == "GIF87a" || it == "GIF89a" }
 
 /**

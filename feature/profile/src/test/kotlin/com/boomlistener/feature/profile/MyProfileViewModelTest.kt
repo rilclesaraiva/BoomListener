@@ -146,7 +146,7 @@ class MyProfileViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun juntaNumerosMaisOuvidaESeguidosDoPerfil() = runTest(dispatcher) {
+    fun juntaNumerosMaisOuvidasESeguidosETocaDoPerfil() = runTest(dispatcher) {
         val at = LocalDateTime.of(2026, 10, 17, 20, 0).atZone(zone).toInstant().toEpochMilli()
         val history = FakeHistory(listOf(HistoryEntry(acai.uri, acai.title, acai.artist, acai.album, at)))
         val top = listOf(SongStat(acai.uri, acai.title, acai.artist, acai.album, plays = 7, lastPlayedMs = at))
@@ -162,7 +162,9 @@ class MyProfileViewModelTest {
         assertEquals(1, state.stats.monthPlays)
         assertEquals(3, state.stats.monthMinutes) // Açaí tem 200 s
         assertEquals(listOf("Djavan"), state.following.map { it.name })
-        assertEquals(listOf(acai.uri), state.topSongs.map { it.uri })
+
+        vm.playTop(0)
+        assertEquals(listOf(acai), player.played)
     }
 
     @Test
