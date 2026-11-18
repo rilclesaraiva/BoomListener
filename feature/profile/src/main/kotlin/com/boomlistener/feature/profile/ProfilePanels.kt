@@ -120,10 +120,11 @@ private fun HighlightPager(highlights: List<Highlight>, viewModel: MyProfileView
     val pager = rememberPagerState { highlights.size }
     if (highlights.size > 1) {
         val spec = boomSpatialSpec<Float>()
-        // Passa sozinho para o próximo; deslizar à mão reinicia a contagem.
-        LaunchedEffect(highlights.size, pager.currentPage) {
+        // Passa sozinho para o próximo; deslizar à mão reinicia a contagem. A chave é a página
+        // *assentada*: `currentPage` muda no meio da animação e cancelaria a própria troca.
+        LaunchedEffect(highlights.size, pager.settledPage) {
             delay(HIGHLIGHT_MS)
-            pager.animateScrollToPage((pager.currentPage + 1) % highlights.size, animationSpec = spec)
+            pager.animateScrollToPage((pager.settledPage + 1) % highlights.size, animationSpec = spec)
         }
     }
     HorizontalPager(pager, pageSpacing = 16.dp) { page -> HighlightRow(highlights[page], viewModel) }
@@ -191,7 +192,8 @@ private fun HighlightRow(highlight: Highlight, viewModel: MyProfileViewModel) {
                 fallbackText = highlight.title,
                 size = lead,
             )
-            is Highlight.TopGenre -> Avatar(highlight.genre, size = lead)
+            // Gênero não leva ícone: o texto começa na borda.
+            is Highlight.TopGenre -> Unit
             is Highlight.BestDay -> Surface(
                 color = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
