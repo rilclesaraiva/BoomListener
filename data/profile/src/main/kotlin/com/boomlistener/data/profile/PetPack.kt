@@ -15,7 +15,12 @@ enum class PetPose { Stand, Walk, Sit, Sleep, Fall, Drag, Dance, Run, Crawl, Gra
 data class PetFrame(val file: String, val durationMs: Int)
 
 /** Um bichinho já lido: o nome e os quadros de cada pose. Sempre tem a pose [PetPose.Stand]. */
-data class PetPack(val name: String, val poses: Map<PetPose, List<PetFrame>>) {
+data class PetPack(
+    val name: String,
+    val poses: Map<PetPose, List<PetFrame>>,
+    /** Os desenhos olham para a direita (a caminhada tem velocidade positiva). O comum é olhar para a esquerda. */
+    val facesRight: Boolean = false,
+) {
     /** Os quadros de [pose]; sem eles, a pose mais parecida e, no fim, o bichinho parado. */
     fun frames(pose: PetPose): List<PetFrame> {
         val chain = when (pose) {
@@ -108,6 +113,32 @@ fun parsePetActions(xml: String, available: Set<String>): Map<PetPose, List<PetF
     return result
 }
 
+/**
+ * Para que lado os desenhos do pacote olham, pelo sentido da caminhada no `actions.xml`: velocidade
+ * horizontal positiva = olham para a direita. Sem a informação, para a esquerda (o padrão dos shimejis).
+ */
+fun parsePetFacesRight(xml: String): Boolean {
+    if (xml.contains("<!DOCTYPE", ignoreCase = true) || xml.contains("<!ENTITY", ignoreCase = true)) return false
+    val document = runCatching {
+        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(ByteArrayInputStream(xml.toByteArray(Charsets.UTF_8)))
+    }.getOrNull() ?: return false
+    val actions = document.getElementsByTagName("Action")
+    for (wanted in listOf("walk", "run", "dash", "creep")) {
+        for (i in 0 until actions.length) {
+            val action = actions.item(i) as? org.w3c.dom.Element ?: continue
+            if (action.getAttribute("Name").trim().lowercase() != wanted) continue
+            val animation = action.getElementsByTagName("Animation").item(0) as? org.w3c.dom.Element
+            val poses = (animation ?: action).getElementsByTagName("Pose")
+            for (j in 0 until poses.length) {
+                val velocity = (poses.item(j) as? org.w3c.dom.Element)?.getAttribute("Velocity").orEmpty()
+                val x = velocity.substringBefore(',').trim().toIntOrNull() ?: continue
+                if (x != 0) return x > 0
+            }
+        }
+    }
+    return false
+}
+
 /** Número dentro do nome do arquivo ("shime12.png" → 12); sem número, null. */
 private fun fileNumber(name: String): Int? = Regex("(\\d+)").findAll(name.substringBeforeLast('.')).lastOrNull()?.value?.toIntOrNull()
 
@@ -133,7 +164,8 @@ fun buildPetPack(name: String, actionsXml: String?, available: Set<String>): Pet
     val fromXml = actionsXml?.let { parsePetActions(it, available) }.orEmpty()
     val poses = if (fromXml[PetPose.Stand] != null) fromXml else fallbackPetPoses(available)
     if (poses[PetPose.Stand] == null) return null
-    return PetPack(name.trim().take(40), poses)
+    val facesRight = fromXml[PetPose.Stand] != null && actionsXml?.let(::parsePetFacesRight) == true
+    return PetPack(name.trim().take(40), poses, facesRight)
 }
 
 /**
@@ -154,7 +186,7 @@ internal fun petToJson(pack: PetPack): String {
             JSONArray().apply { frames.forEach { put(JSONObject().put("f", it.file).put("d", it.durationMs)) } },
         )
     }
-    return JSONObject().put("name", pack.name).put("poses", poses).toString()
+    return JSONObject().put("name", pack.name).put("poses", poses).put("right", pack.facesRight).toString()
 }
 
 internal fun petFromJson(text: String): PetPack? = runCatching {
@@ -170,5 +202,5 @@ internal fun petFromJson(text: String): PetPack? = runCatching {
         }
         if (frames.isNotEmpty()) poses[pose] = frames
     }
-    if (poses[PetPose.Stand] == null) null else PetPack(json.optString("name"), poses)
+    if (poses[PetPose.Stand] == null) null else PetPack(json.optString("name"), poses, json.optBoolean("right", false))
 }.getOrNull()

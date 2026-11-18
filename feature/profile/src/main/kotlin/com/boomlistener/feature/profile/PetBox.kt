@@ -138,7 +138,7 @@ private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repositor
     val loaded by produceState(PetImages(), pack, state.packVersion) {
         value = withContext(Dispatchers.Default) {
             val bitmaps = HashMap<String, ImageBitmap>()
-            val margins = HashMap<String, Pair<Float, Float>>()
+            val margins = HashMap<String, Triple<Float, Float, Float>>()
             pack.files.forEach { file ->
                 val bytes = repository.frame(file) ?: return@forEach
                 val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@forEach
@@ -224,15 +224,22 @@ private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repositor
             var centerX = (engine.x + spriteWidth / 2) * density
             var bottom = (engine.y + PetSpriteHeight.value) * density
             // Na parede e no teto o desenho encosta na borda da caixa pela parte pintada, não pela borda da imagem.
-            val (marginLeft, marginTop) = frame?.let { loaded.margins[it.file] } ?: (0f to 0f)
+            // Pacotes cujos desenhos olham para a direita só espelham quando ele vai para a esquerda.
+            val flipped = engine.facingRight != pack.facesRight
+            val (marginLeft, marginTop, marginRight) = frame?.let { loaded.margins[it.file] } ?: Triple(0f, 0f, 0f)
             when (engine.mode) {
-                PetMode.WallHold, PetMode.WallClimb -> centerX += (if (engine.facingRight) 1 else -1) * marginLeft * width
+                PetMode.WallHold, PetMode.WallClimb -> {
+                    // A folga que conta é a do lado do desenho que encosta na parede, já com o espelhamento.
+                    val drawnLeft = if (flipped) marginRight else marginLeft
+                    val drawnRight = if (flipped) marginLeft else marginRight
+                    centerX += if (engine.facingRight) drawnRight * width else -drawnLeft * width
+                }
                 PetMode.CeilingClimb -> bottom -= marginTop * height
                 else -> Unit
             }
             withTransform({
-                // Os desenhos olham para a esquerda: espelha quando ele vai para a direita.
-                if (engine.facingRight) scale(-1f, 1f, pivot = Offset(centerX, 0f))
+                // Os desenhos olham (em geral) para a esquerda: espelha quando ele vai para o outro lado.
+                if (flipped) scale(-1f, 1f, pivot = Offset(centerX, 0f))
             }) {
                 drawImage(
                     image,
@@ -248,28 +255,30 @@ private fun PetStage(state: PetState, pack: PetPack, playing: Boolean, repositor
 /** Os quadros já lidos e, de cada um, a folga transparente à esquerda e em cima (fração da largura e da altura). */
 private class PetImages(
     val bitmaps: Map<String, ImageBitmap> = emptyMap(),
-    val margins: Map<String, Pair<Float, Float>> = emptyMap(),
+    val margins: Map<String, Triple<Float, Float, Float>> = emptyMap(),
 )
 
-/** Folga transparente à esquerda e em cima do desenho, em fração do tamanho da imagem. */
-private fun transparentMargins(bitmap: Bitmap): Pair<Float, Float> {
+/** Folga transparente (esquerda, em cima, direita) do desenho, em fração do tamanho da imagem. */
+private fun transparentMargins(bitmap: Bitmap): Triple<Float, Float, Float> {
     val width = bitmap.width
     val height = bitmap.height
-    if (width <= 0 || height <= 0) return 0f to 0f
+    if (width <= 0 || height <= 0) return Triple(0f, 0f, 0f)
     val pixels = IntArray(width * height)
     bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
     var left = width
+    var right = -1
     var top = height
     for (y in 0 until height) {
         for (x in 0 until width) {
             if ((pixels[y * width + x] ushr 24) > ALPHA_VISIBLE) {
                 if (x < left) left = x
+                if (x > right) right = x
                 if (y < top) top = y
             }
         }
     }
-    if (left == width) return 0f to 0f
-    return left.toFloat() / width to top.toFloat() / height
+    if (right < 0) return Triple(0f, 0f, 0f)
+    return Triple(left.toFloat() / width, top.toFloat() / height, (width - 1 - right).toFloat() / width)
 }
 
 private const val ALPHA_VISIBLE = 16

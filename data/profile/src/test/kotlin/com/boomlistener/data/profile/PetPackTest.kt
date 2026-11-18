@@ -165,4 +165,20 @@ class PetPackTest {
         val pack = PetPack("x", mapOf(PetPose.Stand to listOf(PetFrame("a.png", 100)), PetPose.ClimbWall to listOf(PetFrame("w.png", 160))))
         assertEquals(pack, petFromJson(petToJson(pack)))
     }
+
+    @Test
+    fun `knows which way the drawings face from the walking speed`() {
+        fun xml(speed: String) = """<Mascot><ActionList>
+            <Action Name="Stand"><Animation><Pose Image="/a.png" Velocity="0,0" Duration="10"/></Animation></Action>
+            <Action Name="Walk"><Animation><Pose Image="/a.png" Velocity="0,0" Duration="2"/><Pose Image="/b.png" Velocity="$speed,0" Duration="2"/></Animation></Action>
+            </ActionList></Mascot>""".trimIndent()
+        val available = setOf("a.png", "b.png")
+        assertEquals(true, parsePetFacesRight(xml("2")))
+        assertEquals(false, parsePetFacesRight(xml("-2")))
+        assertEquals(false, parsePetFacesRight("<Mascot/>"))
+        assertEquals(true, buildPetPack("Agnes", xml("2"), available)!!.facesRight)
+        assertEquals(false, buildPetPack("Ankha", xml("-2"), available)!!.facesRight)
+        val right = buildPetPack("Agnes", xml("2"), available)!!
+        assertEquals(right, petFromJson(petToJson(right)))
+    }
 }
