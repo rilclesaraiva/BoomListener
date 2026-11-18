@@ -23,7 +23,6 @@ import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
-import java.util.zip.ZipFile
 
 /** O que fica atrás do bichinho na caixa do perfil. */
 enum class PetBackgroundKind { Profile, Color, Image, None }
@@ -266,16 +265,13 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
         var total = 0
         var pngs = 0
         var skipped = 0
-        ZipFile(file).use { zip ->
-            DiagnosticLog.log("bichinho", "zip aberto: ${zip.size()} entradas")
-            val all = zip.entries()
-            while (all.hasMoreElements()) {
-                val entry = all.nextElement()
+        ZipArchive(file).use { zip ->
+            DiagnosticLog.log("bichinho", "zip aberto: ${zip.entries.size} entradas")
+            for (entry in zip.entries) {
                 if (entry.isDirectory) continue
                 if (++entries > MAX_ENTRIES) break
                 val name = petEntryName(entry.name) ?: continue
-                if (entry.size > MAX_ENTRY_BYTES) { skipped++; continue }
-                val bytes = zip.getInputStream(entry).use { readLimited(it, MAX_ENTRY_BYTES) }
+                val bytes = zip.read(entry, MAX_ENTRY_BYTES)
                 if (bytes == null) { skipped++; continue }
                 total += bytes.size
                 if (total > MAX_TOTAL_BYTES) break
@@ -290,7 +286,7 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
                     skipped++
                 }
             }
-            DiagnosticLog.log("bichinho", "lidas ${entries} entradas: $pngs PNG, $skipped ignoradas (grandes ou inválidas)")
+            DiagnosticLog.log("bichinho", "lidas $entries entradas: $pngs PNG, $skipped ignoradas (grandes ou inválidas)")
         }
         return xml
     }
