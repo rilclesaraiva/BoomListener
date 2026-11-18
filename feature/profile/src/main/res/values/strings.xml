@@ -153,7 +153,6 @@
     <string name="feature_profile_wrapped_card_title">Your Wrapped is ready</string>
     <string name="feature_profile_wrapped_card_sub">Open your year in cards</string>
     <string name="feature_profile_wrapped_card_dismiss">Dismiss</string>
-    <string name="feature_profile_stats_open_hint">Open statistics</string>
     <string name="feature_profile_highlight_artist">Artist of the month</string>
     <string name="feature_profile_highlight_song">Song of the month</string>
     <string name="feature_profile_highlight_genre">Genre of the month</string>

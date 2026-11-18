@@ -85,16 +85,21 @@ internal fun MonthCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(BoomIcons.History, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.feature_profile_this_month).uppercase(), style = MaterialTheme.typography.titleSmall)
+                Column {
+                    Text(stringResource(R.string.feature_profile_this_month).uppercase(), style = MaterialTheme.typography.titleSmall)
+                    Text(month, style = MaterialTheme.typography.labelLarge)
+                }
                 Spacer(Modifier.weight(1f))
-                Text(month, style = MaterialTheme.typography.titleSmall)
-                Spacer(Modifier.width(8.dp))
-                // A seta: o sinal de que tocar abre as Estatísticas completas.
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(32.dp).clip(CircleShape).background(onContainer.copy(alpha = 0.18f)),
+                // "Ver tudo ›": o sinal claro de que tocar abre as Estatísticas completas.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(onContainer.copy(alpha = 0.18f))
+                        .padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                 ) {
-                    Icon(BoomIcons.ChevronRight, contentDescription = stringResource(R.string.feature_profile_stats_open_hint), modifier = Modifier.size(20.dp))
+                    Text(stringResource(R.string.feature_profile_see_all), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Icon(BoomIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
             }
             Spacer(Modifier.height(16.dp))

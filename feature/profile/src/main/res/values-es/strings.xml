@@ -153,7 +153,6 @@
     <string name="feature_profile_wrapped_card_title">Tu Wrapped está listo</string>
     <string name="feature_profile_wrapped_card_sub">Abre tu año en tarjetas</string>
     <string name="feature_profile_wrapped_card_dismiss">Descartar</string>
-    <string name="feature_profile_stats_open_hint">Abrir estadísticas</string>
     <string name="feature_profile_highlight_artist">Artista del mes</string>
     <string name="feature_profile_highlight_song">Canción del mes</string>
     <string name="feature_profile_highlight_genre">Género del mes</string>
