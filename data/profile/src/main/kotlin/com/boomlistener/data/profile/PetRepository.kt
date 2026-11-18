@@ -22,7 +22,7 @@ import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
-import java.util.zip.ZipInputStream
+import java.util.zip.ZipFile
 
 /** O que fica atrás do bichinho na caixa do perfil. */
 enum class PetBackgroundKind { Profile, Color, Image, None }
@@ -112,6 +112,8 @@ internal fun petSettingsFromJson(text: String): PetSettings {
 private const val MAX_ENTRIES = 400
 private const val MAX_ENTRY_BYTES = 3 * 1024 * 1024
 private const val MAX_TOTAL_BYTES = 30 * 1024 * 1024
+/** O .zip em si pode ter programas e bibliotecas dentro (só PNG e XML são usados): aceita até este tamanho. */
+private const val MAX_ZIP_BYTES = 60 * 1024 * 1024
 private const val MAX_SINGLE_IMAGE_SIDE = 512
 
 private val PNG_HEADER = byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte())
@@ -129,6 +131,19 @@ private fun readLimited(input: InputStream, limit: Int): ByteArray? {
         out.write(buffer, 0, read)
     }
     return out.toByteArray()
+}
+
+/** Copia até [limit] bytes; passando disso, lança erro (o arquivo é grande demais). */
+private fun copyLimited(input: InputStream, out: java.io.OutputStream, limit: Int) {
+    val buffer = ByteArray(16 * 1024)
+    var total = 0
+    while (true) {
+        val read = input.read(buffer)
+        if (read < 0) break
+        total += read
+        require(total <= limit) { "arquivo grande demais" }
+        out.write(buffer, 0, read)
+    }
 }
 
 internal class LocalPetRepository(private val context: Context) : PetRepository {
@@ -196,7 +211,15 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
                     val head = ByteArray(4).also { input.read(it) }
                     input.reset()
                     if (head[0] == 'P'.code.toByte() && head[1] == 'K'.code.toByte()) {
-                        xml = unzipPack(input, staging)
+                        // Zip lido pelo índice (ZipFile): o que vem de programas como o Shimeji-ee às vezes tem
+                        // arquivos sem compressão com "descritor", que a leitura em sequência recusa.
+                        val temp = File(dir, "import.zip")
+                        try {
+                            temp.outputStream().use { out -> copyLimited(input, out, MAX_ZIP_BYTES) }
+                            xml = unzipPack(temp, staging)
+                        } finally {
+                            temp.delete()
+                        }
                     } else {
                         saveSingleImage(input, staging)
                     }
@@ -223,17 +246,19 @@ internal class LocalPetRepository(private val context: Context) : PetRepository 
     }
 
     /** Guarda as imagens PNG do zip em [staging] e devolve o texto do `actions.xml`, se vier um. */
-    private fun unzipPack(input: InputStream, staging: File): String? {
+    private fun unzipPack(file: File, staging: File): String? {
         var xml: String? = null
         var entries = 0
         var total = 0
-        ZipInputStream(input).use { zip ->
-            while (true) {
-                val entry = zip.nextEntry ?: break
+        ZipFile(file).use { zip ->
+            val all = zip.entries()
+            while (all.hasMoreElements()) {
+                val entry = all.nextElement()
                 if (entry.isDirectory) continue
                 if (++entries > MAX_ENTRIES) break
                 val name = petEntryName(entry.name) ?: continue
-                val bytes = readLimited(zip, MAX_ENTRY_BYTES) ?: continue
+                if (entry.size > MAX_ENTRY_BYTES) continue
+                val bytes = zip.getInputStream(entry).use { readLimited(it, MAX_ENTRY_BYTES) } ?: continue
                 total += bytes.size
                 if (total > MAX_TOTAL_BYTES) break
                 if (name.endsWith(".xml")) {
