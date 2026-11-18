@@ -89,13 +89,16 @@ import java.util.Locale
 /** O destaque do cartão que está sendo desenhado (títulos e números grandes). */
 private val LocalWrappedAccent = androidx.compose.runtime.compositionLocalOf { Color.Unspecified }
 
+/** O fundo do cartão que está sendo desenhado: o texto que fica em cima do destaque usa esta cor. */
+private val LocalWrappedBackdrop = androidx.compose.runtime.compositionLocalOf { Color.Unspecified }
+
 /** Tempo de cada cartão antes de passar sozinho. */
 private const val PAGE_MS = 7_000f
 private const val TAP_BACK_SHARE = 0.35f
 private const val MAX_GENRES = 5
 private const val MAX_TOP = 5
 
-private enum class WrappedCard { Intro, Artists, Song, Genres, Time, Hour, Discoveries, Sprint, Top }
+private enum class WrappedCard { Intro, Artists, Song, Genres, Time, Hour, Discoveries, Sprint, Top, Summary }
 
 /**
  * O Wrapped: cartões em sequência (toque à direita avança, à esquerda volta, segurar
@@ -170,6 +173,8 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
             if (report.discoveryCount > 0) add(WrappedCard.Discoveries)
             if (report.sprint != null) add(WrappedCard.Sprint)
             if (report.songs.isNotEmpty()) add(WrappedCard.Top)
+            // O resumo fecha o Wrapped: o melhor de tudo numa tela só, para compartilhar.
+            if (report.songs.isNotEmpty() || report.artists.isNotEmpty()) add(WrappedCard.Summary)
         }
     }
     var page by remember(cards) { mutableIntStateOf(0) }
@@ -203,6 +208,21 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val chooser = stringResource(R.string.feature_profile_wrapped_share)
+    // Compartilhar: a imagem do cartão que está na tela (no resumo, o resumo inteiro).
+    val share: () -> Unit = {
+        if (capture.picture != null && !capturing) {
+            scope.launch {
+                // Mostra a marca (e esconde os botões) por um quadro, tira a foto do cartão e volta ao normal.
+                capturing = true
+                paused = true
+                repeat(2) { androidx.compose.runtime.withFrameNanos { } }
+                val image = capture.picture?.toBitmap()
+                capturing = false
+                paused = false
+                if (image != null) runCatching { context.shareWrappedCard(image, chooser) }
+            }
+        }
+    }
     Box(
         Modifier
             .fillMaxSize()
@@ -243,7 +263,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                     drawContent()
                 },
             ) {
-              androidx.compose.runtime.CompositionLocalProvider(LocalWrappedAccent provides palette.accent) {
+              androidx.compose.runtime.CompositionLocalProvider(LocalWrappedAccent provides palette.accent, LocalWrappedBackdrop provides palette.container) {
                 Column(
                     Modifier
                         .fillMaxSize()
@@ -263,6 +283,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                         WrappedCard.Discoveries -> DiscoveriesCard(report, viewModel)
                         WrappedCard.Sprint -> SprintWrappedCard(report, viewModel)
                         WrappedCard.Top -> TopCard(report, viewModel, showActions = !capturing)
+                        WrappedCard.Summary -> SummaryCard(report, viewModel, showActions = !capturing, onShare = share)
                     }
                     if (capturing) {
                         Text(
@@ -304,20 +325,7 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
                     }
                 }
                 IconButton(
-                    onClick = {
-                        if (capture.picture == null) return@IconButton
-                        if (capturing) return@IconButton
-                        scope.launch {
-                            // Mostra a marca (e esconde os botões) por um quadro, tira a foto do cartão e volta ao normal.
-                            capturing = true
-                            paused = true
-                            repeat(2) { androidx.compose.runtime.withFrameNanos { } }
-                            val image = capture.picture?.toBitmap()
-                            capturing = false
-                            paused = false
-                            if (image != null) runCatching { context.shareWrappedCard(image, chooser) }
-                        }
-                    },
+                    onClick = share,
                 ) {
                     Icon(BoomIcons.Share, contentDescription = stringResource(R.string.feature_profile_wrapped_share))
                 }
@@ -453,7 +461,7 @@ private fun ColumnScope.ArtistsCard(report: StatsReport, viewModel: MyProfileVie
         // O número 1: bloco no destaque do cartão, com a foto grande e o nome em letras grandes.
         Surface(
             color = LocalWrappedAccent.current,
-            contentColor = MaterialTheme.colorScheme.surface,
+            contentColor = LocalWrappedBackdrop.current,
             shape = MaterialTheme.shapes.extraLarge,
             modifier = Modifier.weight(1.5f).fillMaxWidth(),
         ) {
@@ -769,7 +777,7 @@ private fun ColumnScope.SprintWrappedCard(report: StatsReport, viewModel: MyProf
                 previous < last -> stringResource(R.string.feature_profile_stats_down, last - previous)
                 else -> stringResource(R.string.feature_profile_stats_none)
             }
-            Surface(color = LocalWrappedAccent.current, contentColor = MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.small) {
+            Surface(color = LocalWrappedAccent.current, contentColor = LocalWrappedBackdrop.current, shape = MaterialTheme.shapes.small) {
                 Text(badge, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), maxLines = 1)
             }
         }
@@ -822,4 +830,86 @@ private fun ColumnScope.TopCard(report: StatsReport, viewModel: MyProfileViewMod
         Text(createdText ?: stringResource(R.string.feature_profile_wrapped_playlist_create))
     }
     message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+}
+
+/** Um item do resumo: título, linha de baixo (o artista da música) e a imagem que enche o espaço dado. */
+private class SummaryItem(val title: String, val subtitle: String?, val image: @Composable (Modifier) -> Unit)
+
+/** Foto do artista preenchendo o espaço dado (a de círculo das listas não serve aqui). */
+@Composable
+private fun ArtistPhoto(viewModel: MyProfileViewModel, name: String, modifier: Modifier) {
+    val photos = rememberImageSet(remember(name) { artistAttempts(name, SUMMARY_PHOTO_PX, viewModel) })
+    BoomImageCycle(photos) { shown -> BoomArtwork(image = shown, fallbackText = name, modifier = modifier, size = null) }
+}
+
+private const val SUMMARY_PHOTO_PX = 360
+
+/** Uma parte do resumo: o primeiro em bloco grande com o nome no destaque e os outros em linhas ao lado. */
+@Composable
+private fun ColumnScope.SummarySection(title: String, items: List<SummaryItem>) {
+    if (items.isEmpty()) return
+    Text(title, style = MaterialTheme.typography.titleLarge, color = LocalWrappedAccent.current)
+    val ink = LocalContentColor.current
+    Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val first = items.first()
+        Surface(
+            color = LocalWrappedAccent.current,
+            contentColor = LocalWrappedBackdrop.current,
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+        ) {
+            Column {
+                Box(Modifier.weight(1f).fillMaxWidth()) { first.image(Modifier.fillMaxSize()) }
+                Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp)) {
+                    Text(first.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    first.subtitle?.let { Text(it, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                }
+            }
+        }
+        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            items.drop(1).forEach { item ->
+                Surface(
+                    color = ink.copy(alpha = 0.14f),
+                    contentColor = ink,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        item.image(Modifier.fillMaxHeight().aspectRatio(1f))
+                        Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(item.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            item.subtitle?.let { Text(it, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** A última tela: o resumo do período (top artistas, mais ouvidas e tempo) para compartilhar numa imagem só. */
+@Composable
+private fun ColumnScope.SummaryCard(report: StatsReport, viewModel: MyProfileViewModel, showActions: Boolean, onShare: () -> Unit) {
+    val artists = report.artists.take(MAX_TOP).map { artist ->
+        SummaryItem(artist.name, null) { modifier -> ArtistPhoto(viewModel, artist.name, modifier) }
+    }
+    val songs = report.songs.take(MAX_TOP).map { song ->
+        SummaryItem(song.title, song.artist) { modifier -> Cover(viewModel, song.uri, song.title, modifier) }
+    }
+    SummarySection(stringResource(R.string.feature_profile_wrapped_summary_artists), artists)
+    SummarySection(stringResource(R.string.feature_profile_wrapped_summary_songs), songs)
+    Text(stringResource(R.string.feature_profile_wrapped_summary_time), style = MaterialTheme.typography.titleLarge, color = LocalWrappedAccent.current)
+    Surface(color = LocalWrappedAccent.current, contentColor = LocalWrappedBackdrop.current, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            stringResource(R.string.feature_profile_wrapped_minutes_value, java.text.NumberFormat.getIntegerInstance().format(report.minutes)),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+        )
+    }
+    if (!showActions) return
+    Button(onClick = onShare, modifier = Modifier.fillMaxWidth()) {
+        Icon(BoomIcons.Share, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(R.string.feature_profile_wrapped_share))
+    }
 }

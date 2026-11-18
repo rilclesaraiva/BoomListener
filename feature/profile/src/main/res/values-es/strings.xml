@@ -122,6 +122,10 @@
     <string name="feature_profile_wrapped_time">Escuchaste durante…</string>
     <string name="feature_profile_wrapped_minutes">minutos</string>
     <string name="feature_profile_wrapped_song_times">veces</string>
+    <string name="feature_profile_wrapped_summary_artists">Top artistas</string>
+    <string name="feature_profile_wrapped_summary_songs">Más escuchadas</string>
+    <string name="feature_profile_wrapped_summary_time">Tiempo escuchando</string>
+    <string name="feature_profile_wrapped_minutes_value">%1$s minutos</string>
     <string name="feature_profile_wrapped_mute">Silenciar la música</string>
     <string name="feature_profile_wrapped_unmute">Activar el sonido de la música</string>
     <string name="feature_profile_wrapped_times_short">%1$d×</string>
