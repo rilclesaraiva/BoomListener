@@ -36,7 +36,6 @@ class ProfileStatsTest {
         assertEquals(2, stats.week[4].minutes) // dia 15
         assertEquals(1f, stats.dayParts[DayPart.Night]) // 21h e 23h
         assertEquals(0.5f, stats.dayParts[DayPart.Morning])
-        assertEquals(ArtistCount("Djavan", 3), stats.topArtists.first())
     }
 
     @Test

@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlaybackController
+import com.boomlistener.core.player.PlaybackState
 import com.boomlistener.core.player.AreaPlayer
 import com.boomlistener.data.library.LibraryRepository
 import com.boomlistener.data.library.PlaylistRepository
@@ -28,6 +29,7 @@ import com.boomlistener.data.wellbeing.SongRank
 import com.boomlistener.data.wellbeing.SongStat
 import com.boomlistener.data.wellbeing.StatsPeriod
 import com.boomlistener.data.wellbeing.StatsReport
+import com.boomlistener.data.wellbeing.computeCalendar
 import com.boomlistener.data.wellbeing.computeStatsReport
 import com.boomlistener.data.wellbeing.WrappedAlertsRepository
 import com.boomlistener.data.wellbeing.firstDay
@@ -47,6 +49,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.WeekFields
+import java.util.Locale
 
 /** Foto de um artista no Deezer pelo id (o Deezer redireciona para a imagem). */
 internal fun deezerArtistImageUrl(deezerId: Long) = "https://api.deezer.com/artist/$deezerId/image?size=medium"
@@ -67,7 +71,7 @@ internal sealed interface ImageChange {
 internal data class MyProfileUiState(
     val profile: MyProfile,
     val stats: ProfileStats,
-    /** As músicas mais ouvidas (a primeira dá o tom do cabeçalho do perfil). */
+    /** A música mais ouvida (dá o tom do cabeçalho do perfil quando não há capa). */
     val topSongs: List<SongStat>,
     val recent: List<HistoryEntry>,
     val following: List<FollowedArtist>,
@@ -117,6 +121,22 @@ internal class MyProfileViewModel(
             today = now,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Destaques do mês (cartão laranja) e calendário de escuta do Perfil; null até carregar. */
+    val insights: StateFlow<ProfileInsights?> = combine(daily?.summary ?: emptyFlow<DailySummary>(), tracks) { summary, library ->
+        val durations = library.associate { it.uri to it.durationMs }
+        val durationOf = { uri: String -> durations[uri] ?: 0L }
+        val now = today()
+        ProfileInsights(
+            highlights = highlightsOf(computeStatsReport(summary, StatsPeriod.ThisMonth, now, durationOf)),
+            calendar = computeCalendar(summary, now, WeekFields.of(Locale.getDefault()).firstDayOfWeek, durationOf),
+        )
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** O player (a música carregada e onde parou), para o cartão "Continuar de onde parou". */
+    val playback: StateFlow<PlaybackState> get() = player.state
+
+    fun togglePlayPause() = player.togglePlayPause()
 
     private val _period = MutableStateFlow(StatsPeriod.ThisMonth)
 
@@ -213,12 +233,6 @@ internal class MyProfileViewModel(
         }
     }
 
-    /** Toca as mais ouvidas a partir da escolhida (as que ainda estão no aparelho). */
-    fun playTop(index: Int) {
-        val current = state.value ?: return
-        playUris(current.topSongs.map { it.uri }, current.topSongs.getOrNull(index)?.uri)
-    }
-
     /** Toca o histórico recente a partir da escolhida. */
     fun playRecent(entry: HistoryEntry) {
         val current = state.value ?: return
@@ -271,7 +285,7 @@ internal class MyProfileViewModel(
     }
 
     private companion object {
-        const val TOP_SONGS = 12
+        const val TOP_SONGS = 1
         const val RECENT = 15
     }
 }

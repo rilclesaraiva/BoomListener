@@ -3,12 +3,8 @@
     <string name="feature_profile_name">Tu nombre</string>
     <string name="feature_profile_my_profile">Tu perfil</string>
     <string name="feature_profile_save">Guardar</string>
-    <string name="feature_profile_most_played">Más escuchadas</string>
-    <string name="feature_profile_most_played_sub">De siempre</string>
     <string name="feature_profile_listening_time">Tiempo de escucha</string>
     <string name="feature_profile_last_7_days">Últimos 7 días</string>
-    <string name="feature_profile_top_artists">Tus artistas</string>
-    <string name="feature_profile_last_30_days">Últimos 30 días</string>
     <string name="feature_profile_history">Historial</string>
     <string name="feature_profile_see_all">Ver todo</string>
     <string name="feature_profile_this_month">Este mes</string>
@@ -157,4 +153,29 @@
     <string name="feature_profile_wrapped_card_title">Tu Wrapped está listo</string>
     <string name="feature_profile_wrapped_card_sub">Abre tu año en tarjetas</string>
     <string name="feature_profile_wrapped_card_dismiss">Descartar</string>
+    <string name="feature_profile_stats_open_hint">Abrir estadísticas</string>
+    <string name="feature_profile_highlight_artist">Artista del mes</string>
+    <string name="feature_profile_highlight_song">Canción del mes</string>
+    <string name="feature_profile_highlight_genre">Género del mes</string>
+    <string name="feature_profile_highlight_genre_share">%1$d%% de lo que escuchaste</string>
+    <string name="feature_profile_highlight_day">Día récord</string>
+    <string name="feature_profile_highlight_day_time">%1$s de escucha</string>
+    <string name="feature_profile_calendar_title">Tu calendario de escucha</string>
+    <string name="feature_profile_calendar_less">menos</string>
+    <string name="feature_profile_calendar_more">más</string>
+    <string name="feature_profile_continue_title">Seguir donde lo dejaste</string>
+    <string name="feature_profile_continue_playing">Sonando ahora</string>
+    <string name="feature_profile_play">Reproducir</string>
+    <string name="feature_profile_pause">Pausar</string>
+    <string name="feature_profile_following">Siguiendo</string>
+    <string name="feature_profile_wrapped_card_label">WRAPPED %1$d</string>
+    <string name="feature_profile_wrapped_card_open">Ver ahora</string>
+    <plurals name="feature_profile_calendar_weeks">
+        <item quantity="one">Última %1$d semana</item>
+        <item quantity="other">Últimas %1$d semanas</item>
+    </plurals>
+    <plurals name="feature_profile_calendar_streak">
+        <item quantity="one">Mayor racha: %1$d día</item>
+        <item quantity="other">Mayor racha: %1$d días</item>
+    </plurals>
 </resources>

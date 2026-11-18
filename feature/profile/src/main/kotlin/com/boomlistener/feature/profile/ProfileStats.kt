@@ -23,8 +23,6 @@ internal fun dayPartOf(hour: Int): DayPart = when (hour) {
     else -> DayPart.Night
 }
 
-internal data class ArtistCount(val name: String, val plays: Int)
-
 internal data class DayMinutes(val date: LocalDate, val minutes: Int)
 
 internal data class ProfileStats(
@@ -38,8 +36,6 @@ internal data class ProfileStats(
     val week: List<DayMinutes>,
     /** De 0 a 1: quanto de cada parte do dia (últimos 30 dias), relativo à maior. */
     val dayParts: Map<DayPart, Float>,
-    /** Artistas mais ouvidos nos últimos 30 dias. */
-    val topArtists: List<ArtistCount>,
 )
 
 /**
@@ -73,21 +69,11 @@ internal fun computeProfileStats(
         if (maxPart == 0) 0f else (partCounts[part] ?: 0).toFloat() / maxPart
     }
 
-    // "Djavan" e "djavan" são o mesmo artista; vale a grafia mais usada.
-    val topArtists = last30.mapNotNull { it.artist?.trim()?.takeIf(String::isNotEmpty) }
-        .groupBy { it.lowercase() }
-        .map { (_, names) ->
-            ArtistCount(names.groupingBy { it }.eachCount().maxByOrNull { it.value }!!.key, names.size)
-        }
-        .sortedWith(compareByDescending<ArtistCount> { it.plays }.thenBy { it.name.lowercase() })
-        .take(10)
-
     return ProfileStats(
         monthPlays = thisMonth.size,
         monthMinutes = thisMonth.sumOf { minutesOf(it) }.toInt(),
         monthArtists = thisMonth.mapNotNull { it.artist?.lowercase() }.distinct().size,
         week = week,
         dayParts = dayParts,
-        topArtists = topArtists,
     )
 }

@@ -105,10 +105,10 @@ private class Tally {
     var ms = 0L
 }
 
-private data class Day(val date: LocalDate, val song: DaySong, val plays: Int, val ms: Long)
+internal data class Day(val date: LocalDate, val song: DaySong, val plays: Int, val ms: Long)
 
 /** Todas as linhas do resumo entre [from] e [to] (inclusive), já com o tempo estimado somado. */
-private fun daysIn(summary: DailySummary, from: LocalDate?, to: LocalDate, durationOf: (String) -> Long): List<Day> =
+internal fun daysIn(summary: DailySummary, from: LocalDate?, to: LocalDate, durationOf: (String) -> Long): List<Day> =
     summary.months.flatMap { month ->
         if ((from != null && month.month.atEndOfMonth().isBefore(from)) || month.month.atDay(1).isAfter(to)) return@flatMap emptyList()
         month.days.flatMap { (day, rows) ->

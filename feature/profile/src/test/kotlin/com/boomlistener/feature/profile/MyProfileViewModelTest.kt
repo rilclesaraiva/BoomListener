@@ -163,7 +163,8 @@ class MyProfileViewModelTest {
         assertEquals(3, state.stats.monthMinutes) // Açaí tem 200 s
         assertEquals(listOf("Djavan"), state.following.map { it.name })
 
-        vm.playTop(0)
+        assertEquals(listOf(acai.uri), state.topSongs.map { it.uri })
+        vm.playRecent(state.recent.first())
         assertEquals(listOf(acai), player.played)
     }
 
