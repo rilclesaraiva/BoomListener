@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.datastore.PreferencesData
 import com.boomlistener.core.datastore.UserPreferences
+import com.boomlistener.core.designsystem.component.BoomStatusBarScrim
 import com.boomlistener.core.designsystem.theme.BoomTheme
 
 /** Pedidos vindos de fora da tela (ex.: tocar no aviso de lançamento). */
@@ -45,7 +46,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val prefs by preferences.collectAsStateWithLifecycle(initialValue = UserPreferences())
             BoomTheme(themeMode = prefs.themeMode, dynamicColor = prefs.dynamicColor) {
-                BoomListenerApp()
+                androidx.compose.foundation.layout.Box {
+                    BoomListenerApp()
+                    // Por cima de tudo: escurece de leve a barra de status (o conteúdo passa por trás dela).
+                    BoomStatusBarScrim(Modifier.align(androidx.compose.ui.Alignment.TopStart))
+                }
             }
         }
     }

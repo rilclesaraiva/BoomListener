@@ -28,6 +28,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
@@ -38,6 +39,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
@@ -54,6 +56,28 @@ private val ThumbWidth = 6.dp
 private val ThumbWidthDragging = 10.dp
 private val BubbleSize = 64.dp
 private const val HIDE_AFTER_MS = 1_500L
+
+/**
+ * Onde a primeira linha de verdade da lista começa (a partir do topo dela), medido com a lista
+ * no topo e lembrado depois que ela rola. É o ponto mais alto que a bolinha da barra de rolagem
+ * pode alcançar: o trilho não sobe por cima da capa ou do título que vêm antes das linhas.
+ * [firstRowIndex] é o índice do item da primeira linha (depois do cabeçalho). Sem medida ainda: 0.
+ */
+@Composable
+fun rememberListStartOffset(state: LazyListState, firstRowIndex: Int): Dp {
+    var px by remember(state, firstRowIndex) { mutableIntStateOf(0) }
+    LaunchedEffect(state, firstRowIndex) {
+        snapshotFlow {
+            if (state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset == 0) {
+                val info = state.layoutInfo
+                info.visibleItemsInfo.firstOrNull { it.index == firstRowIndex }?.let { it.offset + info.beforeContentPadding }
+            } else {
+                null
+            }
+        }.filterNotNull().collect { px = it }
+    }
+    return with(LocalDensity.current) { px.toDp() }
+}
 
 /** Abaixo disso a lista é curta e a barra só atrapalharia. */
 private const val MIN_ITEMS = 25

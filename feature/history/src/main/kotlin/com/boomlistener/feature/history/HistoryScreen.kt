@@ -8,11 +8,14 @@ import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import com.boomlistener.core.designsystem.component.BoomFastScroller
+import com.boomlistener.core.designsystem.component.rememberListStartOffset
+import com.boomlistener.core.designsystem.theme.boomFastSpatialSpec
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.fillMaxSize
@@ -150,12 +153,14 @@ internal fun HistoryScreen(
                         }
                     }
                 }
+                // O trilho começa na primeira música (abaixo do título e do "Hoje"), não no topo da tela.
+                val rowsTop = rememberListStartOffset(listState, firstRowIndex = 2)
                 BoomFastScroller(
                     state = listState,
                     label = { index -> labels.getOrNull(index) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = with(LocalDensity.current) { headerPx.toDp() })
+                        .padding(top = maxOf(rowsTop, with(LocalDensity.current) { headerPx.toDp() }))
                         .padding(bottom = padding.calculateBottomPadding()),
                 )
                 }
@@ -184,12 +189,14 @@ internal fun HistoryScreen(
 @Composable
 private fun SectionHeader(section: HistorySection, stuck: Boolean, modifier: Modifier = Modifier) {
     val title = sectionTitle(section)
+    // Preso no topo, o título fica na altura do botão de voltar: sai para o lado dele.
+    val start by animateDpAsState(if (stuck) 68.dp else 20.dp, boomFastSpatialSpec(), label = "historyHeaderStart")
     BoomStickyHeader(stuck = stuck, modifier = modifier) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp),
+            modifier = Modifier.padding(start = start, end = 20.dp, top = 16.dp, bottom = 4.dp),
         )
     }
 }

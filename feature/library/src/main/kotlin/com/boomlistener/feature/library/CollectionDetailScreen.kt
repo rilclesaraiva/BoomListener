@@ -59,6 +59,7 @@ import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
 import com.boomlistener.core.common.shareLink
 import com.boomlistener.core.designsystem.component.BoomFastScroller
+import com.boomlistener.core.designsystem.component.rememberListStartOffset
 import com.boomlistener.core.designsystem.component.boomIndexLabel
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomSelectableArtwork
@@ -323,12 +324,14 @@ private fun TrackListWithHeader(
         modifier = Modifier.align(Alignment.TopCenter),
     )
     // Arrastar pela direita pula pela lista, mostrando a letra.
+    // O trilho começa onde começa a primeira música (abaixo da capa e dos botões), não no topo da tela.
+    val rowsTop = rememberListStartOffset(listState, firstRowIndex = 1)
     BoomFastScroller(
         state = listState,
         label = { index -> boomIndexLabel(local.getOrNull((index - 1).coerceAtLeast(0))?.title) },
         modifier = Modifier
             .align(Alignment.TopEnd)
-            .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
+            .padding(top = maxOf(rowsTop, padding.calculateTopPadding()), bottom = padding.calculateBottomPadding()),
     )
     }
 }
