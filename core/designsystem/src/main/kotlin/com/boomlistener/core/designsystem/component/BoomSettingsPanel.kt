@@ -37,6 +37,7 @@ fun BoomSettingsPanel(
     summary: String?,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    accent: BoomAccent = BoomAccent.Neutral,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
@@ -44,6 +45,7 @@ fun BoomSettingsPanel(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         BoomSettingsItem(
             icon = icon,
+            accent = accent,
             title = title,
             subtitle = summary,
             onClick = { open = !open },

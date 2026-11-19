@@ -28,20 +28,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
-/** Cor de destaque do círculo do ícone de cada item dos Ajustes. */
-enum class BoomAccent { Primary, Secondary, Tertiary, Neutral }
+/**
+ * Cor do círculo do ícone de cada item dos Ajustes. Famílias de matiz fixas (não seguem a cor
+ * dinâmica, que deixava tudo parecido): itens de uma mesma categoria usam a mesma família e
+ * itens de assuntos diferentes usam famílias diferentes. Regra no CLAUDE.md.
+ */
+enum class BoomAccent(
+    internal val lightContainer: Color,
+    internal val lightContent: Color,
+    internal val darkContainer: Color,
+    internal val darkContent: Color,
+) {
+    Blue(Color(0xFFD3E3FD), Color(0xFF041E49), Color(0xFF1F3A5F), Color(0xFFA8C7FA)),
+    Green(Color(0xFFC4EED0), Color(0xFF072711), Color(0xFF1E4D2B), Color(0xFF9FD8AE)),
+    Red(Color(0xFFF9DEDC), Color(0xFF410E0B), Color(0xFF5C1A17), Color(0xFFF2B8B5)),
+    Orange(Color(0xFFFFE0B2), Color(0xFF3E2700), Color(0xFF5A3A00), Color(0xFFFFCC80)),
+    Yellow(Color(0xFFFFF0B3), Color(0xFF3A3000), Color(0xFF524500), Color(0xFFFFE082)),
+    Purple(Color(0xFFE8DEF8), Color(0xFF21005D), Color(0xFF3F2A73), Color(0xFFD0BCFF)),
+    Pink(Color(0xFFFFD8E4), Color(0xFF3E001D), Color(0xFF5E1A38), Color(0xFFFFB1C8)),
+    Teal(Color(0xFFBFF0EA), Color(0xFF00201E), Color(0xFF124A46), Color(0xFF8FDDD5)),
+    Neutral(Color(0xFFE0E0E0), Color(0xFF3C3C3C), Color(0xFF3A3A3A), Color(0xFFD0D0D0)),
+}
 
 @Composable
-private fun BoomAccent.colors(): Pair<Color, Color> = with(MaterialTheme.colorScheme) {
-    when (this@colors) {
-        BoomAccent.Primary -> primaryContainer to onPrimaryContainer
-        BoomAccent.Secondary -> secondaryContainer to onSecondaryContainer
-        BoomAccent.Tertiary -> tertiaryContainer to onTertiaryContainer
-        BoomAccent.Neutral -> surfaceContainerHighest to onSurfaceVariant
-    }
+private fun BoomAccent.colors(): Pair<Color, Color> {
+    val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    return if (dark) darkContainer to darkContent else lightContainer to lightContent
 }
 
 /**

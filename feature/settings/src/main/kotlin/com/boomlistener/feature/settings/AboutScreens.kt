@@ -88,7 +88,7 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_about_developer)) {
                     BoomSettingsItem(
                         icon = BoomIcons.Person,
-                        accent = BoomAccent.Primary,
+                        accent = BoomAccent.Pink,
                         title = "rilclesaraiva",
                         subtitle = stringResource(R.string.feature_settings_about_developer_summary),
                         onClick = { context.openUrl(DEVELOPER_URL) },
@@ -100,21 +100,21 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_about_project)) {
                     BoomSettingsItem(
                         icon = BoomIcons.Code,
-                        accent = BoomAccent.Secondary,
+                        accent = BoomAccent.Blue,
                         title = stringResource(R.string.feature_settings_source),
                         subtitle = stringResource(R.string.feature_settings_source_summary),
                         onClick = { context.openUrl(SOURCE_URL) },
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.NewReleases,
-                        accent = BoomAccent.Tertiary,
+                        accent = BoomAccent.Orange,
                         title = stringResource(R.string.feature_settings_about_changelog),
                         subtitle = stringResource(R.string.feature_settings_about_changelog_summary),
                         onClick = { context.openUrl(CHANGELOG_URL) },
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.BugReport,
-                        accent = BoomAccent.Primary,
+                        accent = BoomAccent.Red,
                         title = stringResource(R.string.feature_settings_about_issues),
                         subtitle = stringResource(R.string.feature_settings_about_issues_summary),
                         onClick = { context.openUrl(ISSUES_URL) },
@@ -125,18 +125,21 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_about_legal)) {
                     BoomSettingsItem(
                         icon = BoomIcons.Privacy,
+                        accent = BoomAccent.Green,
                         title = stringResource(R.string.feature_settings_about_privacy_policy),
                         subtitle = stringResource(R.string.feature_settings_about_privacy_policy_summary),
                         onClick = { context.openUrl(PRIVACY_URL) },
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.Article,
+                        accent = BoomAccent.Blue,
                         title = stringResource(R.string.feature_settings_about_terms),
                         subtitle = stringResource(R.string.feature_settings_about_terms_summary),
                         onClick = { context.openUrl(TERMS_URL) },
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.Article,
+                        accent = BoomAccent.Blue,
                         title = stringResource(R.string.feature_settings_licenses),
                         subtitle = stringResource(R.string.feature_settings_licenses_summary),
                         onClick = { context.openUrl(LICENSES_URL) },
@@ -148,7 +151,7 @@ internal fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 BoomSettingsSection(title = null) {
                     BoomSettingsItem(
                         icon = BoomIcons.Favorite,
-                        accent = BoomAccent.Tertiary,
+                        accent = BoomAccent.Red,
                         title = stringResource(R.string.feature_settings_about_support),
                         subtitle = stringResource(R.string.feature_settings_about_support_summary),
                         onClick = { context.openUrl(SOURCE_URL) },

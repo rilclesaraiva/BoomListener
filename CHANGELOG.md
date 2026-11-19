@@ -18,7 +18,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ### Changed
 - **Profile reorganized:** the orange "This month" card now has a "See all" button showing that it opens your Statistics, with the month under "This month", and under your numbers it rotates (every few seconds, or swipe it) through the highlights of the month: your top artist, top song, top genre and record day. Below it come a listening calendar (one square per day for the last 17 weeks, stronger the more you listened, with your longest streak; tap a day, or drag your finger across the squares, to see its date and listening time), your History and the artists you follow. Most played, Listening time and Your artists left the Profile, since the Statistics page already shows them. In December the "Your Wrapped is ready" card got a new look with a "See now" button.
-- **Wrapped backgrounds have shapes:** instead of a flat color, each Wrapped card now has abstract shapes behind it (large discs, rings, arcs and soft blobs, a different composition per card, in the card's own tones, also in the shared image), for depth and personality.
+- **Settings icon colors:** the icons in Settings now have their own colors, grouped by category (Appearance purple, Playback blue, Library green, Sharing orange, System teal, About pink), with different colors where the subject differs (bug reports red, privacy green).
+- **Wrapped backgrounds have shapes:** instead of a flat color, each Wrapped card now has abstract shapes behind it (a different composition for every card: discs, rings, arcs, blobs, stripes, dots, diamonds, rays, waves and triangles, in the card's own tones, also in the shared image), for depth and personality.
 - **Wrapped artists card is now a podium:** your top artist stands big in the middle, the 2nd and 3rd on steps beside it, and the 4th and 5th get their own rows with their little photos.
 - **Softer status bar:** a light dark fade now sits under the status bar, so the clock and icons stay readable when covers or titles scroll behind them.
 - **History:** the day label stuck at the top now moves aside so the back button no longer covers it.
@@ -33,6 +34,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **The app now starts with its own colors and the dark theme:** "Wallpaper colors" is off by default (the app keeps its own look) and the default theme is Dark. Anything you already chose in Settings stays as it is. On Android 11 and older the "Wallpaper colors" option no longer appears, since it only works on Android 12 and newer.
 
 ### Fixed
+- **Songs tab header:** touching the title area of the search header stuck at the top no longer taps whatever is behind it in the list.
 - **Wrapped:** holding your finger to pause and releasing no longer counts as a tap that jumps to the next or previous card; the bars only fade once the hold is recognized.
 - **Artist listed as similar to himself:** in an artist's About tab, a duplicate profile with the same name (no photo, and tapping it did nothing) no longer shows up under "Similar artists".
 - **Similar artists names:** in an artist's About tab, long names no longer break in the middle of a word onto a second line (they end with "…"), so "Artist info: Deezer" below no longer jumps around.

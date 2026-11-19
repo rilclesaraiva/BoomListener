@@ -19,6 +19,7 @@ import com.boomlistener.core.datastore.PreferencesData
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
+import com.boomlistener.core.designsystem.component.BoomAccent
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
 import com.boomlistener.core.model.ThemeMode
@@ -145,6 +146,7 @@ internal fun AppearanceScreen(
                         BoomSettingsItem(
                             // Desenho pequeno de como ele fica: barrinhas ou a onda em mola.
                             icon = if (style == VisualizerStyle.Bars) BoomIcons.GraphicEq else BoomIcons.Waveform,
+                            accent = BoomAccent.Purple,
                             title = stringResource(title),
                             subtitle = stringResource(summary),
                             onClick = { playback.setVisualizerStyle(style) },

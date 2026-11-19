@@ -56,6 +56,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -145,10 +147,12 @@ internal fun MyProfileScreen(
                 BoomLoading(Modifier.padding(padding))
                 return@BoomScreenScaffold
             }
+            // Dia marcado no calendário; tocar em qualquer lugar fora dos quadradinhos desmarca.
+            var calendarDay by remember { mutableStateOf<java.time.LocalDate?>(null) }
             LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(bottom = 32.dp + LocalBottomOverlay.current),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { calendarDay = null } },
             ) {
                 item(key = "title") {
                     ProfileTitleBar(onEdit = { editing = true }, onOpenSettings = onOpenSettings)
@@ -183,7 +187,7 @@ internal fun MyProfileScreen(
                 item(key = "month") { MonthCard(current, insights?.highlights.orEmpty(), viewModel, onClick = onOpenStats) }
 
                 insights?.calendar?.takeIf { it.longestStreak > 0 }?.let { calendar ->
-                    item(key = "calendar") { CalendarCard(calendar) }
+                    item(key = "calendar") { CalendarCard(calendar, calendarDay) { calendarDay = it } }
                 }
 
                 if (current.recent.isNotEmpty()) {

@@ -87,11 +87,12 @@ internal fun BackupPanel(modifier: Modifier = Modifier) {
         title = stringResource(R.string.feature_settings_backup),
         summary = stringResource(R.string.feature_settings_backup_summary),
         icon = BoomIcons.Backup,
+        accent = BoomAccent.Teal,
         modifier = modifier,
     ) {
         BoomSettingsItem(
             icon = BoomIcons.Backup,
-            accent = BoomAccent.Primary,
+            accent = BoomAccent.Teal,
             title = stringResource(R.string.feature_settings_backup_export),
             subtitle = stringResource(R.string.feature_settings_backup_export_summary),
             enabled = !working,
@@ -99,7 +100,7 @@ internal fun BackupPanel(modifier: Modifier = Modifier) {
         )
         BoomSettingsItem(
             icon = BoomIcons.Restore,
-            accent = BoomAccent.Secondary,
+            accent = BoomAccent.Teal,
             title = stringResource(R.string.feature_settings_backup_restore),
             subtitle = stringResource(R.string.feature_settings_backup_restore_summary),
             enabled = !working,

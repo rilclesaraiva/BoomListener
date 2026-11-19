@@ -71,7 +71,7 @@ internal fun UpdatesSettingsSection() {
     BoomSettingsSection(title = stringResource(R.string.feature_settings_system_updates)) {
         BoomSettingsItem(
             icon = BoomIcons.Update,
-            accent = BoomAccent.Primary,
+            accent = BoomAccent.Teal,
             title = stringResource(R.string.feature_settings_updates),
             subtitle = updatesSubtitle(updatesState),
             onClick = {
@@ -83,6 +83,7 @@ internal fun UpdatesSettingsSection() {
         // uma versão. Dá para desfazer aqui o que foi escolhido no aviso.
         BoomSettingsItem(
             icon = BoomIcons.NotificationsOff,
+            accent = BoomAccent.Teal,
             title = stringResource(R.string.feature_settings_update_prompts),
             subtitle = updatePromptsSubtitle(prompts),
             onClick = { choosingPrompts = true },

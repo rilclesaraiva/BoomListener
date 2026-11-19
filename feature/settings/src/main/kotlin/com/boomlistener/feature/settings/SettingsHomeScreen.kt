@@ -49,28 +49,28 @@ internal fun SettingsScreen(
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_section_general)) {
                     BoomSettingsItem(
                         icon = BoomIcons.Palette,
-                        accent = BoomAccent.Primary,
+                        accent = BoomAccent.Purple,
                         title = stringResource(R.string.feature_settings_appearance),
                         subtitle = stringResource(R.string.feature_settings_appearance_summary),
                         onClick = onOpenAppearance,
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.MusicNote,
-                        accent = BoomAccent.Tertiary,
+                        accent = BoomAccent.Blue,
                         title = stringResource(R.string.feature_settings_playback),
                         subtitle = stringResource(R.string.feature_settings_playback_summary),
                         onClick = onOpenPlayback,
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.Collection,
-                        accent = BoomAccent.Secondary,
+                        accent = BoomAccent.Green,
                         title = stringResource(R.string.feature_settings_library),
                         subtitle = stringResource(R.string.feature_settings_library_summary),
                         onClick = onOpenLibrary,
                     )
                     BoomSettingsItem(
                         icon = BoomIcons.Send,
-                        accent = BoomAccent.Primary,
+                        accent = BoomAccent.Orange,
                         title = stringResource(R.string.feature_settings_share),
                         subtitle = stringResource(R.string.feature_settings_share_summary),
                         onClick = onOpenShare,
@@ -78,7 +78,7 @@ internal fun SettingsScreen(
                     // Sistema: internet, segundo plano e backup.
                     BoomSettingsItem(
                         icon = BoomIcons.Settings,
-                        accent = BoomAccent.Secondary,
+                        accent = BoomAccent.Teal,
                         title = stringResource(R.string.feature_settings_system),
                         subtitle = stringResource(R.string.feature_settings_system_summary),
                         onClick = onOpenSystem,
@@ -89,7 +89,7 @@ internal fun SettingsScreen(
                 BoomSettingsSection(title = stringResource(R.string.feature_settings_section_about)) {
                     BoomSettingsItem(
                         icon = BoomIcons.Info,
-                        accent = BoomAccent.Secondary,
+                        accent = BoomAccent.Pink,
                         title = stringResource(R.string.feature_settings_about),
                         subtitle = stringResource(R.string.feature_settings_about_summary, version),
                         onClick = onOpenAbout,
