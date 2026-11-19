@@ -20,7 +20,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -49,6 +58,18 @@ fun BoomSearchField(
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     val focus = LocalFocusManager.current
+    val density = LocalDensity.current
+    var focused by remember { mutableStateOf(false) }
+    // Teclado fechado (botão de voltar, gesto, esconder): o campo perde o foco, em vez de ficar
+    // com o cursor piscando como se o teclado ainda estivesse aberto. Vale para toda busca do app.
+    LaunchedEffect(focused) {
+        if (!focused) return@LaunchedEffect
+        var wasVisible = false
+        snapshotFlow { WindowInsets.ime.getBottom(density) > 0 }.collect { visible ->
+            if (wasVisible && !visible) focus.clearFocus()
+            wasVisible = visible
+        }
+    }
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -72,6 +93,7 @@ fun BoomSearchField(
                     keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                     modifier = Modifier.fillMaxWidth().onFocusChanged {
                         DiagnosticLog.log("teclado", "campo de busca "+ if (it.isFocused) "ganhou o foco" else "perdeu o foco")
+                        focused = it.isFocused
                         if (it.isFocused) onFocused()
                     },
                 )
