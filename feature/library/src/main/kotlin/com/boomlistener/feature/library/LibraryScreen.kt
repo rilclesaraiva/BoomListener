@@ -58,6 +58,7 @@ import androidx.compose.ui.Modifier
 import com.boomlistener.core.designsystem.component.tuckUnderStickyHeader
 import com.boomlistener.core.designsystem.component.rememberStickyHeaderStuck
 import com.boomlistener.core.designsystem.component.BoomStickyHeader
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
@@ -463,7 +464,19 @@ private fun TrackList(
                 // faixa das notificações): ela é só da lista, não do cabeçalho.
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = with(LocalDensity.current) { songsHeaderPx.toDp() })
+                    // O trilho começa na primeira música: com o topo da página à vista, ele
+                    // fica ao lado da lista (descendo junto ao rolar) e, com o "Músicas"
+                    // preso no topo, logo abaixo dele. Lido só na hora do layout.
+                    .layout { measurable, constraints ->
+                        val info = listState.layoutInfo
+                        val firstRowTop = info.visibleItemsInfo.firstOrNull { it.index == headerItems }
+                            ?.let { it.offset + info.beforeContentPadding }
+                        val top = maxOf(firstRowTop ?: 0, songsHeaderPx).coerceIn(0, constraints.maxHeight)
+                        val placeable = measurable.measure(
+                            constraints.copy(minHeight = 0, maxHeight = (constraints.maxHeight - top).coerceAtLeast(0)),
+                        )
+                        layout(placeable.width, constraints.maxHeight) { placeable.place(0, top) }
+                    }
                     .padding(bottom = contentPadding.calculateBottomPadding()),
             )
         }

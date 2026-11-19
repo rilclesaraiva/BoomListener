@@ -35,7 +35,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ### Fixed
 - **Quick taps while a screen is opening:** tapping Settings and quickly an option inside no longer ignores the second tap; only a real double tap (under 0.2 s) is ignored now, so a screen still can't open twice.
-- **Scroll bar on the Songs list:** the side scroll bar now also shows while you scroll with the top of the page (recents, albums, artists) in view, not only once the search bar is stuck at the top; still hides when the list is still.
+- **Scroll bar on the Songs list:** the side scroll bar now also shows while you scroll with the top of the page (recents, albums, artists) in view, not only once the search bar is stuck at the top. It sits beside the song list (moving down with it as you scroll) and hides when the list is still.
 - **Profile cover corners:** no more light gray slivers at the corners of a dark cover image.
 - **Mini player progress bar:** it now glides smoothly like the one in the full player instead of moving in small steps.
 - **Profile with a solid dark color in the light theme:** titles, names and icons no longer look faded (dark on black); they now follow the profile's own light text color.
