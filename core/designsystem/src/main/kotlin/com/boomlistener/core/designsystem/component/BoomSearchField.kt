@@ -30,7 +30,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.runtime.LaunchedEffect
@@ -74,7 +76,7 @@ private object FocusedSearchField {
 
 /**
  * Toque (sem deslizar) fora do campo de busca focado tira o foco dele e fecha o teclado.
- * Vai na raiz do app, uma vez: vale para toda [BoomSearchField]. Olha o toque antes dos filhos
+ * Vai na raiz do app e dentro do [BoomModalSheet] (que é outra janela): vale para toda [BoomSearchField]. Olha o toque antes dos filhos
  * e não o consome, então rolar a lista (deslizar) não faz o campo perder o foco.
  */
 @Composable
@@ -82,11 +84,13 @@ fun Modifier.clearSearchFocusOnTapOutside(): Modifier {
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     val slop = LocalViewConfiguration.current.touchSlop
-    return pointerInput(Unit) {
+    // Onde este elemento está na raiz da janela: o toque vem relativo a ele, a área do campo vem da raiz.
+    val origin = remember { arrayOf(Offset.Zero) }
+    return onGloballyPositioned { origin[0] = it.positionInRoot() }.pointerInput(Unit) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
             val field = FocusedSearchField.bounds ?: return@awaitEachGesture
-            if (field.contains(down.position)) return@awaitEachGesture
+            if (field.contains(down.position + origin[0])) return@awaitEachGesture
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Initial)
                 if (event.changes.size > 1) return@awaitEachGesture

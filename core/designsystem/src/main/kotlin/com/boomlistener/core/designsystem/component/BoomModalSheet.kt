@@ -85,6 +85,8 @@ fun BoomModalSheet(
         Column(
             Modifier
                 .heightIn(max = maxHeight)
+                // A folha é outra janela: o toque fora da busca (dentro da folha) também tira o foco dela.
+                .clearSearchFocusOnTapOutside()
                 .then(if (dragOnlyFromTop) Modifier.nestedScroll(KeepScrollInside) else Modifier),
         ) {
             val sheetScope = remember(this) { BoomSheetScopeImpl(this, hideThenDismiss) }
