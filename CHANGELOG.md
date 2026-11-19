@@ -34,6 +34,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **The app now starts with its own colors and the dark theme:** "Wallpaper colors" is off by default (the app keeps its own look) and the default theme is Dark. Anything you already chose in Settings stays as it is. On Android 11 and older the "Wallpaper colors" option no longer appears, since it only works on Android 12 and newer.
 
 ### Fixed
+- **Profile with a solid dark color in the light theme:** titles, names and icons no longer look faded (dark on black); they now follow the profile's own light text color.
+- **Full-screen player colors:** with "buttons in the cover's color" on, the audio visualizer and the time bar now use the cover's color too, instead of the system color that clashed with the green/other cover tint.
 - **Songs tab header:** touching the title area of the search header stuck at the top no longer taps whatever is behind it in the list.
 - **Wrapped:** holding your finger to pause and releasing no longer counts as a tap that jumps to the next or previous card; the bars only fade once the hold is recognized.
 - **Artist listed as similar to himself:** in an artist's About tab, a duplicate profile with the same name (no photo, and tapping it did nothing) no longer shows up under "Similar artists".

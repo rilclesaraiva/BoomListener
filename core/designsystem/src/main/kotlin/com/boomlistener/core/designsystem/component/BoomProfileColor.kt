@@ -8,7 +8,9 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.Modifier
@@ -66,13 +68,17 @@ fun BoomProfileSurface(hex: String?, solid: Boolean, content: @Composable () -> 
         content()
         return
     }
+    val scheme = MaterialTheme.colorScheme.onSolidColor(color)
     MaterialExpressiveTheme(
-        colorScheme = MaterialTheme.colorScheme.onSolidColor(color),
+        colorScheme = scheme,
         motionScheme = MaterialTheme.motionScheme,
         shapes = MaterialTheme.shapes,
         typography = MaterialTheme.typography,
-        content = content,
-    )
+    ) {
+        // Texto e ícone sem cor própria usam a cor de conteúdo, que vem de fora do tema novo:
+        // no tema claro do sistema ficava escura sobre o fundo preto (texto e ícones apagados).
+        CompositionLocalProvider(LocalContentColor provides scheme.onSurface, content = content)
+    }
 }
 
 /** As superfícies do tema trocadas por tons de [color]; o resto (destaques) fica. */

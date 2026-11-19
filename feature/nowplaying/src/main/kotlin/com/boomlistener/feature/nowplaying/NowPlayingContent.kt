@@ -277,12 +277,15 @@ internal fun NowPlayingContent(
                                         )
                                         // Visualizador (menu ⋮ do player): só na capa da música que toca.
                                         if (playbackPrefs.visualizer && song.uri == item?.uri) {
-                                            CoverVisualizer(
-                                                style = playbackPrefs.visualizerStyle,
-                                                playing = state.isPlaying,
-                                                cover = cover,
-                                                modifier = Modifier.matchParentSize().clip(MaterialTheme.shapes.extraLarge),
-                                            )
+                                            // Na cor da capa, como os botões e a barra de tempo.
+                                            BoomArtworkButtons(seed = artworkColor, enabled = playbackPrefs.artworkButtons) {
+                                                CoverVisualizer(
+                                                    style = playbackPrefs.visualizerStyle,
+                                                    playing = state.isPlaying,
+                                                    cover = cover,
+                                                    modifier = Modifier.matchParentSize().clip(MaterialTheme.shapes.extraLarge),
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -320,15 +323,17 @@ internal fun NowPlayingContent(
 
                     Spacer(Modifier.height(24.dp))
                     // Arrastando a bolinha: o balão mostra onde ela está.
-                    SmoothSeekBar(
-                        positionMs = state.positionMs,
-                        durationMs = state.durationMs,
-                        isPlaying = state.isPlaying,
-                        speed = playbackPrefs.speed,
-                        onSeek = viewModel::seekToFraction,
-                        // O tempo do alvo fica no balão; o da esquerda segue a música.
-                        dragLabel = { fraction -> formatTime((fraction * state.durationMs).toLong()) },
-                    )
+                    BoomArtworkButtons(seed = artworkColor, enabled = playbackPrefs.artworkButtons) {
+                        SmoothSeekBar(
+                            positionMs = state.positionMs,
+                            durationMs = state.durationMs,
+                            isPlaying = state.isPlaying,
+                            speed = playbackPrefs.speed,
+                            onSeek = viewModel::seekToFraction,
+                            // O tempo do alvo fica no balão; o da esquerda segue a música.
+                            dragLabel = { fraction -> formatTime((fraction * state.durationMs).toLong()) },
+                        )
+                    }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelMedium)
                         Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelMedium)
