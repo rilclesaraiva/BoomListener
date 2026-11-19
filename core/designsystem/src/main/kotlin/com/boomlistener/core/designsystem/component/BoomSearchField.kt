@@ -22,7 +22,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +53,55 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.boomlistener.core.designsystem.R
 
+/** Área (na raiz) do campo de busca que está com o foco agora; só um campo tem o foco por vez. */
+private object FocusedSearchField {
+    private var owner: Any? = null
+    var bounds: Rect? = null
+        private set
+
+    fun set(token: Any, rect: Rect?) {
+        owner = token
+        bounds = rect
+    }
+
+    fun clear(token: Any) {
+        if (owner === token) {
+            owner = null
+            bounds = null
+        }
+    }
+}
+
+/**
+ * Toque (sem deslizar) fora do campo de busca focado tira o foco dele e fecha o teclado.
+ * Vai na raiz do app, uma vez: vale para toda [BoomSearchField]. Olha o toque antes dos filhos
+ * e não o consome, então rolar a lista (deslizar) não faz o campo perder o foco.
+ */
+@Composable
+fun Modifier.clearSearchFocusOnTapOutside(): Modifier {
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val slop = LocalViewConfiguration.current.touchSlop
+    return pointerInput(Unit) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            val field = FocusedSearchField.bounds ?: return@awaitEachGesture
+            if (field.contains(down.position)) return@awaitEachGesture
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                if (event.changes.size > 1) return@awaitEachGesture
+                val change = event.changes.firstOrNull { it.id == down.id } ?: return@awaitEachGesture
+                if ((change.position - down.position).getDistance() > slop) return@awaitEachGesture
+                if (change.changedToUp()) {
+                    focus.clearFocus()
+                    keyboard?.hide()
+                    return@awaitEachGesture
+                }
+            }
+        }
+    }
+}
+
 /**
  * Barra de busca em pílula, para ficar dentro da tela (e não no topo):
  * lupa, o texto e um "x" para limpar.
@@ -61,6 +120,9 @@ fun BoomSearchField(
     val density = LocalDensity.current
     val imeInsets = WindowInsets.ime
     var focused by remember { mutableStateOf(false) }
+    val token = remember { Any() }
+    val bounds = remember { arrayOfNulls<Rect>(1) }
+    DisposableEffect(token) { onDispose { FocusedSearchField.clear(token) } }
     // Teclado fechado (botão de voltar, gesto, esconder): o campo perde o foco, em vez de ficar
     // com o cursor piscando como se o teclado ainda estivesse aberto. Vale para toda busca do app.
     LaunchedEffect(focused) {
@@ -75,7 +137,10 @@ fun BoomSearchField(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         shape = CircleShape,
-        modifier = modifier.height(48.dp),
+        modifier = modifier.height(48.dp).onGloballyPositioned {
+            bounds[0] = it.boundsInRoot()
+            if (focused) FocusedSearchField.set(token, bounds[0])
+        },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 14.dp)) {
             Icon(BoomIcons.Search, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -95,15 +160,14 @@ fun BoomSearchField(
                     modifier = Modifier.fillMaxWidth().onFocusChanged {
                         DiagnosticLog.log("teclado", "campo de busca "+ if (it.isFocused) "ganhou o foco" else "perdeu o foco")
                         focused = it.isFocused
+                        if (it.isFocused) FocusedSearchField.set(token, bounds[0]) else FocusedSearchField.clear(token)
                         if (it.isFocused) onFocused()
                     },
                 )
             }
             if (query.isNotEmpty()) {
-                IconButton(onClick = {
-                    onQueryChange("")
-                    focus.clearFocus()
-                }) {
+                // Só apaga o texto: o foco (e o teclado) ficam como estão.
+                IconButton(onClick = { onQueryChange("") }) {
                     Icon(BoomIcons.Close, contentDescription = stringResource(R.string.core_designsystem_clear))
                 }
             } else {

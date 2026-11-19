@@ -43,6 +43,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **The app is now simply called BoomListener**, the same name you see under the icon, everywhere (About, backups, the share card, the README and the legal pages). It used to be written "Boom, listener!".
 
 ### Fixed
+- **Search bars and focus:** tapping anywhere outside a search bar (a tap, not a scroll or swipe) now takes the focus away from it and closes the keyboard, in every search of the app. The "x" button only erases what you typed: the keyboard and the focus stay as they are.
 - **Search bars keep blinking after the keyboard closes:** when the keyboard is closed (back button or gesture), the search field now loses focus instead of staying with a blinking cursor, in every search bar of the app.
 - **Scroll bar drag:** touching or dragging on the scroll bar's track away from the handle no longer makes it jump there; it only moves when you hold the handle itself (and grabbing it doesn't make it jump either). Elsewhere the list simply scrolls. The letter bubble no longer stays on screen after you let go.
 - **Index bubble for symbols:** a song whose title starts with a symbol (like "#doyalike") now shows "#" in the scroll bar bubble instead of the next letter, matching where it sits in the list.

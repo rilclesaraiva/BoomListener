@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import com.boomlistener.core.designsystem.component.LocalBottomOverlay
+import com.boomlistener.core.designsystem.component.clearSearchFocusOnTapOutside
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
@@ -422,7 +423,7 @@ fun BoomListenerApp() {
         LocalFavoriteShare provides favoriteShare,
         LocalBackgroundBlur provides backgroundBlur,
     ) {
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().clearSearchFocusOnTapOutside()) {
       // Altura do mini player (0 sem música), que as telas usam como folga no fim.
       // Medida no próprio mini player (não no que anima a entrada e a saída):
       // assim ela não muda a cada quadro ao entrar nos Ajustes, o que fazia as
