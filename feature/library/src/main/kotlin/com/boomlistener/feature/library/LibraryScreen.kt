@@ -58,7 +58,6 @@ import androidx.compose.ui.Modifier
 import com.boomlistener.core.designsystem.component.tuckUnderStickyHeader
 import com.boomlistener.core.designsystem.component.rememberStickyHeaderStuck
 import com.boomlistener.core.designsystem.component.BoomStickyHeader
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
@@ -453,35 +452,15 @@ private fun TrackList(
                 modifier = Modifier.align(Alignment.TopCenter),
             )
             // Arrastar pela direita pula pela lista, mostrando a letra.
-            val minTrackPx = with(LocalDensity.current) { (contentPadding.calculateBottomPadding() + 96.dp).roundToPx() }
             BoomFastScroller(
                 state = listState,
                 label = { index -> boomIndexLabel(state.tracks.getOrNull((index - headerItems).coerceAtLeast(0))?.title) },
-                // Só na seção "Músicas": o topo (recentes, álbuns, artistas) fica de fora.
-                startIndex = headerItems - 1,
-                // Aparece ao rolar também com o topo da página à vista (parada, some como sempre).
-                hideBeforeStart = false,
-                // A barrinha começa abaixo do "Músicas" preso no topo (que inclui a
-                // faixa das notificações): ela é só da lista, não do cabeçalho.
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    // O trilho começa na primeira música: com o topo da página à vista, ele
-                    // fica ao lado da lista (descendo junto ao rolar) e, com o "Músicas"
-                    // preso no topo, logo abaixo dele. Lido só na hora do layout.
-                    .layout { measurable, constraints ->
-                        val info = listState.layoutInfo
-                        val firstRowTop = info.visibleItemsInfo.firstOrNull { it.index == headerItems }
-                            ?.let { it.offset + info.beforeContentPadding }
-                        // Primeira música fora da tela (embaixo): a bolinha espera no fim do trilho.
-                        val top = maxOf(
-                            minOf(firstRowTop ?: Int.MAX_VALUE, constraints.maxHeight - minTrackPx),
-                            songsHeaderPx,
-                        ).coerceIn(0, constraints.maxHeight)
-                        val placeable = measurable.measure(
-                            constraints.copy(minHeight = 0, maxHeight = (constraints.maxHeight - top).coerceAtLeast(0)),
-                        )
-                        layout(placeable.width, constraints.maxHeight) { placeable.place(0, top) }
-                    }
+                    // A lista inteira num só trilho, abaixo do "Músicas" preso no topo (que inclui a
+                    // faixa das notificações): a bolinha desce junto com o dedo e a lista rola em
+                    // proporção desde o topo da página, sem trocar de modo na hora em que a busca gruda.
+                    .padding(top = with(LocalDensity.current) { songsHeaderPx.toDp() })
                     .padding(bottom = contentPadding.calculateBottomPadding()),
             )
         }

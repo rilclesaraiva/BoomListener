@@ -102,15 +102,13 @@ fun BoomFastScroller(
     startIndex: Int = 0,
     /** A partir de quantos itens a barrinha aparece (listas curtas que ainda rolam podem pedir menos). */
     minItems: Int = MIN_ITEMS,
-    /** Falso: aparece também com o que vem antes de [startIndex] ainda na tela. */
-    hideBeforeStart: Boolean = true,
 ) {
     val metrics = remember(state, startIndex) { ListScrollMetrics(state, startIndex) }
     FastScrollerImpl(
         minItems = minItems,
         total = { state.layoutInfo.totalItemsCount },
         startIndex = startIndex,
-        inSection = { !hideBeforeStart || state.firstVisibleItemIndex >= startIndex },
+        inSection = { state.firstVisibleItemIndex >= startIndex },
         indexAt = metrics::indexAt,
         // O balão é do item que está ao lado da bolinha na tela.
         itemAtY = { y ->
@@ -124,11 +122,6 @@ fun BoomFastScroller(
         fraction = metrics::fraction,
         scrolling = { state.isScrollInProgress },
         scrollToFraction = metrics::scrollTo,
-        // Antes da seção (a bolinha aparece com o topo da página à vista), ela vai presa à primeira
-        // música e arrastar rola a lista 1 para 1 com o dedo, como rolar na tela, até a seção chegar
-        // ao topo; só então o trilho vale.
-        preSection = { !hideBeforeStart && state.firstVisibleItemIndex < startIndex },
-        rawScroll = { state.dispatchRawDelta(it) },
         label = label,
         modifier = modifier,
     )
@@ -257,9 +250,6 @@ private fun FastScrollerImpl(
     fraction: () -> Float,
     scrolling: () -> Boolean,
     scrollToFraction: suspend (Float) -> Unit,
-    /** Verdadeiro enquanto a lista ainda não chegou na seção do trilho (arrastar rola em pixels). */
-    preSection: () -> Boolean = { false },
-    rawScroll: (Float) -> Unit = {},
     label: (Int) -> String?,
     modifier: Modifier,
 ) {
@@ -376,18 +366,10 @@ private fun FastScrollerImpl(
                                         onDragCancel = { dragging = false },
                                         onVerticalDrag = { change, delta ->
                                             change.consume()
-                                            if (preSection()) {
-                                                // Antes da seção a bolinha vai presa à primeira música: o dedo
-                                                // sobe, a lista avança junto (1 para 1) e a bolinha fica sob o
-                                                // dedo, como ao rolar a tela. Sem teleporte.
-                                                rawScroll(-delta)
-                                                dragFraction = listFraction
-                                            } else {
-                                                // Pelo quanto o dedo andou (a área da bolinha anda junto com ela).
-                                                val room = (currentTrackPx.value - currentThumbPx.value).coerceAtLeast(1f)
-                                                dragFraction = (dragFraction + delta / room).coerceIn(0f, 1f)
-                                                target = dragFraction
-                                            }
+                                            // Pelo quanto o dedo andou (a área da bolinha anda junto com ela).
+                                            val room = (currentTrackPx.value - currentThumbPx.value).coerceAtLeast(1f)
+                                            dragFraction = (dragFraction + delta / room).coerceIn(0f, 1f)
+                                            target = dragFraction
                                         },
                                     )
                                 } finally {
