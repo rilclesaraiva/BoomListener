@@ -124,8 +124,9 @@ fun BoomFastScroller(
         fraction = metrics::fraction,
         scrolling = { state.isScrollInProgress },
         scrollToFraction = metrics::scrollTo,
-        // Antes da seção (a bolinha aparece com o topo da página à vista), arrastar rola a lista
-        // junto com o dedo, como rolar na tela, até chegar na seção; só então o trilho vale.
+        // Antes da seção (a bolinha aparece com o topo da página à vista), ela vai presa à primeira
+        // música e arrastar rola a lista 1 para 1 com o dedo, como rolar na tela, até a seção chegar
+        // ao topo; só então o trilho vale.
         preSection = { !hideBeforeStart && state.firstVisibleItemIndex < startIndex },
         rawScroll = { state.dispatchRawDelta(it) },
         label = label,
@@ -376,8 +377,10 @@ private fun FastScrollerImpl(
                                         onVerticalDrag = { change, delta ->
                                             change.consume()
                                             if (preSection()) {
-                                                // Antes da seção: a lista acompanha o dedo, sem teleporte.
-                                                rawScroll(delta)
+                                                // Antes da seção a bolinha vai presa à primeira música: o dedo
+                                                // sobe, a lista avança junto (1 para 1) e a bolinha fica sob o
+                                                // dedo, como ao rolar a tela. Sem teleporte.
+                                                rawScroll(-delta)
                                                 dragFraction = listFraction
                                             } else {
                                                 // Pelo quanto o dedo andou (a área da bolinha anda junto com ela).

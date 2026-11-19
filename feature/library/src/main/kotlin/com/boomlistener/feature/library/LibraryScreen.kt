@@ -453,6 +453,7 @@ private fun TrackList(
                 modifier = Modifier.align(Alignment.TopCenter),
             )
             // Arrastar pela direita pula pela lista, mostrando a letra.
+            val minTrackPx = with(LocalDensity.current) { (contentPadding.calculateBottomPadding() + 96.dp).roundToPx() }
             BoomFastScroller(
                 state = listState,
                 label = { index -> boomIndexLabel(state.tracks.getOrNull((index - headerItems).coerceAtLeast(0))?.title) },
@@ -471,7 +472,11 @@ private fun TrackList(
                         val info = listState.layoutInfo
                         val firstRowTop = info.visibleItemsInfo.firstOrNull { it.index == headerItems }
                             ?.let { it.offset + info.beforeContentPadding }
-                        val top = maxOf(firstRowTop ?: 0, songsHeaderPx).coerceIn(0, constraints.maxHeight)
+                        // Primeira música fora da tela (embaixo): a bolinha espera no fim do trilho.
+                        val top = maxOf(
+                            minOf(firstRowTop ?: Int.MAX_VALUE, constraints.maxHeight - minTrackPx),
+                            songsHeaderPx,
+                        ).coerceIn(0, constraints.maxHeight)
                         val placeable = measurable.measure(
                             constraints.copy(minHeight = 0, maxHeight = (constraints.maxHeight - top).coerceAtLeast(0)),
                         )
