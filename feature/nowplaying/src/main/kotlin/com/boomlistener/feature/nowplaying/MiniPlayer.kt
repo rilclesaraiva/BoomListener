@@ -49,7 +49,6 @@ import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomIcons
 import com.boomlistener.core.designsystem.component.BoomArtworkSurface
 import com.boomlistener.core.designsystem.component.LocalArtworkAccent
-import com.boomlistener.core.designsystem.component.BoomThinProgress
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomFastSpatialSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
@@ -200,8 +199,11 @@ fun MiniPlayer(
                         Icon(BoomIcons.SkipNext, stringResource(R.string.feature_nowplaying_next))
                     }
                 }
-                BoomThinProgress(
-                    progress = state.progress,
+                SmoothThinProgress(
+                    positionMs = state.positionMs,
+                    durationMs = state.durationMs,
+                    isPlaying = state.isPlaying,
+                    speed = playbackPrefs.speed,
                     // Tom da capa sobre o pastel (nunca preto puro).
                     color = LocalArtworkAccent.current,
                     modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 6.dp),

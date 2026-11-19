@@ -457,6 +457,8 @@ private fun TrackList(
                 label = { index -> boomIndexLabel(state.tracks.getOrNull((index - headerItems).coerceAtLeast(0))?.title) },
                 // Só na seção "Músicas": o topo (recentes, álbuns, artistas) fica de fora.
                 startIndex = headerItems - 1,
+                // Aparece ao rolar também com o topo da página à vista (parada, some como sempre).
+                hideBeforeStart = false,
                 // A barrinha começa abaixo do "Músicas" preso no topo (que inclui a
                 // faixa das notificações): ela é só da lista, não do cabeçalho.
                 modifier = Modifier

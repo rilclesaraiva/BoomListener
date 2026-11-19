@@ -11,7 +11,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.boomlistener.core.designsystem.component.BoomSeekBar
+import com.boomlistener.core.designsystem.component.BoomThinProgress
 
 /**
  * A barra do player com a bolinha deslizando: o player informa o ponto da
@@ -32,6 +34,41 @@ internal fun SmoothSeekBar(
     dragLabel: (Float) -> String,
     modifier: Modifier = Modifier,
 ) {
+    val shownMs = rememberSmoothPositionMs(positionMs, durationMs, isPlaying, speed)
+    BoomSeekBar(
+        progress = if (durationMs > 0) (shownMs / durationMs).coerceIn(0f, 1f) else 0f,
+        isPlaying = isPlaying,
+        onSeek = onSeek,
+        dragLabel = dragLabel,
+        modifier = modifier,
+    )
+}
+
+/**
+ * A barrinha fina do mini player, com o mesmo deslizar da barra do player
+ * (a mesma conta de [rememberSmoothPositionMs]), em vez de andar aos saltos
+ * a cada aviso do player.
+ */
+@Composable
+internal fun SmoothThinProgress(
+    positionMs: Long,
+    durationMs: Long,
+    isPlaying: Boolean,
+    speed: Float,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val shownMs = rememberSmoothPositionMs(positionMs, durationMs, isPlaying, speed)
+    BoomThinProgress(
+        progress = if (durationMs > 0) (shownMs / durationMs).coerceIn(0f, 1f) else 0f,
+        color = color,
+        modifier = modifier,
+    )
+}
+
+/** O ponto mostrado da música, andando com o relógio entre um aviso e outro do player. */
+@Composable
+internal fun rememberSmoothPositionMs(positionMs: Long, durationMs: Long, isPlaying: Boolean, speed: Float): Float {
     var shownMs by remember { mutableFloatStateOf(positionMs.toFloat()) }
     LaunchedEffect(positionMs, durationMs, isPlaying, speed) {
         if (!isPlaying || durationMs <= 0) {
@@ -55,13 +92,7 @@ internal fun SmoothSeekBar(
             }
         }
     }
-    BoomSeekBar(
-        progress = if (durationMs > 0) (shownMs / durationMs).coerceIn(0f, 1f) else 0f,
-        isPlaying = isPlaying,
-        onSeek = onSeek,
-        dragLabel = dragLabel,
-        modifier = modifier,
-    )
+    return shownMs
 }
 
 /** Mais que isto de diferença é salto de verdade (pulou na barra, trocou de música): vai direto. */

@@ -186,10 +186,18 @@ internal fun ProfileBanner(image: ProfilePicture?, modifier: Modifier = Modifier
         modifier
             .fillMaxWidth()
             .aspectRatio(BANNER_RATIO)
-            .background(
-                Brush.linearGradient(
-                    listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.tertiaryContainer),
-                ),
+            // O degradê só existe sem imagem: por trás dela, a borda arredondada deixava um
+            // fio claro (quinas cinzas) aparecer nos cantos de capas escuras.
+            .then(
+                if (image == null) {
+                    Modifier.background(
+                        Brush.linearGradient(
+                            listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.tertiaryContainer),
+                        ),
+                    )
+                } else {
+                    Modifier
+                },
             ),
     ) {
         if (image != null) ProfilePictureView(image, Modifier.fillMaxSize())
