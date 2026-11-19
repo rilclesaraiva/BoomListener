@@ -93,4 +93,33 @@ class DailyStatsRepositoryTest {
         assertTrue(reopened.isMigrated())
         assertEquals(1, reopened.summary.first().months.size)
     }
+
+    @Test
+    fun metaQueSumiuComMesesGuardadosNaoRefazAMigracao() = runBlocking {
+        val old = HistoryEntry("content://1", "Açaí", "Djavan", "Luz", ms(2026, 9, 10))
+        repo(history = listOf(old)).migrateIfNeeded { emptyList() }
+        assertTrue(File(dir, "meta.json").delete())
+        val reopened = repo(history = listOf(old))
+        // Os meses já estão no disco: é migrado, e uma nova chamada não duplica nada.
+        assertTrue(reopened.isMigrated())
+        reopened.migrateIfNeeded { emptyList() }
+        val september = reopened.summary.first().months.single { it.month == YearMonth.of(2026, 9) }
+        assertEquals(1, september.days.values.flatten().sumOf { it.plays })
+    }
+
+    @Test
+    fun migracaoComGravacaoQueFalhouNaoMarcaMigradoNoDisco() = runBlocking {
+        val old = HistoryEntry("content://1", "Açaí", "Djavan", "Luz", ms(2026, 9, 10))
+        val repo = repo(history = listOf(old))
+        assertFalse(repo.isMigrated()) // carrega o resumo e cria o meta.json
+        // Uma pasta no lugar do arquivo do mês faz a gravação falhar.
+        File(dir, "2026-09.json").apply { mkdirs() }.resolve("x").writeText("x")
+        repo.migrateIfNeeded { emptyList() }
+        // Na memória vale como migrado (não junta de novo), mas o disco ainda diz que não.
+        assertTrue(repo.isMigrated())
+        assertFalse(decodeMeta(File(dir, "meta.json").readText())!!.migrated)
+        repo.migrateIfNeeded { emptyList() }
+        val september = repo.summary.first().months.single { it.month == YearMonth.of(2026, 9) }
+        assertEquals(1, september.days.values.flatten().sumOf { it.plays })
+    }
 }

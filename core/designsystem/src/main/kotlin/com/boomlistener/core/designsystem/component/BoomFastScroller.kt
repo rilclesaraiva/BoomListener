@@ -137,16 +137,27 @@ fun BoomFastScroller(
  */
 private class ListScrollMetrics(private val state: LazyListState, private val start: Int) {
     private var sizes = IntArray(0)
+    // As alturas só mudam quando uma medida muda: guardadas para não refazer a conta (O(n)) a cada quadro.
+    private var cachedHeights: FloatArray? = null
 
     private fun measure() {
         val info = state.layoutInfo
-        if (info.totalItemsCount != sizes.size) sizes = IntArray(info.totalItemsCount)
+        if (info.totalItemsCount != sizes.size) {
+            sizes = IntArray(info.totalItemsCount)
+            cachedHeights = null
+        }
         val spacing = info.mainAxisItemSpacing
-        info.visibleItemsInfo.forEach { if (it.index in sizes.indices) sizes[it.index] = it.size + spacing }
+        info.visibleItemsInfo.forEach {
+            if (it.index in sizes.indices && sizes[it.index] != it.size + spacing) {
+                sizes[it.index] = it.size + spacing
+                cachedHeights = null
+            }
+        }
     }
 
     /** Altura de cada item a partir de [start]: a medida, ou a média das medidas. */
     private fun heights(): FloatArray {
+        cachedHeights?.let { return it }
         var sum = 0L
         var known = 0
         for (i in start until sizes.size) {
@@ -157,6 +168,7 @@ private class ListScrollMetrics(private val state: LazyListState, private val st
         }
         val average = if (known > 0) sum.toFloat() / known else 1f
         return FloatArray((sizes.size - start).coerceAtLeast(0)) { sizes[start + it].takeIf { s -> s > 0 }?.toFloat() ?: average }
+            .also { cachedHeights = it }
     }
 
     private fun viewport(): Float {
@@ -284,12 +296,20 @@ private fun FastScrollerImpl(
     val thumbWidth by animateDpAsState(if (dragging) ThumbWidthDragging else ThumbWidth, boomFastSpatialSpec(), label = "thumbWidth")
 
     val listFraction by remember { derivedStateOf(fraction) }
-    val currentFraction = if (dragging) dragFraction else listFraction
+    // Escondida e parada, a posição não importa: não lê (e não calcula) nada a cada quadro de rolagem.
+    // Fica com a última posição conhecida, para a bolinha não saltar enquanto some.
+    val lastFraction = remember { floatArrayOf(0f) }
+    val currentFraction = when {
+        dragging -> dragFraction
+        alpha > 0f -> listFraction.also { lastFraction[0] = it }
+        else -> lastFraction[0]
+    }
     // O balão segue a bolinha: no topo do trilho, o primeiro item; no fim, o
     // último; no meio, o item proporcional (o que está perto da bolinha na tela).
     // Antes era o item do topo da tela, e com a bolinha lá embaixo o balão
     // mostrava uma letra lá de cima.
-    val shownIndex = indexAt?.invoke(currentFraction)
+    // Só o balão usa o item, e ele só existe durante o arrasto.
+    val shownIndex = if (!dragging) 0 else indexAt?.invoke(currentFraction)
         ?: (startIndex + (currentFraction * (total() - 1 - startIndex).coerceAtLeast(0)).roundToInt())
 
     // Onde o trilho começa dentro do pai (o mesmo lugar da lista): para achar o item ao lado da bolinha.
@@ -303,7 +323,7 @@ private fun FastScrollerImpl(
         val currentTrackPx = rememberUpdatedState(trackPx)
         val currentThumbPx = rememberUpdatedState(thumbPx)
         val thumbY = ((trackPx - thumbPx) * currentFraction).roundToInt()
-        val labelIndex = itemAtY?.invoke(trackTopPx + thumbY + thumbPx / 2) ?: shownIndex
+        val labelIndex = if (!dragging) 0 else itemAtY?.invoke(trackTopPx + thumbY + thumbPx / 2) ?: shownIndex
 
         // Balão com a letra, ao lado da bolinha, enquanto arrasta.
         if (dragging) {

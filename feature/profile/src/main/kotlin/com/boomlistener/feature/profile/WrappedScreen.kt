@@ -197,10 +197,12 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
             progress.floatValue = 1f
             return@LaunchedEffect
         }
+        // Pausado (segurando), o efeito reinicia ao soltar e nenhum quadro é pedido enquanto isso.
+        if (paused) return@LaunchedEffect
         var last = androidx.compose.runtime.withFrameNanos { it }
         while (progress.floatValue < 1f) {
             val now = androidx.compose.runtime.withFrameNanos { it }
-            if (!paused) progress.floatValue = (progress.floatValue + (now - last) / 1_000_000f / PAGE_MS).coerceAtMost(1f)
+            progress.floatValue = (progress.floatValue + (now - last) / 1_000_000f / PAGE_MS).coerceAtMost(1f)
             last = now
         }
         page += 1

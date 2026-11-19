@@ -19,6 +19,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
@@ -79,6 +80,7 @@ internal class FileDailyStatsRepository(
     private var meta = DailyMeta(0L, false)
     private val dirty = mutableSetOf<YearMonth>()
     private var legacyDirty = false
+    private var metaPending = false
     private var writeJob: Job? = null
 
     override val summary: Flow<DailySummary> = state.onStart { ensureLoaded() }.filterNotNull()
@@ -96,8 +98,6 @@ internal class FileDailyStatsRepository(
     private fun load() {
         dir.mkdirs()
         val metaFile = File(dir, "meta.json")
-        meta = metaFile.takeIf { it.exists() }?.let { runCatching { decodeMeta(it.readText()) }.getOrNull() }
-            ?: DailyMeta(now(), false).also { writeAtomic(metaFile, encodeMeta(it)) }
         val months = dir.listFiles().orEmpty().mapNotNull { file ->
             val match = MONTH_FILE.matchEntire(file.name) ?: return@mapNotNull null
             val month = YearMonth.of(match.groupValues[1].toInt(), match.groupValues[2].toInt())
@@ -106,8 +106,19 @@ internal class FileDailyStatsRepository(
             // (decodeMonth devolve null para arquivo quebrado ou de formato desconhecido.)
             runCatching { decodeMonth(month, file.readText()) }.getOrNull() ?: run { keepCorrupt(file); null }
         }.sortedBy { it.month }
-        val legacy = File(dir, "legacy.json").takeIf { it.exists() }?.let { decodeLegacy(it.readText()) }.orEmpty()
+        val legacyFile = File(dir, "legacy.json")
+        meta = metaFile.takeIf { it.exists() }?.let { runCatching { decodeMeta(it.readText()) }.getOrNull() }
+            ?: recreatedMeta(months, legacyFile.exists()).also { runCatching { writeAtomic(metaFile, encodeMeta(it)) } }
+        val legacy = legacyFile.takeIf { it.exists() }?.let { decodeLegacy(it.readText()) }.orEmpty()
         state.value = DailySummary(months, legacy, meta.realSinceMs)
+    }
+
+    // meta.json sumiu ou não abre. Se já há meses ou o resumo antigo guardados, a migração já rodou: refazê-la
+    // juntaria o histórico de novo por cima e duplicaria as ouvidas. Sem nada guardado, é a primeira vez.
+    private fun recreatedMeta(months: List<MonthData>, hasLegacy: Boolean): DailyMeta {
+        if (months.isEmpty() && !hasLegacy) return DailyMeta(now(), false)
+        val since = months.minOfOrNull { it.month.atDay(1).atStartOfDay(zone()).toInstant().toEpochMilli() } ?: now()
+        return DailyMeta(since, true)
     }
 
     // Chamar só com o mutex.
@@ -173,23 +184,32 @@ internal class FileDailyStatsRepository(
         if (writeJob?.isActive == true) return
         writeJob = scope.launch {
             delay(WRITE_DELAY_MS)
-            mutex.withLock { flush() }
+            // Gravação que falhou (disco cheio, por exemplo) continua pendente e é tentada de novo.
+            while (!mutex.withLock { flush() }) delay(WRITE_DELAY_MS)
         }
     }
 
-    // Chamar só com o mutex.
-    private fun flush() {
-        val current = state.value ?: return
+    // Chamar só com o mutex. Só tira da lista de pendentes o que foi mesmo gravado; devolve false se algo falhou.
+    private fun flush(): Boolean {
+        val current = state.value ?: return true
         dir.mkdirs()
+        var ok = true
         dirty.toList().forEach { month ->
-            val data = current.months.firstOrNull { it.month == month } ?: return@forEach
-            runCatching { writeAtomic(File(dir, "$month.json"), encodeMonth(data)) }
+            val data = current.months.firstOrNull { it.month == month }
+            if (data == null || runCatching { writeAtomic(File(dir, "$month.json"), encodeMonth(data)) }.isSuccess) {
+                dirty.remove(month)
+            } else {
+                ok = false
+            }
         }
-        dirty.clear()
         if (legacyDirty) {
-            runCatching { writeAtomic(File(dir, "legacy.json"), encodeLegacy(current.legacy)) }
-            legacyDirty = false
+            if (runCatching { writeAtomic(File(dir, "legacy.json"), encodeLegacy(current.legacy)) }.isSuccess) legacyDirty = false else ok = false
         }
+        // O "migrado" só vai para o disco depois de tudo o que a migração trouxe estar gravado.
+        if (ok && metaPending) {
+            if (runCatching { writeAtomic(File(dir, "meta.json"), encodeMeta(meta)) }.isSuccess) metaPending = false else ok = false
+        }
+        return ok
     }
 
     override suspend fun isMigrated(): Boolean {
@@ -217,9 +237,10 @@ internal class FileDailyStatsRepository(
                 val legacy = legacyFromPlays(oldPlays, oldHistory, genresOf)
                 state.value = current.copy(months = months, legacy = legacy)
                 legacyDirty = true
-                flush()
+                // Na memória já vale como migrado (não juntar de novo); no disco, só depois de gravar tudo.
                 meta = meta.copy(migrated = true)
-                writeAtomic(File(dir, "meta.json"), encodeMeta(meta))
+                metaPending = true
+                if (!flush()) scheduleWrite()
             }
         }
     }
@@ -229,7 +250,7 @@ internal class FileDailyStatsRepository(
 private fun writeAtomic(file: File, text: String) {
     val temp = File(file.parentFile, file.name + ".tmp")
     temp.writeText(text)
-    temp.renameTo(file)
+    if (!temp.renameTo(file)) throw IOException("Não foi possível gravar ${file.name}")
 }
 
 /** Ponto de acesso provisório enquanto o app não tem Hilt. */

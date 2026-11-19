@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -32,9 +33,17 @@ class AreaPlayer(context: Context, private val controller: PlaybackController) {
         resumeMain = controller.state.value.isPlaying
         if (resumeMain) controller.togglePlayPause()
         player = ExoPlayer.Builder(appContext)
-            // Sem pedir o foco de áudio: o player principal já está pausado por nós
-            // e, se perdesse o foco, não voltaria a tocar sozinho ao fechar.
-            .setAudioAttributes(AudioAttributes.DEFAULT, false)
+            // Pede o foco de áudio: pausa numa ligação ou quando outro app toca (e volta depois).
+            // O player principal já está pausado por nós, então perder o foco não muda nada nele.
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .build(),
+                true,
+            )
+            // Fone desconectado (ou Bluetooth desligado): pausa, em vez de tocar no alto-falante.
+            .setHandleAudioBecomingNoisy(true)
             .build()
             .apply {
                 repeatMode = Player.REPEAT_MODE_ONE

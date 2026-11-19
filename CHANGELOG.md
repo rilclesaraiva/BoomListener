@@ -43,6 +43,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **The app is now simply called BoomListener**, the same name you see under the icon, everywhere (About, backups, the share card, the README and the legal pages). It used to be written "Boom, listener!".
 
 ### Fixed
+- **Wrapped song and other audio:** the song that plays inside the Wrapped now respects the rest of your phone: it pauses during a call or when another app starts playing (and comes back), and it pauses if you unplug your headphones instead of continuing on the speaker.
+- **Listening summary safety:** if the phone can't save your daily listening summary at that moment (for example, storage full), it now keeps trying instead of dropping the changes, and the one-time import of your old history is only marked as done once everything was saved. If its small settings file is ever lost, the app no longer imports your old history a second time on top of what is already there.
+- **Smoother scrolling:** the fast-scroll bar no longer does extra work on every frame while it is hidden, and the Wrapped stops redrawing while you hold a card to pause it.
 - **Search bars and focus:** tapping anywhere outside a search bar (a tap, not a scroll or swipe) now takes the focus away from it and closes the keyboard, in every search of the app. The "x" button only erases what you typed: the keyboard and the focus stay as they are.
 - **Search bars keep blinking after the keyboard closes:** when the keyboard is closed (back button or gesture), the search field now loses focus instead of staying with a blinking cursor, in every search bar of the app.
 - **Scroll bar drag:** touching or dragging on the scroll bar's track away from the handle no longer makes it jump there; it only moves when you hold the handle itself (and grabbing it doesn't make it jump either). Elsewhere the list simply scrolls. The letter bubble no longer stays on screen after you let go.
