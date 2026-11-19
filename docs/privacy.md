@@ -25,7 +25,7 @@ The app keeps the following in its private storage on your device:
 - your profile (name, description, color, photo and cover), which is only shown to you;
 - your settings, the artists you follow and which release alerts you have seen;
 - temporary copies of public information downloaded from the services below (a cache), so it doesn't have to be downloaded again;
-- temporary files in the app's cache: a copy of an audio file when you open it with BoomListener from another app ("Open with"; the app deletes older copies when you open another file, and Android also clears the cache on its own), and the images you create to share (the song banner and your Wrapped summary) until you share them or Android clears the cache.
+- temporary files in the app's cache: a copy of an audio file when you open it with BoomListener from another app ("Open with"; the app deletes copies older than a day when you open another file, and Android also clears the cache on its own), and the images you create to share (the song banner and your Wrapped summary) until you share them or Android clears the cache.
 
 None of this is sent anywhere. If you make a **backup** (Settings → System → Backup), the app writes a file to the place you choose; what you do with that file is up to you.
 
