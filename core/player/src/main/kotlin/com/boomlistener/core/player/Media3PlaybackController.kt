@@ -15,7 +15,6 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.model.Track
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -289,7 +288,6 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
                 .setAlbumTitle(album)
                 .build()
             val fresh = item.buildUpon().setMediaMetadata(metadata).build()
-            DiagnosticLog.log("player", "tags salvas: recarregando o item $index (tocando=${player.isPlaying}, pos=$positionMs ms, atual=${index == playingIndex})")
             // O arquivo mudou no disco: trocar só as informações mantinha o mapa antigo dele no
             // player, e pular para outro ponto dava erro de leitura (música muda). Entra uma cópia
             // nova logo depois e a antiga sai: o player abre o arquivo de novo e, se era a que
@@ -298,7 +296,6 @@ internal class Media3PlaybackController(context: Context) : PlaybackController {
             player.removeMediaItem(index)
             if (index == playingIndex) player.seekTo(positionMs)
         }
-        DiagnosticLog.log("player", "tags salvas: ${indexes.size} item(ns) da fila com esse arquivo")
         publish(player)
     }
 

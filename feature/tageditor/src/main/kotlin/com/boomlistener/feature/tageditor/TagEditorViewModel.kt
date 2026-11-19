@@ -3,7 +3,6 @@
 
 package com.boomlistener.feature.tageditor
 
-import com.boomlistener.core.common.DiagnosticLog
 import android.content.IntentSender
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
@@ -454,9 +453,7 @@ internal class TagEditorViewModel(
                 CoverState.Removed -> CoverEdit.Remove
                 is CoverState.New -> CoverEdit.Replace(c.data)
             }
-            DiagnosticLog.log("tags", "gravando (capa: ${cover::class.simpleName})")
             val result = tagsRepository.write(uri, current.tags, cover)
-            DiagnosticLog.log("tags", "gravação terminou: ${result::class.simpleName}")
             when (result) {
                 TagsWriteResult.Success -> {
                     library.notifyChanged(uri)

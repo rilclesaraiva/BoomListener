@@ -91,7 +91,6 @@ import com.boomlistener.data.wellbeing.HistoryEntry
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -123,9 +122,7 @@ internal fun MyProfileScreen(
     val wrappedCard by viewModel.wrappedCard.collectAsStateWithLifecycle()
     val saveFailed by viewModel.saveFailed.collectAsStateWithLifecycle()
     val insights by viewModel.insights.collectAsStateWithLifecycle()
-    val testerMode by com.boomlistener.core.common.DiagnosticLog.enabled.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf(false) }
-    var testerHidden by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(MY_PROFILE_ROUTE, listState)
     state?.let { PinProfileImages(it, viewModel) }
@@ -168,18 +165,13 @@ internal fun MyProfileScreen(
                         )
                     }
                 }
-                // Convite do Wrapped (dezembro). Com o registro de diagnóstico ligado (builds de
-                // teste) aparece sempre, para abrir o Wrapped a qualquer hora.
-                if (wrappedCard || (testerMode && !testerHidden)) {
+                // Convite do Wrapped (dezembro).
+                if (wrappedCard) {
                     item(key = "wrapped-ready") {
                         WrappedReadyCard(
                             year = current.today.year,
                             onOpen = { onOpenWrapped(com.boomlistener.data.wellbeing.StatsPeriod.ThisYear.name) },
-                            onDismiss = {
-                                viewModel.dismissWrappedCard()
-                                // Nas builds de teste o cartão é forçado: dispensar o esconde até reabrir o app.
-                                testerHidden = true
-                            },
+                            onDismiss = { viewModel.dismissWrappedCard() },
                         )
                     }
                 }
@@ -701,7 +693,7 @@ private fun HistoryCard(entry: HistoryEntry, today: LocalDate, viewModel: MyProf
     val label = when (date) {
         today -> stringResource(R.string.feature_profile_today)
         today.minusDays(1) -> stringResource(R.string.feature_profile_yesterday)
-        else -> date.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
+        else -> date.format(localizedDateFormatter("dMMM"))
     }
     Column(Modifier.width(CoverCard).clip(MaterialTheme.shapes.medium).clickableWithMenu(menuOpen, onClick = onClick).padding(bottom = TileBottom)) {
         Box(contentAlignment = Alignment.BottomStart) {

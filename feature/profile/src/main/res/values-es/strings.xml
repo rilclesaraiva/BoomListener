@@ -143,7 +143,6 @@
     </plurals>
     <string name="feature_profile_wrapped_playlist_name">Wrapped %1$s</string>
     <string name="feature_profile_wrapped_playlist_none">Ninguna canción de este período está en tu dispositivo.</string>
-    <string name="feature_profile_wrapped_tester">Build de prueba: toca para abrir igualmente</string>
     <string name="feature_profile_wrapped_share">Compartir</string>
     <string name="feature_profile_wrapped_brand">BoomListener</string>
     <string name="feature_profile_wrapped_channel_name">Wrapped</string>

@@ -3,6 +3,8 @@
 
 package com.boomlistener.app
 
+import android.net.Uri
+import java.io.File
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -83,8 +85,21 @@ class ExternalPlayerActivity : ComponentActivity() {
         super.onDestroy()
     }
 
+    /** `file://` dentro da pasta de dados do app (o `content://` de outro app não passa por aqui). */
+    private fun pointsToOwnPrivateData(uri: Uri): Boolean {
+        if (uri.scheme != "file") return false
+        // Caminho que nem dá para resolver também é recusado.
+        val path = runCatching { File(uri.path.orEmpty()).canonicalPath }.getOrNull() ?: return true
+        return listOfNotNull(applicationInfo.dataDir, applicationInfo.deviceProtectedDataDir).any { root ->
+            val base = runCatching { File(root).canonicalPath }.getOrNull() ?: return@any false
+            path == base || path.startsWith(base + File.separator)
+        }
+    }
+
     private fun handle(intent: Intent?) {
         val audio = intent?.data ?: return finish()
+        // Outro app pode mandar um file:// apontando para os dados privados do BoomListener: não abre.
+        if (pointsToOwnPrivateData(audio)) return finish()
         lifecycleScope.launch {
             val found = LibraryData.repository(applicationContext).trackFromUri(audio.toString())
             if (found == null) {

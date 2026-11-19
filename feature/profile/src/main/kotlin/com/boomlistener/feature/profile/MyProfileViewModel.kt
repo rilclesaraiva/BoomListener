@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.profile
 
+import com.boomlistener.core.common.runCatchingSuspend
 import com.boomlistener.data.deezer.latestTrackOf
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
@@ -273,7 +274,7 @@ internal class MyProfileViewModel(
             artistPhoto(name, sizePx)?.let { return it }
         }
         if (!coverFallback) return null
-        runCatching { artistLatestCover.invoke(name, sizePx) }.getOrNull()?.let { return it }
+        runCatchingSuspend { artistLatestCover.invoke(name, sizePx) }.getOrNull()?.let { return it }
         val track = latestTrackOf(tracks.value, name) ?: return null
         return library.loadArtwork(track.uri, sizePx)
     }

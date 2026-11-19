@@ -47,7 +47,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
-import com.boomlistener.core.common.DiagnosticLog
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -162,7 +161,6 @@ fun BoomSearchField(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                     modifier = Modifier.fillMaxWidth().onFocusChanged {
-                        DiagnosticLog.log("teclado", "campo de busca "+ if (it.isFocused) "ganhou o foco" else "perdeu o foco")
                         focused = it.isFocused
                         if (it.isFocused) FocusedSearchField.set(token, bounds[0]) else FocusedSearchField.clear(token)
                         if (it.isFocused) onFocused()

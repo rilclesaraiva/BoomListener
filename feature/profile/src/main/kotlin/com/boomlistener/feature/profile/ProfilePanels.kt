@@ -59,7 +59,6 @@ import com.boomlistener.data.wellbeing.CalendarDay
 import com.boomlistener.data.wellbeing.ListeningCalendar
 import kotlinx.coroutines.delay
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -189,7 +188,7 @@ private fun HighlightRow(highlight: Highlight, viewModel: MyProfileViewModel) {
         }
         is Highlight.BestDay -> {
             label = stringResource(R.string.feature_profile_highlight_day)
-            value = highlight.date.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
+            value = highlight.date.format(localizedDateFormatter("dMMM"))
             caption = stringResource(R.string.feature_profile_highlight_day_time, shortDuration(highlight.minutes))
         }
     }
@@ -328,7 +327,7 @@ internal fun CalendarCard(calendar: ListeningCalendar, selected: LocalDate?, onS
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     selectedDay?.let { day ->
-                        val date = day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
+                        val date = day.date.format(localizedDateFormatter("EEEdMMM"))
                         // Dia com escuta menor que 1 minuto conta como 1 minuto, para não mostrar "0 min".
                         if (day.level == 0) stringResource(R.string.feature_profile_calendar_day_none, date)
                         else stringResource(R.string.feature_profile_calendar_day, date, shortDuration(day.minutes.coerceAtLeast(1)))

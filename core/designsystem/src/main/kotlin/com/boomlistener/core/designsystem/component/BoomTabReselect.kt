@@ -14,7 +14,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.staticCompositionLocalOf
-import com.boomlistener.core.common.DiagnosticLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -44,7 +43,6 @@ fun ScrollToTopOnReselect(route: String, state: LazyListState) {
                 // do dedo tem prioridade). Sem isto, o cancelamento derrubava também
                 // a escuta da aba, e ela deixava de subir ao topo. Se foi a própria
                 // escuta que acabou (saiu da aba), ensureActive() relança.
-                DiagnosticLog.log("aba", "subida ao topo interrompida pela rolagem")
                 currentCoroutineContext().ensureActive()
             }
         }

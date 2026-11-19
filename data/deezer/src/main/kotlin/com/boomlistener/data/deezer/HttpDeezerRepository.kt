@@ -3,7 +3,6 @@
 
 package com.boomlistener.data.deezer
 
-import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.common.OfflineMode
 import android.content.Context
 import android.graphics.Bitmap
@@ -31,7 +30,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.security.MessageDigest
-import java.util.concurrent.atomic.AtomicInteger
 
 private const val API = "https://api.deezer.com"
 // Respostas da API ficam guardadas por um dia (discografia muda pouco).
@@ -41,8 +39,6 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
 
     private val jsonCache = File(context.cacheDir, "deezer/json").apply { mkdirs() }
     private val imageCache = File(context.cacheDir, "deezer/images").apply { mkdirs() }
-    /** Pedidos de rede em andamento (para o registro de diagnóstico: limite do Deezer, rolagem rápida). */
-    private val inFlight = AtomicInteger()
 
     /** Poucas buscas de artista ao mesmo tempo: a rolagem rápida da lista não despeja centenas de pedidos de uma vez. */
     private val searchGate = Semaphore(4)
@@ -93,12 +89,10 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             val found = json.optJSONArray("data").objects()
                 .map { it.toArtist() }
                 .filter { it.id > 0 && it.name.isNotBlank() }
-            if (found.isEmpty()) DiagnosticLog.log("deezer", "busca de artista veio vazia (em andamento=${inFlight.get()})")
             found
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
-            DiagnosticLog.log("deezer", "busca de artista falhou: ${e.javaClass.simpleName}: (em andamento=${inFlight.get()})")
+        } catch (_: Exception) {
             null
         }
     }
@@ -127,12 +121,10 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             val json = cachedJson(url, hasResults) ?: searchGate.withPermit { getJson(url, hasResults) }
             val cover = json.optJSONArray("data").objects().map { it.toRelease() }
                 .maxByOrNull { it.releaseDate.orEmpty() }?.coverUrl
-            if (cover == null) DiagnosticLog.log("deezer", "lançamentos do artista vieram sem capa (em andamento=${inFlight.get()})")
             cover
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
-            DiagnosticLog.log("deezer", "lançamentos do artista falharam: ${e.javaClass.simpleName}: (em andamento=${inFlight.get()})")
+        } catch (_: Exception) {
             null
         }
     }
@@ -264,29 +256,14 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
                     val connection = URL(url).openConnection() as HttpURLConnection
                     connection.connectTimeout = 10_000
                     connection.readTimeout = 15_000
-                    inFlight.incrementAndGet()
                     try {
-                        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                            DiagnosticLog.log("deezer", "imagem: resposta ${connection.responseCode} (em andamento=${inFlight.get()})")
-                            return@runCatching null
-                        }
+                        if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
                         connection.inputStream.use { input -> file.outputStream().use { input.copyTo(it) } }
-                        val expected = connection.contentLengthLong
-                        if (expected > 0 && file.length() != expected) {
-                            DiagnosticLog.log("deezer", "imagem: download incompleto (${file.length()} de $expected bytes)")
-                        }
                     } finally {
                         connection.disconnect()
-                        inFlight.decrementAndGet()
                     }
                 }
                 decodeSampled(file, sizePx)?.also { memoryImages.put(key, it) }
-                    ?: run {
-                        DiagnosticLog.log("deezer", "imagem: arquivo de ${file.length()} bytes não decodificou")
-                        null
-                    }
-            }.onFailure {
-                DiagnosticLog.log("deezer", "imagem: falhou ${it.javaClass.simpleName}: (em andamento=${inFlight.get()})")
             }.getOrNull()
         }
     }
@@ -319,7 +296,6 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             connectTimeout = 10_000
             readTimeout = 10_000
         }
-        inFlight.incrementAndGet()
         try {
             check(connection.responseCode == HttpURLConnection.HTTP_OK) { "Deezer ${connection.responseCode}" }
             val body = connection.inputStream.bufferedReader().use { it.readText() }
@@ -330,7 +306,6 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
             return json
         } finally {
             connection.disconnect()
-            inFlight.decrementAndGet()
         }
     }
 

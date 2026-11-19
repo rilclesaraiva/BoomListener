@@ -13,6 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
+private const val WRAPPED_FILE_PREFIX = "boomlistener_wrapped_"
+
 /** Guarda o desenho do cartão que está na tela (o que vira a imagem de compartilhar). */
 internal class WrappedCapture {
     var picture: Picture? = null
@@ -30,11 +32,11 @@ internal fun Picture.toBitmap(): Bitmap =
  */
 internal suspend fun Context.shareWrappedCard(card: Bitmap, chooserTitle: String) {
     val file = withContext(Dispatchers.IO) {
-        val dir = File(cacheDir, "share").apply {
-            deleteRecursively()
-            mkdirs()
-        }
-        File(dir, "boomlistener_wrapped_${System.currentTimeMillis()}.png").also { file ->
+        // Só apaga as imagens do Wrapped anteriores: os arquivos do banner da música (a mesma pasta)
+        // podem estar sendo lidos por outro app e não são daqui.
+        val dir = File(cacheDir, "share").apply { mkdirs() }
+        dir.listFiles { file -> file.name.startsWith(WRAPPED_FILE_PREFIX) }?.forEach { it.delete() }
+        File(dir, "$WRAPPED_FILE_PREFIX${System.currentTimeMillis()}.png").also { file ->
             file.outputStream().use { card.compress(Bitmap.CompressFormat.PNG, 100, it) }
         }
     }

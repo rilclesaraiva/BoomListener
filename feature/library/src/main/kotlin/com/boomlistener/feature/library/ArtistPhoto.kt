@@ -9,13 +9,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
-import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.designsystem.component.PinImages
 import com.boomlistener.core.designsystem.component.PinItem
 import com.boomlistener.core.designsystem.component.rememberImageSet
 import com.boomlistener.data.deezer.splitArtistNames
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.isActive
 
 /** Chave da foto do artista [name] no tamanho [px] na memória de imagens. */
 internal fun artistPhotoKey(name: String, px: Int) = "artist:$name@$px"
@@ -36,9 +33,9 @@ internal fun coverKey(uri: String, px: Int, version: Int) = "cover:$uri@$px#$ver
  * cada artista (foto, ou a capa do último lançamento de quem não tem).
  */
 internal fun artistAttempts(name: String, px: Int, version: Int, load: ArtistImageLoader): List<List<PinItem>> {
-    fun withCover(n: String) = PinItem(artistOrCoverKey(n, px, version)) { loadLogged(n, px, true, load) }
+    fun withCover(n: String) = PinItem(artistOrCoverKey(n, px, version)) { load(n, px, true) }
     val parts = splitArtistNames(name).takeIf { it.size > 1 } ?: return listOf(listOf(withCover(name)))
-    val whole = PinItem(artistPhotoKey(name, px)) { loadLogged(name, px, false, load) }
+    val whole = PinItem(artistPhotoKey(name, px)) { load(name, px, false) }
     return listOf(listOf(whole), parts.map { withCover(it) })
 }
 
@@ -66,13 +63,3 @@ internal fun PinTopArtistPhotos(names: List<String>, size: Dp, version: Int, loa
 /** O que deixar fixo para [name]: a foto inteira e a de cada artista, se tiver vários. */
 internal fun artistPinItems(name: String, px: Int, version: Int, load: ArtistImageLoader): List<PinItem> =
     artistAttempts(name, px, version, load).flatten()
-
-private suspend fun loadLogged(name: String, px: Int, coverFallback: Boolean, load: ArtistImageLoader): Bitmap? {
-    val bitmap = load(name, px, coverFallback)
-    if (!currentCoroutineContext().isActive) {
-        DiagnosticLog.log("foto", "carga da foto de artista cancelada ao sair da tela")
-    } else if (bitmap == null) {
-        DiagnosticLog.log("foto", "foto de artista sem imagem, ainda na tela")
-    }
-    return bitmap
-}

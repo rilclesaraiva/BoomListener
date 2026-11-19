@@ -43,7 +43,7 @@ import kotlinx.coroutines.withContext
  * Arquivos do banner para compartilhar: a imagem (PNG) e o vídeo (MP4 com o
  * banner parado e o trecho de até 30 s da música). Ficam no cache, na pasta
  * "share", que o FileProvider deixa o app escolhido ler. Cada novo banner
- * apaga os anteriores.
+ * apaga os banners anteriores (as imagens do Wrapped, que moram na mesma pasta, ficam).
  */
 
 private const val SHARE_DIR = "share"
@@ -52,8 +52,8 @@ private const val VIDEO_FRAME_RATE = 30
 
 private fun shareDir(context: Context): File =
     File(context.cacheDir, SHARE_DIR).apply {
-        deleteRecursively()
         mkdirs()
+        listFiles { file -> !file.name.startsWith("boomlistener_wrapped_") }?.forEach { it.deleteRecursively() }
     }
 
 /** Grava o banner como PNG. */

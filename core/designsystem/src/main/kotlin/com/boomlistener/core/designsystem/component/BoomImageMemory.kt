@@ -11,7 +11,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import com.boomlistener.core.common.DiagnosticLog
 
 /**
  * Capas e fotos já carregadas, à mão **na hora** (sem esperar uma carga assíncrona):
@@ -26,10 +25,6 @@ import com.boomlistener.core.common.DiagnosticLog
 object BoomImageMemory {
     private val cache = object : LruCache<String, ImageBitmap>((Runtime.getRuntime().maxMemory() / 1024 / 8).toInt()) {
         override fun sizeOf(key: String, value: ImageBitmap): Int = (value.width * value.height * 4 / 1024).coerceAtLeast(1)
-
-        override fun entryRemoved(evicted: Boolean, key: String, oldValue: ImageBitmap, newValue: ImageBitmap?) {
-            if (evicted) DiagnosticLog.log("imagem", "saiu da memória por falta de espaço (${size() / 1024} de ${maxSize() / 1024} MB)")
-        }
     }
     private val pins = HashMap<String, HashMap<String, ImageBitmap>>()
 

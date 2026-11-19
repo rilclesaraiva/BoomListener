@@ -9,7 +9,7 @@
     <string name="feature_history_empty_message">Every song you listen to for 30 seconds or more shows up here, grouped by day and week. Your history stays on your phone.</string>
     <string name="feature_history_clear">Clear history</string>
     <string name="feature_history_clear_title">Clear your listening history?</string>
-    <string name="feature_history_clear_message">This removes the list of songs you listened to. Most played isn’t affected.</string>
+    <string name="feature_history_clear_message">This removes the list of songs you listened to. Most played, your Statistics and your Wrapped aren’t affected: they keep their own daily summary on your phone.</string>
     <string name="feature_history_cancel">Cancel</string>
     <string name="feature_history_add_to_playlist">Add to playlist</string>
     <string name="feature_history_go_to_artist">Go to artist</string>

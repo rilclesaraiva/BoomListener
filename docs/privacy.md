@@ -24,9 +24,8 @@ The app keeps the following in its private storage on your device:
 - your playlists, favorites, play counts, listening history and listening stats, including a daily summary of what you listened to (songs, artists, genres and how long you listened, including which hours of the day);
 - your profile (name, description, color, photo and cover), which is only shown to you;
 - your settings, the artists you follow and which release alerts you have seen;
-- an optional diagnostic log (Settings → System → Diagnostics; off by default) with screen names, counts, states, and playback and network errors (such as seeks, volume and failed photo downloads), but never song titles, artists or file locations. It stays on your phone unless you choose to share it;
 - temporary copies of public information downloaded from the services below (a cache), so it doesn't have to be downloaded again;
-- temporary files in the app's cache: a copy of an audio file when you open it with BoomListener from another app ("Open with"; copies older than a day are deleted, and Android also clears the cache on its own), and the images you create to share (the song banner and your Wrapped summary) until you share them or Android clears the cache.
+- temporary files in the app's cache: a copy of an audio file when you open it with BoomListener from another app ("Open with"; the app deletes older copies when you open another file, and Android also clears the cache on its own), and the images you create to share (the song banner and your Wrapped summary) until you share them or Android clears the cache.
 
 None of this is sent anywhere. If you make a **backup** (Settings → System → Backup), the app writes a file to the place you choose; what you do with that file is up to you.
 
@@ -36,7 +35,7 @@ Each request goes directly from your phone to the service (except Last.fm, see b
 
 | Service | When | What is sent |
 |---|---|---|
-| **Deezer** (api.deezer.com and its image servers) | Showing artists on Home and in Library → Artists (their photos), opening an artist page, choosing between the artists of a song, the profile's "Your artists", searching artists in the Library, fixing tags, and the release check for artists you follow (about twice a day, in the background) | Artist names, song title, artist and length, what you type in the artist search, Deezer IDs of artists you follow |
+| **Deezer** (api.deezer.com and its image servers) | Showing artists on Home, in Library → Artists and in your Profile (their photos; when an artist has no photo, the cover of their latest release is used instead), opening an artist page, choosing between the artists of a song, searching artists in the Library, fixing tags, and the release check for artists you follow (about twice a day, in the background) | Artist names, song title, artist and length, what you type in the artist search, Deezer IDs of artists you follow |
 | **MusicBrainz** and **Cover Art Archive** | When Deezer doesn't know an artist or song | Artist names, song title, artist and length |
 | **Last.fm**, through the project's own Cloudflare Worker | Artist biography and song genres | Artist name (and song title for genres). The Worker only adds the project's access key and forwards the request; it runs on Cloudflare, which can see your IP address. If you enter **your own Last.fm key** (Settings → System → Last.fm), the Worker is not used: your phone asks Last.fm directly, sending your key, and Last.fm can see your IP address |
 | **LRCLIB** | When you open the lyrics of a song, pick "Lyrics" for the share banner, or tap "Find synced lyrics" in the tag editor | Song title, artist, album and length |
@@ -60,7 +59,7 @@ The app doesn't ask for photos, videos, contacts, location, microphone or Blueto
 
 ## How long data is kept and how to delete it
 
-Everything stays on your phone until you delete it: remove items inside the app, clear the app's data in Android's settings, or uninstall the app. Cached public information is kept for a limited time and is also removed by clearing the app's cache or data. Because the maintainer holds no copy of your data, there is nothing to request from us; if you have a question, write to [saraivarilcle@gmail.com](mailto:saraivarilcle@gmail.com) or [open an issue](https://github.com/rilclesaraiva/BoomListener/issues).
+Everything stays on your phone until you delete it: remove items inside the app, clear the app's data in Android's settings, or uninstall the app. Note that "Clear history" removes only the list of songs in your History: the daily listening summary behind your Statistics and Wrapped, and your most-played counts, are kept, and can be erased by clearing the app's data (or uninstalling). Cached public information is kept for a limited time and is also removed by clearing the app's cache or data. Because the maintainer holds no copy of your data, there is nothing to request from us; if you have a question, write to [saraivarilcle@gmail.com](mailto:saraivarilcle@gmail.com) or [open an issue](https://github.com/rilclesaraiva/BoomListener/issues).
 
 ## Your rights (LGPD and GDPR)
 

@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.common.runCatchingSuspend
 import com.boomlistener.data.deezer.latestTrackOf
 import com.boomlistener.core.player.PlaybackController
 import android.graphics.Bitmap
@@ -176,9 +177,9 @@ internal class CollectionsViewModel(
      */
     suspend fun artistImage(name: String, sizePx: Int, coverFallback: Boolean): Bitmap? {
         if (name.isBlank()) return null
-        runCatching { artistPhoto.invoke(name, sizePx) }.getOrNull()?.let { return it }
+        runCatchingSuspend { artistPhoto.invoke(name, sizePx) }.getOrNull()?.let { return it }
         if (!coverFallback) return null
-        runCatching { artistLatestCover.invoke(name, sizePx) }.getOrNull()?.let { return it }
+        runCatchingSuspend { artistLatestCover.invoke(name, sizePx) }.getOrNull()?.let { return it }
         val track = latestTrackOf(tracks.value.orEmpty(), name) ?: return null
         return library.loadArtwork(track.uri, sizePx)
     }
