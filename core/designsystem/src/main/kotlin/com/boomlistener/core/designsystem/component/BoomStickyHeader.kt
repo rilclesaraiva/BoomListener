@@ -66,7 +66,8 @@ fun BoomStickyHeader(
                 .background(if (stuck) color else Color.Transparent)
                 .then(if (stuck) blockTouches else Modifier),
         )
-        Column(Modifier.fillMaxWidth().background(color).then(blockTouches)) { content() }
+        // Só preso no topo o cabeçalho segura o toque e o arrasto; fora dele, deslizar sobre ele rola a lista.
+        Column(Modifier.fillMaxWidth().background(color).then(if (stuck) blockTouches else Modifier)) { content() }
     }
 }
 

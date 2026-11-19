@@ -52,7 +52,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Mini player progress bar:** it now glides smoothly like the one in the full player instead of moving in small steps.
 - **Profile with a solid dark color in the light theme:** titles, names and icons no longer look faded (dark on black); they now follow the profile's own light text color.
 - **Full-screen player colors:** with "buttons in the cover's color" on, the audio visualizer and the time bar now use the cover's color too, instead of the system color that clashed with the green/other cover tint.
-- **Songs tab header:** touching or sliding your finger over the title area of the search header stuck at the top no longer taps or scrolls whatever is behind it in the list.
+- **Songs tab header:** touching or sliding your finger over the title area of the search header while it is stuck at the top no longer taps or scrolls whatever is behind it in the list (when it is not stuck, sliding over it scrolls the list as usual).
 - **Wrapped cards:** the Wrapped no longer jumps back to the first card if the song card becomes available while it is open.
 - **Wrapped:** holding your finger to pause and releasing no longer counts as a tap that jumps to the next or previous card; the bars only fade once the hold is recognized.
 - **Artist listed as similar to himself:** in an artist's About tab, a duplicate profile with the same name (no photo, and tapping it did nothing) no longer shows up under "Similar artists".
