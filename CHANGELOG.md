@@ -79,6 +79,11 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **New songs not showing up:** songs downloaded while the app was in the background could be missing from the library until you restarted it. The library now also reloads every time you come back to the app.
 - **Songs that don't say they're music:** audio files that Android doesn't flag as music (for example ones saved straight in your phone's storage by a download app) now show up in the library. Ringtones, notifications and alarms are still left out. If voice messages or other audio show up that you don't want, use **Settings → Library**: minimum duration or only the folders you choose.
 
+### Known issues
+- **Tag scan:** it is still in development. "No lyrics" only looks at lyrics saved inside the file, not the ones the app fetched from LRCLIB. On a big library the scan can take a while, and the result is not saved between visits.
+- **Selecting songs:** it only works in the Songs list on Home and in album, genre, playlist and favorites pages (not yet in artist pages, search results, history or profile).
+- **Profile:** tapping the name or bio, and the previews in the edit sheet, still open the editor or the picture picker.
+
 ## [0.56.0] - 2026-11-10
 
 ### Fixed
