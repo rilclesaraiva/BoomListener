@@ -67,13 +67,12 @@ private const val WRITE_DELAY_MS = 3_000L
 private val MONTH_FILE = Regex("""(\d{4})-(\d{2})\.json""")
 
 internal class FileDailyStatsRepository(
-    context: Context,
+    private val dir: File,
     private val history: ListeningHistoryRepository,
     private val stats: ListeningStatsRepository,
     private val zone: () -> ZoneId = { ZoneId.systemDefault() },
     private val now: () -> Long = { System.currentTimeMillis() },
 ) : DailyStatsRepository {
-    private val dir = File(context.filesDir, "stats/daily")
     private val mutex = Mutex()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val state = MutableStateFlow<DailySummary?>(null)
@@ -102,10 +101,18 @@ internal class FileDailyStatsRepository(
         val months = dir.listFiles().orEmpty().mapNotNull { file ->
             val match = MONTH_FILE.matchEntire(file.name) ?: return@mapNotNull null
             val month = YearMonth.of(match.groupValues[1].toInt(), match.groupValues[2].toInt())
-            runCatching { decodeMonth(month, file.readText()) }.getOrNull()
+            // Mês que não abre não é descartado em silêncio: o arquivo fica guardado ao lado
+            // (.corrupt) em vez de ser sobrescrito pela próxima gravação daquele mês.
+            // (decodeMonth devolve null para arquivo quebrado ou de formato desconhecido.)
+            runCatching { decodeMonth(month, file.readText()) }.getOrNull() ?: run { keepCorrupt(file); null }
         }.sortedBy { it.month }
         val legacy = File(dir, "legacy.json").takeIf { it.exists() }?.let { decodeLegacy(it.readText()) }.orEmpty()
         state.value = DailySummary(months, legacy, meta.realSinceMs)
+    }
+
+    // Chamar só com o mutex.
+    private fun keepCorrupt(file: File) {
+        runCatching { file.renameTo(File(file.parentFile, file.name + ".corrupt")) }
     }
 
     override suspend fun recordListen(
@@ -233,7 +240,7 @@ object DailyStatsData {
     fun repository(context: Context): DailyStatsRepository =
         instance ?: synchronized(this) {
             instance ?: FileDailyStatsRepository(
-                context.applicationContext,
+                File(context.applicationContext.filesDir, "stats/daily"),
                 HistoryData.repository(context),
                 StatsData.repository(context),
             ).also { instance = it }

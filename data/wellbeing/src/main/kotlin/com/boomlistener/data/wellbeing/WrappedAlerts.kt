@@ -12,7 +12,7 @@ import java.time.Month
 
 /**
  * Aviso de fim de ano do Wrapped: a opção (ligada por padrão) e o que já foi
- * feito em cada ano. Fica só no aparelho (preferências, fora do backup).
+ * feito em cada ano. Fica só no aparelho (preferências; entram no backup do app, como as demais preferências).
  */
 interface WrappedAlertsRepository {
     val enabled: StateFlow<Boolean>

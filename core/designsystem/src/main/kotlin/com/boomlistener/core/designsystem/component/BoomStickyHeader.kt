@@ -5,6 +5,7 @@ package com.boomlistener.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -52,9 +53,11 @@ fun BoomStickyHeader(
     content: @Composable () -> Unit,
 ) {
     val color = MaterialTheme.colorScheme.surface
-    // Toque na área sólida do cabeçalho (título, vãos ao redor do campo) fica nele:
-    // sem isso o toque passava para o item da lista que está atrás dele.
-    val blockTouches = Modifier.pointerInput(Unit) { detectTapGestures { } }
+    // Toque e arrasto na área sólida do cabeçalho (título, vãos ao redor do campo) ficam nele:
+    // sem isso o toque passava para o item da lista que está atrás dele e o arrasto rolava a lista.
+    val blockTouches = Modifier
+        .pointerInput(Unit) { detectTapGestures { } }
+        .pointerInput(Unit) { detectVerticalDragGestures { change, _ -> change.consume() } }
     Column(modifier.fillMaxWidth().then(KeepListStill)) {
         Spacer(
             Modifier

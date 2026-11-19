@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -239,6 +240,8 @@ internal fun BigNumber(value: String, label: String, modifier: Modifier = Modifi
 @Composable
 internal fun CalendarCard(calendar: ListeningCalendar, selected: LocalDate?, onSelect: (LocalDate?) -> Unit) {
     val gap = 3.dp
+    val currentSelected by rememberUpdatedState(selected)
+    val currentOnSelect by rememberUpdatedState(onSelect)
     val selectedDay = remember(calendar, selected) { calendar.weeks.flatten().firstOrNull { it != null && it.date == selected } }
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -263,7 +266,9 @@ internal fun CalendarCard(calendar: ListeningCalendar, selected: LocalDate?, onS
             Spacer(Modifier.height(14.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(gap),
-                modifier = Modifier.pointerInput(calendar, selected) {
+                // Chave só no calendário: marcar um dia (selected muda) não pode reiniciar o gesto,
+                // senão o arrasto parava no primeiro quadrado.
+                modifier = Modifier.pointerInput(calendar) {
                     val gapPx = gap.toPx()
                     // O quadrado sob o dedo (os quadrados são redondos de lado igual; fora da grade, o mais próximo).
                     fun dayAt(position: Offset): CalendarDay? {
@@ -282,15 +287,15 @@ internal fun CalendarCard(calendar: ListeningCalendar, selected: LocalDate?, onS
                             // Toque sem arrastar: marca o dia, ou desmarca se já era o marcado.
                             val up = currentEvent.changes.firstOrNull { it.id == down.id }
                             if (tapped != null && up != null && !up.pressed && !up.isConsumed) {
-                                onSelect(if (selected == tapped.date) null else tapped.date)
+                                currentOnSelect(if (currentSelected == tapped.date) null else tapped.date)
                                 // Consumido: o toque fora dos quadradinhos (que limpa a seleção) não o vê.
                                 up.consume()
                             }
                         } else {
-                            dayAt(drag.position)?.let { onSelect(it.date) }
+                            dayAt(drag.position)?.let { currentOnSelect(it.date) }
                             horizontalDrag(drag.id) { change ->
                                 change.consume()
-                                dayAt(change.position)?.let { onSelect(it.date) }
+                                dayAt(change.position)?.let { currentOnSelect(it.date) }
                             }
                         }
                     }

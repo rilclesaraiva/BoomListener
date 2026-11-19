@@ -98,7 +98,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            DiagnosticLog.log("deezer", "busca de artista falhou: ${e.javaClass.simpleName}: ${e.message?.take(120)} (em andamento=${inFlight.get()})")
+            DiagnosticLog.log("deezer", "busca de artista falhou: ${e.javaClass.simpleName}: (em andamento=${inFlight.get()})")
             null
         }
     }
@@ -132,7 +132,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            DiagnosticLog.log("deezer", "lançamentos do artista falharam: ${e.javaClass.simpleName}: ${e.message?.take(120)} (em andamento=${inFlight.get()})")
+            DiagnosticLog.log("deezer", "lançamentos do artista falharam: ${e.javaClass.simpleName}: (em andamento=${inFlight.get()})")
             null
         }
     }
@@ -286,7 +286,7 @@ internal class HttpDeezerRepository(context: Context) : DeezerRepository {
                         null
                     }
             }.onFailure {
-                DiagnosticLog.log("deezer", "imagem: falhou ${it.javaClass.simpleName}: ${it.message?.take(100)} (em andamento=${inFlight.get()})")
+                DiagnosticLog.log("deezer", "imagem: falhou ${it.javaClass.simpleName}: (em andamento=${inFlight.get()})")
             }.getOrNull()
         }
     }

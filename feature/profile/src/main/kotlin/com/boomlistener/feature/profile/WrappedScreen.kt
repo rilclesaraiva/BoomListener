@@ -180,7 +180,9 @@ private fun WrappedCards(report: StatsReport, viewModel: MyProfileViewModel, has
             if (report.songs.isNotEmpty() || report.artists.isNotEmpty()) add(WrappedCard.Summary)
         }
     }
-    var page by remember(cards) { mutableIntStateOf(0) }
+    // A página não volta ao início se a lista de cartões mudar com o Wrapped aberto (a música ficou disponível, por exemplo).
+    var page by remember { mutableIntStateOf(0) }
+    LaunchedEffect(cards) { if (page > cards.lastIndex) page = cards.lastIndex }
     var paused by remember { mutableStateOf(false) }
     // Segurando o dedo na tela: barras e botões se esvaem; ao soltar, voltam com a mesma animação.
     var holding by remember { mutableStateOf(false) }
@@ -838,7 +840,7 @@ private fun ColumnScope.SprintWrappedCard(report: StatsReport, viewModel: MyProf
                 Text(row.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (previous != null && previousMonth != null) {
                     val monthName = previousMonth.month.getDisplayName(TextStyle.SHORT, locale).replaceFirstChar { it.titlecase(locale) }
-                    Text("$monthName #$previous", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.feature_profile_wrapped_previous_rank, monthName, previous.toString()), style = MaterialTheme.typography.bodyMedium)
                 }
             }
             val badge = when {

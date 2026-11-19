@@ -176,7 +176,7 @@ private fun AboutHero() {
         // Toca uma vez ao entrar e de novo a cada toque no ícone.
         BoomLogo(size = 112.dp, clickLabel = stringResource(R.string.feature_settings_about_icon_replay))
         Spacer(Modifier.height(16.dp))
-        Text("BoomListener", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.feature_settings_about_app_name), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AboutChip(rawVersion.removeSuffix("-debug"))

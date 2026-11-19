@@ -175,4 +175,5 @@
     </plurals>
     <string name="feature_profile_calendar_day">%1$s · %2$s of listening</string>
     <string name="feature_profile_calendar_day_none">%1$s · no listening</string>
+    <string name="feature_profile_wrapped_previous_rank" translatable="false">%1$s #%2$s</string>
 </resources>

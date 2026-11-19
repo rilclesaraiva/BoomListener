@@ -4,7 +4,7 @@ title: Privacy Policy
 
 # Privacy Policy — BoomListener
 
-_Last updated: November 17, 2026_
+_Last updated: November 19, 2026_
 
 BoomListener ("the app") is a free, open-source music player for Android that plays the music files stored on your phone. This policy explains what the app does with information, based on what its [source code](https://github.com/rilclesaraiva/BoomListener) actually does.
 
@@ -25,7 +25,8 @@ The app keeps the following in its private storage on your device:
 - your profile (name, description, color, photo and cover), which is only shown to you;
 - your settings, the artists you follow and which release alerts you have seen;
 - an optional diagnostic log (Settings → System → Diagnostics; off by default) with screen names, counts, states, and playback and network errors (such as seeks, volume and failed photo downloads), but never song titles, artists or file locations. It stays on your phone unless you choose to share it;
-- temporary copies of public information downloaded from the services below (a cache), so it doesn't have to be downloaded again.
+- temporary copies of public information downloaded from the services below (a cache), so it doesn't have to be downloaded again;
+- temporary files in the app's cache: a copy of an audio file when you open it with BoomListener from another app ("Open with"; copies older than a day are deleted, and Android also clears the cache on its own), and the images you create to share (the song banner and your Wrapped summary) until you share them or Android clears the cache.
 
 None of this is sent anywhere. If you make a **backup** (Settings → System → Backup), the app writes a file to the place you choose; what you do with that file is up to you.
 
