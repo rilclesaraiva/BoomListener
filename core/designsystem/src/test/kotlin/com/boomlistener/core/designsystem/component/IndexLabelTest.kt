@@ -15,9 +15,11 @@ class IndexLabelTest {
     }
 
     @Test
-    fun ignoraSimbolosDoComeco() {
-        assertEquals("H", boomIndexLabel("\"Heroes\""))
-        assertEquals("B", boomIndexLabel("  (bonus) track"))
+    fun simboloNoComecoViraCerquilha() {
+        assertEquals("#", boomIndexLabel("#doyalike"))
+        assertEquals("#", boomIndexLabel("\"Heroes\""))
+        assertEquals("B", boomIndexLabel("  bonus track"))
+        assertEquals("#", boomIndexLabel("  (bonus) track"))
     }
 
     @Test

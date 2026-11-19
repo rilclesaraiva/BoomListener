@@ -304,12 +304,6 @@ private fun FastScrollerImpl(
         val thumbY = ((trackPx - thumbPx) * currentFraction).roundToInt()
         val labelIndex = itemAtY?.invoke(trackTopPx + thumbY + thumbPx / 2) ?: shownIndex
 
-        fun jump(y: Float) {
-            // O centro da bolinha fica sob o dedo; o topo e o fim do trilho são o começo e o fim da lista.
-            dragFraction = ((y - thumbPx / 2) / (trackPx - thumbPx)).coerceIn(0f, 1f)
-            target = dragFraction
-        }
-
         // Balão com a letra, ao lado da bolinha, enquanto arrasta.
         if (dragging) {
             label(labelIndex)?.let { text ->
@@ -341,55 +335,68 @@ private fun FastScrollerImpl(
             }
         }
 
+        // O trilho em si não pega toque: tocar ou arrastar fora da bolinha rola a lista
+        // normalmente. Só segurar a bolinha (a área dela, mais larga que o desenho) arrasta.
         Box(
             Modifier
                 .align(Alignment.TopEnd)
                 .width(TrackWidth)
                 .fillMaxHeight()
-                .alpha(alpha)
-                // Só pega o toque quando está à mostra: escondida, a lista rola normal.
-                .then(
-                    if (shown) {
-                        Modifier.pointerInput(Unit) {
-                            detectVerticalDragGestures(
-                                onDragStart = { offset ->
-                                    dragging = true
-                                    jump(offset.y)
-                                },
-                                onDragEnd = { dragging = false },
-                                onDragCancel = { dragging = false },
-                                onVerticalDrag = { change, _ ->
-                                    change.consume()
-                                    jump(change.position.y)
-                                },
-                            )
-                        }
-                    } else {
-                        Modifier
-                    },
-                ),
+                .alpha(alpha),
         ) {
             Box(
-                Modifier
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
                     .align(Alignment.TopCenter)
                     .offset { IntOffset(0, thumbY) }
-                    .size(width = thumbWidth, height = ThumbHeight)
-                    // Na cor do tema (o cinza destoava no AMOLED).
-                    .background(
-                        if (dragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                        CircleShape,
+                    .size(width = TrackWidth, height = ThumbHeight)
+                    // Só pega o toque quando está à mostra: escondida, a lista rola normal.
+                    .then(
+                        if (shown) {
+                            Modifier.pointerInput(trackPx, thumbPx) {
+                                val room = (trackPx - thumbPx).coerceAtLeast(1f)
+                                detectVerticalDragGestures(
+                                    onDragStart = {
+                                        // Parte de onde a lista está: segurar a bolinha não a faz pular.
+                                        dragFraction = listFraction
+                                        dragging = true
+                                    },
+                                    onDragEnd = { dragging = false },
+                                    onDragCancel = { dragging = false },
+                                    onVerticalDrag = { change, delta ->
+                                        change.consume()
+                                        // Pelo quanto o dedo andou (a área da bolinha anda junto com ela).
+                                        dragFraction = (dragFraction + delta / room).coerceIn(0f, 1f)
+                                        target = dragFraction
+                                    },
+                                )
+                            }
+                        } else {
+                            Modifier
+                        },
                     ),
-            )
+            ) {
+                Box(
+                    Modifier
+                        .size(width = thumbWidth, height = ThumbHeight)
+                        // Na cor do tema (o cinza destoava no AMOLED).
+                        .background(
+                            if (dragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                            CircleShape,
+                        ),
+                )
+            }
         }
     }
 }
 
 /**
- * Letra do índice para um título: sem acento ("Ávila" → "A"), ignorando
- * aspas e símbolos do começo; número ou outro alfabeto viram "#".
+ * Letra do índice para um título: sem acento ("Ávila" → "A"). Título que começa
+ * com símbolo ("#doyalike", "(bonus)", aspas), número ou outro alfabeto vira "#":
+ * é onde a lista ordenada (que põe símbolos antes de números e letras) o coloca.
  */
 fun boomIndexLabel(title: String?): String {
-    val first = title?.trim()?.firstOrNull { it.isLetterOrDigit() } ?: return "#"
+    val first = title?.trim()?.firstOrNull()?.takeIf { it.isLetterOrDigit() } ?: return "#"
     val plain = Normalizer.normalize(first.toString(), Normalizer.Form.NFD)
         .firstOrNull()?.uppercaseChar() ?: return "#"
     return if (plain in 'A'..'Z') plain.toString() else "#"
