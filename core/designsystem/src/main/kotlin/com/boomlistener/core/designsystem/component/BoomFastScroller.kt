@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -123,6 +124,10 @@ fun BoomFastScroller(
         fraction = metrics::fraction,
         scrolling = { state.isScrollInProgress },
         scrollToFraction = metrics::scrollTo,
+        // Antes da seção (a bolinha aparece com o topo da página à vista), arrastar rola a lista
+        // junto com o dedo, como rolar na tela, até chegar na seção; só então o trilho vale.
+        preSection = { !hideBeforeStart && state.firstVisibleItemIndex < startIndex },
+        rawScroll = { state.dispatchRawDelta(it) },
         label = label,
         modifier = modifier,
     )
@@ -251,6 +256,9 @@ private fun FastScrollerImpl(
     fraction: () -> Float,
     scrolling: () -> Boolean,
     scrollToFraction: suspend (Float) -> Unit,
+    /** Verdadeiro enquanto a lista ainda não chegou na seção do trilho (arrastar rola em pixels). */
+    preSection: () -> Boolean = { false },
+    rawScroll: (Float) -> Unit = {},
     label: (Int) -> String?,
     modifier: Modifier,
 ) {
@@ -301,6 +309,8 @@ private fun FastScrollerImpl(
         val density = LocalDensity.current
         val trackPx = with(density) { maxHeight.toPx() }
         val thumbPx = with(density) { ThumbHeight.toPx() }
+        val currentTrackPx = rememberUpdatedState(trackPx)
+        val currentThumbPx = rememberUpdatedState(thumbPx)
         val thumbY = ((trackPx - thumbPx) * currentFraction).roundToInt()
         val labelIndex = itemAtY?.invoke(trackTopPx + thumbY + thumbPx / 2) ?: shownIndex
 
@@ -353,23 +363,34 @@ private fun FastScrollerImpl(
                     // Só pega o toque quando está à mostra: escondida, a lista rola normal.
                     .then(
                         if (shown) {
-                            Modifier.pointerInput(trackPx, thumbPx) {
-                                val room = (trackPx - thumbPx).coerceAtLeast(1f)
-                                detectVerticalDragGestures(
-                                    onDragStart = {
-                                        // Parte de onde a lista está: segurar a bolinha não a faz pular.
-                                        dragFraction = listFraction
-                                        dragging = true
-                                    },
-                                    onDragEnd = { dragging = false },
-                                    onDragCancel = { dragging = false },
-                                    onVerticalDrag = { change, delta ->
-                                        change.consume()
-                                        // Pelo quanto o dedo andou (a área da bolinha anda junto com ela).
-                                        dragFraction = (dragFraction + delta / room).coerceIn(0f, 1f)
-                                        target = dragFraction
-                                    },
-                                )
+                            Modifier.pointerInput(Unit) {
+                                try {
+                                    detectVerticalDragGestures(
+                                        onDragStart = {
+                                            // Parte de onde a lista está: segurar a bolinha não a faz pular.
+                                            dragFraction = listFraction
+                                            dragging = true
+                                        },
+                                        onDragEnd = { dragging = false },
+                                        onDragCancel = { dragging = false },
+                                        onVerticalDrag = { change, delta ->
+                                            change.consume()
+                                            if (preSection()) {
+                                                // Antes da seção: a lista acompanha o dedo, sem teleporte.
+                                                rawScroll(delta)
+                                                dragFraction = listFraction
+                                            } else {
+                                                // Pelo quanto o dedo andou (a área da bolinha anda junto com ela).
+                                                val room = (currentTrackPx.value - currentThumbPx.value).coerceAtLeast(1f)
+                                                dragFraction = (dragFraction + delta / room).coerceIn(0f, 1f)
+                                                target = dragFraction
+                                            }
+                                        },
+                                    )
+                                } finally {
+                                    // Se o gesto for interrompido (a tela mudou por baixo), o balão não fica preso.
+                                    dragging = false
+                                }
                             }
                         } else {
                             Modifier
