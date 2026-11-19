@@ -455,11 +455,12 @@ private fun TrackList(
             BoomFastScroller(
                 state = listState,
                 label = { index -> boomIndexLabel(state.tracks.getOrNull((index - headerItems).coerceAtLeast(0))?.title) },
+                // Só na seção "Músicas": a barrinha só aparece com a busca grudada no topo.
+                startIndex = headerItems - 1,
+                // O trilho começa na primeira música, abaixo do "Músicas" preso no topo (que
+                // inclui a faixa das notificações): ela é só da lista, não do cabeçalho.
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    // A lista inteira num só trilho, abaixo do "Músicas" preso no topo (que inclui a
-                    // faixa das notificações): a bolinha desce junto com o dedo e a lista rola em
-                    // proporção desde o topo da página, sem trocar de modo na hora em que a busca gruda.
                     .padding(top = with(LocalDensity.current) { songsHeaderPx.toDp() })
                     .padding(bottom = contentPadding.calculateBottomPadding()),
             )
