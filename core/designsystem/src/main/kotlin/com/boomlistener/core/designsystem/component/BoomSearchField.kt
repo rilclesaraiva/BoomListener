@@ -59,13 +59,14 @@ fun BoomSearchField(
     val keyboard = LocalSoftwareKeyboardController.current
     val focus = LocalFocusManager.current
     val density = LocalDensity.current
+    val imeInsets = WindowInsets.ime
     var focused by remember { mutableStateOf(false) }
     // Teclado fechado (botão de voltar, gesto, esconder): o campo perde o foco, em vez de ficar
     // com o cursor piscando como se o teclado ainda estivesse aberto. Vale para toda busca do app.
     LaunchedEffect(focused) {
         if (!focused) return@LaunchedEffect
         var wasVisible = false
-        snapshotFlow { WindowInsets.ime.getBottom(density) > 0 }.collect { visible ->
+        snapshotFlow { imeInsets.getBottom(density) > 0 }.collect { visible ->
             if (wasVisible && !visible) focus.clearFocus()
             wasVisible = visible
         }
