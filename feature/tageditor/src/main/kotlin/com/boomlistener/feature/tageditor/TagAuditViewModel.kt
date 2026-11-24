@@ -5,7 +5,9 @@ package com.boomlistener.feature.tageditor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.boomlistener.data.library.DuplicateGroup
 import com.boomlistener.data.library.LibraryRepository
+import com.boomlistener.data.library.findDuplicateGroups
 import com.boomlistener.data.tags.TagGap
 import com.boomlistener.data.tags.TagsRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -37,6 +39,8 @@ internal data class TagAuditState(
     val unreadable: Int = 0,
     /** Para cada coisa que falta, as músicas a que ela falta (só as que têm alguma). */
     val found: Map<TagGap, List<AuditSong>> = emptyMap(),
+    /** Músicas que parecem repetidas pela coerência das tags (só sugestão; ver [findDuplicateGroups]). */
+    val duplicates: List<DuplicateGroup> = emptyList(),
 )
 
 /** Agrupa as músicas pelo que falta a cada uma (na ordem de [TagGap]); o que não falta a ninguém fica de fora. */
@@ -67,7 +71,8 @@ internal class TagAuditViewModel(
     fun scan() {
         if (job?.isActive == true) return
         job = viewModelScope.launch {
-            val all = library.getTracks().map { AuditSong(it.uri, it.title, it.artist) }
+            val tracks = library.getTracks()
+            val all = tracks.map { AuditSong(it.uri, it.title, it.artist) }
             songs = all
             scans.clear()
             edited.clear()
@@ -85,7 +90,11 @@ internal class TagAuditViewModel(
                     _state.value.copy(scanned = scanned, unreadable = unreadable)
                 }
             }
-            _state.value = _state.value.copy(phase = ScanPhase.Done, found = buildAudit(all, scans))
+            _state.value = _state.value.copy(
+                phase = ScanPhase.Done,
+                found = buildAudit(all, scans),
+                duplicates = findDuplicateGroups(tracks),
+            )
         }
     }
 
@@ -104,7 +113,11 @@ internal class TagAuditViewModel(
                 batch.map { uri -> async(io) { uri to tags.scan(uri) } }.awaitAll()
                     .forEach { (uri, gaps) -> if (gaps != null) scans[uri] = gaps }
             }
-            _state.value = _state.value.copy(found = buildAudit(songs, scans))
+            // Título e artista podem ter mudado no editor: as repetidas são refeitas com a biblioteca atual.
+            _state.value = _state.value.copy(
+                found = buildAudit(songs, scans),
+                duplicates = findDuplicateGroups(library.getTracks()),
+            )
         }
     }
 }

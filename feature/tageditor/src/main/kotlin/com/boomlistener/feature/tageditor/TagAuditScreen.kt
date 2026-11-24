@@ -43,6 +43,7 @@ import com.boomlistener.core.designsystem.component.BoomPageTitle
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
+import com.boomlistener.data.library.DuplicateGroup
 import com.boomlistener.data.tags.TagGap
 
 @Composable
@@ -86,20 +87,51 @@ internal fun TagAuditScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    BackHandler(enabled = open != null) { openName = null }
+    // A lista de músicas repetidas aberta (separada das lacunas, que são por tag).
+    var showDuplicates by rememberSaveable { mutableStateOf(false) }
+    val duplicatesOpen = showDuplicates && state.duplicates.isNotEmpty()
 
-    val title = open?.label() ?: stringResource(R.string.feature_tageditor_audit_title)
+    BackHandler(enabled = open != null || duplicatesOpen) {
+        openName = null
+        showDuplicates = false
+    }
+
+    val title = when {
+        duplicatesOpen -> stringResource(R.string.feature_tageditor_audit_duplicates_title)
+        else -> open?.label() ?: stringResource(R.string.feature_tageditor_audit_title)
+    }
     BoomScreenScaffold(
         title = title,
-        onBack = { if (open != null) openName = null else onBack() },
+        onBack = {
+            if (open != null || duplicatesOpen) {
+                openName = null
+                showDuplicates = false
+            } else {
+                onBack()
+            }
+        },
         modifier = modifier,
         topBar = {},
     ) { padding ->
       Box(Modifier.fillMaxSize()) {
         LazyColumn(contentPadding = padding) {
             item(key = "pageTitle") { BoomPageTitle(title, hasBack = true, large = true) }
-            if (open == null) {
-                overview(state, onScan = viewModel::scan, onOpen = { openName = it.name })
+            if (duplicatesOpen) {
+                duplicatesList(
+                    groups = state.duplicates,
+                    onOpenGroup = { group ->
+                        val uris = group.tracks.map { it.uri }
+                        viewModel.markEdited(uris)
+                        onEditTracks(uris)
+                    },
+                )
+            } else if (open == null) {
+                overview(
+                    state,
+                    onScan = viewModel::scan,
+                    onOpen = { openName = it.name },
+                    onOpenDuplicates = { showDuplicates = true },
+                )
             } else {
                 val songs = state.found.getValue(open)
                 if (songs.size > 1) {
@@ -130,7 +162,7 @@ internal fun TagAuditScreen(
             item { Spacer(Modifier.height(24.dp)) }
         }
         // Aviso discreto no rodapé (só na visão geral; a lista de músicas usa a tela toda).
-        if (open == null) {
+        if (open == null && !duplicatesOpen) {
             Text(
                 stringResource(R.string.feature_tageditor_audit_experimental),
                 style = MaterialTheme.typography.bodySmall,
@@ -149,6 +181,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.overview(
     state: TagAuditState,
     onScan: () -> Unit,
     onOpen: (TagGap) -> Unit,
+    onOpenDuplicates: () -> Unit,
 ) {
     item(key = "intro") {
         Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -213,6 +246,55 @@ private fun androidx.compose.foundation.lazy.LazyListScope.overview(
                     }
                 }
             }
+        }
+        if (state.duplicates.isNotEmpty()) {
+            item(key = "duplicates") {
+                BoomSettingsSection(title = null) {
+                    BoomSettingsItem(
+                        icon = null,
+                        title = stringResource(R.string.feature_tageditor_audit_duplicates_title),
+                        onClick = onOpenDuplicates,
+                        trailing = { Text(state.duplicates.size.toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(end = 4.dp), color = MaterialTheme.colorScheme.primary) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Grupos de músicas que parecem repetidas; tocar numa abre o grupo no editor de tags para comparar. */
+private fun androidx.compose.foundation.lazy.LazyListScope.duplicatesList(
+    groups: List<DuplicateGroup>,
+    onOpenGroup: (DuplicateGroup) -> Unit,
+) {
+    item(key = "dupHint") {
+        Text(
+            stringResource(R.string.feature_tageditor_audit_duplicates_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+        )
+    }
+    groups.forEachIndexed { index, group ->
+        item(key = "dupHeader$index") {
+            Text(
+                pluralStringResource(R.plurals.feature_tageditor_audit_duplicates_copies, group.tracks.size, group.tracks.size),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp),
+            )
+        }
+        items(group.tracks, key = { "dup$index-${it.id}" }) { track ->
+            ListItem(
+                headlineContent = { Text(track.title, maxLines = 1) },
+                supportingContent = {
+                    val seconds = track.durationMs / 1000
+                    val length = "%d:%02d".format(seconds / 60, seconds % 60)
+                    Text(listOfNotNull(track.artist, track.album, length).joinToString(" · "), maxLines = 1)
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable { onOpenGroup(group) },
+            )
         }
     }
 }

@@ -123,4 +123,25 @@ class TagAuditViewModelTest {
         vm.refreshEdited()
         assertTrue(tags.scanned.isEmpty())
     }
+
+    @Test
+    fun achaRepetidasPelasTagsSemLerOsArquivosAMais() {
+        val dup = listOf(
+            track(1, "Açaí", "Djavan"),
+            track(2, "ACAI", "djavan"),
+            track(3, "Quebrada", null),
+        )
+        val tags = ScanTags(mutableMapOf("content://media/1" to emptySet(), "content://media/2" to emptySet(), "content://media/3" to emptySet()))
+        val vm = TagAuditViewModel(tags, ListLibrary(dup), io = dispatcher)
+        vm.scan()
+        assertEquals(listOf(listOf(1L, 2L)), vm.state.value.duplicates.map { g -> g.tracks.map { it.id }.sorted() })
+    }
+
+    @Test
+    fun semRepetidasAListaFicaVazia() {
+        val tags = ScanTags(mutableMapOf())
+        val vm = viewModel(tags)
+        vm.scan()
+        assertTrue(vm.state.value.duplicates.isEmpty())
+    }
 }

@@ -58,7 +58,7 @@
     <string name="feature_tageditor_queue_position">Canción %1$d de %2$d</string>
     <string name="feature_tageditor_queue_skip">Omitir</string>
     <string name="feature_tageditor_audit_title">Escaneo de etiquetas</string>
-    <string name="feature_tageditor_audit_intro">Escanea la biblioteca para encontrar canciones sin etiquetas, portada o letra y corrígelas una tras otra.</string>
+    <string name="feature_tageditor_audit_intro">Escanea tu biblioteca para encontrar canciones sin etiquetas, carátula o letra, y canciones que parecen repetidas, y corrígelas una tras otra.</string>
     <string name="feature_tageditor_audit_scan">Escanear biblioteca</string>
     <string name="feature_tageditor_audit_rescan">Escanear de nuevo</string>
     <string name="feature_tageditor_audit_progress">Analizando %1$d de %2$d</string>
@@ -81,5 +81,11 @@
     <string name="feature_tageditor_audit_gap_composer">Sin compositor</string>
     <string name="feature_tageditor_audit_gap_cover">Sin portada</string>
     <string name="feature_tageditor_audit_gap_lyrics">Sin letra en el archivo</string>
+    <string name="feature_tageditor_audit_duplicates_title">Canciones repetidas</string>
+    <string name="feature_tageditor_audit_duplicates_hint">Mismo título, mismo artista y duración casi igual. Es solo una sugerencia basada en las etiquetas: escucha antes de quitar una copia y quítala desde el menú de la canción en tu biblioteca.</string>
+    <plurals name="feature_tageditor_audit_duplicates_copies">
+        <item quantity="one">%1$d copia</item>
+        <item quantity="other">%1$d copias</item>
+    </plurals>
     <string name="feature_tageditor_audit_experimental">Esta área está en desarrollo y puede mejorar o desaparecer.</string>
 </resources>

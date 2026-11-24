@@ -58,7 +58,7 @@
     <string name="feature_tageditor_queue_position">Música %1$d de %2$d</string>
     <string name="feature_tageditor_queue_skip">Pular</string>
     <string name="feature_tageditor_audit_title">Escaneamento de tags</string>
-    <string name="feature_tageditor_audit_intro">Escaneie a biblioteca para achar músicas sem tags, capa ou letra e corrigi-las em sequência.</string>
+    <string name="feature_tageditor_audit_intro">Escaneie a biblioteca para achar músicas sem tags, capa ou letra, e músicas que parecem repetidas, e corrija uma depois da outra.</string>
     <string name="feature_tageditor_audit_scan">Escanear biblioteca</string>
     <string name="feature_tageditor_audit_rescan">Escanear de novo</string>
     <string name="feature_tageditor_audit_progress">Analisando %1$d de %2$d</string>
@@ -81,5 +81,11 @@
     <string name="feature_tageditor_audit_gap_composer">Sem compositor</string>
     <string name="feature_tageditor_audit_gap_cover">Sem capa</string>
     <string name="feature_tageditor_audit_gap_lyrics">Sem letra no arquivo</string>
+    <string name="feature_tageditor_audit_duplicates_title">Músicas repetidas</string>
+    <string name="feature_tageditor_audit_duplicates_hint">Mesmo título, mesmo artista e duração quase igual. É só uma sugestão baseada nas tags: ouça antes de remover uma cópia e remova pelo menu da música na biblioteca.</string>
+    <plurals name="feature_tageditor_audit_duplicates_copies">
+        <item quantity="one">%1$d cópia</item>
+        <item quantity="other">%1$d cópias</item>
+    </plurals>
     <string name="feature_tageditor_audit_experimental">Esta área está em desenvolvimento e pode melhorar ou desaparecer.</string>
 </resources>

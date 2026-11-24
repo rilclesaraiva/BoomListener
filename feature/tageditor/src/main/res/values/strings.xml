@@ -58,7 +58,7 @@
     <string name="feature_tageditor_queue_position">Song %1$d of %2$d</string>
     <string name="feature_tageditor_queue_skip">Skip</string>
     <string name="feature_tageditor_audit_title">Tag scan</string>
-    <string name="feature_tageditor_audit_intro">Scan your library to find songs with missing tags, cover art or lyrics, then fix them one after another.</string>
+    <string name="feature_tageditor_audit_intro">Scan your library to find songs with missing tags, cover art or lyrics, and songs that look repeated, then fix them one after another.</string>
     <string name="feature_tageditor_audit_scan">Scan library</string>
     <string name="feature_tageditor_audit_rescan">Scan again</string>
     <string name="feature_tageditor_audit_progress">Scanning %1$d of %2$d</string>
@@ -81,5 +81,11 @@
     <string name="feature_tageditor_audit_gap_composer">No composer</string>
     <string name="feature_tageditor_audit_gap_cover">No cover art</string>
     <string name="feature_tageditor_audit_gap_lyrics">No lyrics in the file</string>
+    <string name="feature_tageditor_audit_duplicates_title">Repeated songs</string>
+    <string name="feature_tageditor_audit_duplicates_hint">Same title, artist and nearly the same length. This is only a suggestion based on tags: listen before removing a copy, and remove it from the song\'s menu in your library.</string>
+    <plurals name="feature_tageditor_audit_duplicates_copies">
+        <item quantity="one">%1$d copies</item>
+        <item quantity="other">%1$d copies</item>
+    </plurals>
     <string name="feature_tageditor_audit_experimental">This area is in development and may improve or disappear.</string>
 </resources>

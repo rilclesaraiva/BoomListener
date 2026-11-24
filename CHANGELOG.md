@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Added
+- **Repeated songs in the tag scan:** after a scan (Settings → Library → Tag scan), a new "Repeated songs" entry lists songs that look like the same one: same title and artist (ignoring accents, capital letters and "feat. …") and nearly the same length. Live, remix or acoustic versions and songs by different artists with the same title are not mixed up. It is only a suggestion based on tags: nothing is ever removed for you, and tapping a group opens its songs in the tag editor so you can compare them.
+
 ### Changed
 - **Heart in the full-screen player:** when a song is a favorite, the filled heart now takes the color of the cover, like the other buttons (when **Settings → Appearance** has the buttons-in-cover-color option on).
 
