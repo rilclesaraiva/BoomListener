@@ -318,7 +318,10 @@ internal fun NowPlayingContent(
                         ),
                     )
                     }
-                    FavoriteButton(item.uri)
+                    // O coração cheio usa a cor de botão do tema: aqui, a cor da capa (opção de Aparência).
+                    BoomArtworkButtons(seed = artworkColor, enabled = playbackPrefs.artworkButtons) {
+                        FavoriteButton(item.uri)
+                    }
                     }
 
                     Spacer(Modifier.height(24.dp))

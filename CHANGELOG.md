@@ -6,6 +6,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 
 ## [Unreleased]
 
+### Changed
+- **Heart in the full-screen player:** when a song is a favorite, the filled heart now takes the color of the cover, like the other buttons (when **Settings → Appearance** has the buttons-in-cover-color option on).
+
 ## [0.57.0] - 2026-11-19
 
 ### Added
