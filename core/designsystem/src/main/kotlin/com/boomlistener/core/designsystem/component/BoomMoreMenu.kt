@@ -4,17 +4,12 @@
 package com.boomlistener.core.designsystem.component
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import com.boomlistener.core.designsystem.theme.boomEffectsSpec
 import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import androidx.compose.foundation.layout.Column
@@ -240,22 +235,28 @@ fun BoomMenuSheet(
             }
         }
         BackHandler(enabled = page != null) { page = null }
-        val offsetSpec = boomSpatialSpec<IntOffset>()
-        val sizeSpec = boomSpatialSpec<IntSize>()
-        val fadeSpec = boomEffectsSpec<Float>()
-        AnimatedContent(
-            targetState = page,
-            transitionSpec = {
-                // O conteúdo de agora corre para a direita e some; o novo vem correndo de lá, em mola.
-                ContentTransform(
-                    targetContentEnter = slideInHorizontally(offsetSpec) { it } + fadeIn(fadeSpec),
-                    initialContentExit = slideOutHorizontally(offsetSpec) { it } + fadeOut(fadeSpec),
-                    // A altura do painel cresce ou encolhe até a do novo conteúdo.
-                    sizeTransform = SizeTransform(clip = true) { _, _ -> sizeSpec },
-                )
-            },
-            label = "sheetPage",
-        ) { target ->
+        // Como no Intruphon (BottomPanelFlow): o que está na tela corre para a direita e some; só então
+        // entra o próximo, vindo do mesmo lado, em mola. A altura do painel anima sozinha até a do
+        // conteúdo que está aparecendo.
+        var shown by remember { mutableStateOf<(@Composable BoomMenuPageScope.() -> Unit)?>(null) }
+        val away = remember { Animatable(0f) } // 0 no lugar, 1 fora, à direita
+        val leaving = boomEffectsSpec<Float>()
+        val arriving = boomSpatialSpec<Float>()
+        LaunchedEffect(page) {
+            if (page !== shown) {
+                away.animateTo(1f, leaving)
+                shown = page
+            }
+            away.animateTo(0f, arriving)
+        }
+        Column(Modifier.fillMaxWidth().animateContentSize(boomSpatialSpec())) {
+          Column(
+              Modifier.fillMaxWidth().graphicsLayer {
+                  translationX = away.value * size.width
+                  alpha = (1f - away.value).coerceIn(0f, 1f)
+              },
+          ) {
+          val target = shown
           if (target != null) {
             Column(Modifier.fillMaxWidth()) {
                 FilledTonalIconButton(onClick = { page = null }, modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)) {
@@ -325,6 +326,7 @@ fun BoomMenuSheet(
                 }
             }
             Spacer(Modifier.height(16.dp))
+          }
           }
         }
     }
