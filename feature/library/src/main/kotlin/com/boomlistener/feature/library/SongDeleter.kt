@@ -6,14 +6,10 @@ package com.boomlistener.feature.library
 import com.boomlistener.core.designsystem.component.rememberKeyboardDismisser
 import android.Manifest
 import android.app.Activity
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,6 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.boomlistener.core.designsystem.component.BoomConfirmPage
+import com.boomlistener.core.designsystem.component.BoomMenuPageScope
 import com.boomlistener.core.model.Track
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.DeleteResult
@@ -52,7 +50,6 @@ internal fun rememberSongsDeleter(): (List<Track>) -> Unit {
         uris.forEach { player.removeUri(it) }
     }
     val scope = rememberCoroutineScope()
-    var confirming by remember { mutableStateOf<List<Track>?>(null) }
     var pending by remember { mutableStateOf<List<String>?>(null) }
     var retry by remember { mutableStateOf(false) }
     val failedText = stringResource(R.string.feature_library_delete_failed)
@@ -112,37 +109,20 @@ internal fun rememberSongsDeleter(): (List<Track>) -> Unit {
         }
     }
 
-    confirming?.let { tracks ->
-        AlertDialog(
-            onDismissRequest = { confirming = null },
-            title = {
-                Text(
-                    if (tracks.size == 1) stringResource(R.string.feature_library_delete_song_title)
-                    else pluralStringResource(R.plurals.feature_library_delete_songs_title, tracks.size, tracks.size),
-                )
-            },
-            text = {
-                Text(
-                    if (tracks.size == 1) stringResource(R.string.feature_library_delete_song_message, tracks.first().title)
-                    else stringResource(R.string.feature_library_delete_songs_message),
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirming = null
-                    start(tracks.map { it.uri })
-                }) { Text(stringResource(R.string.feature_library_delete)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirming = null }) { Text(stringResource(R.string.feature_library_cancel)) }
-            },
-        )
-    }
+    // A pergunta "Apagar?" é uma página do painel do menu ([DeleteSongsPage]): aqui só se apaga.
+    return { tracks -> if (tracks.isNotEmpty()) start(tracks.map { it.uri }) }
+}
 
-    return { tracks ->
-        if (tracks.isNotEmpty()) {
-            // Android 11+: o sistema já mostra o "Apagar?"; perguntar duas vezes cansa.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) start(tracks.map { it.uri }) else confirming = tracks
-        }
-    }
+/** Página de confirmação de apagar uma ou mais músicas, dentro do painel do menu. */
+@Composable
+internal fun BoomMenuPageScope.DeleteSongsPage(tracks: List<Track>, onDelete: () -> Unit) {
+    BoomConfirmPage(
+        title = if (tracks.size == 1) stringResource(R.string.feature_library_delete_song_title)
+        else pluralStringResource(R.plurals.feature_library_delete_songs_title, tracks.size, tracks.size),
+        message = if (tracks.size == 1) stringResource(R.string.feature_library_delete_song_message, tracks.first().title)
+        else stringResource(R.string.feature_library_delete_songs_message),
+        confirmLabel = stringResource(R.string.feature_library_delete),
+        cancelLabel = stringResource(R.string.feature_library_cancel),
+        onConfirm = onDelete,
+    )
 }

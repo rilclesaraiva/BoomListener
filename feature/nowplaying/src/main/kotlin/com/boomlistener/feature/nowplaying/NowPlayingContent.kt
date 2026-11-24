@@ -117,10 +117,6 @@ internal fun NowPlayingContent(
     val playbackSettings = remember { PlaybackSettingsData.get(context.applicationContext) }
     val sleepTimer by playbackSettings.sleepTimer.collectAsStateWithLifecycle()
     val playbackPrefs by playbackSettings.prefs.collectAsStateWithLifecycle()
-    var showSleep by remember { mutableStateOf(false) }
-    var showSpeed by remember { mutableStateOf(false) }
-    if (showSleep) SleepTimerSheet(playbackSettings, onDismiss = { showSleep = false })
-    if (showSpeed) SpeedSheet(playbackSettings, onDismiss = { showSpeed = false })
     var showShareCard by remember { mutableStateOf(false) }
     if (showShareCard && item != null) ShareCardSheet(viewModel, item, onDismiss = { showShareCard = false })
 
@@ -182,11 +178,12 @@ internal fun NowPlayingContent(
                                 // Mix: enche a fila com o resto da biblioteca, misturado.
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_mix), kind = BoomMenuKind.Mix) { viewModel.mix() },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_queue_open), kind = BoomMenuKind.Queue) { queueState.expand() },
-                                BoomMenuAction(sleepTimerLabel(sleepTimer), kind = BoomMenuKind.SleepTimer) { showSleep = true },
+                                BoomMenuAction(sleepTimerLabel(sleepTimer), kind = BoomMenuKind.SleepTimer, page = { SleepTimerPage(playbackSettings) }),
                                 BoomMenuAction(
                                     stringResource(R.string.feature_nowplaying_speed) + " · " + formatSpeed(playbackPrefs.speed),
                                     kind = BoomMenuKind.Speed,
-                                ) { showSpeed = true },
+                                    page = { SpeedPage(playbackSettings) },
+                                ),
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
                                     onAddToPlaylist(item.uri)
                                 },
@@ -195,9 +192,7 @@ internal fun NowPlayingContent(
                                 },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags), kind = BoomMenuKind.EditTags) { onEditTags(item.uri) },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_details), kind = BoomMenuKind.Details, page = { SongDetailsPage(item.uri, item.title) }),
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song), kind = BoomMenuKind.Delete) {
-                                    deleteSong(item.uri, item.title)
-                                },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song), kind = BoomMenuKind.Delete, page = { DeleteSongPage(item.title) { deleteSong(item.uri, item.title) } }),
                             ),
                             header = BoomMenuHeader(item.title, item.artist, artwork),
                             onShare = {

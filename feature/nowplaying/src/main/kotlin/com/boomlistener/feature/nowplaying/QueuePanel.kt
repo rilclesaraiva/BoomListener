@@ -270,9 +270,7 @@ internal fun QueuePanel(
                                         BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist), kind = BoomMenuKind.GoToArtist) { onOpenArtist(name) }
                                     },
                                     BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags), kind = BoomMenuKind.EditTags) { onEditTags(entry.item.uri) },
-                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song), kind = BoomMenuKind.Delete) {
-                                        onDelete(entry.item.uri, entry.item.title)
-                                    },
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song), kind = BoomMenuKind.Delete, page = { DeleteSongPage(entry.item.title) { onDelete(entry.item.uri, entry.item.title) } }),
                                 ),
                             )
                         }

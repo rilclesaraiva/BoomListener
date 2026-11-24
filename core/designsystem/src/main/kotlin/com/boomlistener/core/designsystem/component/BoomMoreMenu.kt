@@ -129,6 +129,15 @@ internal val BoomMenuKind.icon: ImageVector?
         BoomMenuKind.Delete -> BoomIcons.Delete
     }
 
+/** O que uma página aberta dentro do painel do menu ([BoomMenuAction.page]) pode pedir ao painel. */
+interface BoomMenuPageScope {
+    /** Volta ao menu, no mesmo painel. */
+    fun back()
+
+    /** Fecha o painel descendo. */
+    fun dismiss()
+}
+
 /** Uma opção do menu de três pontinhos. */
 data class BoomMenuAction(
     val label: String,
@@ -141,7 +150,7 @@ data class BoomMenuAction(
      * o voltar leva ao menu), em vez de fechar o menu e abrir outro painel. Com [page],
      * tocar não fecha o painel.
      */
-    val page: (@Composable () -> Unit)? = null,
+    val page: (@Composable BoomMenuPageScope.() -> Unit)? = null,
     val onClick: () -> Unit = {},
 )
 
@@ -223,7 +232,13 @@ fun BoomMenuSheet(
         // O painel, para fechar de dentro das colunas (que não deixam chamá-lo direto).
         val sheet = this
         // A página aberta dentro do painel (null = o menu); o voltar volta ao menu sem fechar o painel.
-        var page by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+        var page by remember { mutableStateOf<(@Composable BoomMenuPageScope.() -> Unit)?>(null) }
+        val pageScope = remember(sheet) {
+            object : BoomMenuPageScope {
+                override fun back() { page = null }
+                override fun dismiss() = sheet.dismiss()
+            }
+        }
         BackHandler(enabled = page != null) { page = null }
         val offsetSpec = boomSpatialSpec<IntOffset>()
         val sizeSpec = boomSpatialSpec<IntSize>()
@@ -231,11 +246,10 @@ fun BoomMenuSheet(
         AnimatedContent(
             targetState = page,
             transitionSpec = {
-                // Entrar numa página empurra o menu para a esquerda; voltar faz o contrário.
-                val forward = targetState != null
+                // O conteúdo de agora corre para a direita e some; o novo vem correndo de lá, em mola.
                 ContentTransform(
-                    targetContentEnter = slideInHorizontally(offsetSpec) { if (forward) it / 4 else -it / 4 } + fadeIn(fadeSpec),
-                    initialContentExit = slideOutHorizontally(offsetSpec) { if (forward) -it / 4 else it / 4 } + fadeOut(fadeSpec),
+                    targetContentEnter = slideInHorizontally(offsetSpec) { it } + fadeIn(fadeSpec),
+                    initialContentExit = slideOutHorizontally(offsetSpec) { it } + fadeOut(fadeSpec),
                     // A altura do painel cresce ou encolhe até a do novo conteúdo.
                     sizeTransform = SizeTransform(clip = true) { _, _ -> sizeSpec },
                 )
@@ -247,7 +261,7 @@ fun BoomMenuSheet(
                 FilledTonalIconButton(onClick = { page = null }, modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)) {
                     Icon(BoomIcons.Back, contentDescription = stringResource(R.string.core_designsystem_back))
                 }
-                target()
+                pageScope.target()
             }
           } else Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
             if (header != null) {

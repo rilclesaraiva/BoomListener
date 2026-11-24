@@ -74,6 +74,6 @@ internal fun selectionActions(
                 kind = BoomMenuKind.RemoveFromPlaylist,
             ) { remove(tracks) }
         },
-        BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete) { onDelete(tracks) },
+        BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete, page = { DeleteSongsPage(tracks) { onDelete(tracks) } }),
     )
 }

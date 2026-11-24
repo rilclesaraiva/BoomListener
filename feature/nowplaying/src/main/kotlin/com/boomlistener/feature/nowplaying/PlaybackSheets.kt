@@ -3,7 +3,6 @@
 
 package com.boomlistener.feature.nowplaying
 
-import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
@@ -89,7 +88,7 @@ internal fun customSleepMinutes(hours: String, minutes: String): Int {
  * personalizar.
  */
 @Composable
-internal fun SleepTimerSheet(settings: PlaybackSettings, onDismiss: () -> Unit) {
+internal fun SleepTimerPage(settings: PlaybackSettings) {
     val timer by settings.sleepTimer.collectAsStateWithLifecycle()
     var custom by rememberSaveable { mutableStateOf(false) }
     var hours by rememberSaveable { mutableStateOf("") }
@@ -102,7 +101,7 @@ internal fun SleepTimerSheet(settings: PlaybackSettings, onDismiss: () -> Unit) 
         }
     }
     val endsAt = timer?.endsAtMs
-    BoomModalSheet(onDismissRequest = onDismiss) {
+    run {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -205,11 +204,11 @@ internal fun formatSpeed(speed: Float): String = String.format(Locale.getDefault
 
 /** Velocidade de reprodução (a mesma dos Ajustes → Reprodução). */
 @Composable
-internal fun SpeedSheet(settings: PlaybackSettings, onDismiss: () -> Unit) {
+internal fun SpeedPage(settings: PlaybackSettings) {
     val prefs by settings.prefs.collectAsStateWithLifecycle()
     var dragging by remember { mutableFloatStateOf(-1f) }
     val speed = if (dragging >= 0f) dragging else prefs.speed
-    BoomModalSheet(onDismissRequest = onDismiss) {
+    run {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.feature_nowplaying_speed), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))

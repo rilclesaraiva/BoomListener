@@ -6,14 +6,10 @@ package com.boomlistener.feature.nowplaying
 import com.boomlistener.core.designsystem.component.rememberKeyboardDismisser
 import android.Manifest
 import android.app.Activity
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +19,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import com.boomlistener.core.designsystem.component.BoomConfirmPage
+import com.boomlistener.core.designsystem.component.BoomMenuPageScope
 import com.boomlistener.core.player.PlayerConnection
 import com.boomlistener.data.library.DeleteResult
 import com.boomlistener.data.library.LibraryData
@@ -40,7 +38,6 @@ internal fun rememberSongDeleter(): (uri: String, title: String) -> Unit {
     // Apagada: sai também da fila de reprodução.
     val onDeleted: (String) -> Unit = { uri -> PlayerConnection.controller(context.applicationContext).removeUri(uri) }
     val scope = rememberCoroutineScope()
-    var confirming by remember { mutableStateOf<Pair<String, String>?>(null) }
     var pending by remember { mutableStateOf<String?>(null) }
     var retry by remember { mutableStateOf<String?>(null) }
     val failedText = stringResource(R.string.feature_nowplaying_delete_failed)
@@ -100,25 +97,18 @@ internal fun rememberSongDeleter(): (uri: String, title: String) -> Unit {
         }
     }
 
-    confirming?.let { (uri, title) ->
-        AlertDialog(
-            onDismissRequest = { confirming = null },
-            title = { Text(stringResource(R.string.feature_nowplaying_delete_song_title)) },
-            text = { Text(stringResource(R.string.feature_nowplaying_delete_song_message, title)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirming = null
-                    start(uri)
-                }) { Text(stringResource(R.string.feature_nowplaying_delete)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirming = null }) { Text(stringResource(R.string.feature_nowplaying_cancel)) }
-            },
-        )
-    }
+    // A pergunta "Apagar?" é uma página do painel do menu ([DeleteSongPage]): aqui só se apaga.
+    return { uri, _ -> start(uri) }
+}
 
-    return { uri, title ->
-        // Android 11+: o sistema já mostra o "Apagar?"; perguntar duas vezes cansa.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) start(uri) else confirming = uri to title
-    }
+/** Página de confirmação de apagar a música, dentro do painel do menu. */
+@Composable
+internal fun BoomMenuPageScope.DeleteSongPage(title: String, onDelete: () -> Unit) {
+    BoomConfirmPage(
+        title = stringResource(R.string.feature_nowplaying_delete_song_title),
+        message = stringResource(R.string.feature_nowplaying_delete_song_message, title),
+        confirmLabel = stringResource(R.string.feature_nowplaying_delete),
+        cancelLabel = stringResource(R.string.feature_nowplaying_cancel),
+        onConfirm = onDelete,
+    )
 }

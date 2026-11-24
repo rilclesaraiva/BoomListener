@@ -33,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.boomlistener.core.designsystem.component.BoomConfirmPage
 import com.boomlistener.core.designsystem.component.BoomMosaicArtwork
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.layout.ContentScale
@@ -107,7 +108,6 @@ internal fun CollectionDetailScreen(
     val state = (rawState as? CollectionDetailUiState.Ready)?.takeIf { it.isFavorites }?.copy(name = favoritesName) ?: rawState
     val ready = state as? CollectionDetailUiState.Ready
     var renaming by remember { mutableStateOf(false) }
-    var confirmDelete by remember { mutableStateOf(false) }
     var addToPlaylist by remember { mutableStateOf<Track?>(null) }
     var addingSongs by remember { mutableStateOf(false) }
     val deleteSong = rememberSongDeleter()
@@ -131,7 +131,20 @@ internal fun CollectionDetailScreen(
                             .takeUnless { ready.locked },
                         BoomMenuAction(stringResource(R.string.feature_library_rename_playlist), kind = BoomMenuKind.Rename) { renaming = true }
                             .takeUnless { ready.locked },
-                        BoomMenuAction(stringResource(R.string.feature_library_delete_playlist), kind = BoomMenuKind.Delete) { confirmDelete = true },
+                        BoomMenuAction(stringResource(R.string.feature_library_delete_playlist), kind = BoomMenuKind.Delete,
+                            page = {
+                                BoomConfirmPage(
+                                    title = stringResource(R.string.feature_library_delete_playlist_title, ready.name),
+                                    message = stringResource(R.string.feature_library_delete_playlist_message),
+                                    confirmLabel = stringResource(R.string.feature_library_delete),
+                                    cancelLabel = stringResource(R.string.feature_library_cancel),
+                                    onConfirm = {
+                                        viewModel.delete()
+                                        onBack()
+                                    },
+                                )
+                            },
+                        ),
                     ),
                     header = BoomMenuHeader(
                         title = ready.name,
@@ -194,23 +207,6 @@ internal fun CollectionDetailScreen(
                 viewModel.rename(name)
             },
             onDismiss = { renaming = false },
-        )
-    }
-    if (confirmDelete && ready != null) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text(stringResource(R.string.feature_library_delete_playlist_title, ready.name)) },
-            text = { Text(stringResource(R.string.feature_library_delete_playlist_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    viewModel.delete()
-                    onBack()
-                }) { Text(stringResource(R.string.feature_library_delete)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.feature_library_cancel)) }
-            },
         )
     }
 }
@@ -509,7 +505,7 @@ private fun DetailTrackRow(
                         },
                         BoomMenuAction(stringResource(R.string.feature_library_edit_tags), kind = BoomMenuKind.EditTags) { onEditTags(track) },
                         BoomMenuAction(stringResource(R.string.feature_library_details), kind = BoomMenuKind.Details, page = { SongDetailsPage(track.uri, track.title) }),
-                        BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete, onClick = onDelete),
+                        BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete, page = { DeleteSongsPage(listOf(track)) { onDelete() } }),
                     ),
                     header = BoomMenuHeader(track.title, track.artist, artwork),
                     onShare = {

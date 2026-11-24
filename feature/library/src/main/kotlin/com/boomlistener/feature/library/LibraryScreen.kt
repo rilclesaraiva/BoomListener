@@ -752,7 +752,7 @@ private fun SongMenuView(
         },
         BoomMenuAction(stringResource(R.string.feature_library_edit_tags), kind = BoomMenuKind.EditTags) { menu.onEditTags(track) },
         BoomMenuAction(stringResource(R.string.feature_library_details), kind = BoomMenuKind.Details, page = { SongDetailsPage(track.uri, track.title) }),
-        BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete) { menu.onDelete(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete, page = { DeleteSongsPage(listOf(track)) { menu.onDelete(track) } }),
     )
     val header = BoomMenuHeader(track.title, track.artist, cover)
     val onShare: () -> Unit = {

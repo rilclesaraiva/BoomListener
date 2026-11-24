@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boomlistener.core.designsystem.component.BoomArtwork
 import com.boomlistener.core.designsystem.component.BoomListArtworkSize
 import com.boomlistener.core.designsystem.component.BoomLoading
+import com.boomlistener.core.designsystem.component.BoomConfirmPage
 import com.boomlistener.core.designsystem.component.BoomMenuAction
 import com.boomlistener.core.designsystem.component.BoomMenuHeader
 import com.boomlistener.core.designsystem.component.BoomMenuKind
@@ -74,7 +75,6 @@ internal fun HistoryScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var confirmClear by remember { mutableStateOf(false) }
     val hasEntries = (state as? HistoryUiState.Ready)?.sections?.isNotEmpty() == true
 
     BoomScreenScaffold(
@@ -90,7 +90,17 @@ internal fun HistoryScreen(
                 if (hasEntries) {
                     BoomMoreMenu(
                         actions = listOf(
-                            BoomMenuAction(stringResource(R.string.feature_history_clear), kind = BoomMenuKind.Delete) { confirmClear = true },
+                            BoomMenuAction(stringResource(R.string.feature_history_clear), kind = BoomMenuKind.Delete,
+                                page = {
+                                    BoomConfirmPage(
+                                        title = stringResource(R.string.feature_history_clear_title),
+                                        message = stringResource(R.string.feature_history_clear_message),
+                                        confirmLabel = stringResource(R.string.feature_history_clear),
+                                        cancelLabel = stringResource(R.string.feature_history_cancel),
+                                        onConfirm = { viewModel.clear() },
+                                    )
+                                },
+                            ),
                         ),
                     )
                 }
@@ -166,23 +176,6 @@ internal fun HistoryScreen(
                 }
             }
         }
-    }
-
-    if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            title = { Text(stringResource(R.string.feature_history_clear_title)) },
-            text = { Text(stringResource(R.string.feature_history_clear_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmClear = false
-                    viewModel.clear()
-                }) { Text(stringResource(R.string.feature_history_clear)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.feature_history_cancel)) }
-            },
-        )
     }
 }
 
