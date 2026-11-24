@@ -3,7 +3,20 @@
 
 package com.boomlistener.core.designsystem.component
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import com.boomlistener.core.designsystem.theme.boomEffectsSpec
+import com.boomlistener.core.designsystem.theme.boomSpatialSpec
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -123,7 +136,13 @@ data class BoomMenuAction(
     val kind: BoomMenuKind = BoomMenuKind.Other,
     /** Ícone diferente do padrão do [kind] (ex.: coração cheio de quem já é favorita). */
     val icon: ImageVector? = null,
-    val onClick: () -> Unit,
+    /**
+     * Página que abre **dentro do mesmo painel** (a altura anima para o novo conteúdo e
+     * o voltar leva ao menu), em vez de fechar o menu e abrir outro painel. Com [page],
+     * tocar não fecha o painel.
+     */
+    val page: (@Composable () -> Unit)? = null,
+    val onClick: () -> Unit = {},
 )
 
 /** O topo do menu: a capa e o nome do que foi tocado (música, álbum, playlist…). */
@@ -203,7 +222,34 @@ fun BoomMenuSheet(
     ) {
         // O painel, para fechar de dentro das colunas (que não deixam chamá-lo direto).
         val sheet = this
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        // A página aberta dentro do painel (null = o menu); o voltar volta ao menu sem fechar o painel.
+        var page by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+        BackHandler(enabled = page != null) { page = null }
+        val offsetSpec = boomSpatialSpec<IntOffset>()
+        val sizeSpec = boomSpatialSpec<IntSize>()
+        val fadeSpec = boomEffectsSpec<Float>()
+        AnimatedContent(
+            targetState = page,
+            transitionSpec = {
+                // Entrar numa página empurra o menu para a esquerda; voltar faz o contrário.
+                val forward = targetState != null
+                ContentTransform(
+                    targetContentEnter = slideInHorizontally(offsetSpec) { if (forward) it / 4 else -it / 4 } + fadeIn(fadeSpec),
+                    initialContentExit = slideOutHorizontally(offsetSpec) { if (forward) -it / 4 else it / 4 } + fadeOut(fadeSpec),
+                    // A altura do painel cresce ou encolhe até a do novo conteúdo.
+                    sizeTransform = SizeTransform(clip = true) { _, _ -> sizeSpec },
+                )
+            },
+            label = "sheetPage",
+        ) { target ->
+          if (target != null) {
+            Column(Modifier.fillMaxWidth()) {
+                FilledTonalIconButton(onClick = { page = null }, modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)) {
+                    Icon(BoomIcons.Back, contentDescription = stringResource(R.string.core_designsystem_back))
+                }
+                target()
+            }
+          } else Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
             if (header != null) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -239,9 +285,13 @@ fun BoomMenuSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable(enabled = action.enabled) {
-                            // Fecha com a animação de descer e só então some de vez.
-                            action.onClick()
-                            sheet.dismiss()
+                            if (action.page != null) {
+                                page = action.page
+                            } else {
+                                // Fecha com a animação de descer e só então some de vez.
+                                action.onClick()
+                                sheet.dismiss()
+                            }
                         }
                         .padding(horizontal = 24.dp, vertical = 14.dp)
                         .alpha(if (action.enabled) 1f else 0.38f),
@@ -261,6 +311,7 @@ fun BoomMenuSheet(
                 }
             }
             Spacer(Modifier.height(16.dp))
+          }
         }
     }
 }

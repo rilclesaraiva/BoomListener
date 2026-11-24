@@ -37,14 +37,14 @@ data class BoomSongDetails(
 )
 
 /**
- * Painel "Detalhes" de uma música (sobe de baixo, como os outros): onde está, tamanho,
- * formato, taxa de bits… Fecha descendo ou tocando fora; sem botão de fechar.
+ * Conteúdo de "Detalhes" de uma música: onde está, tamanho, formato, taxa de bits…
+ * É uma página do painel do menu (ver `BoomMenuAction.page`), não um painel próprio.
  * [details] null = ainda carregando. O texto pode ser selecionado (para copiar o caminho).
  */
 @Composable
-fun BoomSongDetailsSheet(title: String, details: BoomSongDetails?, onDismiss: () -> Unit) {
+fun BoomSongDetailsContent(title: String, details: BoomSongDetails?) {
     val context = LocalContext.current
-    BoomModalSheet(onDismissRequest = onDismiss) {
+    run {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
             Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 2)
             Spacer(Modifier.height(16.dp))

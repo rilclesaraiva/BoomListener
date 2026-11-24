@@ -168,7 +168,6 @@ internal fun LibraryScreen(
     BackHandler(enabled = query.isNotEmpty()) { viewModel.onQueryChange("") }
     val deleteSong = rememberSongDeleter()
     val deleteSongs = rememberSongsDeleter()
-    val showDetails = rememberSongDetails()
 
     val title = stringResource(R.string.feature_library_title)
     val topActions: @Composable RowScope.() -> Unit = {
@@ -199,7 +198,6 @@ internal fun LibraryScreen(
                     onPlayRecent = viewModel::playRecent,
                     onQueryChange = viewModel::onQueryChange,
                     onDelete = deleteSong,
-                    onDetails = { showDetails(it.uri, it.title) },
                     onOpenAlbum = onOpenAlbum,
                     onSeeAll = onSeeAll,
                     loadArtwork = viewModel::artwork,
@@ -240,7 +238,6 @@ private fun TrackList(
     onPlayRecent: (Int) -> Unit,
     onQueryChange: (String) -> Unit,
     onDelete: (Track) -> Unit,
-    onDetails: (Track) -> Unit,
     onOpenAlbum: (String) -> Unit,
     onSeeAll: (CollectionKind) -> Unit,
     loadArtwork: suspend (Track, Int) -> android.graphics.Bitmap?,
@@ -268,8 +265,8 @@ private fun TrackList(
     val scope = rememberCoroutineScope()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
     if (state.query.isEmpty()) PinHomeImages(state, loadArtwork, loadArtistPhoto)
-    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails, onOpenAlbum) {
-        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onDetails, onOpenAlbum)
+    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onOpenAlbum) {
+        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onOpenAlbum)
     }
     when {
         state.totalCount == 0 -> BoomPlaceholder(
@@ -729,7 +726,6 @@ internal class SongMenu(
     val onEditTags: (Track) -> Unit,
     val onAddToPlaylist: (Track) -> Unit,
     val onDelete: (Track) -> Unit,
-    val onDetails: (Track) -> Unit,
     val onOpenAlbum: (albumKey: String) -> Unit,
 )
 
@@ -755,7 +751,7 @@ private fun SongMenuView(
             BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), kind = BoomMenuKind.GoToArtist) { menu.onOpenArtist(name) }
         },
         BoomMenuAction(stringResource(R.string.feature_library_edit_tags), kind = BoomMenuKind.EditTags) { menu.onEditTags(track) },
-        BoomMenuAction(stringResource(R.string.feature_library_details), kind = BoomMenuKind.Details) { menu.onDetails(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_details), kind = BoomMenuKind.Details, page = { SongDetailsPage(track.uri, track.title) }),
         BoomMenuAction(stringResource(R.string.feature_library_delete_song), kind = BoomMenuKind.Delete) { menu.onDelete(track) },
     )
     val header = BoomMenuHeader(track.title, track.artist, cover)

@@ -114,7 +114,6 @@ internal fun NowPlayingContent(
     val spatial = boomSpatialSpec<Float>()
     val effects = boomEffectsSpec<Float>()
     val deleteSong = rememberSongDeleter()
-    val showDetails = rememberSongDetails()
     val playbackSettings = remember { PlaybackSettingsData.get(context.applicationContext) }
     val sleepTimer by playbackSettings.sleepTimer.collectAsStateWithLifecycle()
     val playbackPrefs by playbackSettings.prefs.collectAsStateWithLifecycle()
@@ -195,9 +194,7 @@ internal fun NowPlayingContent(
                                     BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist), kind = BoomMenuKind.GoToArtist) { openArtist(name) }
                                 },
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_edit_tags), kind = BoomMenuKind.EditTags) { onEditTags(item.uri) },
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_details), kind = BoomMenuKind.Details) {
-                                    showDetails(item.uri, item.title)
-                                },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_details), kind = BoomMenuKind.Details, page = { SongDetailsPage(item.uri, item.title) }),
                                 BoomMenuAction(stringResource(R.string.feature_nowplaying_delete_song), kind = BoomMenuKind.Delete) {
                                     deleteSong(item.uri, item.title)
                                 },
