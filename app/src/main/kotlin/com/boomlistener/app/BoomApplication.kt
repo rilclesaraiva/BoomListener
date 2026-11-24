@@ -3,6 +3,7 @@
 
 package com.boomlistener.app
 
+import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.common.OfflineMode
 import android.app.Application
 import com.boomlistener.core.player.PlaybackHooks
@@ -33,6 +34,7 @@ class BoomApplication : Application() {
         super.onCreate()
         // Antes de tudo: com o modo offline ligado, nada pode ir para a internet.
         OfflineMode.init(this)
+        DiagnosticLog.init(this)
         val stats = StatsData.repository(this)
         val history = HistoryData.repository(this)
         val daily = DailyStatsData.repository(this)

@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.runtime.collectAsState
 import androidx.activity.compose.BackHandler
+import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.common.popBackStackOnce
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
@@ -157,6 +158,10 @@ fun BoomListenerApp() {
     val inTagEditor = route.startsWith("tageditor")
     // O Wrapped ocupa a tela toda (a música dele toca na própria área): sem mini player.
     val inWrapped = route.startsWith("profile/wrapped")
+    // TEMPORÁRIO (registro do "voltar"): a tela e o tamanho da pilha a cada mudança.
+    LaunchedEffect(backStackEntry) {
+        DiagnosticLog.log("navegacao", "tela=${backStackEntry?.destination?.route} pilha=${navController.currentBackStack.value.size}")
+    }
     val barSpec = boomSpatialSpec<IntSize>()
     val barFade = boomEffectsSpec<Float>()
 
@@ -497,6 +502,7 @@ fun BoomListenerApp() {
         }
         val entryState by entryLifecycle.collectAsState()
         BackHandler(enabled = !entryState.isAtLeast(Lifecycle.State.RESUMED)) { }
+        LaunchedEffect(entryState) { DiagnosticLog.log("navegacao", "estado da tela=$entryState (voltar do app preso: ${!entryState.isAtLeast(Lifecycle.State.RESUMED)})") }
 
         // Por último: fica por cima de tudo e tem prioridade no "voltar".
         PlayerSheet(

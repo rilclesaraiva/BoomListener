@@ -7,6 +7,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 ## [Unreleased]
 
 ### Added
+- **Temporary back-gesture log** (Settings → System → Diagnostics, off by default): to track down a bug where the system back gesture closes the app from Settings, the app can keep on your phone a short text log of screen names and counts (never song names). Nothing is sent by itself; you share it yourself. This is only in test builds and will be removed before the next public release.
 - **Repeated songs in the tag scan:** after a scan (Settings → Library → Tag scan), a new "Repeated songs" entry lists songs that look like the same one: same title and artist (ignoring accents, capital letters and "feat. …") and nearly the same length. Live, remix or acoustic versions and songs by different artists with the same title are not mixed up. It is only a suggestion based on tags: nothing is ever removed for you, and tapping a group opens its songs in the tag editor so you can compare them.
 
 ### Changed

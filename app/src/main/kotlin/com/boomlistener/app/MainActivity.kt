@@ -6,6 +6,10 @@ package com.boomlistener.app
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
+import androidx.lifecycle.lifecycleScope
+import com.boomlistener.core.common.DiagnosticLog
+import kotlinx.coroutines.launch
 import com.boomlistener.feature.profile.WrappedNotification
 import com.boomlistener.feature.releases.ReleaseAlerts
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +37,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // TEMPORÁRIO (registro do "voltar"): este é o primeiro callback registrado, então é o último a
+        // ser chamado: se ele rodar, ninguém no app tratou o voltar e o sistema vai fechar a tela.
+        // Só fica ligado com o registro ligado; fora disso o voltar é o de sempre.
+        val lastResort = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                DiagnosticLog.log("voltar", "ninguém tratou o voltar: a tela vai fechar")
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, lastResort)
+        lifecycleScope.launch { DiagnosticLog.enabled.collect { lastResort.isEnabled = it } }
         // Celular fica sempre em pé (o layout é o do retrato). Tablet e
         // dobrável aberto giram à vontade; dobrar ou abrir recria a tela e
         // isto é decidido de novo.
@@ -58,6 +74,17 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handle(intent)
+    }
+
+    // TEMPORÁRIO (registro do "voltar"): separa "o app fechou" de "foi para o fundo".
+    override fun onStop() {
+        super.onStop()
+        DiagnosticLog.log("ciclo", "tela parou (fechando=$isFinishing)")
+    }
+
+    override fun onDestroy() {
+        DiagnosticLog.log("ciclo", "tela destruída (fechando=$isFinishing)")
+        super.onDestroy()
     }
 
     private fun handle(intent: Intent?) {
