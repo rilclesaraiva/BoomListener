@@ -8,6 +8,11 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import android.provider.Settings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +27,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -32,9 +39,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.boomlistener.core.designsystem.component.BoomPageTitle
+import com.boomlistener.core.designsystem.component.BoomAccent
 import com.boomlistener.core.designsystem.component.BoomScreenScaffold
 import com.boomlistener.core.designsystem.component.BoomSettingsItem
 import com.boomlistener.core.designsystem.component.BoomSettingsSection
@@ -110,10 +121,56 @@ internal fun LibrarySettingsScreen(
                     )
                 }
             }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                item(key = "manageMedia") {
+                    ManageMediaItem()
+                }
+            }
             item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
+
+/**
+ * Acesso especial "Apps de gerenciamento de mídia" (Android 12+): com ele, apagar
+ * músicas não mostra a caixa de confirmação do sistema. Só a pessoa pode liberar,
+ * na tela de configurações do Android; a situação é lida de novo ao voltar.
+ */
+@Composable
+private fun ManageMediaItem() {
+    val context = LocalContext.current
+    val owner = LocalLifecycleOwner.current
+    var granted by remember { mutableStateOf(canManageMedia(context)) }
+    DisposableEffect(owner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) granted = canManageMedia(context)
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    BoomSettingsSection(title = null) {
+        BoomSettingsItem(
+            icon = null,
+            accent = BoomAccent.Green,
+            title = stringResource(R.string.feature_settings_library_manage_media),
+            subtitle = stringResource(
+                if (granted) {
+                    R.string.feature_settings_library_manage_media_on
+                } else {
+                    R.string.feature_settings_library_manage_media_off
+                },
+            ),
+            onClick = {
+                val intent = Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA, Uri.parse("package:${context.packageName}"))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                runCatching { context.startActivity(intent) }
+            },
+        )
+    }
+}
+
+private fun canManageMedia(context: android.content.Context): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(context)
 
 /**
  * A barra mexe na hora, mas a biblioteca só recarrega quando o dedo solta

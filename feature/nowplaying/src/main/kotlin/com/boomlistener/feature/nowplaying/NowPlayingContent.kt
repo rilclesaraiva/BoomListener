@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.nowplaying
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import com.boomlistener.data.library.FavoritesData
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
@@ -93,7 +94,6 @@ internal fun NowPlayingContent(
     queueState: PlayerSheetState,
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (trackUri: String) -> Unit,
-    onAddToPlaylist: (trackUri: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -184,9 +184,7 @@ internal fun NowPlayingContent(
                                     kind = BoomMenuKind.Speed,
                                     page = { SpeedPage(playbackSettings) },
                                 ),
-                                BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
-                                    onAddToPlaylist(item.uri)
-                                },
+                                BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(listOf(item.uri)) }),
                                 item.artist?.let { name ->
                                     BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist), kind = BoomMenuKind.GoToArtist) { openArtist(name) }
                                 },
@@ -370,7 +368,6 @@ internal fun NowPlayingContent(
             viewModel = viewModel,
             onOpenArtist = openArtist,
             onEditTags = onEditTags,
-            onAddToPlaylist = onAddToPlaylist,
             onDelete = deleteSong,
         )
     }

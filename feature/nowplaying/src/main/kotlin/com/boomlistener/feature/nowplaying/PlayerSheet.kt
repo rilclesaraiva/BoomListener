@@ -44,7 +44,6 @@ fun PlayerSheet(
     state: PlayerSheetState,
     onOpenArtist: (artistName: String) -> Unit,
     onEditTags: (trackUri: String) -> Unit,
-    onAddToPlaylist: (trackUri: String) -> Unit,
     modifier: Modifier = Modifier,
     /** Avisa o :app quando a letra aparece ou some no player (para "manter a tela ativa"). */
     onLyricsShown: (Boolean) -> Unit = {},
@@ -132,7 +131,6 @@ fun PlayerSheet(
             queueState = queueState,
             onOpenArtist = onOpenArtist,
             onEditTags = onEditTags,
-            onAddToPlaylist = onAddToPlaylist,
             modifier = Modifier
                 .graphicsLayer {
                     growLayer()

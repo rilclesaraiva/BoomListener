@@ -35,6 +35,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -64,6 +66,9 @@ import java.util.Locale
 
 // Quanto tempo cada destaque do mês fica na tela antes de passar para o próximo.
 private const val HIGHLIGHT_MS = 5_000L
+
+/** Quanto o carrossel parado espera antes de assentar na página mais próxima, se ficou no meio. */
+private const val SETTLE_CHECK_MS = 250L
 
 /**
  * "Este mês": músicas, horas e artistas, com os destaques do mês trocando embaixo
@@ -130,8 +135,21 @@ internal fun MonthCard(
 @Composable
 private fun HighlightPager(highlights: List<Highlight>, viewModel: MyProfileViewModel) {
     val pager = rememberPagerState { highlights.size }
+    val spec = boomSpatialSpec<Float>()
+    // Vigia: se o carrossel parar no meio de uma troca (a animação cortada ao sair da aba, ou o estado
+    // guardado com a posição quebrada no meio das duas páginas, mostrando as duas), termina de
+    // assentar na página mais próxima. Também roda ao entrar, com o carrossel parado.
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.isScrollInProgress }.collectLatest { moving ->
+            if (!moving) {
+                delay(SETTLE_CHECK_MS)
+                if (!pager.isScrollInProgress && pager.currentPageOffsetFraction != 0f) {
+                    pager.animateScrollToPage(pager.currentPage, animationSpec = spec)
+                }
+            }
+        }
+    }
     if (highlights.size > 1) {
-        val spec = boomSpatialSpec<Float>()
         // Passa sozinho para o próximo; deslizar à mão reinicia a contagem. A chave é a página
         // *assentada*: `currentPage` muda no meio da animação e cancelaria a própria troca.
         LaunchedEffect(highlights.size, pager.settledPage) {

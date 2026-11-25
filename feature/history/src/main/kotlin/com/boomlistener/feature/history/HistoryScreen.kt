@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.history
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import com.boomlistener.core.designsystem.component.clickableWithMenu
 import com.boomlistener.core.common.ExternalLinks
 import com.boomlistener.core.common.openUrl
@@ -247,7 +248,7 @@ private fun HistoryRow(
             BoomMoreMenu(
                 actions = listOfNotNull(
                     playNextAction(entry.uri),
-                    BoomMenuAction(stringResource(R.string.feature_history_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { songMenu.onAddToPlaylist(entry.uri) },
+                    BoomMenuAction(stringResource(R.string.feature_history_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(listOf(entry.uri)) }),
                     favoriteAction(entry.uri),
                     entry.artist?.let { name ->
                         BoomMenuAction(stringResource(R.string.feature_history_go_to_artist), kind = BoomMenuKind.GoToArtist) { songMenu.onOpenArtist(name) }

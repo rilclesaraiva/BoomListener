@@ -46,5 +46,4 @@ fun NavGraphBuilder.historyScreen(onBack: () -> Unit, songMenu: HistorySongMenu 
 class HistorySongMenu(
     val onOpenArtist: (String) -> Unit = {},
     val onEditTags: (uri: String) -> Unit = {},
-    val onAddToPlaylist: (uri: String) -> Unit = {},
 )

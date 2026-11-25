@@ -198,4 +198,7 @@
     <string name="feature_settings_system_notifications">Notificaciones</string>
     <string name="feature_settings_wrapped_alert">Wrapped de fin de año</string>
     <string name="feature_settings_wrapped_alert_summary">Una notificación en diciembre cuando tu Wrapped esté listo. Solo se envía si las notificaciones ya están permitidas.</string>
+    <string name="feature_settings_library_manage_media">Borrar sin el aviso del sistema</string>
+    <string name="feature_settings_library_manage_media_on">Activado: borrar canciones ya no muestra la confirmación de Android</string>
+    <string name="feature_settings_library_manage_media_off">Desactivado: Android pregunta cada vez. Toca para permitir «Apps de administración de medios»</string>
 </resources>

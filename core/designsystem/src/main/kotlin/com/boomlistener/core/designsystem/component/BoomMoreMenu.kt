@@ -47,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.Modifier
@@ -246,6 +247,11 @@ fun BoomMenuSheet(
             if (page !== shown) {
                 away.animateTo(1f, leaving)
                 shown = page
+                // O conteúdo novo compõe e mede (e o painel começa a mudar de altura) enquanto ainda está
+                // invisível: sem isso, o primeiro quadro pesado comia o começo da mola e a entrada
+                // "engasgava" às vezes (mais em páginas com lista, como Adicionar à playlist).
+                withFrameNanos { }
+                withFrameNanos { }
             }
             away.animateTo(0f, arriving)
         }

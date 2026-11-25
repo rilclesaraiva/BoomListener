@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.profile
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -26,7 +27,6 @@ import kotlinx.coroutines.launch
 class ProfileSongMenu(
     val onOpenArtist: (String) -> Unit,
     val onEditTags: (uri: String) -> Unit,
-    val onAddToPlaylist: (uri: String) -> Unit,
 )
 
 /** "Favoritar" / "Tirar dos favoritos" no menu de uma música. */
@@ -62,7 +62,7 @@ internal fun ProfileSongMenuSheet(
             BoomMenuAction(stringResource(R.string.feature_profile_play), kind = BoomMenuKind.PlayNow, onClick = onPlay),
             favoriteAction(uri),
             playNextAction(uri),
-            BoomMenuAction(stringResource(R.string.feature_profile_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { menu.onAddToPlaylist(uri) },
+            BoomMenuAction(stringResource(R.string.feature_profile_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(listOf(uri)) }),
             artist?.takeIf { it.isNotBlank() }?.let { name ->
                 BoomMenuAction(stringResource(R.string.feature_profile_go_to_artist), kind = BoomMenuKind.GoToArtist) {
                     menu.onOpenArtist(artistOf(name))

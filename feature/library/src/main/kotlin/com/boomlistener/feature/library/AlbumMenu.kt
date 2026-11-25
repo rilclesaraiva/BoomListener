@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.graphics.ImageBitmap
@@ -20,7 +21,6 @@ import com.boomlistener.core.model.Track
 internal class AlbumMenuActions(
     val play: (List<Track>) -> Unit,
     val shuffle: (List<Track>) -> Unit,
-    val addToPlaylist: (List<Track>) -> Unit,
     val openArtist: (String) -> Unit,
 )
 
@@ -67,9 +67,7 @@ internal fun GroupMenuSheet(
             BoomMenuAction(stringResource(R.string.feature_library_play), kind = BoomMenuKind.PlayNow) { actions.play(tracks) },
             BoomMenuAction(stringResource(R.string.feature_library_shuffle_all), kind = BoomMenuKind.Mix) { actions.shuffle(tracks) },
             onSelect?.let { select -> BoomMenuAction(stringResource(R.string.feature_library_select), kind = BoomMenuKind.Select) { select() } },
-            BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
-                actions.addToPlaylist(tracks)
-            },
+            BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(tracks.map { it.uri }) }),
             artistToOpen?.takeIf { it.isNotBlank() }?.let { artist ->
                 BoomMenuAction(stringResource(R.string.feature_library_go_to_artist), kind = BoomMenuKind.GoToArtist) { actions.openArtist(artist) }
             },

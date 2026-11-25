@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,7 +38,6 @@ internal fun favoriteTargets(selected: List<String>, favorites: Collection<Strin
 internal fun selectionActions(
     tracks: List<Track>,
     onEditTags: (List<String>) -> Unit,
-    onAddToPlaylist: (List<Track>) -> Unit,
     onDelete: (List<Track>) -> Unit,
     onRemoveFromPlaylist: ((List<Track>) -> Unit)? = null,
 ): List<BoomMenuAction> {
@@ -57,9 +57,7 @@ internal fun selectionActions(
             tracks.asReversed().forEach(controller::playNext)
             Toast.makeText(context, queued, Toast.LENGTH_SHORT).show()
         },
-        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
-            onAddToPlaylist(tracks)
-        },
+        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(tracks.map { it.uri }) }),
         BoomMenuAction(
             stringResource(if (allFavorite) R.string.feature_library_unfavorite else R.string.feature_library_favorite),
             kind = BoomMenuKind.Favorite,

@@ -201,4 +201,7 @@
     <string name="feature_settings_system_notifications">Notificações</string>
     <string name="feature_settings_wrapped_alert">Wrapped de fim de ano</string>
     <string name="feature_settings_wrapped_alert_summary">Uma notificação em dezembro quando o seu Wrapped estiver pronto. Só é enviada se as notificações já estiverem permitidas.</string>
+    <string name="feature_settings_library_manage_media">Apagar sem a caixa do sistema</string>
+    <string name="feature_settings_library_manage_media_on">Ligado: apagar músicas não mostra mais a confirmação do Android</string>
+    <string name="feature_settings_library_manage_media_off">Desligado: o Android pergunta toda vez. Toque para permitir “Apps de gerenciamento de mídia”</string>
 </resources>

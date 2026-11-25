@@ -5,6 +5,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -126,15 +127,11 @@ internal fun CollectionsScreen(
     val searchScope = rememberCoroutineScope()
     // Vários grupos marcados (gêneros, artistas, playlists ou álbuns): fazer uma rádio com eles.
     val selection = rememberBoomSelection()
-    // Álbum inteiro (menu do álbum) a caminho de uma playlist.
-    var addManyToPlaylist by remember { mutableStateOf<List<String>?>(null) }
     val albumMenu = AlbumMenuActions(
         play = viewModel::playTracks,
         shuffle = viewModel::shuffleTracks,
-        addToPlaylist = { tracks -> addManyToPlaylist = tracks.map { it.uri } },
         openArtist = onOpenArtist,
     )
-    addManyToPlaylist?.let { uris -> AddToPlaylistSheet(trackUris = uris, onDismiss = { addManyToPlaylist = null }) }
     val gridKinds by viewModel.gridKinds.collectAsStateWithLifecycle()
     BoomScreenScaffold(
         title = stringResource(R.string.feature_library_collections_title),
@@ -278,9 +275,7 @@ internal fun CollectionsScreen(
                             viewModel.playTracks(pickedTracks)
                             selection.clear()
                         },
-                        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) {
-                            addManyToPlaylist = pickedTracks.map { it.uri }
-                        },
+                        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(pickedTracks.map { it.uri }) }),
                     ),
                     modifier = Modifier.align(Alignment.TopCenter),
                 )

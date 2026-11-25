@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.nowplaying
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -84,7 +85,6 @@ internal fun QueuePanel(
     viewModel: NowPlayingViewModel,
     onOpenArtist: (String) -> Unit,
     onEditTags: (String) -> Unit,
-    onAddToPlaylist: (String) -> Unit,
     onDelete: (uri: String, title: String) -> Unit,
 ) {
     PredictiveBackHandler(enabled = queueState.isExpanded) { backEvents ->
@@ -264,7 +264,7 @@ internal fun QueuePanel(
                                     } else {
                                         null
                                     },
-                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { onAddToPlaylist(entry.item.uri) },
+                                    BoomMenuAction(stringResource(R.string.feature_nowplaying_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(listOf(entry.item.uri)) }),
                                     favoriteAction(entry.item.uri),
                                     entry.item.artist?.let { name ->
                                         BoomMenuAction(stringResource(R.string.feature_nowplaying_go_to_artist), kind = BoomMenuKind.GoToArtist) { onOpenArtist(name) }

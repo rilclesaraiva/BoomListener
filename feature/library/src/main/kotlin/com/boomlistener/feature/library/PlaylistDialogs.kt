@@ -5,6 +5,16 @@ package com.boomlistener.feature.library
 
 import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.material3.Button
+import com.boomlistener.core.designsystem.component.BoomMenuPageScope
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Checkbox
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,20 +59,22 @@ import com.boomlistener.data.library.PlaylistData
 import kotlinx.coroutines.launch
 
 /**
- * Folha "Adicionar à playlist": cada playlist mostra se já tem a música;
- * tocar adiciona ou tira (dá para desfazer na hora). Também cria uma nova.
- * Pública porque o :app também usa (menu do player).
+ * Página "Adicionar à playlist" (dentro do painel do menu): cada playlist mostra se já tem a
+ * música; tocar adiciona ou remove (dá para desfazer na hora). Também cria uma nova, ali mesmo.
+ * Pública porque o `:app` a entrega aos menus de todas as features (`LocalAddToPlaylistPage`).
  */
 @Composable
-fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
+fun BoomMenuPageScope.AddToPlaylistPage(trackUris: List<String>) {
     val context = LocalContext.current.applicationContext
     val repository = remember { PlaylistData.repository(context) }
     val playlists by repository.playlists.collectAsStateWithLifecycle(initialValue = emptyList())
     val scope = rememberCoroutineScope()
     var creating by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf("") }
+    val defaultName = stringResource(R.string.feature_library_playlist_default_name, playlists.size + 1)
     val effects = boomEffectsSpec<Float>()
 
-    BoomModalSheet(onDismissRequest = onDismiss) {
+    Column(Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.feature_library_add_to_playlist),
             style = MaterialTheme.typography.titleLarge,
@@ -70,12 +82,39 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
         )
         LazyColumn(Modifier.weight(1f, fill = false)) {
             item(key = "new") {
-                ListItem(
-                    modifier = Modifier.clickable { creating = true },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    leadingContent = { Icon(BoomIcons.Add, contentDescription = null) },
-                    headlineContent = { Text(stringResource(R.string.feature_library_new_playlist)) },
-                )
+                if (creating) {
+                    val create = {
+                        val name = newName.trim().ifEmpty { defaultName }
+                        creating = false
+                        scope.launch { repository.create(name, trackUris) }
+                        Unit
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            singleLine = true,
+                            placeholder = { Text(defaultName) },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { create() }),
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        FilledIconButton(onClick = { create() }) {
+                            Icon(BoomIcons.Check, contentDescription = stringResource(R.string.feature_library_create))
+                        }
+                    }
+                } else {
+                    ListItem(
+                        modifier = Modifier.clickable { newName = ""; creating = true },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = { Icon(BoomIcons.Add, contentDescription = null) },
+                        headlineContent = { Text(stringResource(R.string.feature_library_new_playlist)) },
+                    )
+                }
             }
             items(playlists.filterNot { it.locked }, key = { it.id }) { playlist ->
                 val inside = trackUris.isNotEmpty() && playlist.trackUris.containsAll(trackUris)
@@ -115,41 +154,37 @@ fun AddToPlaylistSheet(trackUris: List<String>, onDismiss: () -> Unit) {
             }
         }
         Button(
-            onClick = {
-                // Desce o painel e só então fecha.
-                dismiss()
-            },
+            onClick = { dismiss() },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
         ) { Text(stringResource(R.string.feature_library_done)) }
-    }
-
-    if (creating) {
-        PlaylistNameDialog(
-            title = stringResource(R.string.feature_library_new_playlist),
-            initialName = stringResource(R.string.feature_library_playlist_default_name, playlists.size + 1),
-            confirmLabel = stringResource(R.string.feature_library_create),
-            onConfirm = { name ->
-                creating = false
-                scope.launch { repository.create(name, trackUris) }
-            },
-            onDismiss = { creating = false },
-        )
     }
 }
 
 /**
- * "Adicionar músicas" dentro de uma playlist: todas as músicas do aparelho,
+ * Página "Adicionar músicas" dentro de uma playlist (no painel do menu): todas as músicas do aparelho,
  * com busca; marcar adiciona, desmarcar tira.
  */
 @Composable
+internal fun BoomMenuPageScope.AddSongsPage(viewModel: CollectionDetailViewModel) =
+    AddSongsContent(viewModel, onDone = { dismiss() })
+
+/** O botão "+" do topo da playlist (que não é um menu) abre a mesma lista num painel próprio. */
+@Composable
 internal fun AddSongsSheet(viewModel: CollectionDetailViewModel, onDismiss: () -> Unit) {
+    BoomModalSheet(onDismissRequest = onDismiss) {
+        AddSongsContent(viewModel, onDone = { dismiss() })
+    }
+}
+
+@Composable
+private fun AddSongsContent(viewModel: CollectionDetailViewModel, onDone: () -> Unit) {
     val all by viewModel.libraryTracks.collectAsStateWithLifecycle()
     val inside by viewModel.playlistUris.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
     val shown = remember(all, query) { filterTracks(all, query) }
     val scope = rememberCoroutineScope()
 
-    BoomModalSheet(onDismissRequest = onDismiss) {
+    Column(Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.feature_library_add_songs),
             style = MaterialTheme.typography.titleLarge,
@@ -180,10 +215,7 @@ internal fun AddSongsSheet(viewModel: CollectionDetailViewModel, onDismiss: () -
             }
         }
         Button(
-            onClick = {
-                // Desce o painel e só então fecha.
-                dismiss()
-            },
+            onClick = onDone,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
         ) { Text(stringResource(R.string.feature_library_done)) }
     }

@@ -3,6 +3,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -108,12 +109,9 @@ internal fun CollectionDetailScreen(
     val state = (rawState as? CollectionDetailUiState.Ready)?.takeIf { it.isFavorites }?.copy(name = favoritesName) ?: rawState
     val ready = state as? CollectionDetailUiState.Ready
     var renaming by remember { mutableStateOf(false) }
-    var addToPlaylist by remember { mutableStateOf<Track?>(null) }
     var addingSongs by remember { mutableStateOf(false) }
     val deleteSong = rememberSongDeleter()
     val deleteSongs = rememberSongsDeleter()
-    // A seleção inteira a caminho de uma playlist.
-    var addManyToPlaylist by remember { mutableStateOf<List<String>?>(null) }
     // Capa do topo do menu da playlist: a da primeira música.
     val headerPx = with(LocalDensity.current) { 56.dp.roundToPx() }
     val firstUri = ready?.tracks?.firstOrNull()?.uri
@@ -127,7 +125,7 @@ internal fun CollectionDetailScreen(
                 BoomMoreMenu(
                     actions = listOfNotNull(
                         // A playlist do Wrapped é travada: sem adicionar músicas nem renomear.
-                        BoomMenuAction(stringResource(R.string.feature_library_add_songs), kind = BoomMenuKind.AddToPlaylist) { addingSongs = true }
+                        BoomMenuAction(stringResource(R.string.feature_library_add_songs), kind = BoomMenuKind.AddToPlaylist, page = { AddSongsPage(viewModel) })
                             .takeUnless { ready.locked },
                         BoomMenuAction(stringResource(R.string.feature_library_rename_playlist), kind = BoomMenuKind.Rename) { renaming = true }
                             .takeUnless { ready.locked },
@@ -176,9 +174,7 @@ internal fun CollectionDetailScreen(
                 onOpenArtist = onOpenArtist,
                 onEditTags = onEditTags,
                 onEditTagsMany = onEditTagsMany,
-                onAddManyToPlaylist = { tracks -> addManyToPlaylist = tracks.map { it.uri } },
                 onDeleteMany = deleteSongs,
-                onAddToPlaylist = { addToPlaylist = it },
                 onDelete = deleteSong,
                 onAddSongs = { addingSongs = true },
                 onOpenAlbum = onOpenAlbum,
@@ -189,13 +185,6 @@ internal fun CollectionDetailScreen(
 
     if (addingSongs && ready?.isPlaylist == true && !ready.locked) {
         AddSongsSheet(viewModel = viewModel, onDismiss = { addingSongs = false })
-    }
-
-    addToPlaylist?.let { track ->
-        AddToPlaylistSheet(trackUris = listOf(track.uri), onDismiss = { addToPlaylist = null })
-    }
-    addManyToPlaylist?.let { uris ->
-        AddToPlaylistSheet(trackUris = uris, onDismiss = { addManyToPlaylist = null })
     }
     if (renaming && ready != null && !ready.locked) {
         PlaylistNameDialog(
@@ -219,9 +208,7 @@ private fun TrackListWithHeader(
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
     onEditTagsMany: (List<String>) -> Unit,
-    onAddManyToPlaylist: (List<Track>) -> Unit,
     onDeleteMany: (List<Track>) -> Unit,
-    onAddToPlaylist: (Track) -> Unit,
     onDelete: (Track) -> Unit,
     onAddSongs: () -> Unit,
     onOpenAlbum: ((String) -> Unit)?,
@@ -270,7 +257,6 @@ private fun TrackListWithHeader(
                         onToggle = { selection.toggle(track.uri) },
                         onOpenArtist = onOpenArtist,
                         onEditTags = onEditTags,
-                        onAddToPlaylist = onAddToPlaylist,
                         onDelete = { onDelete(track) },
                         onOpenAlbum = onOpenAlbum,
                         dragHandle = {
@@ -309,7 +295,6 @@ private fun TrackListWithHeader(
         actions = selectionActions(
             tracks = selectedTracks,
             onEditTags = onEditTagsMany,
-            onAddToPlaylist = onAddManyToPlaylist,
             onDelete = onDeleteMany,
             onRemoveFromPlaylist = if (state.isPlaylist) { viewModel::removeMany } else null,
         ),
@@ -441,7 +426,6 @@ private fun DetailTrackRow(
     onToggle: () -> Unit,
     onOpenArtist: (String) -> Unit,
     onEditTags: (Track) -> Unit,
-    onAddToPlaylist: (Track) -> Unit,
     onDelete: () -> Unit,
     onOpenAlbum: ((String) -> Unit)?,
     dragHandle: @Composable () -> Unit,
@@ -485,7 +469,7 @@ private fun DetailTrackRow(
                 BoomMoreMenu(
                     actions = listOfNotNull(
                         playNextAction(track),
-                        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { onAddToPlaylist(track) },
+                        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(listOf(track.uri)) }),
                         favoriteAction(track.uri),
                         if (isPlaylist) {
                             BoomMenuAction(

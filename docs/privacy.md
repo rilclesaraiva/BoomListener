@@ -4,7 +4,7 @@ title: Privacy Policy
 
 # Privacy Policy — BoomListener
 
-_Last updated: November 24, 2026_
+_Last updated: November 25, 2026_
 
 BoomListener ("the app") is a free, open-source music player for Android that plays the music files stored on your phone. This policy explains what the app does with information, based on what its [source code](https://github.com/rilclesaraiva/BoomListener) actually does.
 
@@ -52,6 +52,7 @@ The app identifies itself to MusicBrainz, LRCLIB and GitHub with its name ("Boom
 
 - **Music and audio** (`READ_MEDIA_AUDIO`, or storage read access on Android 12 and older): to find and play the songs on your phone.
 - **Notifications** (Android 13 and newer): only for release alerts and for a once-a-year notification in December when your Wrapped is ready; you can turn each off (Settings → System → Notifications for the Wrapped one). The app never asks for this permission because of the Wrapped: without it, a card in your Profile is shown instead. The playback controls in the notification area don't need it.
+- **Media management** (`MANAGE_MEDIA`, Android 12 and newer, optional): lets the app delete songs you chose to delete without Android asking again each time. It is off until you allow “Media management apps” for BoomListener in Settings → Library, you can turn it off in the same place, and the app only uses it to delete songs you asked to delete.
 - **Internet**: for the lookups listed above.
 - **Foreground service (media playback)**: to keep playing with the screen off.
 - **Write to storage** (Android 8 and 9 only): to save tags you edit. On Android 10 and newer, Android asks you file by file instead.

@@ -16,7 +16,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.runtime.collectAsState
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavController
 import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.common.popBackStackOnce
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -101,6 +106,8 @@ import com.boomlistener.feature.profile.navigateToWrapped
 import com.boomlistener.feature.profile.wrappedScreen
 import com.boomlistener.feature.profile.ProfileSongMenu
 import com.boomlistener.core.designsystem.component.FavoriteShare
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistContent
+import com.boomlistener.core.designsystem.component.LocalAddToPlaylistPage
 import com.boomlistener.core.designsystem.component.LocalFavoriteShare
 import com.boomlistener.core.common.ShareTarget
 import com.boomlistener.feature.tageditor.navigateToTagEditor
@@ -109,7 +116,7 @@ import com.boomlistener.feature.tageditor.navigateToTagAudit
 import com.boomlistener.feature.tageditor.tageditorScreen
 import com.boomlistener.feature.history.navigateToHistory
 import com.boomlistener.feature.settings.navigateToSettings
-import com.boomlistener.feature.library.AddToPlaylistSheet
+import com.boomlistener.feature.library.AddToPlaylistPage
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
@@ -137,6 +144,9 @@ internal fun isBackNavigation(stack: List<NavBackStackEntry>, from: NavBackStack
  * player em tela cheia como painel por cima de tudo. É o ÚNICO lugar que
  * conhece todas as features e liga uma à outra (ver CLAUDE.md).
  */
+/** A página "Adicionar à playlist" que todo menu abre (um valor só: o local é estático). */
+private val AddToPlaylistContent: BoomAddToPlaylistContent = { uris -> AddToPlaylistPage(uris) }
+
 @Composable
 fun BoomListenerApp() {
     val navController = rememberNavController()
@@ -144,7 +154,6 @@ fun BoomListenerApp() {
     val currentDestination = backStackEntry?.destination
     val playerSheet = rememberPlayerSheetState()
     // Música do player a adicionar numa playlist (a folha aparece por cima de tudo).
-    var addToPlaylistUri by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current.applicationContext
     // Tocar de novo na aba aberta: a lista dela sobe até o topo.
     val reselect = remember { MutableSharedFlow<String>(extraBufferCapacity = 1) }
@@ -354,7 +363,6 @@ fun BoomListenerApp() {
                 songMenu = ProfileSongMenu(
                     onOpenArtist = openSongArtist,
                     onEditTags = { uri -> navController.navigateToTagEditor(uri) },
-                    onAddToPlaylist = { uri -> addToPlaylistUri = uri },
                 ),
             )
             wrappedScreen(onBack = back)
@@ -365,7 +373,6 @@ fun BoomListenerApp() {
                 songMenu = ProfileSongMenu(
                     onOpenArtist = openSongArtist,
                     onEditTags = { uri -> navController.navigateToTagEditor(uri) },
-                    onAddToPlaylist = { uri -> addToPlaylistUri = uri },
                 ),
             )
             artistScreen(
@@ -389,7 +396,6 @@ fun BoomListenerApp() {
                 songMenu = HistorySongMenu(
                     onOpenArtist = openSongArtist,
                     onEditTags = { uri -> navController.navigateToTagEditor(uri) },
-                    onAddToPlaylist = { uri -> addToPlaylistUri = uri },
                 ),
             )
         }
@@ -418,6 +424,7 @@ fun BoomListenerApp() {
         LocalSelectionEpoch provides selectionEpoch,
         LocalTabReselect provides reselect,
         LocalFavoriteShare provides favoriteShare,
+        LocalAddToPlaylistPage provides AddToPlaylistContent,
         LocalBackgroundBlur provides backgroundBlur,
     ) {
     Box(Modifier.fillMaxSize().clearSearchFocusOnTapOutside()) {
@@ -493,16 +500,41 @@ fun BoomListenerApp() {
             }
         }
 
-        // Enquanto uma tela ainda está entrando ou saindo, o "voltar" espera:
-        // um segundo voltar no meio da animação deixava as duas telas
-        // sobrepostas e transparentes. Vem depois do NavHost, então tem
-        // prioridade sobre ele (o gesto já começado continua com o NavHost).
-        val entryLifecycle = remember(backStackEntry) {
-            backStackEntry?.lifecycle?.currentStateFlow ?: MutableStateFlow(Lifecycle.State.RESUMED)
+        // Enquanto uma tela ainda está entrando ou saindo, o "voltar" espera: um segundo voltar no meio da
+        // animação deixava as duas telas sobrepostas e, tocando na engrenagem e voltando rápido e várias
+        // vezes, chegava a tirar a própria Home da pilha (tela vazia e, depois, o app fechando ao voltar).
+        // Vem depois do NavHost, então tem prioridade sobre ele (o gesto já começado continua com o
+        // NavHost). A trava é ligada na hora, pelo NavController e pelo ciclo de vida da tela do topo, e
+        // não pela recomposição: um segundo voltar que chegasse antes do próximo quadro passaria direto.
+        val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+        val backOwner = LocalLifecycleOwner.current
+        DisposableEffect(navController, backDispatcher, backOwner) {
+            val guard = object : OnBackPressedCallback(false) {
+                override fun handleOnBackPressed() = Unit
+            }
+            var watched: NavBackStackEntry? = null
+            val refresh = {
+                val state = navController.currentBackStackEntry?.lifecycle?.currentState
+                guard.isEnabled = state != null && !state.isAtLeast(Lifecycle.State.RESUMED)
+            }
+            val watcher = LifecycleEventObserver { _, _ -> refresh() }
+            val onDestination = NavController.OnDestinationChangedListener { controller, _, _ ->
+                val top = controller.currentBackStackEntry
+                if (top !== watched) {
+                    watched?.lifecycle?.removeObserver(watcher)
+                    watched = top
+                    top?.lifecycle?.addObserver(watcher)
+                }
+                refresh()
+            }
+            backDispatcher?.addCallback(backOwner, guard)
+            navController.addOnDestinationChangedListener(onDestination)
+            onDispose {
+                navController.removeOnDestinationChangedListener(onDestination)
+                watched?.lifecycle?.removeObserver(watcher)
+                guard.remove()
+            }
         }
-        val entryState by entryLifecycle.collectAsState()
-        BackHandler(enabled = !entryState.isAtLeast(Lifecycle.State.RESUMED)) { }
-        LaunchedEffect(entryState) { DiagnosticLog.log("navegacao", "estado da tela=$entryState (voltar do app preso: ${!entryState.isAtLeast(Lifecycle.State.RESUMED)})") }
 
         // Por último: fica por cima de tudo e tem prioridade no "voltar".
         PlayerSheet(
@@ -517,13 +549,8 @@ fun BoomListenerApp() {
                 playerSheet.collapse()
                 openFromPlayer { navController.navigateToTagEditor(uri) }
             },
-            onAddToPlaylist = { uri -> addToPlaylistUri = uri },
             onLyricsShown = { lyricsShown = it },
         )
-
-        addToPlaylistUri?.let { uri ->
-            AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
-        }
 
         // Versão nova no GitHub: aviso em tela cheia ao abrir o app (no máximo uma consulta por hora).
         UpdatePromptHost()

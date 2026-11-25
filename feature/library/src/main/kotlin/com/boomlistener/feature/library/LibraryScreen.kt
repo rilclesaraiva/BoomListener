@@ -5,6 +5,7 @@
 
 package com.boomlistener.feature.library
 
+import com.boomlistener.core.designsystem.component.BoomAddToPlaylistPage
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -128,9 +129,6 @@ internal fun LibraryScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    var addToPlaylist by remember { mutableStateOf<Track?>(null) }
-    // Álbum inteiro (menu do álbum) a caminho de uma playlist.
-    var addManyToPlaylist by remember { mutableStateOf<List<String>?>(null) }
     val viewModel: LibraryViewModel = viewModel {
         val deezer = DeezerData.repository(context.applicationContext)
         LibraryViewModel(
@@ -208,11 +206,9 @@ internal fun LibraryScreen(
                     onEditTags = onEditTags,
                     onEditTagsMany = onEditTagsMany,
                     onDeleteMany = deleteSongs,
-                    onAddToPlaylist = { addToPlaylist = it },
                     albumMenu = AlbumMenuActions(
                         play = viewModel::playTracks,
                         shuffle = viewModel::shuffleTracks,
-                        addToPlaylist = { tracks -> addManyToPlaylist = tracks.map { it.uri } },
                         openArtist = onOpenArtist,
                     ),
                     contentPadding = padding,
@@ -220,13 +216,6 @@ internal fun LibraryScreen(
                 )
             }
         }
-    }
-
-    addToPlaylist?.let { track ->
-        AddToPlaylistSheet(trackUris = listOf(track.uri), onDismiss = { addToPlaylist = null })
-    }
-    addManyToPlaylist?.let { uris ->
-        AddToPlaylistSheet(trackUris = uris, onDismiss = { addManyToPlaylist = null })
     }
 }
 
@@ -248,7 +237,6 @@ private fun TrackList(
     onEditTags: (Track) -> Unit,
     onEditTagsMany: (List<String>) -> Unit,
     onDeleteMany: (List<Track>) -> Unit,
-    onAddToPlaylist: (Track) -> Unit,
     albumMenu: AlbumMenuActions,
     contentPadding: PaddingValues,
     title: @Composable () -> Unit,
@@ -265,8 +253,8 @@ private fun TrackList(
     val scope = rememberCoroutineScope()
     ScrollToTopOnReselect(LIBRARY_ROUTE, listState)
     if (state.query.isEmpty()) PinHomeImages(state, loadArtwork, loadArtistPhoto)
-    val menu = remember(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onOpenAlbum) {
-        SongMenu(shareUrl, onOpenArtist, onEditTags, onAddToPlaylist, onDelete, onOpenAlbum)
+    val menu = remember(shareUrl, onOpenArtist, onEditTags, onDelete, onOpenAlbum) {
+        SongMenu(shareUrl, onOpenArtist, onEditTags, onDelete, onOpenAlbum)
     }
     when {
         state.totalCount == 0 -> BoomPlaceholder(
@@ -443,7 +431,6 @@ private fun TrackList(
                 actions = selectionActions(
                     tracks = selectedTracks,
                     onEditTags = onEditTagsMany,
-                    onAddToPlaylist = albumMenu.addToPlaylist,
                     onDelete = onDeleteMany,
                 ),
                 modifier = Modifier.align(Alignment.TopCenter),
@@ -724,7 +711,6 @@ internal class SongMenu(
     val shareUrl: suspend (Track) -> String,
     val onOpenArtist: (String) -> Unit,
     val onEditTags: (Track) -> Unit,
-    val onAddToPlaylist: (Track) -> Unit,
     val onDelete: (Track) -> Unit,
     val onOpenAlbum: (albumKey: String) -> Unit,
 )
@@ -742,7 +728,7 @@ private fun SongMenuView(
     val scope = rememberCoroutineScope()
     val actions = listOfNotNull(
         playNextAction(track),
-        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist) { menu.onAddToPlaylist(track) },
+        BoomMenuAction(stringResource(R.string.feature_library_add_to_playlist), kind = BoomMenuKind.AddToPlaylist, page = { BoomAddToPlaylistPage(listOf(track.uri)) }),
         favoriteAction(track.uri),
         track.album?.takeIf { it.isNotBlank() }?.let {
             BoomMenuAction(stringResource(R.string.feature_library_go_to_album), kind = BoomMenuKind.GoToAlbum) { menu.onOpenAlbum(track.albumId.toString()) }

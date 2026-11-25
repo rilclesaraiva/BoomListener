@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Ler as músicas do aparelho. Android 13+ usa READ_MEDIA_AUDIO; até o
          Android 12, READ_EXTERNAL_STORAGE. Fotos e vídeos NÃO são pedidos. -->
@@ -12,6 +13,13 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
+
+    <!-- Apagar músicas sem a caixa de confirmação do sistema (Android 12+).
+         Só vale se a pessoa liberar em Ajustes → Biblioteca (acesso especial
+         "Apps de gerenciamento de mídia"); sem isso, o Android pergunta como antes. -->
+    <uses-permission
+        android:name="android.permission.MANAGE_MEDIA"
+        tools:ignore="ProtectedPermissions" />
 
     <!-- Avisar no celular quando um artista seguido lança algo (Android 13+
          pergunta; a pessoa liga e desliga no sino da tela de Lançamentos). -->

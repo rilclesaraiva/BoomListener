@@ -199,4 +199,7 @@
     <string name="feature_settings_wrapped_alert">Year-end Wrapped</string>
     <string name="feature_settings_wrapped_alert_summary">A notification on December 1 when your Wrapped is ready. Only sent if notifications are already allowed.</string>
     <string name="feature_settings_about_app_name" translatable="false">BoomListener</string>
+    <string name="feature_settings_library_manage_media">Delete without the system prompt</string>
+    <string name="feature_settings_library_manage_media_on">On: deleting songs no longer shows the Android confirmation</string>
+    <string name="feature_settings_library_manage_media_off">Off: Android asks every time. Tap to allow “Media management apps”</string>
 </resources>
