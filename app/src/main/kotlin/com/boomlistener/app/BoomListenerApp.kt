@@ -519,27 +519,6 @@ fun BoomListenerApp() {
                 playerSheet.collapse()
                 openFromPlayer { navController.navigateToTagEditor(uri) }
             },
-            onAddToPlaylist = { uri -> addToPlaylistUri = uri },
-            onLyricsShown = { lyricsShown = it },
-        )
-
-        addToPlaylistUri?.let { uri ->
-            AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
-        }
-
-        // Por último: fica por cima de tudo e tem prioridade no "voltar".
-        PlayerSheet(
-            state = playerSheet,
-            // Tocar no artista dentro do player: fecha o player e abre o perfil.
-            onOpenArtist = { name ->
-                playerSheet.collapse()
-                openFromPlayer { openArtist(name) }
-            },
-            // Editar tags da música que está tocando: fecha o player e abre o editor.
-            onEditTags = { uri ->
-                playerSheet.collapse()
-                openFromPlayer { navController.navigateToTagEditor(uri) }
-            },
             onLyricsShown = { lyricsShown = it },
         )
 
