@@ -41,9 +41,20 @@ fun NavController.navigateOnce(route: String, builder: NavOptionsBuilder.() -> U
     currentBackStackEntry?.let { lastOpened[this] = it.id }
 }
 
+/** TEMPORÁRIO (registro do "voltar"): a pilha por nome e estado (ex.: "grafo:RES>library:RES>settings:STA"). */
+fun NavController.stackDescription(): String = currentBackStack.value.joinToString(">") {
+    "${it.destination.route ?: "grafo"}:${it.lifecycle.currentState.name.take(3)}"
+}
+
 /** "Voltar" de uma tela de dentro, uma vez só (dois toques não fecham duas telas). */
 fun NavController.popBackStackOnce(): Boolean {
-    if (isDoubleTap()) return false
+    if (isDoubleTap()) {
+        DiagnosticLog.log("voltar", "popBackStackOnce ignorado (toque duplo) pilha=${stackDescription()}")
+        return false
+    }
     lastNavigation[this] = nowMs()
-    return popBackStack()
+    DiagnosticLog.log("voltar", "popBackStackOnce pedido pilha=${stackDescription()}")
+    val popped = popBackStack()
+    DiagnosticLog.log("voltar", "popBackStackOnce resultado=$popped pilha=${stackDescription()}")
+    return popped
 }

@@ -19,6 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.activity.compose.BackHandler
 import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.common.popBackStackOnce
+import com.boomlistener.core.common.stackDescription
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -164,7 +165,11 @@ fun BoomListenerApp() {
     val inWrapped = route.startsWith("profile/wrapped")
     // TEMPORÁRIO (registro do "voltar"): a tela e o tamanho da pilha a cada mudança.
     LaunchedEffect(backStackEntry) {
-        DiagnosticLog.log("navegacao", "tela=${backStackEntry?.destination?.route} pilha=${navController.currentBackStack.value.size}")
+        DiagnosticLog.log("navegacao", "tela=${backStackEntry?.destination?.route} pilha=${navController.stackDescription()}")
+    }
+    // Toda mudança da pilha, mesmo sem tela nova no topo (é o que aconteceu quando a Home sumiu).
+    LaunchedEffect(navController) {
+        navController.currentBackStack.collect { DiagnosticLog.log("pilha", it.joinToString(">") { e -> "${e.destination.route ?: "grafo"}:${e.lifecycle.currentState.name.take(3)}" }) }
     }
     val barSpec = boomSpatialSpec<IntSize>()
     val barFade = boomEffectsSpec<Float>()
@@ -228,7 +233,10 @@ fun BoomListenerApp() {
             // Já está nela: sobe a lista até o topo.
             route == destination.route -> reselect.tryEmit(destination.route)
             // Numa tela de dentro dela (ex.: um álbum): volta para o começo da aba.
-            selected -> navController.popBackStack(destination.route, inclusive = false)
+            selected -> {
+                DiagnosticLog.log("voltar", "aba: voltar ao começo de ${destination.route} pilha=${navController.stackDescription()}")
+                navController.popBackStack(destination.route, inclusive = false)
+            }
             else -> navController.navigate(destination.route) {
                 popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                 launchSingleTop = true
@@ -503,7 +511,9 @@ fun BoomListenerApp() {
             backStackEntry?.lifecycle?.currentStateFlow ?: MutableStateFlow(Lifecycle.State.RESUMED)
         }
         val entryState by entryLifecycle.collectAsState()
-        BackHandler(enabled = !entryState.isAtLeast(Lifecycle.State.RESUMED)) { }
+        BackHandler(enabled = !entryState.isAtLeast(Lifecycle.State.RESUMED)) {
+            DiagnosticLog.log("voltar", "voltar do sistema BLOQUEADO (tela em $entryState) pilha=${navController.stackDescription()}")
+        }
         LaunchedEffect(entryState) { DiagnosticLog.log("navegacao", "estado da tela=$entryState (voltar do app preso: ${!entryState.isAtLeast(Lifecycle.State.RESUMED)})") }
 
         // Por último: fica por cima de tudo e tem prioridade no "voltar".
