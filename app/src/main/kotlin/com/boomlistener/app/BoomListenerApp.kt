@@ -16,12 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.runtime.collectAsState
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigation.NavController
 import com.boomlistener.core.common.DiagnosticLog
 import com.boomlistener.core.common.popBackStackOnce
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -500,40 +495,36 @@ fun BoomListenerApp() {
             }
         }
 
-        // Enquanto uma tela ainda está entrando ou saindo, o "voltar" espera: um segundo voltar no meio da
-        // animação deixava as duas telas sobrepostas e, tocando na engrenagem e voltando rápido e várias
-        // vezes, chegava a tirar a própria Home da pilha (tela vazia e, depois, o app fechando ao voltar).
-        // Vem depois do NavHost, então tem prioridade sobre ele (o gesto já começado continua com o
-        // NavHost). A trava é ligada na hora, pelo NavController e pelo ciclo de vida da tela do topo, e
-        // não pela recomposição: um segundo voltar que chegasse antes do próximo quadro passaria direto.
-        val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-        val backOwner = LocalLifecycleOwner.current
-        DisposableEffect(navController, backDispatcher, backOwner) {
-            val guard = object : OnBackPressedCallback(false) {
-                override fun handleOnBackPressed() = Unit
-            }
-            var watched: NavBackStackEntry? = null
-            val refresh = {
-                val state = navController.currentBackStackEntry?.lifecycle?.currentState
-                guard.isEnabled = state != null && !state.isAtLeast(Lifecycle.State.RESUMED)
-            }
-            val watcher = LifecycleEventObserver { _, _ -> refresh() }
-            val onDestination = NavController.OnDestinationChangedListener { controller, _, _ ->
-                val top = controller.currentBackStackEntry
-                if (top !== watched) {
-                    watched?.lifecycle?.removeObserver(watcher)
-                    watched = top
-                    top?.lifecycle?.addObserver(watcher)
-                }
-                refresh()
-            }
-            backDispatcher?.addCallback(backOwner, guard)
-            navController.addOnDestinationChangedListener(onDestination)
-            onDispose {
-                navController.removeOnDestinationChangedListener(onDestination)
-                watched?.lifecycle?.removeObserver(watcher)
-                guard.remove()
-            }
+        // Enquanto uma tela ainda está entrando ou saindo, o "voltar" espera:
+        // um segundo voltar no meio da animação deixava as duas telas
+        // sobrepostas e transparentes. Vem depois do NavHost, então tem
+        // prioridade sobre ele (o gesto já começado continua com o NavHost).
+        val entryLifecycle = remember(backStackEntry) {
+            backStackEntry?.lifecycle?.currentStateFlow ?: MutableStateFlow(Lifecycle.State.RESUMED)
+        }
+        val entryState by entryLifecycle.collectAsState()
+        BackHandler(enabled = !entryState.isAtLeast(Lifecycle.State.RESUMED)) { }
+        LaunchedEffect(entryState) { DiagnosticLog.log("navegacao", "estado da tela=$entryState (voltar do app preso: ${!entryState.isAtLeast(Lifecycle.State.RESUMED)})") }
+
+        // Por último: fica por cima de tudo e tem prioridade no "voltar".
+        PlayerSheet(
+            state = playerSheet,
+            // Tocar no artista dentro do player: fecha o player e abre o perfil.
+            onOpenArtist = { name ->
+                playerSheet.collapse()
+                openFromPlayer { openArtist(name) }
+            },
+            // Editar tags da música que está tocando: fecha o player e abre o editor.
+            onEditTags = { uri ->
+                playerSheet.collapse()
+                openFromPlayer { navController.navigateToTagEditor(uri) }
+            },
+            onAddToPlaylist = { uri -> addToPlaylistUri = uri },
+            onLyricsShown = { lyricsShown = it },
+        )
+
+        addToPlaylistUri?.let { uri ->
+            AddToPlaylistSheet(trackUris = listOf(uri), onDismiss = { addToPlaylistUri = null })
         }
 
         // Por último: fica por cima de tudo e tem prioridade no "voltar".

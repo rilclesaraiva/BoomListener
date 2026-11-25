@@ -13,6 +13,17 @@ import androidx.compose.ui.graphics.Color
 import com.boomlistener.core.designsystem.component.BoomModalSheet
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
+import com.boomlistener.core.designsystem.theme.boomSpatialSpec
+import com.boomlistener.core.designsystem.theme.boomEffectsSpec
+import androidx.compose.ui.draw.rotate
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Icon
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,13 +57,6 @@ internal fun UpdatesSettingsSection() {
     val showUpdateDialog by updatesViewModel.showDialog.collectAsStateWithLifecycle()
     val prompts by updatesViewModel.prompts.collectAsStateWithLifecycle()
     var choosingPrompts by remember { mutableStateOf(false) }
-    if (choosingPrompts) {
-        UpdatePromptsDialog(
-            onAlways = { updatesViewModel.resumePrompts() },
-            onSnooze = { period -> updatesViewModel.snooze(period) },
-            onDismiss = { choosingPrompts = false },
-        )
-    }
 
     val available = (updatesState as? UpdatesUiState.Done)?.result as? UpdateCheckResult.Available
     if (showUpdateDialog && available != null) {
@@ -86,8 +90,31 @@ internal fun UpdatesSettingsSection() {
             accent = BoomAccent.Teal,
             title = stringResource(R.string.feature_settings_update_prompts),
             subtitle = updatePromptsSubtitle(prompts),
-            onClick = { choosingPrompts = true },
+            onClick = { choosingPrompts = !choosingPrompts },
+            trailing = {
+                val turn by animateFloatAsState(if (choosingPrompts) 180f else 0f, boomSpatialSpec(), label = "promptsArrow")
+                Icon(BoomIcons.Collapse, contentDescription = null, modifier = Modifier.rotate(turn))
+            },
         )
+        // Recolhível: as escolhas abrem aqui mesmo, sem painel.
+        AnimatedVisibility(
+            visible = choosingPrompts,
+            enter = expandVertically(boomSpatialSpec()) + fadeIn(boomEffectsSpec()),
+            exit = shrinkVertically(boomSpatialSpec()) + fadeOut(boomEffectsSpec()),
+        ) {
+            val now = System.currentTimeMillis()
+            val remaining = prompts.snoozedUntilMs - now
+            val snoozed = remaining > 0
+            val normal = !snoozed && prompts.skippedVersion == null
+            // A pausa não guarda o período escolhido: mais de uma semana restando = "um mês".
+            val week = snoozed && remaining <= WEEK_MS
+            val month = snoozed && remaining > WEEK_MS
+            Column {
+                PromptChoice(R.string.feature_settings_update_prompts_always, normal) { updatesViewModel.resumePrompts() }
+                PromptChoice(R.string.feature_settings_update_prompt_week, week) { updatesViewModel.snooze(SnoozePeriod.Week) }
+                PromptChoice(R.string.feature_settings_update_prompt_month, month) { updatesViewModel.snooze(SnoozePeriod.Month) }
+            }
+        }
     }
 }
 
@@ -119,37 +146,14 @@ private fun updatePromptsSubtitle(state: UpdatePromptState): String {
     }
 }
 
-/**
- * Escolher como ficam os avisos de versão nova: normais, ou pausados por um tempo.
- * Painel de baixo; a escolha desce o painel e só então fecha.
- */
-@Composable
-private fun UpdatePromptsDialog(onAlways: () -> Unit, onSnooze: (SnoozePeriod) -> Unit, onDismiss: () -> Unit) {
-    BoomModalSheet(onDismissRequest = onDismiss) {
-        val sheet = this
-        Column(Modifier.padding(bottom = 24.dp)) {
-            Text(
-                stringResource(R.string.feature_settings_update_prompts),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-            )
-            val colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-            ListItem(
-                modifier = Modifier.clickable { onAlways(); sheet.dismiss() },
-                headlineContent = { Text(stringResource(R.string.feature_settings_update_prompts_always)) },
-                colors = colors,
-            )
-            ListItem(
-                modifier = Modifier.clickable { onSnooze(SnoozePeriod.Week); sheet.dismiss() },
-                headlineContent = { Text(stringResource(R.string.feature_settings_update_prompt_week)) },
-                colors = colors,
-            )
-            ListItem(
-                modifier = Modifier.clickable { onSnooze(SnoozePeriod.Month); sheet.dismiss() },
-                headlineContent = { Text(stringResource(R.string.feature_settings_update_prompt_month)) },
-                colors = colors,
-            )
-        }
-    }
-}
+private const val WEEK_MS = 7L * 24 * 60 * 60 * 1000
 
+@Composable
+private fun PromptChoice(@androidx.annotation.StringRes title: Int, selected: Boolean, onClick: () -> Unit) {
+    BoomSettingsItem(
+        icon = null,
+        title = stringResource(title),
+        onClick = onClick,
+        trailing = { RadioButton(selected = selected, onClick = onClick) },
+    )
+}
