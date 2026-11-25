@@ -54,6 +54,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **The app is now simply called BoomListener**, the same name you see under the icon, everywhere (About, backups, the share card, the README and the legal pages). It used to be written "Boom, listener!".
 
 ### Fixed
+- **Home screen no longer disappears when you open Settings and go back quickly many times:** a second "back" coming from the Settings screen while it was still sliding away could remove the Home screen itself, leaving a blank screen and then closing the app on the next back. That extra "back" is now ignored when only the Home screen is left.
 - **Dates follow your language:** the dates in the Profile's listening calendar and highlights now use the order and words of your phone's language (for example "19 Nov" or "Nov 19") instead of one fixed format.
 - **Clear history is clearer:** the confirmation now says that Most played, your Statistics and your Wrapped keep their own daily summary and aren't affected. The privacy policy says the same, and how to erase that summary (clearing the app's data).
 - **Open with, safer:** BoomListener no longer opens a `file://` address that points inside its own private data, if another app sends one.

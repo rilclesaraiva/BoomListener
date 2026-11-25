@@ -4,6 +4,7 @@
 package com.boomlistener.core.common
 
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph
 import androidx.navigation.NavOptionsBuilder
 
 /**
@@ -50,6 +51,13 @@ fun NavController.stackDescription(): String = currentBackStack.value.joinToStri
 fun NavController.popBackStackOnce(): Boolean {
     if (isDoubleTap()) {
         DiagnosticLog.log("voltar", "popBackStackOnce ignorado (toque duplo) pilha=${stackDescription()}")
+        return false
+    }
+    // Só resta uma tela de verdade (a Home): voltar nela esvaziaria a pilha (tela vazia, e o app fechando
+    // no voltar seguinte). Acontece quando a tela que acabou de sair, ainda na animação de saída, pede
+    // voltar de novo (provado pelo registro de 25/11/2026). Quem sai do app é o sistema, não esta função.
+    if (currentBackStack.value.count { it.destination !is NavGraph } <= 1) {
+        DiagnosticLog.log("voltar", "popBackStackOnce recusado: só resta uma tela pilha=${stackDescription()}")
         return false
     }
     lastNavigation[this] = nowMs()
