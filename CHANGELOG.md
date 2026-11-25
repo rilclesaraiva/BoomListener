@@ -16,6 +16,9 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **One panel for menus, Details, delete, speed and sleep timer:** these no longer close the panel and open another. The same panel swaps its content (the current content slides off to the right and the new one springs in from there) and grows or shrinks to fit, with a back button (or the back gesture) to return to the menu. Deleting a song (or several), deleting a playlist and clearing the history now ask on a page of that same panel instead of a pop-up window. Add to playlist and Add songs (from a playlist) are pages of the same panel too, and you can name a new playlist right there. Android still shows its own "Allow BoomListener to delete this file?" box after you confirm.
 - **Heart in the full-screen player:** when a song is a favorite, the filled heart now takes the color of the cover, like the other buttons (when **Settings → Appearance** has the buttons-in-cover-color option on).
 
+### Fixed
+- **Home screen no longer disappears when you open Settings and go back quickly many times:** a second "back" coming from the Settings screen while it was still sliding away could remove the Home screen itself, leaving a blank screen and then closing the app on the next back. That extra "back" is now ignored when only the Home screen is left.
+
 ## [0.57.0] - 2026-11-19
 
 ### Added
@@ -54,7 +57,6 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **The app is now simply called BoomListener**, the same name you see under the icon, everywhere (About, backups, the share card, the README and the legal pages). It used to be written "Boom, listener!".
 
 ### Fixed
-- **Home screen no longer disappears when you open Settings and go back quickly many times:** a second "back" coming from the Settings screen while it was still sliding away could remove the Home screen itself, leaving a blank screen and then closing the app on the next back. That extra "back" is now ignored when only the Home screen is left.
 - **Dates follow your language:** the dates in the Profile's listening calendar and highlights now use the order and words of your phone's language (for example "19 Nov" or "Nov 19") instead of one fixed format.
 - **Clear history is clearer:** the confirmation now says that Most played, your Statistics and your Wrapped keep their own daily summary and aren't affected. The privacy policy says the same, and how to erase that summary (clearing the app's data).
 - **Open with, safer:** BoomListener no longer opens a `file://` address that points inside its own private data, if another app sends one.
