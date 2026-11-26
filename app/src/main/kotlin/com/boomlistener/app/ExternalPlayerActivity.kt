@@ -57,7 +57,7 @@ class ExternalPlayerActivity : ComponentActivity() {
                     track = track,
                     player = player,
                     onOpenApp = ::openInApp,
-                    onClose = ::finish,
+                    onClose = ::closeNow,
                 )
             }
         }
@@ -71,17 +71,37 @@ class ExternalPlayerActivity : ComponentActivity() {
     // Saiu da frente (outro app, tela apagada): o pop-up não fica tocando sem controle na tela.
     override fun onStop() {
         super.onStop()
-        if (!isChangingConfigurations) finish()
+        if (!isChangingConfigurations) closeNow()
     }
 
-    override fun onDestroy() {
+    // `finish()` só leva ao `onDestroy` depois que o Android quiser (às vezes segundos), e o som
+    // ficava tocando nesse meio-tempo: ao fechar, para na hora e só então pede para fechar a tela.
+    override fun onPause() {
+        super.onPause()
+        if (isFinishing) stopSoundAndGiveBack()
+    }
+
+    private fun closeNow() {
+        stopSoundAndGiveBack()
+        finish()
+    }
+
+    private var givenBack = false
+
+    private fun stopSoundAndGiveBack() {
         player.release()
+        if (givenBack) return
+        givenBack = true
         // Fechou o pop-up (não girou a tela nem passou a música ao app): devolve o que ele pausou.
-        if (isFinishing && !handedOver && appWasPlaying == true) {
+        if (!handedOver && appWasPlaying == true) {
             val controller = PlayerConnection.controller(applicationContext)
             val app = controller.state.value
             if (app.item != null && !app.isPlaying) controller.togglePlayPause()
         }
+    }
+
+    override fun onDestroy() {
+        if (isFinishing) stopSoundAndGiveBack() else player.release()
         super.onDestroy()
     }
 

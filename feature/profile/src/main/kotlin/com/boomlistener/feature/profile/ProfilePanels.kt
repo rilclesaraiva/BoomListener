@@ -65,7 +65,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 // Quanto tempo cada destaque do mês fica na tela antes de passar para o próximo.
-private const val HIGHLIGHT_MS = 5_000L
+private const val HIGHLIGHT_MS = 3_500L
 
 /** Quanto o carrossel parado espera antes de assentar na página mais próxima, se ficou no meio. */
 private const val SETTLE_CHECK_MS = 250L

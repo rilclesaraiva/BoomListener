@@ -11,12 +11,14 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Repeated songs in the tag scan:** after a scan (Settings → Library → Tag scan), a new "Repeated songs" entry lists songs that look like the same one: same title and artist (ignoring accents, capital letters and "feat. …") and nearly the same length. Live, remix or acoustic versions and songs by different artists with the same title are not mixed up. It is only a suggestion based on tags: nothing is ever removed for you, and tapping a group opens its songs in the tag editor so you can compare them.
 
 ### Changed
+- **Faster highlights in the Profile's orange card:** they now change every 3.5 seconds instead of 5.
 - **Update notices are now a collapsible item:** in Settings → System → Updates, tapping "Update notices" opens the choices (normal, pause for a week, pause for a month) right there, with no pop-up panel.
 - **Delete without the Android box (optional):** new item in Settings → Library that opens Android's “Media management apps” screen. Once you allow BoomListener there (Android 12 and newer), deleting songs no longer shows the “Allow BoomListener to delete…” box after you confirm in the app. Without it, nothing changes. Saving tags still asks Android.
 - **One panel for menus, Details, delete, speed and sleep timer:** these no longer close the panel and open another. The same panel swaps its content (the current content slides off to the right and the new one springs in from there) and grows or shrinks to fit, with a back button (or the back gesture) to return to the menu. Deleting a song (or several), deleting a playlist and clearing the history now ask on a page of that same panel instead of a pop-up window. Add to playlist and Add songs (from a playlist) are pages of the same panel too, and you can name a new playlist right there. Android still shows its own "Allow BoomListener to delete this file?" box after you confirm.
 - **Heart in the full-screen player:** when a song is a favorite, the filled heart now takes the color of the cover, like the other buttons (when **Settings → Appearance** has the buttons-in-cover-color option on).
 
 ### Fixed
+- **"Open with" player stops right away:** closing the small player (swiping it down, or leaving it) now silences the song immediately; before, it could keep playing for a few seconds until Android finished closing the screen.
 - **Home screen no longer disappears when you open Settings and go back quickly many times:** a second "back" coming from the Settings screen while it was still sliding away could remove the Home screen itself, leaving a blank screen and then closing the app on the next back. That extra "back" is now ignored when only the Home screen is left.
 
 ## [0.57.0] - 2026-11-19
