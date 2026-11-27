@@ -26,6 +26,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.exoplayer.source.ShuffleOrder
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import kotlinx.coroutines.MainScope
@@ -222,6 +223,10 @@ class PlaybackService : MediaSessionService() {
         val builder = MediaSession.Builder(this, sessionPlayer)
         openAppIntent()?.let { builder.setSessionActivity(it) }
         mediaSession = builder.build()
+        // O ícone do app (e não o círculo com "play" padrão do Media3) na notificação e nos controles de mídia.
+        setMediaNotificationProvider(
+            DefaultMediaNotificationProvider.Builder(this).build().apply { setSmallIcon(R.drawable.ic_notification_player) },
+        )
 
         // Saída de som escolhida na tela "Dispositivos" (null = o sistema decide).
         val outputs = AudioOutputsData.internalGet(this)

@@ -11,6 +11,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Repeated songs in the tag scan:** after a scan (Settings → Library → Tag scan), a new "Repeated songs" entry lists songs that look like the same one: same title and artist (ignoring accents, capital letters and "feat. …") and nearly the same length. Live, remix or acoustic versions and songs by different artists with the same title are not mixed up. It is only a suggestion based on tags: nothing is ever removed for you, and tapping a group opens its songs in the tag editor so you can compare them.
 
 ### Changed
+- **The app icon in the player notification:** the player controls (notification and lock screen) now show the BoomListener icon instead of Android's generic play circle. Android decides how to tint it, so on some phones it may still look different.
 - **Faster highlights in the Profile's orange card:** they now change every 3.5 seconds instead of 5.
 - **Update notices are now a collapsible item:** in Settings → System → Updates, tapping "Update notices" opens the choices (normal, pause for a week, pause for a month) right there, with no pop-up panel.
 - **Delete without the Android box (optional):** new item in Settings → Library that opens Android's “Media management apps” screen. Once you allow BoomListener there (Android 12 and newer), deleting songs no longer shows the “Allow BoomListener to delete…” box after you confirm in the app. Without it, nothing changes. Saving tags still asks Android.

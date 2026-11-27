@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícone do player na notificação e nos controles de mídia: o ícone do app (fundo do launcher +
+     símbolo), com o fundo transparente nos cantos. Onde o sistema tinge o ícone, vira um círculo
+     cheio (o fundo é opaco, de propósito, pedido do mantenedor em 27/11/2026). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#9A4600"
+        android:pathData="M54,54m-54,0a54,54 0,1 1,108 0a54,54 0,1 1,-108 0" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="1.3"
+        android:scaleY="1.3">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M40,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M56,40a20,20 0,0 1,0 28" />
+        <path
+            android:strokeColor="#FFDBC8"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M66,32a32,32 0,0 1,0 44" />
+    </group>
+</vector>
