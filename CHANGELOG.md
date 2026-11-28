@@ -11,6 +11,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 - **Repeated songs in the tag scan:** after a scan (Settings → Library → Tag scan), a new "Repeated songs" entry lists songs that look like the same one: same title and artist (ignoring accents, capital letters and "feat. …") and nearly the same length. Live, remix or acoustic versions and songs by different artists with the same title are not mixed up. It is only a suggestion based on tags: nothing is ever removed for you, and tapping a group opens its songs in the tag editor so you can compare them.
 
 ### Changed
+- **Release notices look more like YouTube Music's:** each new release notice now shows its cover (small next to the text when collapsed, large when expanded) and says the type before the title ("Single · Title"). Without internet for the cover, the notice still appears, just without the image.
 - **The app icon in the player notification:** the player controls (notification and lock screen) now show the BoomListener icon instead of Android's generic play circle. Android decides how to tint it, so on some phones it may still look different.
 - **Faster highlights in the Profile's orange card:** they now change every 3.5 seconds instead of 5.
 - **Update notices are now a collapsible item:** in Settings → System → Updates, tapping "Update notices" opens the choices (normal, pause for a week, pause for a month) right there, with no pop-up panel.

@@ -4,7 +4,7 @@ title: Privacy Policy
 
 # Privacy Policy — BoomListener
 
-_Last updated: November 25, 2026_
+_Last updated: November 28, 2026_
 
 BoomListener ("the app") is a free, open-source music player for Android that plays the music files stored on your phone. This policy explains what the app does with information, based on what its [source code](https://github.com/rilclesaraiva/BoomListener) actually does.
 
@@ -36,7 +36,7 @@ Each request goes directly from your phone to the service (except Last.fm, see b
 
 | Service | When | What is sent |
 |---|---|---|
-| **Deezer** (api.deezer.com and its image servers) | Showing artists on Home, in Library → Artists and in your Profile (their photos; when an artist has no photo, the cover of their latest release is used instead), opening an artist page, choosing between the artists of a song, searching artists in the Library, fixing tags, and the release check for artists you follow (about twice a day, in the background) | Artist names, song title, artist and length, what you type in the artist search, Deezer IDs of artists you follow |
+| **Deezer** (api.deezer.com and its image servers) | Showing artists on Home, in Library → Artists and in your Profile (their photos; when an artist has no photo, the cover of their latest release is used instead), opening an artist page, choosing between the artists of a song, searching artists in the Library, fixing tags, and the release check for artists you follow (about twice a day, in the background, including the cover of each new release shown in its notice) | Artist names, song title, artist and length, what you type in the artist search, Deezer IDs of artists you follow |
 | **MusicBrainz** and **Cover Art Archive** | When Deezer doesn't know an artist or song | Artist names, song title, artist and length |
 | **Last.fm**, through the project's own Cloudflare Worker | Artist biography and song genres | Artist name (and song title for genres). The Worker only adds the project's access key and forwards the request; it runs on Cloudflare, which can see your IP address. If you enter **your own Last.fm key** (Settings → System → Last.fm), the Worker is not used: your phone asks Last.fm directly, sending your key, and Last.fm can see your IP address |
 | **LRCLIB** | When you open the lyrics of a song, pick "Lyrics" for the share banner, or tap "Find synced lyrics" in the tag editor | Song title, artist, album and length |

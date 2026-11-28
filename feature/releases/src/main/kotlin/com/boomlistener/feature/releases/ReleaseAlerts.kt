@@ -11,6 +11,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -28,6 +29,7 @@ import com.boomlistener.data.releases.ReleasesData
 import com.boomlistener.data.releases.alertsToSend
 import com.boomlistener.data.releases.findNewReleases
 import com.boomlistener.core.model.Release
+import com.boomlistener.core.model.ReleaseType
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
@@ -45,7 +47,8 @@ object ReleaseAlerts {
     private const val WORK_NAME = "release_alerts"
     private const val CHANNEL_ID = "new_releases"
     private const val SUMMARY_ID = 1
-    private const val MAX_SINGLE_ALERTS = 3
+    internal const val MAX_SINGLE_ALERTS = 3
+    internal const val COVER_PX = 512
 
     /** Agenda a conferência periódica (chamado ao abrir o app; não duplica). */
     fun schedule(context: Context) {
@@ -62,20 +65,37 @@ object ReleaseAlerts {
         return granted && NotificationManagerCompat.from(context).areNotificationsEnabled()
     }
 
-    internal fun notify(context: Context, items: List<Pair<String, Release>>) {
+    /** [covers]: a capa de cada lançamento (pelo `id`), baixada antes; sem ela o aviso sai sem imagem. */
+    internal fun notify(context: Context, items: List<Pair<String, Release>>, covers: Map<Long, Bitmap> = emptyMap()) {
         if (items.isEmpty() || !canNotify(context)) return
         val manager = NotificationManagerCompat.from(context)
         ensureChannel(context)
         val open = openReleasesIntent(context)
         if (items.size <= MAX_SINGLE_ALERTS) {
             items.forEach { (artist, release) ->
-                val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                // Como o aviso de vídeo novo do YT Music: recolhido, a capa pequena ao lado do texto;
+                // aberto, a capa grande embaixo (no lugar da pequena).
+                val cover = covers[release.id]
+                val line = "${context.getString(typeLabel(release.type))} · ${release.title}"
+                val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_notification_release)
                     .setContentTitle(context.getString(R.string.feature_releases_notification_title, artist))
-                    .setContentText(release.title)
+                    .setContentText(line)
                     .setContentIntent(open)
                     .setAutoCancel(true)
-                    .build()
+                    .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+                if (cover != null) {
+                    builder.setLargeIcon(cover)
+                    builder.setStyle(
+                        NotificationCompat.BigPictureStyle()
+                            .bigPicture(cover)
+                            .bigLargeIcon(null as Bitmap?)
+                            .setSummaryText(line),
+                    )
+                } else {
+                    builder.setStyle(NotificationCompat.BigTextStyle().bigText(line))
+                }
+                val notification = builder.build()
                 runCatching { manager.notify(release.id.hashCode(), notification) }
             }
         } else {
@@ -91,6 +111,14 @@ object ReleaseAlerts {
                 .build()
             runCatching { manager.notify(SUMMARY_ID, notification) }
         }
+    }
+
+    @androidx.annotation.StringRes
+    private fun typeLabel(type: ReleaseType): Int = when (type) {
+        ReleaseType.Album -> R.string.feature_releases_type_album
+        ReleaseType.EP -> R.string.feature_releases_type_ep
+        ReleaseType.Single -> R.string.feature_releases_type_single
+        ReleaseType.Compilation -> R.string.feature_releases_type_compilation
     }
 
     private fun ensureChannel(context: Context) {
@@ -130,7 +158,12 @@ class ReleaseCheckWorker(context: Context, params: WorkerParameters) : Coroutine
         if (alerts.enabled.value) {
             val names = followed.associate { it.deezerId to it.name }
             // Artistas com o sino desligado na página deles ficam de fora.
-            ReleaseAlerts.notify(context, alertsToSend(check.fresh, alerts.muted.value).map { names[it.artistId].orEmpty() to it.release })
+            val items = alertsToSend(check.fresh, alerts.muted.value).map { names[it.artistId].orEmpty() to it.release }
+            // A capa só dos avisos individuais (o resumo de vários não leva imagem); falhou, sai sem capa.
+            val covers = items.take(ReleaseAlerts.MAX_SINGLE_ALERTS).mapNotNull { (_, release) ->
+                release.coverUrl?.let { url -> deezer.image(url, ReleaseAlerts.COVER_PX)?.let { release.id to it } }
+            }.toMap()
+            ReleaseAlerts.notify(context, items, covers)
         }
         return Result.success()
     }
